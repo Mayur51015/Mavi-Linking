@@ -1,13 +1,37 @@
+const path = require('path');
+const dotenv = require('dotenv');
 const { OpenAI } = require('openai');
 
+// Ensure env is loaded even when this module is required directly (e.g., node scripts)
+dotenv.config({
+  path: path.resolve(__dirname, '..', '..', '.env'),
+});
+
 const generateInsights = async (user) => {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OpenAI API key is missing. Cannot generate AI insights.');
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+  const groqApiKey = process.env.GROQ_API_KEY;
+  const grokApiKey = process.env.GROK_API_KEY;
+  const openaiApiKey = process.env.OPENAI_INSIGHTS_API_KEY || process.env.OPENAI_API_KEY;
+
+  const apiKey = geminiApiKey || groqApiKey || grokApiKey || openaiApiKey;
+
+  if (!apiKey) {
+    throw new Error('API key is missing. Set GEMINI_API_KEY, GROQ_API_KEY, GROK_API_KEY, or OPENAI_API_KEY in server/.env');
   }
 
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+  const baseURL = geminiApiKey ? 'https://generativelanguage.googleapis.com/v1beta/openai/'
+                : groqApiKey ? 'https://api.groq.com/openai/v1' 
+                : grokApiKey ? 'https://api.x.ai/v1' 
+                : undefined;
+
+  const openai = new OpenAI({ apiKey, baseURL });
+  
+  const modelName = geminiApiKey ? 'gemini-2.5-flash'
+                  : groqApiKey ? 'llama-3.1-8b-instant' 
+                  : grokApiKey ? 'grok-2-latest' 
+                  : 'gpt-4o-mini';
+
+
 
   // Construct a summary of the developer's profile based on available data
   const { scores, platformData } = user;
@@ -64,7 +88,7 @@ Format the response in clean, concise Markdown. Do NOT use overly verbose langua
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: modelName,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: developerProfile },

@@ -1,4 +1,10 @@
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
+
+dotenv.config({
+  path: path.resolve(__dirname, '..', '.env'),
+});
+
 
 const express = require('express');
 const cors = require('cors');
@@ -13,6 +19,9 @@ const platformRoutes = require('./routes/platformRoutes');
 const scoreRoutes = require('./routes/scoreRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
+const aiRoutes = require('./routes/aiRoutes'); // new AI routes
+const { init } = require('./config/socket'); // socket.io
+const http = require('http');
 
 // ─── Initialize Express ─────────────────────────────────────────────────────
 const app = express();
@@ -52,6 +61,9 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// ─── Static Files ───────────────────────────────────────────────────────────
+app.use('/public', express.static(path.join(__dirname, '..', 'public')));
+
 // ─── Health Check ───────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -68,6 +80,7 @@ app.use('/api/platforms', platformRoutes);
 app.use('/api/scores', scoreRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/ai', aiRoutes);
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 app.use('*', (req, res) => {
@@ -84,7 +97,10 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
-    app.listen(PORT, () => {
+    const server = http.createServer(app);
+    init(server); // Initialize socket.io
+
+    server.listen(PORT, () => {
       console.log(`\n🚀 MaVi Linking API Server`);
       console.log(`   Environment: ${process.env.NODE_ENV}`);
       console.log(`   Port:        ${PORT}`);

@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const Activity = require('../models/Activity');
+const { getIO } = require('../config/socket');
 
 /**
  * @desc    Register a new user
@@ -23,6 +25,20 @@ const register = async (req, res, next) => {
 
     // Generate JWT
     const token = user.generateAuthToken();
+
+    // Log Activity
+    try {
+      const activity = await Activity.create({
+        userId: user._id,
+        type: 'Milestone',
+        title: 'Joined MaVi-Linking',
+        description: 'Created a new developer profile',
+      });
+      const io = getIO();
+      if (io) io.to(user._id.toString()).emit('new_activity', activity);
+    } catch (err) {
+      console.error('Activity Error:', err.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -117,6 +133,20 @@ const updateProfile = async (req, res, next) => {
       { $set: updateFields },
       { new: true, runValidators: true }
     );
+
+    // Log Activity
+    try {
+      const activity = await Activity.create({
+        userId: user._id,
+        type: 'Other',
+        title: 'Profile Updated',
+        description: 'Updated profile information',
+      });
+      const io = getIO();
+      if (io) io.to(user._id.toString()).emit('new_activity', activity);
+    } catch (err) {
+      console.error('Activity Error:', err.message);
+    }
 
     res.status(200).json({
       success: true,

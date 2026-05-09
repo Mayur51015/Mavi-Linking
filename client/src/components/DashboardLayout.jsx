@@ -63,15 +63,15 @@ const DashboardLayout = ({ children }) => {
             </div>
           </div>
         </div>
-        
+
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Link 
-                key={item.name} 
-                to={item.path} 
-                style={{ 
+              <Link
+                key={item.name}
+                to={item.path}
+                style={{
                   display: 'flex', alignItems: 'center', gap: '0.75rem',
                   padding: '0.625rem 1rem', borderRadius: '10px',
                   background: isActive ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
@@ -95,7 +95,6 @@ const DashboardLayout = ({ children }) => {
             </div>
             {!user?.isVerified && (
               <button
-                id="get-verified-btn"
                 onClick={() => setShowVerify(true)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.75rem',

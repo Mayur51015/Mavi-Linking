@@ -16,6 +16,38 @@ const userSchema = new mongoose.Schema(
       minlength: [2, 'Name must be at least 2 characters'],
       maxlength: [50, 'Name cannot exceed 50 characters'],
     },
+    // Public identity handle (unique slug for /u/:username)
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      lowercase: true,
+      match: [/^[a-z0-9_-]{3,30}$/, 'Username must be 3-30 chars (lowercase, digits, hyphens, underscores)'],
+    },
+    bio: {
+      type: String,
+      maxlength: [500, 'Bio cannot exceed 500 characters'],
+      default: '',
+    },
+    role: {
+      type: String,
+      enum: ['developer', 'recruiter', 'professor', 'admin'],
+      default: 'developer',
+    },
+    isPublic: { type: Boolean, default: true },
+    isVerified: { type: Boolean, default: false },
+    verificationCode: { type: String, default: null },
+    university: {
+      name: { type: String, default: '' },
+      department: { type: String, default: '' },
+      batch: { type: String, default: '' },
+    },
+    profileSettings: {
+      theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
+      showEmail: { type: Boolean, default: false },
+      resumeTemplate: { type: String, default: 'default' },
+    },
     email: {
       type: String,
       required: [true, 'Email is required'],
@@ -80,8 +112,10 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// ─── Index for leaderboard queries ──────────────────────────────────────────
+// ─── Indexes ────────────────────────────────────────────────────────────────
 userSchema.index({ 'scores.overall': -1 });
+userSchema.index({ role: 1 });
+userSchema.index({ 'university.name': 1, 'university.department': 1 });
 
 // ─── Pre-save: Hash password before persisting ──────────────────────────────
 userSchema.pre('save', async function (next) {

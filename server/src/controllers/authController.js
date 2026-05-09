@@ -122,11 +122,24 @@ const getMe = async (req, res, next) => {
  */
 const updateProfile = async (req, res, next) => {
   try {
-    const { name, avatar } = req.body;
+    const { name, avatar, username, bio, university, profileSettings, isPublic } = req.body;
     const updateFields = {};
 
     if (name) updateFields.name = name;
     if (avatar !== undefined) updateFields.avatar = avatar;
+    if (username !== undefined) updateFields.username = username.toLowerCase().trim();
+    if (bio !== undefined) updateFields.bio = bio;
+    if (isPublic !== undefined) updateFields.isPublic = isPublic;
+    if (university) {
+      if (university.name !== undefined) updateFields['university.name'] = university.name;
+      if (university.department !== undefined) updateFields['university.department'] = university.department;
+      if (university.batch !== undefined) updateFields['university.batch'] = university.batch;
+    }
+    if (profileSettings) {
+      if (profileSettings.theme !== undefined) updateFields['profileSettings.theme'] = profileSettings.theme;
+      if (profileSettings.showEmail !== undefined) updateFields['profileSettings.showEmail'] = profileSettings.showEmail;
+      if (profileSettings.resumeTemplate !== undefined) updateFields['profileSettings.resumeTemplate'] = profileSettings.resumeTemplate;
+    }
 
     const user = await User.findByIdAndUpdate(
       req.user.id,

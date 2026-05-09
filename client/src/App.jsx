@@ -9,6 +9,10 @@ import AccountLinking from './pages/AccountLinking';
 import AIInsights from './pages/AIInsights';
 import ProjectManagement from './pages/ProjectManagement';
 import PublicPortfolio from './pages/PublicPortfolio';
+import PublicIdentity from './pages/PublicIdentity';
+import RecruiterDashboard from './pages/RecruiterDashboard';
+import CollegeDashboard from './pages/CollegeDashboard';
+import CompatibilityPage from './pages/CompatibilityPage';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
@@ -59,7 +63,33 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
-          {/* Public Portfolio Route */}
+          <Route 
+            path="/dashboard/recruiter" 
+            element={
+              <ProtectedRoute>
+                <RecruiterDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard/college" 
+            element={
+              <ProtectedRoute>
+                <CollegeDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard/compatibility" 
+            element={
+              <ProtectedRoute>
+                <CompatibilityPage />
+              </ProtectedRoute>
+            } 
+          />
+          {/* Public Identity Route — /u/:username */}
+          <Route path="/u/:username" element={<PublicIdentity />} />
+          {/* Legacy Portfolio Route */}
           <Route path="/portfolio/:id" element={<PublicPortfolio />} />
         </Routes>
       </div>

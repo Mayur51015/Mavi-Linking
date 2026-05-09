@@ -10,14 +10,35 @@ const rankingSchema = new mongoose.Schema(
     },
     tier: { 
       type: String, 
-      enum: ['Bronze', 'Silver', 'Gold', 'Elite Developer'],
+      enum: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Elite Developer'],
       default: 'Bronze' 
     },
     globalRank: { type: Number, default: 0 },
-    score: { type: Number, default: 0 }, // dynamically calculated
+    score: { type: Number, default: 0 },
+    // Category-specific ranks
+    categoryRanks: {
+      codeQuality: { type: Number, default: 0 },
+      projectComplexity: { type: Number, default: 0 },
+      openSourceInfluence: { type: Number, default: 0 },
+      consistencyScore: { type: Number, default: 0 },
+      technicalDiversity: { type: Number, default: 0 },
+      collaborationImpact: { type: Number, default: 0 },
+    },
+    // University ranking
+    universityRank: { type: Number, default: 0 },
+    departmentRank: { type: Number, default: 0 },
+    // Historical snapshots
+    history: [{
+      date: { type: Date, default: Date.now },
+      score: Number,
+      globalRank: Number,
+      tier: String,
+    }],
     lastUpdated: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
+
+rankingSchema.index({ score: -1 });
 
 module.exports = mongoose.model('Ranking', rankingSchema);

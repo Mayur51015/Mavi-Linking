@@ -1,4 +1,4 @@
-const path = require('path');
+ const path = require('path');
 const dotenv = require('dotenv');
 
 dotenv.config({
@@ -20,8 +20,15 @@ const scoreRoutes = require('./routes/scoreRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const aiRoutes = require('./routes/aiRoutes'); // new AI routes
+const publicRoutes = require('./routes/publicRoutes');
+const redirectRoutes = require('./routes/redirectRoutes');
+const verificationRoutes = require('./routes/verificationRoutes');
+const recruiterRoutes = require('./routes/recruiterRoutes');
+const educationRoutes = require('./routes/educationRoutes');
+const compatibilityRoutes = require('./routes/compatibilityRoutes');
 const { init } = require('./config/socket'); // socket.io
 const http = require('http');
+
 
 // ─── Initialize Express ─────────────────────────────────────────────────────
 const app = express();
@@ -81,6 +88,13 @@ app.use('/api/scores', scoreRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/verification', verificationRoutes);
+app.use('/api/recruiter', recruiterRoutes);
+app.use('/api/education', educationRoutes);
+app.use('/api/compatibility', compatibilityRoutes);
+app.use('/', redirectRoutes);
+app.use('/', publicRoutes);
+
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 app.use('*', (req, res) => {

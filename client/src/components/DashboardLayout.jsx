@@ -1,12 +1,17 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { LogOut, LayoutDashboard, Link as LinkIcon, BarChart3, Terminal, Briefcase } from 'lucide-react';
+import {
+  LogOut, LayoutDashboard, Link as LinkIcon, BarChart3,
+  Terminal, Briefcase, Search, GraduationCap, Heart, BadgeCheck, QrCode,
+} from 'lucide-react';
+import VerificationModal from './VerificationModal';
 
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
+  const [showVerify, setShowVerify] = React.useState(false);
 
   const handleLogout = () => {
     logout();
@@ -18,39 +23,112 @@ const DashboardLayout = ({ children }) => {
     { name: 'Projects', path: '/dashboard/projects', icon: <Briefcase size={20} /> },
     { name: 'Link Accounts', path: '/dashboard/link', icon: <LinkIcon size={20} /> },
     { name: 'AI Insights', path: '/dashboard/insights', icon: <BarChart3 size={20} /> },
+    { name: 'Compatibility', path: '/dashboard/compatibility', icon: <Heart size={20} /> },
+    { name: 'Recruiter', path: '/dashboard/recruiter', icon: <Search size={20} /> },
+    { name: 'College Mode', path: '/dashboard/college', icon: <GraduationCap size={20} /> },
   ];
+
+  const publicUsername = user?.username || user?.platforms?.github?.username;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       {/* Sidebar */}
-      <aside style={{ width: '280px', background: 'var(--bg-glass)', borderRight: '1px solid var(--border-color)', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column' }}>
-        <Link to="/" className="nav-brand" style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <aside style={{
+        width: '280px', background: 'var(--bg-glass)', borderRight: '1px solid var(--border-color)',
+        padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column',
+        backdropFilter: 'blur(12px)',
+      }}>
+        <Link to="/" className="nav-brand" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Terminal size={24} className="text-gradient" />
           <span className="text-gradient">MaVi Linking</span>
         </Link>
+
+        {/* User Info */}
+        <div style={{
+          background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px',
+          marginBottom: '1.5rem', border: '1px solid var(--border-subtle)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div className="avatar-gradient" style={{ width: '36px', height: '36px', fontSize: '0.9rem', flexShrink: 0 }}>
+              {user?.name?.charAt(0)}
+            </div>
+            <div>
+              <div style={{ fontWeight: '600', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                {user?.name}
+                {user?.isVerified && <BadgeCheck size={14} style={{ color: 'var(--accent-cyan)' }} />}
+              </div>
+              {publicUsername && (
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>@{publicUsername}</div>
+              )}
+            </div>
+          </div>
+        </div>
         
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link 
                 key={item.name} 
                 to={item.path} 
-                className="btn btn-outline" 
                 style={{ 
-                  justifyContent: 'flex-start', 
-                  border: 'none', 
-                  background: isActive ? 'rgba(255,255,255,0.05)' : 'transparent',
-                  color: isActive ? 'white' : 'var(--text-secondary)'
+                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  padding: '0.625rem 1rem', borderRadius: '10px',
+                  background: isActive ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+                  color: isActive ? 'white' : 'var(--text-secondary)',
+                  borderLeft: isActive ? '3px solid var(--accent-purple)' : '3px solid transparent',
+                  transition: 'all 0.2s',
+                  fontSize: '0.9rem',
+                  fontWeight: isActive ? '600' : '400',
+                  textDecoration: 'none',
                 }}
               >
                 {item.icon} {item.name}
               </Link>
             );
           })}
+
+          {/* Quick Actions */}
+          <div style={{ borderTop: '1px solid var(--border-color)', marginTop: '1rem', paddingTop: '1rem' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem', paddingLeft: '1rem' }}>
+              Quick Actions
+            </div>
+            {!user?.isVerified && (
+              <button
+                onClick={() => setShowVerify(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  padding: '0.625rem 1rem', borderRadius: '10px',
+                  background: 'transparent', color: 'var(--accent-cyan)',
+                  border: 'none', cursor: 'pointer', fontSize: '0.9rem', width: '100%', textAlign: 'left',
+                }}
+              >
+                <BadgeCheck size={20} /> Get Verified
+              </button>
+            )}
+            {publicUsername && (
+              <Link
+                to={`/u/${publicUsername}`}
+                target="_blank"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  padding: '0.625rem 1rem', borderRadius: '10px',
+                  color: 'var(--text-secondary)', fontSize: '0.9rem',
+                  textDecoration: 'none',
+                }}
+              >
+                <QrCode size={20} /> Public Profile
+              </Link>
+            )}
+          </div>
         </nav>
 
-        <button onClick={handleLogout} className="btn btn-outline" style={{ justifyContent: 'flex-start', border: 'none', color: '#fca5a5' }}>
+        <button onClick={handleLogout} style={{
+          display: 'flex', alignItems: 'center', gap: '0.75rem',
+          padding: '0.625rem 1rem', borderRadius: '10px',
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          color: '#fca5a5', fontSize: '0.9rem', width: '100%',
+        }}>
           <LogOut size={20} /> Sign Out
         </button>
       </aside>
@@ -59,6 +137,9 @@ const DashboardLayout = ({ children }) => {
       <main style={{ flex: 1, padding: '2rem 4rem', overflowY: 'auto' }}>
         {children}
       </main>
+
+      {/* Verification Modal */}
+      {showVerify && <VerificationModal onClose={() => setShowVerify(false)} />}
     </div>
   );
 };

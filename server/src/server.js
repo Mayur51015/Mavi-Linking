@@ -25,6 +25,7 @@ const redirectRoutes = require('./routes/redirectRoutes');
 const verificationRoutes = require('./routes/verificationRoutes');
 const recruiterRoutes = require('./routes/recruiterRoutes');
 const educationRoutes = require('./routes/educationRoutes');
+const leetcodeRoutes = require('./routes/leetcodeRoutes');
 const compatibilityRoutes = require('./routes/compatibilityRoutes');
 const { init } = require('./config/socket'); // socket.io
 const http = require('http');
@@ -92,6 +93,7 @@ app.use('/api/verification', verificationRoutes);
 app.use('/api/recruiter', recruiterRoutes);
 app.use('/api/education', educationRoutes);
 app.use('/api/compatibility', compatibilityRoutes);
+app.use('/api/leetcode', leetcodeRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', redirectRoutes);
 

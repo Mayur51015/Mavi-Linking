@@ -7,22 +7,18 @@ const Analytics = require('../models/Analytics');
 
 const normalizeUsername = (s) => (s || '').toString().trim().toLowerCase();
 
-/**
- * Find user by username or platform username.
- */
 const findUserByHandle = async (username) => {
-  // First try the dedicated username field
-  let user = await User.findOne({ username, isPublic: true }).select('-password -__v');
-  if (user) return user;
-
-  // Fallback: search platform usernames
-  user = await User.findOne({
+  const usernameRegex = new RegExp(`^${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+  
+  const user = await User.findOne({
     isPublic: { $ne: false },
     $or: [
-      { 'platforms.github.username': username },
-      { 'platforms.leetcode.username': username },
-      { 'platforms.codeforces.username': username },
-      { 'platforms.stackoverflow.username': username },
+      { username: usernameRegex },
+      { email: usernameRegex },
+      { 'platforms.github.username': usernameRegex },
+      { 'platforms.leetcode.username': usernameRegex },
+      { 'platforms.codeforces.username': usernameRegex },
+      { 'platforms.stackoverflow.username': usernameRegex },
     ],
   }).select('-password -__v');
 
@@ -78,7 +74,7 @@ const getPublicProfileByUsername = async (req, res, next) => {
           specialization: insight.specialization,
           topSkills: insight.topSkills,
           techStack: insight.techStack,
-          confidenceScores: Object.fromEntries(insight.confidenceScores || new Map()),
+          confidenceScores: insight.confidenceScores || {},
           strengths: insight.strengths,
           improvements: insight.improvements,
           careerRecommendations: insight.careerRecommendations,

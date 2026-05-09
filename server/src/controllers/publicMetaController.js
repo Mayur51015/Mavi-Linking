@@ -6,12 +6,17 @@ const getMetaByUsername = async (req, res, next) => {
   try {
     const username = normalizeUsername(req.params.username);
 
+    const usernameRegex = new RegExp(`^${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+
     const user = await User.findOne({
+      isPublic: { $ne: false },
       $or: [
-        { 'platforms.github.username': username },
-        { 'platforms.leetcode.username': username },
-        { 'platforms.codeforces.username': username },
-        { 'platforms.stackoverflow.username': username },
+        { username: usernameRegex },
+        { email: usernameRegex },
+        { 'platforms.github.username': usernameRegex },
+        { 'platforms.leetcode.username': usernameRegex },
+        { 'platforms.codeforces.username': usernameRegex },
+        { 'platforms.stackoverflow.username': usernameRegex },
       ],
     }).select('-password -__v -email');
 

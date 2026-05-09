@@ -22,7 +22,6 @@ const verificationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-verificationSchema.index({ userId: 1 });
 verificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('Verification', verificationSchema);

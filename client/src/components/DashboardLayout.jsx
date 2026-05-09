@@ -95,6 +95,7 @@ const DashboardLayout = ({ children }) => {
             </div>
             {!user?.isVerified && (
               <button
+                id="get-verified-btn"
                 onClick={() => setShowVerify(true)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.75rem',

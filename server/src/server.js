@@ -92,8 +92,8 @@ app.use('/api/verification', verificationRoutes);
 app.use('/api/recruiter', recruiterRoutes);
 app.use('/api/education', educationRoutes);
 app.use('/api/compatibility', compatibilityRoutes);
-app.use('/', redirectRoutes);
-app.use('/', publicRoutes);
+app.use('/api', publicRoutes);
+app.use('/api', redirectRoutes);
 
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────

@@ -4,6 +4,20 @@
 
 ![MaVi Linking Dashboard Mockup](https://via.placeholder.com/1000x500.png?text=MaVi+Linking+Dashboard)
 
+## 📸 Snapshots
+
+<div align="center">
+  <img src="https://via.placeholder.com/800x400.png?text=Developer+Dashboard" alt="Developer Dashboard" width="48%">
+  <img src="https://via.placeholder.com/800x400.png?text=AI-Powered+DNA+Profile" alt="DNA Profile" width="48%">
+</div>
+<br/>
+<div align="center">
+  <img src="https://via.placeholder.com/800x400.png?text=Global+Leaderboard" alt="Global Leaderboard" width="48%">
+  <img src="https://via.placeholder.com/800x400.png?text=Public+Profile+Share" alt="Public Profile" width="48%">
+</div>
+
+---
+
 ## 🌟 Key Features
 
 - **🧠 AI-Powered Intelligence**: Uses LLMs to analyze your problem-solving patterns, consistency, and technical stack, generating a unique "Developer DNA" and specific performance scores.

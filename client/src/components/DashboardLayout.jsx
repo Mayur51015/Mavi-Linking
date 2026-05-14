@@ -123,19 +123,38 @@ const DashboardLayout = ({ children }) => {
           </div>
         </nav>
 
-        <button onClick={handleLogout} style={{
-          display: 'flex', alignItems: 'center', gap: '0.75rem',
-          padding: '0.625rem 1rem', borderRadius: '10px',
-          background: 'transparent', border: 'none', cursor: 'pointer',
-          color: '#fca5a5', fontSize: '0.9rem', width: '100%',
-        }}>
-          <LogOut size={20} /> Sign Out
-        </button>
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, padding: '2rem 4rem', overflowY: 'auto' }}>
-        {children}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+        {/* Dashboard Header / Navbar */}
+        <header style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          width: '100%', 
+          padding: '1rem 1.5rem', 
+          borderBottom: '1px solid var(--border-color)', 
+          background: 'rgba(18, 18, 28, 0.5)',
+          backdropFilter: 'blur(12px)',
+          minHeight: '72px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <LayoutDashboard size={24} style={{ color: 'var(--accent-purple)' }} />
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Dashboard</h1>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="btn btn-danger"
+          >
+            <LogOut size={18} />
+            <span className="hide-mobile">Sign Out</span>
+          </button>
+        </header>
+
+        <div style={{ flex: 1, padding: '2rem 4rem', overflowY: 'auto' }}>
+          {children}
+        </div>
       </main>
 
       {/* Verification Modal */}

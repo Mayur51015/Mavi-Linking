@@ -310,6 +310,21 @@ code, .mono {
   box-shadow: 0 4px 15px rgba(236, 72, 153, 0.2);
 }
 
+.btn-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: white;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+  transform: translateY(-2px);
+}
+
 .btn-outline {
   background: transparent;
   border: 1px solid var(--border-color);

@@ -1,61 +1,94 @@
 # MaVi Linking 🚀
 
-**MaVi Linking** is a next-generation, AI-Powered Developer Intelligence System. It goes beyond a simple resume by aggregating your developer data across multiple platforms (GitHub, LeetCode, Codeforces, etc.) and leveraging Artificial Intelligence (Gemini/OpenAI) to generate deep technical insights, a personalized "Developer DNA" profile, and comparative rankings.
+**MaVi Linking** is a next-generation, **AI-Powered Developer Intelligence Platform**. It aggregates your developer footprint across multiple coding platforms (GitHub, LeetCode, Codeforces), leverages AI (Gemini / OpenAI) to generate deep technical insights, and produces a personalized **"Developer DNA"** profile with comparative global rankings — all in one sleek, glassmorphic dashboard.
 
-![MaVi Linking Dashboard Mockup](https://via.placeholder.com/1000x500.png?text=MaVi+Linking+Dashboard)
-
-## 📸 Snapshots
-
-<div align="center">
-  <img src="https://via.placeholder.com/800x400.png?text=Developer+Dashboard" alt="Developer Dashboard" width="48%">
-  <img src="https://via.placeholder.com/800x400.png?text=AI-Powered+DNA+Profile" alt="DNA Profile" width="48%">
-</div>
-<br/>
-<div align="center">
-  <img src="https://via.placeholder.com/800x400.png?text=Global+Leaderboard" alt="Global Leaderboard" width="48%">
-  <img src="https://via.placeholder.com/800x400.png?text=Public+Profile+Share" alt="Public Profile" width="48%">
-</div>
+Built for **Students**, **Recruiters**, and **Educators** alike, MaVi Linking provides role-specific dashboards so every stakeholder gets exactly the intelligence they need.
 
 ---
 
 ## 🌟 Key Features
 
-- **🧠 AI-Powered Intelligence**: Uses LLMs to analyze your problem-solving patterns, consistency, and technical stack, generating a unique "Developer DNA" and specific performance scores.
-- **🔗 Cross-Platform Aggregation**: Seamlessly connects with GitHub and LeetCode (via Alfa API) to fetch real-time public repositories, contest ratings, easy/medium/hard problem breakdowns, and recent submissions.
-- **🏆 Global Ranking System**: Computes an overall score based on your Development, Problem Solving, and Knowledge metrics, placing you in a global tier (Bronze to Elite Developer).
-- **📊 Interactive Dashboards**: Modern, glassmorphic UI built with React and Tailwind CSS, featuring Recharts for beautiful data visualization (Problem Breakdown, Growth Charts, Skill Radars).
-- **🌍 Public Identities & QR Codes**: Share your aggregated developer profile via a public `/u/:username` link. Generate custom QR codes automatically to attach to your resume.
-- **💼 Recruiter Portal**: Dedicated dashboard for recruiters to discover, bookmark, and analyze top engineering talent based on AI-verified technical footprints.
-- **📈 Advanced Reporting**: Generate detailed PDF technical reports outlining a user's skills and insights directly from the dashboard.
+### 🧠 AI-Powered Intelligence
+- Uses Google Gemini / OpenAI LLMs to analyze problem-solving patterns, coding consistency, and technical stack depth.
+- Generates a unique **Developer DNA** profile and dimensioned performance scores (Development, Problem Solving, Knowledge).
+
+### 🔗 Cross-Platform Aggregation
+- **GitHub** — Public repositories, language breakdown, contribution activity, and star counts.
+- **LeetCode** — Contest ratings, problem breakdown (Easy / Medium / Hard), badges, recent submissions, and AI-driven insights via the Alfa API.
+- **Codeforces & StackOverflow** — Platform slots ready for linking and data sync.
+
+### 👥 Multi-Role Dashboards
+| Role | Dashboard Highlights |
+|:---|:---|
+| **Student / User** | Personal analytics, account linking, AI insights, project portfolio, compatibility checker |
+| **Recruiter** | Talent search & filtering, candidate comparison, bookmarking, AI-verified technical profiles |
+| **Teacher / Educator** | Student roster management, industry-readiness reports, department leaderboards |
+
+### 🏆 Global Ranking & Gamification
+- Computes an **overall score** from Development, Problem Solving, and Knowledge metrics.
+- Places users in tiers — **Bronze → Silver → Gold → Platinum → Elite Developer**.
+- Global and department-scoped leaderboards.
+
+### 📊 Interactive Data Visualization
+- Modern glassmorphic UI with **Recharts** — Problem Breakdown charts, Growth timelines, Skill Radars, and Activity Feeds.
+- Smooth **Framer Motion** animations throughout.
+
+### 🌍 Public Identity & QR Codes
+- Share your aggregated developer profile via a public `/u/:username` link.
+- Auto-generated **QR codes** for embedding on resumes and portfolios.
+- SEO / OpenGraph metadata endpoint for rich link previews.
+
+### 🤝 Compatibility Engine
+- Match students with projects, teams, or roles based on AI-analyzed skill profiles.
+
+### 📈 PDF Report Generation
+- Generate detailed **PDF technical reports** outlining skills, insights, and platform analytics directly from the dashboard.
+
+### ⚡ Real-Time Updates
+- **Socket.IO** integration for live dashboard events and sync notifications.
 
 ---
 
 ## 🛠️ Technology Stack
 
-**Frontend:**
-- **Core**: React (Vite)
-- **Routing**: React Router DOM
-- **Styling & Animations**: Tailwind CSS & Framer Motion
-- **Data Visualization**: Recharts
-- **Icons**: Lucide React
-- **HTTP Client**: Axios
+### Frontend
+| Category | Technology |
+|:---|:---|
+| **Core** | React 19 (Vite 8) |
+| **Routing** | React Router DOM v7 |
+| **State** | React Context API |
+| **Styling** | Vanilla CSS (glassmorphic design system) |
+| **Animations** | Framer Motion |
+| **Charts** | Recharts |
+| **Icons** | Lucide React |
+| **HTTP** | Axios |
+| **Real-Time** | Socket.IO Client |
+| **Utilities** | clsx |
 
-**Backend:**
-- **Core**: Node.js & Express.js
-- **Database**: MongoDB & Mongoose
-- **Authentication**: JSON Web Tokens (JWT) & bcryptjs
-- **Performance & Security**: Node Cache, Helmet, Express Rate Limit
-- **AI Integration**: `@google/generative-ai` (Gemini) & `openai`
-- **Utilities**: `qrcode` (for profile links) & `pdfkit` (for report generation)
+### Backend
+| Category | Technology |
+|:---|:---|
+| **Core** | Node.js & Express.js |
+| **Database** | MongoDB & Mongoose |
+| **Auth** | JWT (jsonwebtoken) & bcryptjs |
+| **Validation** | express-validator |
+| **Security** | Helmet, CORS, express-rate-limit |
+| **AI** | `@google/generative-ai` (Gemini) & `openai` |
+| **Caching** | node-cache |
+| **Real-Time** | Socket.IO |
+| **PDF** | PDFKit |
+| **QR** | qrcode |
+| **Logging** | Morgan |
+| **Dev** | Nodemon |
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Node.js** (v16 or higher)
-- **MongoDB** (Local instance or MongoDB Atlas)
-- **AI API Keys** (Google Gemini API Key or OpenAI API Key)
+- **Node.js** v16 or higher
+- **MongoDB** (local instance or [MongoDB Atlas](https://www.mongodb.com/atlas))
+- **AI API Key** — Google Gemini API Key and/or OpenAI API Key
 
 ### 1. Clone the Repository
 ```bash
@@ -64,13 +97,12 @@ cd Mavi-Linking
 ```
 
 ### 2. Backend Setup
-Navigate to the server directory, install dependencies, and configure environment variables.
 ```bash
 cd server
 npm install
 ```
 
-Create a `.env` file in the `server` directory using `.env.example` as a template:
+Create a `.env` file in the `server/` directory:
 ```env
 PORT=5000
 NODE_ENV=development
@@ -78,85 +110,79 @@ MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_super_secret_jwt_key
 CLIENT_URL=http://localhost:5173
 
-# AI APIs (Provide at least one)
+# AI APIs (provide at least one)
 GEMINI_API_KEY=your_gemini_api_key
 OPENAI_API_KEY=your_openai_api_key
 ```
 
-Start the backend server:
+Start the backend:
 ```bash
 npm run dev
 ```
 
 ### 3. Frontend Setup
-Open a new terminal, navigate to the client directory, and install dependencies.
+Open a new terminal:
 ```bash
 cd client
 npm install
 ```
 
-Create a `.env` file in the `client` directory (optional if relying on defaults):
+Create a `.env` file in the `client/` directory (optional — defaults to localhost):
 ```env
 VITE_API_URL=http://localhost:5000/api
 ```
 
-Start the frontend development server:
+Start the frontend:
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`.
+The app will be available at **`http://localhost:5173`**.
 
 ---
 
-## 🔐 Environment Variables Guide
+## 🔐 Environment Variables
 
 ### Backend (`server/.env`)
-- `PORT`: The port your API runs on (default: 5000).
-- `NODE_ENV`: Set to `development` or `production`.
-- `MONGODB_URI`: Your MongoDB connection string.
-- `JWT_SECRET`: A strong random string used to sign JSON Web Tokens.
-- `CLIENT_URL`: The URL of your frontend (used for CORS, e.g., `http://localhost:5173`).
-- `GEMINI_API_KEY`: API key for Google's Generative AI (used for developer insight generation).
-- `OPENAI_API_KEY`: Fallback API key for AI generation.
+| Variable | Description |
+|:---|:---|
+| `PORT` | API port (default: `5000`) |
+| `NODE_ENV` | `development` or `production` |
+| `MONGODB_URI` | MongoDB connection string |
+| `JWT_SECRET` | Secret key for signing JWTs |
+| `CLIENT_URL` | Frontend URL for CORS (e.g. `http://localhost:5173`) |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `OPENAI_API_KEY` | OpenAI API key (fallback) |
 
 ### Frontend (`client/.env`)
-- `VITE_API_URL`: Points to your backend API URL.
+| Variable | Description |
+|:---|:---|
+| `VITE_API_URL` | Backend API base URL |
 
 ---
 
-## 📡 API Endpoints Overview
+## 📡 API Endpoints
 
-The backend exposes a highly modular REST API. Below are the primary route prefixes:
+The backend exposes a modular REST API with role-based access control:
 
-| Endpoint Prefix | Description |
-| :--- | :--- |
-| `/api/auth` | User registration, login, and fetching current user context (`/me`). |
-| `/api/platforms` | Endpoints to sync and manage GitHub accounts. |
-| `/api/leetcode` | Endpoints to sync and fetch LeetCode analytics and problem breakdown. |
-| `/api/scores` | Manages user ranking, gamification scores, and leaderboard data. |
-| `/api/projects` | User portfolio project management. |
-| `/api/ai` | Triggers LLM analysis to generate Developer DNA and insights. |
-| `/api/recruiter` | Fetch public profiles, bookmarking functionalities for HR. |
-| `/api/verification`| Platform verification tokens and callbacks. |
-
-*Public user profiles are accessible at `/api/public/u/:username`.*
-
----
-
-## 🚢 Deployment Instructions
-
-### Deploying the Backend (Render / Heroku / DigitalOcean)
-1. Ensure your MongoDB cluster allows external IP connections (e.g., `0.0.0.0/0` in MongoDB Atlas).
-2. Push your `server` code to a repository and link it to your hosting provider.
-3. Add all your production environment variables (from your `.env` file) to the host's environment settings.
-4. Set the Start Command to: `npm start` (which runs `node src/server.js`).
-
-### Deploying the Frontend (Vercel / Netlify)
-1. Link your frontend repository to Vercel/Netlify.
-2. Set the build command to `npm run build` and the output directory to `dist`.
-3. Add the `VITE_API_URL` environment variable pointing to your deployed backend URL (e.g., `https://mavi-linking-api.onrender.com/api`).
-4. Deploy!
+| Prefix | Description | Auth |
+|:---|:---|:---|
+| `/api/auth` | Registration, login, profile updates, `/me` | Public / JWT |
+| `/api/platforms` | GitHub account linking & data sync | JWT |
+| `/api/leetcode` | LeetCode analytics sync & retrieval | JWT |
+| `/api/scores` | Ranking, gamification scores, leaderboard | JWT |
+| `/api/projects` | Portfolio project CRUD | JWT |
+| `/api/portfolio` | Public portfolio data | Public |
+| `/api/ai` | AI insight generation (Developer DNA) | JWT |
+| `/api/recruiter` | Talent search, bookmarks, candidate analytics | JWT (Recruiter) |
+| `/api/teacher` | Student management, readiness reports | JWT (Teacher) |
+| `/api/education` | University & department data | JWT |
+| `/api/compatibility` | Skill-based compatibility matching | JWT |
+| `/api/verification` | Platform verification tokens | JWT |
+| `/api/public/u/:username` | Public profile aggregation | Public |
+| `/api/public/qr/:username` | QR code generation | Public |
+| `/api/public/meta/:username` | SEO / OpenGraph metadata | Public |
+| `/api/health` | API health check | Public |
 
 ---
 
@@ -164,27 +190,115 @@ The backend exposes a highly modular REST API. Below are the primary route prefi
 
 ```text
 Mavi-Linking/
-├── client/                 # React Frontend
+├── client/                       # React Frontend (Vite)
 │   ├── src/
-│   │   ├── api/            # Axios configurations
-│   │   ├── components/     # Reusable UI components & Widgets
-│   │   ├── context/        # React Context (Auth)
-│   │   ├── pages/          # Full page views (Dashboard, Login, Profile)
-│   │   └── App.jsx         # App routing
+│   │   ├── api/                  # Axios instance & interceptors
+│   │   ├── assets/               # Static assets (logos, images)
+│   │   ├── components/           # Reusable UI widgets
+│   │   │   ├── leetcode/         #   └─ LeetCode-specific components
+│   │   │   ├── DNACard.jsx       #   └─ Developer DNA display
+│   │   │   ├── SkillRadar.jsx    #   └─ Radar chart component
+│   │   │   ├── GrowthChart.jsx   #   └─ Growth timeline
+│   │   │   ├── LeaderboardWidget.jsx
+│   │   │   ├── QRModal.jsx       #   └─ QR code modal
+│   │   │   └── ReportGenerator.jsx
+│   │   ├── context/              # React Context (AuthContext)
+│   │   ├── layouts/              # Role-specific shell layouts
+│   │   │   ├── UserLayout.jsx
+│   │   │   ├── RecruiterLayout.jsx
+│   │   │   └── TeacherLayout.jsx
+│   │   ├── pages/                # Full-page views
+│   │   │   ├── recruiter/        #   └─ Recruiter dashboard pages
+│   │   │   ├── teacher/          #   └─ Teacher dashboard pages
+│   │   │   ├── Dashboard.jsx     #   └─ Student dashboard
+│   │   │   ├── Home.jsx          #   └─ Landing page
+│   │   │   ├── Login.jsx
+│   │   │   ├── Register.jsx
+│   │   │   ├── PublicIdentity.jsx
+│   │   │   └── ...
+│   │   ├── routes/               # ProtectedRoute (role-aware)
+│   │   ├── App.jsx               # Top-level routing
+│   │   ├── index.css             # Global design system
+│   │   └── main.jsx              # Vite entry point
 │   └── package.json
-└── server/                 # Node/Express Backend
-    ├── src/
-    │   ├── config/         # DB & Socket configurations
-    │   ├── controllers/    # Route controllers
-    │   ├── middleware/     # Auth, Validation, Error Handling
-    │   ├── models/         # Mongoose Schemas (User, DNA, LeetCodeAnalytics)
-    │   ├── routes/         # Express API routes
-    │   └── services/       # External API & AI integration
-    └── package.json
+│
+├── server/                       # Node/Express Backend
+│   ├── src/
+│   │   ├── config/               # DB connection & Socket.IO setup
+│   │   ├── controllers/          # Route handlers
+│   │   │   ├── authController.js
+│   │   │   ├── aiController.js
+│   │   │   ├── leetcodeController.js
+│   │   │   ├── recruiterController.js
+│   │   │   ├── teacherController.js
+│   │   │   ├── scoreController.js
+│   │   │   ├── compatibilityController.js
+│   │   │   └── ...
+│   │   ├── middleware/           # Auth, role-guard, validation, error handling
+│   │   │   ├── auth.js
+│   │   │   ├── roleMiddleware.js
+│   │   │   ├── validate.js
+│   │   │   └── errorHandler.js
+│   │   ├── models/               # Mongoose schemas
+│   │   │   ├── User.js           #   └─ Multi-role user model
+│   │   │   ├── DNA.js
+│   │   │   ├── LeetCodeAnalytics.js
+│   │   │   ├── Ranking.js
+│   │   │   ├── Project.js
+│   │   │   ├── Compatibility.js
+│   │   │   └── ...
+│   │   ├── routes/               # Express route definitions
+│   │   ├── services/             # Business logic & external API integrations
+│   │   │   ├── aiAnalyzer.js
+│   │   │   ├── leetcodeService.js
+│   │   │   ├── recruiterService.js
+│   │   │   ├── teacherService.js
+│   │   │   ├── compatibilityService.js
+│   │   │   └── ...
+│   │   └── server.js             # Express app entry point
+│   └── package.json
+│
+├── README.md
+└── TODO.md
 ```
 
+---
+
+## 🚢 Deployment
+
+### Backend (Render / Railway / Heroku)
+1. Ensure your MongoDB Atlas cluster allows external connections (`0.0.0.0/0`).
+2. Push the `server/` code and link it to your hosting provider.
+3. Add all production environment variables from `.env`.
+4. Set the **Start Command** to `npm start` (runs `node src/server.js`).
+
+### Frontend (Vercel / Netlify)
+1. Link your frontend repo to Vercel or Netlify.
+2. Set **Build Command** to `npm run build` and **Output Directory** to `dist`.
+3. Add `VITE_API_URL` pointing to your deployed backend (e.g. `https://your-api.onrender.com/api`).
+4. Deploy!
+
+---
+
 ## 🤝 Contributing
-Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
+
+Contributions, issues, and feature requests are welcome!  
+Feel free to check the [issues page](https://github.com/Mayur51015/Mavi-Linking/issues).
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
 
 ## 📝 License
-This project is licensed under the ISC License.
+
+This project is licensed under the **ISC License**.
+
+---
+
+<div align="center">
+  <b>Built with ❤️ by MaVi</b>
+</div>

@@ -38,6 +38,13 @@ const protect = async (req, res, next) => {
       });
     }
 
+    // ─── Backward Compatibility: migrate old role names ─────────────
+    const roleMigration = { developer: 'user', professor: 'teacher' };
+    if (roleMigration[user.role]) {
+      user.role = roleMigration[user.role];
+      await User.updateOne({ _id: user._id }, { $set: { role: user.role } });
+    }
+
     req.user = user;
     next();
   } catch (error) {

@@ -1,5 +1,6 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
+const { requireRole } = require('../middleware/roleMiddleware');
 const {
   searchDevelopers,
   compareDevelopers,
@@ -7,11 +8,16 @@ const {
   removeBookmark,
   getBookmarks,
   updateBookmark,
+  getRecruiterStats,
 } = require('../controllers/recruiterController');
 
 const router = express.Router();
 
-router.use(protect);
+// All recruiter routes require authentication + recruiter role
+router.use(protect, requireRole('recruiter', 'admin'));
+
+// Stats
+router.get('/stats', getRecruiterStats);
 
 // Search & Compare
 router.get('/search', searchDevelopers);

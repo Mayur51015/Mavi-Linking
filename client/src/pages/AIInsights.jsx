@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '../components/DashboardLayout';
+import UserLayout from '../layouts/UserLayout';
 import api from '../api/axios';
 import { Cpu, RefreshCw, AlertCircle } from 'lucide-react';
 
@@ -26,7 +26,7 @@ const AIInsights = () => {
   }, []);
 
   return (
-    <DashboardLayout>
+    <UserLayout>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem' }}>
         <div>
           <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -66,7 +66,7 @@ const AIInsights = () => {
           })}
         </div>
       )}
-    </DashboardLayout>
+    </UserLayout>
   );
 };
 

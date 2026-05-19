@@ -32,8 +32,10 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['developer', 'recruiter', 'professor', 'admin'],
-      default: 'developer',
+      // 'developer' and 'professor' are legacy values kept for backward compatibility
+      // They are auto-migrated to 'user' and 'teacher' on next auth request
+      enum: ['user', 'recruiter', 'teacher', 'admin', 'developer', 'professor'],
+      default: 'user',
     },
     isPublic: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
@@ -43,6 +45,26 @@ const userSchema = new mongoose.Schema(
       department: { type: String, default: '' },
       batch: { type: String, default: '' },
     },
+    // Student-specific fields
+    degree: { type: String, default: '' },
+    graduationYear: { type: String, default: '' },
+    portfolioWebsite: { type: String, default: '' },
+    githubUsername: { type: String, default: '' },
+    preferredDomain: {
+      type: String,
+      enum: ['', 'Web Development', 'AI/ML', 'Competitive Programming', 'Cybersecurity', 'App Development'],
+      default: '',
+    },
+    experienceLevel: {
+      type: String,
+      enum: ['', 'Beginner', 'Intermediate', 'Advanced'],
+      default: '',
+    },
+    // Recruiter-specific fields
+    companyName: { type: String, default: '' },
+    allowedColleges: [{ type: String }],
+    allowedDepartments: [{ type: String }],
+    // Teacher-specific fields (college/department from university field)
     profileSettings: {
       theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
       showEmail: { type: Boolean, default: false },
@@ -139,7 +161,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 // ─── Instance method: Generate signed JWT ───────────────────────────────────
 userSchema.methods.generateAuthToken = function () {
   return jwt.sign(
-    { id: this._id, email: this.email },
+    { id: this._id, email: this.email, role: this.role },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRE || '7d' }
   );

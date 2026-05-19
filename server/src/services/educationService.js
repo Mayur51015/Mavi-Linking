@@ -8,7 +8,7 @@ const Analytics = require('../models/Analytics');
 const getStudentsByUniversity = async (filters = {}) => {
   const { university, department, batch, page = 1, limit = 50 } = filters;
 
-  const query = { role: 'developer' };
+  const query = { role: 'user' };
   if (university) query['university.name'] = new RegExp(university, 'i');
   if (department) query['university.department'] = new RegExp(department, 'i');
   if (batch) query['university.batch'] = batch;
@@ -38,7 +38,7 @@ const getStudentsByUniversity = async (filters = {}) => {
  * Get placement readiness analytics for a batch of students.
  */
 const getPlacementReadiness = async (university, department) => {
-  const query = { role: 'developer' };
+  const query = { role: 'user' };
   if (university) query['university.name'] = new RegExp(university, 'i');
   if (department) query['university.department'] = new RegExp(department, 'i');
 
@@ -93,7 +93,7 @@ const getPlacementReadiness = async (university, department) => {
  * Get department leaderboard.
  */
 const getDepartmentLeaderboard = async (university, department, limit = 20) => {
-  const query = { role: 'developer', 'scores.overall': { $gt: 0 } };
+  const query = { role: 'user', 'scores.overall': { $gt: 0 } };
   if (university) query['university.name'] = new RegExp(university, 'i');
   if (department) query['university.department'] = new RegExp(department, 'i');
 

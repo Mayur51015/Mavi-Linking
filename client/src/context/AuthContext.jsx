@@ -36,8 +36,8 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   };
 
-  const register = async (name, email, password) => {
-    const res = await api.post('/auth/register', { name, email, password });
+  const register = async (userData) => {
+    const res = await api.post('/auth/register', userData);
     localStorage.setItem('token', res.data.data.token);
     setUser(res.data.data.user);
     return res.data;
@@ -48,8 +48,33 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const res = await api.get('/auth/me');
+      setUser(res.data.data.user);
+    } catch (error) {
+      console.error('Error refreshing user', error);
+    }
+  };
+
+  /**
+   * Get the dashboard path based on user role
+   */
+  const getDashboardPath = () => {
+    if (!user) return '/login';
+    switch (user.role) {
+      case 'recruiter': return '/dashboard/recruiter';
+      case 'teacher':
+      case 'professor': return '/dashboard/teacher';
+      default: return '/dashboard';
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ 
+      user, loading, login, register, logout, refreshUser,
+      getDashboardPath, setUser
+    }}>
       {children}
     </AuthContext.Provider>
   );

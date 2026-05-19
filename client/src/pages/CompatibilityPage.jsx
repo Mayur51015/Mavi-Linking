@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Plus, X, Zap, Heart } from 'lucide-react';
-import DashboardLayout from '../components/DashboardLayout';
+import UserLayout from '../layouts/UserLayout';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axios';
 
@@ -41,7 +41,7 @@ const CompatibilityPage = () => {
   const scoreColor = (score) => score >= 80 ? '#10b981' : score >= 60 ? '#3b82f6' : score >= 40 ? '#f59e0b' : '#ef4444';
 
   return (
-    <DashboardLayout>
+    <UserLayout>
       <header style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Heart size={28} /> Team Compatibility
@@ -129,7 +129,7 @@ const CompatibilityPage = () => {
           )}
         </motion.div>
       )}
-    </DashboardLayout>
+    </UserLayout>
   );
 };
 

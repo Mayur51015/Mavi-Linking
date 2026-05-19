@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '../components/DashboardLayout';
+import UserLayout from '../layouts/UserLayout';
 import api from '../api/axios';
 import { GitBranch, Code2, Database, Trash2, Link as LinkIcon } from 'lucide-react';
 
@@ -104,7 +104,7 @@ const AccountLinking = () => {
   };
 
   return (
-    <DashboardLayout>
+    <UserLayout>
       <header style={{ marginBottom: '3rem' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Account Linking</h1>
         <p style={{ color: 'var(--text-secondary)' }}>Connect your external developer platforms to aggregate your intelligence data.</p>
@@ -138,7 +138,7 @@ const AccountLinking = () => {
           ))}
         </div>
       )}
-    </DashboardLayout>
+    </UserLayout>
   );
 };
 

@@ -3,13 +3,20 @@ const Activity = require('../models/Activity');
 const { getIO } = require('../config/socket');
 
 /**
- * @desc    Register a new user
+ * @desc    Register a new user (supports user/recruiter/teacher roles)
  * @route   POST /api/auth/register
  * @access  Public
  */
 const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const {
+      name, email, password, role,
+      // Student-specific
+      university, degree, graduationYear, portfolioWebsite, githubUsername,
+      preferredDomain, experienceLevel, bio,
+      // Recruiter-specific
+      companyName, allowedColleges, allowedDepartments,
+    } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -20,19 +27,51 @@ const register = async (req, res, next) => {
       });
     }
 
+    // Build user data based on role
+    const userData = { name, email, password };
+
+    // Validate and set role (default to 'user')
+    const validRoles = ['user', 'recruiter', 'teacher'];
+    userData.role = validRoles.includes(role) ? role : 'user';
+
+    // Common optional fields
+    if (bio) userData.bio = bio;
+
+    // Role-specific fields
+    if (userData.role === 'user') {
+      if (university) userData.university = university;
+      if (degree) userData.degree = degree;
+      if (graduationYear) userData.graduationYear = graduationYear;
+      if (portfolioWebsite) userData.portfolioWebsite = portfolioWebsite;
+      if (githubUsername) userData.githubUsername = githubUsername;
+      if (preferredDomain) userData.preferredDomain = preferredDomain;
+      if (experienceLevel) userData.experienceLevel = experienceLevel;
+    }
+
+    if (userData.role === 'recruiter') {
+      if (companyName) userData.companyName = companyName;
+      if (allowedColleges) userData.allowedColleges = allowedColleges;
+      if (allowedDepartments) userData.allowedDepartments = allowedDepartments;
+    }
+
+    if (userData.role === 'teacher') {
+      if (university) userData.university = university;
+    }
+
     // Create user (password is hashed via pre-save hook)
-    const user = await User.create({ name, email, password });
+    const user = await User.create(userData);
 
     // Generate JWT
     const token = user.generateAuthToken();
 
     // Log Activity
     try {
+      const roleLabels = { user: 'developer', recruiter: 'recruiter', teacher: 'teacher' };
       const activity = await Activity.create({
         userId: user._id,
         type: 'Milestone',
         title: 'Joined MaVi-Linking',
-        description: 'Created a new developer profile',
+        description: `Created a new ${roleLabels[user.role] || 'developer'} profile`,
       });
       const io = getIO();
       if (io) io.to(user._id.toString()).emit('new_activity', activity);
@@ -122,7 +161,12 @@ const getMe = async (req, res, next) => {
  */
 const updateProfile = async (req, res, next) => {
   try {
-    const { name, avatar, username, bio, university, profileSettings, isPublic } = req.body;
+    const {
+      name, avatar, username, bio, university, profileSettings, isPublic,
+      degree, graduationYear, portfolioWebsite, githubUsername,
+      preferredDomain, experienceLevel, companyName,
+      allowedColleges, allowedDepartments,
+    } = req.body;
     const updateFields = {};
 
     if (name) updateFields.name = name;
@@ -140,6 +184,19 @@ const updateProfile = async (req, res, next) => {
       if (profileSettings.showEmail !== undefined) updateFields['profileSettings.showEmail'] = profileSettings.showEmail;
       if (profileSettings.resumeTemplate !== undefined) updateFields['profileSettings.resumeTemplate'] = profileSettings.resumeTemplate;
     }
+
+    // Student-specific updates
+    if (degree !== undefined) updateFields.degree = degree;
+    if (graduationYear !== undefined) updateFields.graduationYear = graduationYear;
+    if (portfolioWebsite !== undefined) updateFields.portfolioWebsite = portfolioWebsite;
+    if (githubUsername !== undefined) updateFields.githubUsername = githubUsername;
+    if (preferredDomain !== undefined) updateFields.preferredDomain = preferredDomain;
+    if (experienceLevel !== undefined) updateFields.experienceLevel = experienceLevel;
+
+    // Recruiter-specific updates
+    if (companyName !== undefined) updateFields.companyName = companyName;
+    if (allowedColleges !== undefined) updateFields.allowedColleges = allowedColleges;
+    if (allowedDepartments !== undefined) updateFields.allowedDepartments = allowedDepartments;
 
     const user = await User.findByIdAndUpdate(
       req.user.id,

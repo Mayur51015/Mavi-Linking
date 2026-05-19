@@ -27,6 +27,7 @@ const recruiterRoutes = require('./routes/recruiterRoutes');
 const educationRoutes = require('./routes/educationRoutes');
 const leetcodeRoutes = require('./routes/leetcodeRoutes');
 const compatibilityRoutes = require('./routes/compatibilityRoutes');
+const teacherRoutes = require('./routes/teacherRoutes');
 const { init } = require('./config/socket'); // socket.io
 const http = require('http');
 
@@ -93,6 +94,7 @@ app.use('/api/verification', verificationRoutes);
 app.use('/api/recruiter', recruiterRoutes);
 app.use('/api/education', educationRoutes);
 app.use('/api/compatibility', compatibilityRoutes);
+app.use('/api/teacher', teacherRoutes);
 app.use('/api/leetcode', leetcodeRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', redirectRoutes);
@@ -113,6 +115,25 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
+
+    // ─── One-time role migration (developer → user, professor → teacher) ─────
+    try {
+      const User = require('./models/User');
+      const devMigrated = await User.updateMany(
+        { role: 'developer' },
+        { $set: { role: 'user' } }
+      );
+      const profMigrated = await User.updateMany(
+        { role: 'professor' },
+        { $set: { role: 'teacher' } }
+      );
+      if (devMigrated.modifiedCount > 0 || profMigrated.modifiedCount > 0) {
+        console.log(`   ✅ Role migration: ${devMigrated.modifiedCount} developer→user, ${profMigrated.modifiedCount} professor→teacher`);
+      }
+    } catch (migrationErr) {
+      console.warn('   ⚠️  Role migration skipped:', migrationErr.message);
+    }
+
     const server = http.createServer(app);
     init(server); // Initialize socket.io
 

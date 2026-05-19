@@ -8,15 +8,22 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   
-  const { login } = useContext(AuthContext);
+  const { login, getDashboardPath } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      const res = await login(email, password);
+      // Navigate based on user role (handles legacy roles too)
+      const userRole = res.data.user.role;
+      switch (userRole) {
+        case 'recruiter': navigate('/dashboard/recruiter'); break;
+        case 'teacher':
+        case 'professor': navigate('/dashboard/teacher'); break;
+        default: navigate('/dashboard'); break;
+      }
     } catch (err) {
       const data = err.response?.data;
       if (data?.errors && data.errors.length > 0) {

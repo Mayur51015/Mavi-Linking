@@ -5,28 +5,122 @@ const Ranking = require('../models/Ranking');
 const RecruiterBookmark = require('../models/RecruiterBookmark');
 
 /**
- * Search developers with filters.
+ * Get recruiter dashboard stats (scoped to allowed colleges/departments).
  */
-const searchDevelopers = async (filters = {}) => {
+const getRecruiterStats = async (recruiter) => {
+  const query = { role: 'user', isPublic: true };
+
+  // Scope to allowed colleges/departments if set — also include unaffiliated students
+  const scopeConditions = [];
+  if (recruiter.allowedColleges && recruiter.allowedColleges.length > 0) {
+    scopeConditions.push({
+      'university.name': { $in: recruiter.allowedColleges.map(c => new RegExp(c, 'i')) },
+    });
+  }
+  if (recruiter.allowedDepartments && recruiter.allowedDepartments.length > 0) {
+    scopeConditions.push({
+      'university.department': { $in: recruiter.allowedDepartments.map(d => new RegExp(d, 'i')) },
+    });
+  }
+  if (scopeConditions.length > 0) {
+    // Include students that match the scope OR have no university set
+    const unaffiliatedCondition = {
+      $or: [
+        { 'university.name': { $in: ['', null] } },
+        { 'university.name': { $exists: false } },
+      ],
+    };
+    query.$or = [...scopeConditions, unaffiliatedCondition];
+  }
+
+  const [totalCandidates, bookmarkCount, topCandidates] = await Promise.all([
+    User.countDocuments(query),
+    RecruiterBookmark.countDocuments({ recruiterId: recruiter._id }),
+    User.find(query).sort({ 'scores.overall': -1 }).limit(5).select('name scores university'),
+  ]);
+
+  // Calculate average score
+  const avgResult = await User.aggregate([
+    { $match: query },
+    { $group: { _id: null, avgScore: { $avg: '$scores.overall' } } },
+  ]);
+
+  return {
+    totalCandidates,
+    bookmarkedCount: bookmarkCount,
+    averageScore: Math.round(avgResult[0]?.avgScore || 0),
+    topCandidates,
+    allowedColleges: recruiter.allowedColleges || [],
+    allowedDepartments: recruiter.allowedDepartments || [],
+  };
+};
+
+/**
+ * Search developers with filters. Scoped to recruiter's allowed colleges/departments.
+ */
+const searchDevelopers = async (filters = {}, recruiter = null) => {
   const {
     skills, minScore, maxScore, tier,
     university, department,
     page = 1, limit = 20, sortBy = 'scores.overall', order = 'desc',
   } = filters;
 
-  const query = { role: 'developer', isPublic: true };
+  const query = { role: 'user', isPublic: true };
 
   if (minScore) query['scores.overall'] = { ...query['scores.overall'], $gte: parseInt(minScore) };
   if (maxScore) query['scores.overall'] = { ...query['scores.overall'], $lte: parseInt(maxScore) };
-  if (university) query['university.name'] = new RegExp(university, 'i');
-  if (department) query['university.department'] = new RegExp(department, 'i');
+
+  // Apply recruiter's scoped access
+  if (recruiter && recruiter.allowedColleges && recruiter.allowedColleges.length > 0) {
+    if (university) {
+      // Validate that the requested university is within the recruiter's allowed list
+      const isAllowed = recruiter.allowedColleges.some(c => 
+        new RegExp(c, 'i').test(university) || new RegExp(university, 'i').test(c)
+      );
+      if (!isAllowed) {
+        return { developers: [], pagination: { total: 0, page: 1, pages: 0 } };
+      }
+      query['university.name'] = new RegExp(university, 'i');
+    } else {
+      // Show students from allowed colleges + unaffiliated students
+      query.$or = [
+        { 'university.name': { $in: recruiter.allowedColleges.map(c => new RegExp(c, 'i')) } },
+        { 'university.name': { $in: ['', null] } },
+        { 'university.name': { $exists: false } },
+      ];
+    }
+  } else if (university) {
+    query['university.name'] = new RegExp(university, 'i');
+  }
+
+  if (recruiter && recruiter.allowedDepartments && recruiter.allowedDepartments.length > 0) {
+    if (department) {
+      const isAllowed = recruiter.allowedDepartments.some(d => 
+        new RegExp(d, 'i').test(department) || new RegExp(department, 'i').test(d)
+      );
+      if (!isAllowed) {
+        return { developers: [], pagination: { total: 0, page: 1, pages: 0 } };
+      }
+      query['university.department'] = new RegExp(department, 'i');
+    } else if (!query.$or) {
+      // Only add department scope if we haven't already used $or for colleges
+      // (avoid conflicting $or conditions)
+      query.$or = [
+        { 'university.department': { $in: recruiter.allowedDepartments.map(d => new RegExp(d, 'i')) } },
+        { 'university.department': { $in: ['', null] } },
+        { 'university.department': { $exists: false } },
+      ];
+    }
+  } else if (department) {
+    query['university.department'] = new RegExp(department, 'i');
+  }
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const sortDirection = order === 'asc' ? 1 : -1;
 
   const [users, total] = await Promise.all([
     User.find(query)
-      .select('name username avatar scores platforms.github.username university isVerified')
+      .select('name username avatar scores platforms.github.username university isVerified preferredDomain experienceLevel')
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(parseInt(limit)),
@@ -132,6 +226,7 @@ const updateBookmark = async (recruiterId, developerId, updates) => {
 };
 
 module.exports = {
+  getRecruiterStats,
   searchDevelopers,
   compareDevelopers,
   bookmarkDeveloper,

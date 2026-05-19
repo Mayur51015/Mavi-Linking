@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Users, BarChart3, GraduationCap, TrendingUp } from 'lucide-react';
-import DashboardLayout from '../components/DashboardLayout';
+import UserLayout from '../layouts/UserLayout';
 import api from '../api/axios';
 
 const CollegeDashboard = () => {
@@ -60,7 +60,7 @@ const CollegeDashboard = () => {
   const readinessColors = { excellent: '#10b981', good: '#3b82f6', developing: '#f59e0b', beginner: '#ef4444' };
 
   return (
-    <DashboardLayout>
+    <UserLayout>
       <header style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <GraduationCap size={28} /> College Dashboard
@@ -163,7 +163,7 @@ const CollegeDashboard = () => {
           ))}
         </div>
       )}
-    </DashboardLayout>
+    </UserLayout>
   );
 };
 

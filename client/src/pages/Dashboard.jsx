@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axios';
 import { Globe, GitBranch, Code2 } from 'lucide-react';
-import DashboardLayout from '../components/DashboardLayout';
+import UserLayout from '../layouts/UserLayout';
 import DNACard from '../components/DNACard';
 import SkillRadar from '../components/SkillRadar';
 import ActivityFeed from '../components/ActivityFeed';
@@ -68,7 +68,7 @@ const Dashboard = () => {
   };
 
   return (
-    <DashboardLayout>
+    <UserLayout>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
           <div>
             <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Welcome, {user?.name}</h1>
@@ -153,7 +153,7 @@ const Dashboard = () => {
             <LeetCodeSection />
           </>
         )}
-    </DashboardLayout>
+    </UserLayout>
   );
 };
 

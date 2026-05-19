@@ -1,7 +1,21 @@
 const recruiterService = require('../services/recruiterService');
 
 /**
- * @desc    Search developers
+ * @desc    Get recruiter dashboard stats
+ * @route   GET /api/recruiter/stats
+ * @access  Private (recruiter)
+ */
+const getRecruiterStats = async (req, res, next) => {
+  try {
+    const stats = await recruiterService.getRecruiterStats(req.user);
+    res.status(200).json({ success: true, data: stats });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Search developers (scoped to allowed colleges/departments)
  * @route   GET /api/recruiter/search
  * @access  Private (recruiter)
  */
@@ -13,7 +27,7 @@ const searchDevelopers = async (req, res, next) => {
     const result = await recruiterService.searchDevelopers({
       skills: skillsArr, minScore, maxScore, tier,
       university, department, page, limit, sortBy, order,
-    });
+    }, req.user);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -93,6 +107,7 @@ const updateBookmark = async (req, res, next) => {
 };
 
 module.exports = {
+  getRecruiterStats,
   searchDevelopers,
   compareDevelopers,
   addBookmark,

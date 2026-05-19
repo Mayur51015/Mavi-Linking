@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Bookmark, Users, BadgeCheck, X, Eye } from 'lucide-react';
-import DashboardLayout from '../components/DashboardLayout';
+import UserLayout from '../layouts/UserLayout';
 import api from '../api/axios';
 
 const RecruiterDashboard = () => {
@@ -62,7 +62,7 @@ const RecruiterDashboard = () => {
   };
 
   return (
-    <DashboardLayout>
+    <UserLayout>
       <header style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Recruiter Dashboard</h1>
         <p style={{ color: 'var(--text-secondary)' }}>Search, compare, and bookmark developer talent.</p>
@@ -173,7 +173,7 @@ const RecruiterDashboard = () => {
           </div>
         </motion.div>
       )}
-    </DashboardLayout>
+    </UserLayout>
   );
 };
 

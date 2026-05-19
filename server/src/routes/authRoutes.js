@@ -36,6 +36,10 @@ const registerValidation = [
     .withMessage(
       'Password must contain at least one uppercase letter, one lowercase letter, and one number'
     ),
+  body('role')
+    .optional()
+    .isIn(['user', 'recruiter', 'teacher'])
+    .withMessage('Role must be user, recruiter, or teacher'),
 ];
 
 const loginValidation = [

@@ -39,19 +39,29 @@ const compareUsers = async (userIds) => {
   const complementaryStrengths = findComplementaryStrengths(users, insightMap);
   const recommendedRoles = assignRoles(users, insightMap, dnaMap);
 
-  const compatibility = await Compatibility.findOneAndUpdate(
-    { userIds: { $all: userIds, $size: userIds.length } },
-    {
-      userIds,
-      overallScore,
-      breakdown,
-      complementaryStrengths,
-      recommendedRoles,
-      aiSummary: generateSummary(users, overallScore, breakdown),
-      generatedAt: new Date(),
-    },
-    { new: true, upsert: true }
-  );
+  let compatibility = await Compatibility.findOne({
+    userIds: { $all: userIds, $size: userIds.length }
+  });
+
+  const updateData = {
+    userIds,
+    overallScore,
+    breakdown,
+    complementaryStrengths,
+    recommendedRoles,
+    aiSummary: generateSummary(users, overallScore, breakdown),
+    generatedAt: new Date(),
+  };
+
+  if (compatibility) {
+    compatibility = await Compatibility.findByIdAndUpdate(
+      compatibility._id,
+      { $set: updateData },
+      { new: true }
+    );
+  } else {
+    compatibility = await Compatibility.create(updateData);
+  }
 
   return {
     compatibility,

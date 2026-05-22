@@ -65,6 +65,35 @@ const userSchema = new mongoose.Schema(
     allowedColleges: [{ type: String }],
     allowedDepartments: [{ type: String }],
     // Teacher-specific fields (college/department from university field)
+
+    // ─── Placement & Availability (Candidate Lifecycle) ─────────────────
+    placementStatus: {
+      type: String,
+      enum: [
+        'Available for Hiring',
+        'Under Review',
+        'Interview Scheduled',
+        'Offer Received',
+        'Offer Accepted',
+        'Placed / Hired',
+        'Not Available',
+        'Open to Opportunities',
+      ],
+      default: 'Available for Hiring',
+    },
+    availabilitySettings: {
+      openToOpportunities: { type: Boolean, default: true },
+      availableForInternship: { type: Boolean, default: false },
+      availableForFullTime: { type: Boolean, default: true },
+      hideFromRecruiters: { type: Boolean, default: false },
+      publicProfile: { type: Boolean, default: true },
+      notLookingForJobs: { type: Boolean, default: false },
+    },
+    placedCompany: { type: String, default: '' },
+    placedRole: { type: String, default: '' },
+    placementCTC: { type: String, default: '' },
+    placementDate: { type: Date, default: null },
+
     profileSettings: {
       theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
       showEmail: { type: Boolean, default: false },
@@ -138,6 +167,7 @@ const userSchema = new mongoose.Schema(
 userSchema.index({ 'scores.overall': -1 });
 userSchema.index({ role: 1 });
 userSchema.index({ 'university.name': 1, 'university.department': 1 });
+userSchema.index({ placementStatus: 1 });
 
 // ─── Pre-save: Hash password before persisting ──────────────────────────────
 userSchema.pre('save', async function (next) {

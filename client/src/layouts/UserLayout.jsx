@@ -6,6 +6,7 @@ import {
   Terminal, Briefcase, Heart, BadgeCheck, QrCode, User,
 } from 'lucide-react';
 import VerificationModal from '../components/VerificationModal';
+import NotificationBell from '../components/NotificationBell';
 
 const UserLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
@@ -21,6 +22,7 @@ const UserLayout = ({ children }) => {
   const navItems = [
     { name: 'Overview', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Projects', path: '/dashboard/projects', icon: <Briefcase size={20} /> },
+    { name: 'Availability', path: '/dashboard/availability', icon: <User size={20} /> },
     { name: 'Link Accounts', path: '/dashboard/link', icon: <LinkIcon size={20} /> },
     { name: 'AI Insights', path: '/dashboard/insights', icon: <BarChart3 size={20} /> },
     { name: 'Compatibility', path: '/dashboard/compatibility', icon: <Heart size={20} /> },
@@ -139,10 +141,13 @@ const UserLayout = ({ children }) => {
             <User size={24} style={{ color: 'var(--accent-purple)' }} />
             <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Student Dashboard</h1>
           </div>
-          <button onClick={handleLogout} className="btn btn-danger">
-            <LogOut size={18} />
-            <span className="hide-mobile">Sign Out</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <NotificationBell />
+            <button onClick={handleLogout} className="btn btn-danger">
+              <LogOut size={18} />
+              <span className="hide-mobile">Sign Out</span>
+            </button>
+          </div>
         </header>
 
         <div style={{ flex: 1, padding: '2rem 4rem', overflowY: 'auto' }}>

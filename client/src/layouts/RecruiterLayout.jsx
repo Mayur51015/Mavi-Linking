@@ -3,8 +3,9 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   LogOut, Search, Bookmark, Users, BarChart3,
-  Terminal, Building2, UserCheck,
+  Terminal, Building2, UserCheck, GitPullRequest,
 } from 'lucide-react';
+import NotificationBell from '../components/NotificationBell';
 
 const RecruiterLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
@@ -19,6 +20,7 @@ const RecruiterLayout = ({ children }) => {
   const navItems = [
     { name: 'Overview', path: '/dashboard/recruiter', icon: <BarChart3 size={20} /> },
     { name: 'Search Talent', path: '/dashboard/recruiter/search', icon: <Search size={20} /> },
+    { name: 'Pipeline', path: '/dashboard/recruiter/pipeline', icon: <GitPullRequest size={20} /> },
     { name: 'Bookmarks', path: '/dashboard/recruiter/bookmarks', icon: <Bookmark size={20} /> },
     { name: 'Compare', path: '/dashboard/recruiter/compare', icon: <Users size={20} /> },
   ];
@@ -123,10 +125,13 @@ const RecruiterLayout = ({ children }) => {
             <Search size={24} style={{ color: 'var(--accent-cyan)' }} />
             <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Recruiter Dashboard</h1>
           </div>
-          <button onClick={handleLogout} className="btn btn-danger">
-            <LogOut size={18} />
-            <span className="hide-mobile">Sign Out</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <NotificationBell />
+            <button onClick={handleLogout} className="btn btn-danger">
+              <LogOut size={18} />
+              <span className="hide-mobile">Sign Out</span>
+            </button>
+          </div>
         </header>
 
         <div style={{ flex: 1, padding: '2rem 4rem', overflowY: 'auto' }}>

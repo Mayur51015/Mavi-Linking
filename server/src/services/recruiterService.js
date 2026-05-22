@@ -120,7 +120,7 @@ const searchDevelopers = async (filters = {}, recruiter = null) => {
 
   const [users, total] = await Promise.all([
     User.find(query)
-      .select('name username avatar scores platforms.github.username university isVerified preferredDomain experienceLevel')
+      .select('name username avatar scores platforms.github.username university isVerified preferredDomain experienceLevel placementStatus availabilitySettings placedCompany placedRole')
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(parseInt(limit)),

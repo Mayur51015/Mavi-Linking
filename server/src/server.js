@@ -28,6 +28,8 @@ const educationRoutes = require('./routes/educationRoutes');
 const leetcodeRoutes = require('./routes/leetcodeRoutes');
 const compatibilityRoutes = require('./routes/compatibilityRoutes');
 const teacherRoutes = require('./routes/teacherRoutes');
+const placementRoutes = require('./routes/placementRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { init } = require('./config/socket'); // socket.io
 const http = require('http');
 
@@ -96,6 +98,8 @@ app.use('/api/education', educationRoutes);
 app.use('/api/compatibility', compatibilityRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/leetcode', leetcodeRoutes);
+app.use('/api/placement', placementRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', redirectRoutes);
 

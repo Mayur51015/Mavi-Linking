@@ -13,12 +13,14 @@ import AccountLinking from './pages/AccountLinking';
 import AIInsights from './pages/AIInsights';
 import ProjectManagement from './pages/ProjectManagement';
 import CompatibilityPage from './pages/CompatibilityPage';
+import StudentAvailability from './pages/StudentAvailability';
 
 // Recruiter Pages
 import RecruiterOverview from './pages/recruiter/RecruiterOverview';
 import RecruiterSearch from './pages/recruiter/RecruiterSearch';
 import RecruiterBookmarks from './pages/recruiter/RecruiterBookmarks';
 import RecruiterCompare from './pages/recruiter/RecruiterCompare';
+import RecruitmentPipelinePage from './pages/recruiter/RecruitmentPipeline';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
@@ -70,6 +72,11 @@ const App = () => {
               <CompatibilityPage />
             </ProtectedRoute>
           } />
+          <Route path="/dashboard/availability" element={
+            <ProtectedRoute roles={['user', 'admin']}>
+              <StudentAvailability />
+            </ProtectedRoute>
+          } />
 
           {/* ─── Recruiter Dashboard ───────────────────────────── */}
           <Route path="/dashboard/recruiter" element={
@@ -90,6 +97,11 @@ const App = () => {
           <Route path="/dashboard/recruiter/compare" element={
             <ProtectedRoute roles={['recruiter', 'admin']}>
               <RecruiterCompare />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/recruiter/pipeline" element={
+            <ProtectedRoute roles={['recruiter', 'admin']}>
+              <RecruitmentPipelinePage />
             </ProtectedRoute>
           } />
 

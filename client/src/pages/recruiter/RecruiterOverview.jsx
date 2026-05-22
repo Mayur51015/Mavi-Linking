@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Bookmark, TrendingUp, Search, Building2, BarChart3 } from 'lucide-react';
+import { Users, Bookmark, TrendingUp, Search, Building2, BarChart3, GitPullRequest } from 'lucide-react';
 import RecruiterLayout from '../../layouts/RecruiterLayout';
+import PlacementBadge from '../../components/PlacementBadge';
 import api from '../../api/axios';
 
 const RecruiterOverview = () => {
   const [stats, setStats] = useState(null);
+  const [pipelineStats, setPipelineStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await api.get('/recruiter/stats');
-        setStats(res.data.data);
+        const [statsRes, plStatsRes] = await Promise.all([
+          api.get('/recruiter/stats'),
+          api.get('/placement/stats').catch(() => ({ data: { data: null } })),
+        ]);
+        setStats(statsRes.data.data);
+        setPipelineStats(plStatsRes.data.data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -64,6 +70,49 @@ const RecruiterOverview = () => {
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Avg. Candidate Score</div>
         </div>
       </motion.div>
+
+      {/* Pipeline Stats */}
+      {pipelineStats && pipelineStats.total > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="glass-card-static"
+          style={{ padding: '1.5rem', marginBottom: '2rem' }}
+        >
+          <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <GitPullRequest size={20} style={{ color: 'var(--accent-emerald)' }} /> Pipeline Overview
+          </h3>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {['Applied', 'Under Review', 'Interview Scheduled', 'Offer Received', 'Offer Accepted', 'Placed', 'Rejected'].map(s => {
+              const colors = {
+                'Applied': 'var(--text-muted)',
+                'Under Review': 'var(--accent-amber)',
+                'Interview Scheduled': 'var(--accent-blue)',
+                'Offer Received': 'var(--accent-purple)',
+                'Offer Accepted': 'var(--accent-cyan)',
+                'Placed': 'var(--accent-emerald)',
+                'Rejected': 'var(--accent-red)',
+              };
+              return (
+                <div key={s} style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '10px',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid var(--border-subtle)',
+                  textAlign: 'center',
+                  minWidth: '100px',
+                }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '700', fontFamily: 'Outfit', color: colors[s] }}>
+                    {pipelineStats[s] || 0}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s}</div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
 
       {/* Access Scope Info */}
       {(stats?.allowedColleges?.length > 0 || stats?.allowedDepartments?.length > 0) && (

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Bookmark, BadgeCheck, Eye, Users } from 'lucide-react';
+import { Search, Bookmark, BadgeCheck, Eye, Users, GitPullRequest } from 'lucide-react';
 import RecruiterLayout from '../../layouts/RecruiterLayout';
+import PlacementBadge from '../../components/PlacementBadge';
+import { PLACEMENT_STATUSES } from '../../constants/placementConstants';
 import api from '../../api/axios';
 
 const RecruiterSearch = () => {
@@ -119,6 +121,13 @@ const RecruiterSearch = () => {
                 <div style={{ fontSize: '1.5rem', fontWeight: '700', fontFamily: 'Outfit' }}>{dev.scores?.overall || 0}</div>
               </div>
 
+              {/* Placement Status */}
+              {dev.placementStatus && (
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <PlacementBadge status={dev.placementStatus} company={dev.placedCompany} size="sm" />
+                </div>
+              )}
+
               {/* Tags */}
               <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                 {dev.preferredDomain && <span className="badge badge-primary">{dev.preferredDomain}</span>}
@@ -138,6 +147,21 @@ const RecruiterSearch = () => {
                     <Eye size={14} />
                   </a>
                 )}
+                <button
+                  onClick={() => {
+                    const role = prompt('Enter role/position for this candidate:');
+                    if (role) {
+                      api.post('/placement/pipeline', { studentId: dev._id, role })
+                        .then(() => alert('Pipeline created!'))
+                        .catch(err => alert(err.response?.data?.message || 'Failed'));
+                    }
+                  }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--accent-emerald)' }}
+                  title="Start Pipeline"
+                >
+                  <GitPullRequest size={14} />
+                </button>
               </div>
             </motion.div>
           ))

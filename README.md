@@ -38,14 +38,27 @@ Built for **Students**, **Recruiters**, and **Educators** alike, MaVi Linking pr
 - Auto-generated **QR codes** for embedding on resumes and portfolios.
 - SEO / OpenGraph metadata endpoint for rich link previews.
 
-### 🤝 Compatibility Engine
-- Match students with projects, teams, or roles based on AI-analyzed skill profiles.
+### 🤝 Team Compatibility & Collaboration
+- **Upgraded Picker** — Search developers by name/username via a debounced, autocomplete dropdown showing avatars, university, and performance scores.
+- Matches students with projects, teams, or roles using an AI-analyzed multi-dimensional compatibility engine (skills, coding behavior, personality, work styles).
 
-### 📈 PDF Report Generation
-- Generate detailed **PDF technical reports** outlining skills, insights, and platform analytics directly from the dashboard.
+### 💼 Candidate Availability & Placement Management
+- **Placement Tracking** — Tracks candidate placement lifecycle (Available for Hiring, Under Review, Interview Scheduled, Offer Received, Offer Accepted, Placed / Hired).
+- **Transparency-First Search** — Placed candidates remain discoverable in recruiter searches but display clear badge indications (e.g. `Placed @ Company`).
+- **Recruiter Kanban Pipeline** — Visual board for recruiters to manage applicants, schedule interviews (online/offline/hybrid), offer details (CTC, joining date), and handle workflow transitions.
+- **Availability Toggles** — Granular student settings (e.g., Open to Opportunities, Internship vs Full-Time, Hide Profile).
 
-### ⚡ Real-Time Updates
-- **Socket.IO** integration for live dashboard events and sync notifications.
+### ⚡ Real-Time Notification Center
+- **Dynamic Alerts** — Real-time in-app notifications (via Socket.io and DB storage) for students regarding interview scheduling, pipeline starts, and offer releases.
+- Portal-based navigation header dropdown with unread badges, individual, and batch read actions.
+
+---
+
+## 🐛 Recent Bug Fixes
+
+- **Overlay Stacking / Z-Index Fix** — Fixed the notification center dropdown painting behind active dashboard elements due to layout stacking contexts. Re-implemented the overlay using `ReactDOM.createPortal` targeting `document.body`.
+- **Compatibility Upsert Query Inference** — Fixed a MongoDB driver crash (`path 'userIds' is matched twice`) when generating team compatibility records with array filter query operators. Resolved by decoupling check and write operations into explicit `findOne` and write calls.
+
 
 ---
 

@@ -17,7 +17,7 @@ const Login = () => {
     try {
       const res = await login(email, password);
       // Navigate based on user role (handles legacy roles too)
-      const userRole = res.data.user.role;
+      const userRole = res?.user?.role;
       switch (userRole) {
         case 'recruiter': navigate('/dashboard/recruiter'); break;
         case 'teacher':

@@ -2,9 +2,25 @@ import axios from 'axios';
 
 // ─── Centralized API Instance ───────────────────────────────────────────────
 // All API calls go through this single instance.
-// baseURL is set via VITE_API_URL env var (includes /api suffix).
+// baseURL is set via VITE_API_URL env var. If the provided URL omits /api,
+// normalize it to avoid production 404s when the frontend and backend are hosted separately.
+const rawApiUrl = import.meta.env.VITE_API_URL;
+
+if (import.meta.env.PROD && !rawApiUrl) {
+  console.warn(
+    'VITE_API_URL is not configured for production. The frontend will fall back to localhost:5000, which will fail in deployed environments.'
+  );
+}
+
+const apiBaseUrl = rawApiUrl
+  ? (() => {
+      const trimmed = rawApiUrl.replace(/\/+$/u, '');
+      return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+    })()
+  : 'http://localhost:5000/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },

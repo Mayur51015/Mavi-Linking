@@ -33,14 +33,14 @@ export const AuthProvider = ({ children }) => {
     const res = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', res.data.data.token);
     setUser(res.data.data.user);
-    return res.data;
+    return res.data.data;
   };
 
   const register = async (userData) => {
     const res = await api.post('/auth/register', userData);
     localStorage.setItem('token', res.data.data.token);
     setUser(res.data.data.user);
-    return res.data;
+    return res.data.data;
   };
 
   const logout = () => {

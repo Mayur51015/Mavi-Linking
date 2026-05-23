@@ -1,7 +1,9 @@
 {
   "rewrites": [
-    {
-      "source": "/(.*)",
+    {      "source": "/api/:path*",
+      "destination": "https://mavi-server-4yvl.onrender.com/api/:path*"
+    },
+    {      "source": "/(.*)",
       "destination": "/"
     }
   ]

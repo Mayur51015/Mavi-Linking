@@ -4,9 +4,14 @@ let io;
 
 module.exports = {
   init: (httpServer) => {
+    const allowedOrigins = [
+      'http://localhost:5173',
+      process.env.CLIENT_URL,
+    ].filter(Boolean);
+
     io = new Server(httpServer, {
       cors: {
-        origin: process.env.CLIENT_URL || 'http://localhost:5173',
+        origin: allowedOrigins,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
         credentials: true
       }

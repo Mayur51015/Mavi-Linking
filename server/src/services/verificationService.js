@@ -48,9 +48,16 @@ const verifyGitHubBio = async (userId) => {
 
   // Get user's GitHub username
   const user = await User.findById(userId);
-  const githubUsername = user?.platforms?.github?.username;
+  const githubUsername = user?.platforms?.github?.username || user?.githubUsername;
   if (!githubUsername) {
     throw new Error('GitHub account is not linked. Please link your GitHub first.');
+  }
+
+  // Persist legacy GitHub username into platforms.github for consistency
+  if (!user.platforms?.github?.username && user.githubUsername) {
+    user.platforms.github.username = user.githubUsername;
+    user.platforms.github.linkedAt = user.platforms.github.linkedAt || new Date();
+    await user.save();
   }
 
   // Fetch GitHub bio

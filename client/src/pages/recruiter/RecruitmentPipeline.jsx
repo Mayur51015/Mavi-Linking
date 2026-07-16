@@ -84,13 +84,19 @@ const RecruitmentPipelinePage = () => {
   // Valid next statuses for a given current status
   const getNextStatuses = (currentStatus) => {
     const transitions = {
-      'Applied': ['Under Review', 'Rejected'],
-      'Under Review': ['Interview Scheduled', 'Rejected'],
-      'Interview Scheduled': ['Offer Received', 'Under Review', 'Rejected'],
+      'Applied': ['Under Review', 'Shortlisted', 'Rejected'],
+      'Under Review': ['Shortlisted', 'Interview Scheduled', 'Rejected'],
+      'Shortlisted': ['Interview Scheduled', 'Technical Round', 'Rejected'],
+      'Interview Scheduled': ['Technical Round', 'HR Round', 'Selected', 'Offer Sent', 'Offer Received', 'Rejected'],
+      'Technical Round': ['HR Round', 'Selected', 'Rejected'],
+      'HR Round': ['Selected', 'Offer Sent', 'Rejected'],
+      'Selected': ['Offer Sent', 'Offer Received', 'Rejected'],
+      'Offer Sent': ['Joined', 'Offer Accepted', 'Rejected'],
       'Offer Received': ['Offer Accepted', 'Rejected'],
-      'Offer Accepted': ['Placed', 'Rejected'],
-      'Rejected': ['Under Review'],
-      'Placed': [],
+      'Offer Accepted': ['Joined', 'Placed', 'Rejected'],
+      'Placed': ['Joined'],
+      'Joined': [],
+      'Rejected': ['Applied', 'Under Review', 'Shortlisted'],
     };
     return transitions[currentStatus] || [];
   };
@@ -98,9 +104,15 @@ const RecruitmentPipelinePage = () => {
   const statusColumnColors = {
     'Applied': 'var(--text-muted)',
     'Under Review': 'var(--accent-amber)',
+    'Shortlisted': 'var(--accent-blue)',
     'Interview Scheduled': 'var(--accent-blue)',
+    'Technical Round': 'var(--accent-purple)',
+    'HR Round': 'var(--accent-pink)',
+    'Selected': 'var(--accent-cyan)',
+    'Offer Sent': 'var(--accent-cyan)',
     'Offer Received': 'var(--accent-purple)',
     'Offer Accepted': 'var(--accent-cyan)',
+    'Joined': 'var(--accent-emerald)',
     'Placed': 'var(--accent-emerald)',
     'Rejected': 'var(--accent-red)',
   };

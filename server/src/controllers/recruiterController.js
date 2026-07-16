@@ -21,12 +21,12 @@ const getRecruiterStats = async (req, res, next) => {
  */
 const searchDevelopers = async (req, res, next) => {
   try {
-    const { skills, minScore, maxScore, tier, university, department, page, limit, sortBy, order } = req.query;
+    const { skills, minScore, maxScore, tier, university, department, graduationYear, experienceLevel, isVerified, page, limit, sortBy, order } = req.query;
     const skillsArr = skills ? skills.split(',').map(s => s.trim()) : undefined;
 
     const result = await recruiterService.searchDevelopers({
       skills: skillsArr, minScore, maxScore, tier,
-      university, department, page, limit, sortBy, order,
+      university, department, graduationYear, experienceLevel, isVerified, page, limit, sortBy, order,
     }, req.user);
     res.status(200).json({ success: true, data: result });
   } catch (error) {

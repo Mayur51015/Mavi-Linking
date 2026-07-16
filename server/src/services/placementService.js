@@ -4,13 +4,19 @@ const User = require('../models/User');
 
 // Status transition map — defines which transitions are legal
 const VALID_TRANSITIONS = {
-  'Applied': ['Under Review', 'Rejected'],
-  'Under Review': ['Interview Scheduled', 'Rejected'],
-  'Interview Scheduled': ['Offer Received', 'Under Review', 'Rejected'],
+  'Applied': ['Under Review', 'Shortlisted', 'Rejected'],
+  'Under Review': ['Shortlisted', 'Interview Scheduled', 'Rejected'],
+  'Shortlisted': ['Interview Scheduled', 'Technical Round', 'Rejected'],
+  'Interview Scheduled': ['Technical Round', 'HR Round', 'Selected', 'Offer Sent', 'Offer Received', 'Rejected'],
+  'Technical Round': ['HR Round', 'Selected', 'Rejected'],
+  'HR Round': ['Selected', 'Offer Sent', 'Rejected'],
+  'Selected': ['Offer Sent', 'Offer Received', 'Rejected'],
+  'Offer Sent': ['Joined', 'Offer Accepted', 'Rejected'],
   'Offer Received': ['Offer Accepted', 'Rejected'],
-  'Offer Accepted': ['Placed', 'Rejected'],
-  'Rejected': ['Under Review'], // Can re-open
-  'Placed': [],
+  'Offer Accepted': ['Joined', 'Placed', 'Rejected'],
+  'Placed': ['Joined'],
+  'Joined': [],
+  'Rejected': ['Applied', 'Under Review', 'Shortlisted'], // Can re-open
 };
 
 /**
@@ -23,7 +29,7 @@ const createPipeline = async (recruiterId, data) => {
   const existing = await RecruitmentPipeline.findOne({
     studentId,
     recruiterId,
-    status: { $nin: ['Rejected', 'Placed'] },
+    status: { $nin: ['Rejected', 'Placed', 'Joined'] },
   });
   if (existing) {
     throw new Error('An active pipeline already exists for this student.');
@@ -88,47 +94,49 @@ const updatePipelineStatus = async (pipelineId, newStatus, updatedBy, note = '')
     note,
   });
 
-  // Handle special statuses
-  if (newStatus === 'Offer Accepted') {
-    pipeline.offerAccepted = true;
-    await User.findByIdAndUpdate(pipeline.studentId, {
-      $set: { placementStatus: 'Offer Accepted' },
-    });
-  }
-
-  if (newStatus === 'Placed') {
-    pipeline.offerAccepted = true;
+  // Handle student model status sync based on pipeline status
+  let userPlacementStatusUpdate = 'Under Review';
+  
+  if (newStatus === 'Offer Accepted' || newStatus === 'Offer Sent' || newStatus === 'Offer Received' || newStatus === 'Selected') {
+    userPlacementStatusUpdate = 'Offer Received';
+  } else if (newStatus === 'Placed' || newStatus === 'Joined') {
+    userPlacementStatusUpdate = 'Placed / Hired';
     await User.findByIdAndUpdate(pipeline.studentId, {
       $set: {
-        placementStatus: 'Placed / Hired',
         placedCompany: pipeline.companyName,
         placedRole: pipeline.role,
         placementCTC: pipeline.offerDetails?.ctc || '',
         placementDate: new Date(),
       },
     });
+  } else if (newStatus === 'Interview Scheduled') {
+    userPlacementStatusUpdate = 'Interview Scheduled';
+  } else if (newStatus === 'Rejected') {
+    userPlacementStatusUpdate = 'Available for Hiring'; // Reset or keep available
   }
 
-  if (newStatus === 'Interview Scheduled') {
-    await User.findByIdAndUpdate(pipeline.studentId, {
-      $set: { placementStatus: 'Interview Scheduled' },
-    });
-  }
+  await User.findByIdAndUpdate(pipeline.studentId, {
+    $set: { placementStatus: userPlacementStatusUpdate },
+  });
 
-  if (newStatus === 'Offer Received') {
-    await User.findByIdAndUpdate(pipeline.studentId, {
-      $set: { placementStatus: 'Offer Received' },
-    });
+  if (newStatus === 'Offer Accepted' || newStatus === 'Joined' || newStatus === 'Placed') {
+    pipeline.offerAccepted = true;
   }
 
   await pipeline.save();
 
   // Map status to notification type
   const notifTypeMap = {
+    'Shortlisted': 'status_update',
+    'Technical Round': 'status_update',
+    'HR Round': 'status_update',
+    'Selected': 'status_update',
+    'Offer Sent': 'offer_received',
     'Interview Scheduled': 'interview_scheduled',
     'Offer Received': 'offer_received',
     'Offer Accepted': 'offer_accepted',
     'Placed': 'placement_confirmed',
+    'Joined': 'placement_confirmed',
   };
 
   await _createNotification({
@@ -140,6 +148,32 @@ const updatePipelineStatus = async (pipelineId, newStatus, updatedBy, note = '')
     metadata: { pipelineId: pipeline._id, companyName: pipeline.companyName, role: pipeline.role, status: newStatus },
   });
 
+  // Notify Teachers of status updates if placed or selected
+  if (['Selected', 'Offer Sent', 'Offer Accepted', 'Placed', 'Joined'].includes(newStatus)) {
+    try {
+      const student = await User.findById(pipeline.studentId).select('university name');
+      if (student?.university?.name) {
+        // Find teachers of the same college/department
+        const teachers = await User.find({
+          role: 'teacher',
+          'university.name': student.university.name,
+        }).select('_id');
+
+        for (const t of teachers) {
+          await _createNotification({
+            recipientId: t._id,
+            senderId: updatedBy,
+            type: 'status_update',
+            title: `Student Status Update: ${student.name} - ${newStatus}`,
+            message: `Student "${student.name}" has reached "${newStatus}" for "${pipeline.role}" at ${pipeline.companyName}.`,
+            metadata: { pipelineId: pipeline._id, studentId: student._id },
+          });
+        }
+      }
+    } catch (teacherNotifErr) {
+      console.error('Error notifying teachers:', teacherNotifErr.message);
+    }
+  }
   return pipeline;
 };
 

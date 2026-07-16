@@ -7,6 +7,13 @@ const {
   login,
   getMe,
   updateProfile,
+  refreshToken,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
+  googleLogin,
+  githubLogin,
+  logout,
 } = require('../controllers/authController');
 
 const router = express.Router();
@@ -71,10 +78,17 @@ const updateProfileValidation = [
 
 router.post('/register', registerValidation, validate, register);
 router.post('/login', loginValidation, validate, login);
+router.post('/refresh', refreshToken);
+router.post('/verify-email', verifyEmail);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
+router.post('/google', googleLogin);
+router.post('/github', githubLogin);
 
 // ─── Protected Routes ───────────────────────────────────────────────────────
 
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateProfileValidation, validate, updateProfile);
+router.post('/logout', protect, logout);
 
 module.exports = router;

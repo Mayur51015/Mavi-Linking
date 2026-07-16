@@ -21,11 +21,17 @@ export const PLACEMENT_STATUSES = [
 export const PIPELINE_STATUSES = [
   'Applied',
   'Under Review',
+  'Shortlisted',
   'Interview Scheduled',
+  'Technical Round',
+  'HR Round',
+  'Selected',
+  'Offer Sent',
   'Offer Received',
   'Offer Accepted',
-  'Rejected',
+  'Joined',
   'Placed',
+  'Rejected',
 ];
 
 // ─── Badge Color Mapping ────────────────────────────────────────────────────
@@ -41,6 +47,12 @@ export const STATUS_BADGE_MAP = {
 
   // Pipeline statuses
   'Applied':              { color: '#a1a1aa', bg: 'rgba(161, 161, 170, 0.15)', icon: '📋' },
+  'Shortlisted':          { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', icon: '⭐' },
+  'Technical Round':      { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', icon: '💻' },
+  'HR Round':             { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', icon: '👤' },
+  'Selected':             { color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', icon: '🎉' },
+  'Offer Sent':           { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', icon: '✉️' },
+  'Joined':               { color: '#10b981', bg: 'rgba(16, 185, 129, 0.25)', icon: '🚀' },
   'Rejected':             { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', icon: '❌' },
   'Placed':               { color: '#10b981', bg: 'rgba(16, 185, 129, 0.25)', icon: '🎓' },
 };

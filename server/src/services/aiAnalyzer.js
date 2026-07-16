@@ -3,15 +3,24 @@ const Insight = require('../models/Insight');
 const DNA = require('../models/DNA');
 const Ranking = require('../models/Ranking');
 const Analytics = require('../models/Analytics');
+const Project = require('../models/Project');
 
 /**
  * Build a rich developer profile summary for AI analysis.
  */
-const buildProfileSummary = (user) => {
+const buildProfileSummary = (user, projects = []) => {
   const pd = user.platformData || {};
   const summary = {
     name: user.name,
     scores: user.scores,
+    skills: user.skillsList ? user.skillsList.map(s => s.name) : [],
+    preferredDomain: user.preferredDomain || null,
+    projects: projects.map(p => ({
+      title: p.title,
+      description: p.description,
+      technologies: p.technologies,
+      githubUrl: p.githubUrl,
+    })),
     github: null,
     leetcode: null,
     codeforces: null,
@@ -29,6 +38,7 @@ const buildProfileSummary = (user) => {
       accountAge: pd.github.createdAt
         ? `${Math.round((Date.now() - new Date(pd.github.createdAt)) / (365.25 * 86400000))} years`
         : null,
+      repos: pd.github.repos || [],
     };
   }
 
@@ -74,13 +84,16 @@ const analyzeUser = async (user) => {
 
   const apiKey = geminiApiKey || groqApiKey || grokApiKey || openaiApiKey;
 
+  // Retrieve actual student projects from database
+  const projects = await Project.find({ user: user._id });
+
   let result;
 
   if (!apiKey) {
-    // Generate clean mock result based on user details
+    // Generate clean mock result based on user details and actual projects
     const topSkills = user.skillsList && user.skillsList.length > 0
       ? user.skillsList.map(s => s.name)
-      : ["JavaScript", "Node.js", "React", "MongoDB", "Express"];
+      : (projects.length > 0 ? Array.from(new Set(projects.flatMap(p => p.technologies))) : ["JavaScript", "Node.js", "React", "MongoDB", "Express"]);
       
     const confidenceScores = {};
     topSkills.forEach(skill => {
@@ -117,9 +130,9 @@ const analyzeUser = async (user) => {
           consistency: 75
         },
         extendedScores: {
-          engineeringMaturity: 70,
-          problemSolvingDepth: 65,
-          systemDesign: 60,
+          engineeringMaturity: Math.min(70 + projects.length * 5, 100),
+          problemSolvingDepth: user.platformData?.leetcode?.solved ? Math.min(50 + Math.round(user.platformData.leetcode.solved / 5), 100) : 65,
+          systemDesign: Math.min(60 + projects.length * 6, 100),
           codeQuality: 75,
           technicalDiversity: 70
         },
@@ -147,7 +160,7 @@ const analyzeUser = async (user) => {
                     : 'gpt-4o-mini';
     
     // Build enriched profile summary
-    const profileSummary = JSON.stringify(buildProfileSummary(user));
+    const profileSummary = JSON.stringify(buildProfileSummary(user, projects));
 
     const prompt = `You are an expert AI Developer Intelligence System. Analyze the developer data and provide a comprehensive JSON profile with deep technical insights.
 

@@ -244,6 +244,10 @@ const RecruitmentPipelinePage = () => {
                       <Eye size={14} />
                     </a>
                   )}
+
+                  <button onClick={() => setShowDetailModal(p)} className="btn btn-ghost btn-sm" style={{ color: 'var(--accent-purple)', fontSize: '0.75rem' }}>
+                    Manage Details
+                  </button>
                 </div>
 
                 {/* Timeline Preview */}
@@ -347,6 +351,172 @@ const RecruitmentPipelinePage = () => {
             <button onClick={handleCreate} disabled={creating} className="btn btn-primary" style={{ width: '100%' }}>
               <Send size={16} /> {creating ? 'Creating...' : 'Create Pipeline'}
             </button>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Edit Details Modal (Interview/Offer scheduling) */}
+      {showDetailModal && (
+        <div className="modal-overlay" onClick={() => setShowDetailModal(null)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="modal-content"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.25rem' }}>Manage Candidate Pipeline: {showDetailModal.studentId?.name}</h2>
+              <button onClick={() => setShowDetailModal(null)} className="btn btn-ghost btn-sm"><X size={18} /></button>
+            </div>
+
+            {/* Stage Selector */}
+            <div className="input-group">
+              <label className="input-label">Current Pipeline Stage</label>
+              <select
+                className="input-field"
+                value={showDetailModal.status}
+                onChange={(e) => handleStatusUpdate(showDetailModal._id, e.target.value)}
+              >
+                {PIPELINE_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            {/* Interview details form */}
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '1.5rem' }}>
+              <h4 style={{ color: 'var(--accent-blue)', marginBottom: '1rem' }}>Interview Scheduling</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="input-group">
+                  <label className="input-label">Interview Date</label>
+                  <input
+                    type="datetime-local"
+                    className="input-field"
+                    value={showDetailModal.interviewDetails?.interviewDate ? new Date(showDetailModal.interviewDetails.interviewDate).toISOString().slice(0, 16) : ''}
+                    onChange={(e) => {
+                      const date = e.target.value;
+                      setShowDetailModal(prev => ({
+                        ...prev,
+                        interviewDetails: { ...prev.interviewDetails, interviewDate: date }
+                      }));
+                    }}
+                  />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Interview Mode</label>
+                  <select
+                    className="input-field"
+                    value={showDetailModal.interviewDetails?.interviewMode || 'Online'}
+                    onChange={(e) => {
+                      const mode = e.target.value;
+                      setShowDetailModal(prev => ({
+                        ...prev,
+                        interviewDetails: { ...prev.interviewDetails, interviewMode: mode }
+                      }));
+                    }}
+                  >
+                    <option value="Online">Online / meeting link</option>
+                    <option value="In-Person">In-Person</option>
+                    <option value="Hybrid">Hybrid</option>
+                  </select>
+                </div>
+              </div>
+              <div className="input-group">
+                <label className="input-label">Meeting Link / Location</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="https://zoom.us/j/... or Office HQ Room 402"
+                  value={showDetailModal.interviewDetails?.meetingLink || ''}
+                  onChange={(e) => {
+                    const link = e.target.value;
+                    setShowDetailModal(prev => ({
+                      ...prev,
+                      interviewDetails: { ...prev.interviewDetails, meetingLink: link }
+                    }));
+                  }}
+                />
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await handleInterviewUpdate(showDetailModal._id, showDetailModal.interviewDetails);
+                    alert('Interview details saved!');
+                  } catch (err) {
+                    alert('Failed to save interview details.');
+                  }
+                }}
+                className="btn btn-outline btn-sm"
+              >
+                Save Interview Schedule
+              </button>
+            </div>
+
+            {/* Offer details form */}
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '1.5rem' }}>
+              <h4 style={{ color: 'var(--accent-emerald)', marginBottom: '1rem' }}>Offer & Compensation Details</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="input-group">
+                  <label className="input-label">Package (CTC)</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. 14 LPA"
+                    value={showDetailModal.offerDetails?.ctc || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setShowDetailModal(prev => ({
+                        ...prev,
+                        offerDetails: { ...prev.offerDetails, ctc: val }
+                      }));
+                    }}
+                  />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Joining Date</label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={showDetailModal.offerDetails?.joiningDate ? new Date(showDetailModal.offerDetails.joiningDate).toISOString().slice(0, 10) : ''}
+                    onChange={(e) => {
+                      const date = e.target.value;
+                      setShowDetailModal(prev => ({
+                        ...prev,
+                        offerDetails: { ...prev.offerDetails, joiningDate: date }
+                      }));
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="input-group">
+                <label className="input-label">Offer / Joining Letter Link</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="https://drive.google.com/..."
+                  value={showDetailModal.offerDetails?.offerLetterUrl || ''}
+                  onChange={(e) => {
+                    const url = e.target.value;
+                    setShowDetailModal(prev => ({
+                      ...prev,
+                      offerDetails: { ...prev.offerDetails, offerLetterUrl: url }
+                    }));
+                  }}
+                />
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await handleOfferUpdate(showDetailModal._id, showDetailModal.offerDetails);
+                    alert('Offer details saved!');
+                  } catch (err) {
+                    alert('Failed to save offer details.');
+                  }
+                }}
+                className="btn btn-outline btn-sm"
+              >
+                Save Offer Details
+              </button>
+            </div>
           </motion.div>
         </div>
       )}

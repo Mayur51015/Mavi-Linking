@@ -9,6 +9,8 @@ const {
   getBookmarks,
   updateBookmark,
   getRecruiterStats,
+  getCompanyProfile,
+  updateCompanyProfile
 } = require('../controllers/recruiterController');
 const { getCompany, updateCompany } = require('../controllers/companyController');
 
@@ -19,6 +21,11 @@ router.use(protect, requireRole('recruiter', 'admin'));
 
 // Stats
 router.get('/stats', getRecruiterStats);
+
+// Company Profile
+router.route('/company')
+  .get(getCompanyProfile)
+  .put(updateCompanyProfile);
 
 // Search & Compare
 router.get('/search', searchDevelopers);

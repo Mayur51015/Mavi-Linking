@@ -67,7 +67,6 @@ const Messages = React.lazy(() => import('./pages/Messages'));
 const PublicPortfolio = React.lazy(() => import('./pages/PublicPortfolio'));
 const PublicIdentity = React.lazy(() => import('./pages/PublicIdentity'));
 
-// Legacy Pages (Lazy)
 const CollegeDashboard = React.lazy(() => import('./pages/CollegeDashboard'));
 
 
@@ -122,7 +121,7 @@ const App = () => {
             {/* ─── Recruiter Dashboard ───────────────────────────── */}
             <Route path="/dashboard/recruiter" element={
               <ProtectedRoute roles={['recruiter', 'admin']}>
-                <RecruiterOverview />
+                <RecruiterDashboard />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/recruiter/company" element={
@@ -137,20 +136,20 @@ const App = () => {
             } />
             <Route path="/dashboard/recruiter/search" element={
               <ProtectedRoute roles={['recruiter', 'admin']}>
-                <RecruiterSearch />
+                <HiringPipeline />
               </ProtectedRoute>
             } />
-            <Route path="/dashboard/recruiter/bookmarks" element={
+            <Route path="/dashboard/recruiter/jobs" element={
               <ProtectedRoute roles={['recruiter', 'admin']}>
-                <RecruiterBookmarks />
+                <JobManagement />
               </ProtectedRoute>
             } />
-            <Route path="/dashboard/recruiter/compare" element={
+            <Route path="/dashboard/recruiter/company" element={
               <ProtectedRoute roles={['recruiter', 'admin']}>
-                <RecruiterCompare />
+                <CompanyProfile />
               </ProtectedRoute>
             } />
-            <Route path="/dashboard/recruiter/pipeline" element={
+            <Route path="/dashboard/recruiter/analytics" element={
               <ProtectedRoute roles={['recruiter', 'admin']}>
                 <RecruitmentPipelinePage />
               </ProtectedRoute>

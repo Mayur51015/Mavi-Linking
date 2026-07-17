@@ -3,6 +3,8 @@ const Insight = require('../models/Insight');
 const DNA = require('../models/DNA');
 const Ranking = require('../models/Ranking');
 const RecruiterBookmark = require('../models/RecruiterBookmark');
+const Job = require('../models/Job');
+const Application = require('../models/Application');
 
 /**
  * Get recruiter dashboard stats (scoped to allowed colleges/departments).
@@ -33,10 +35,12 @@ const getRecruiterStats = async (recruiter) => {
     query.$or = [...scopeConditions, unaffiliatedCondition];
   }
 
-  const [totalCandidates, bookmarkCount, topCandidates] = await Promise.all([
+  const [totalCandidates, bookmarkCount, topCandidates, totalJobs, applications] = await Promise.all([
     User.countDocuments(query),
     RecruiterBookmark.countDocuments({ recruiterId: recruiter._id }),
     User.find(query).sort({ 'scores.overall': -1 }).limit(5).select('name scores university'),
+    Job.countDocuments({ recruiterId: recruiter._id }),
+    Application.find({ recruiterId: recruiter._id }).populate('studentId', 'university.department createdAt')
   ]);
 
   // Calculate average score
@@ -45,6 +49,48 @@ const getRecruiterStats = async (recruiter) => {
     { $group: { _id: null, avgScore: { $avg: '$scores.overall' } } },
   ]);
 
+  let totalApplications = applications.length;
+  let totalInterviews = applications.filter(a => ['Interview Scheduled', 'Technical Round', 'HR Round'].includes(a.status)).length;
+  let totalHired = applications.filter(a => ['Selected', 'Offer Sent', 'Joined'].includes(a.status)).length;
+
+  // Build hiring trends (last 6 months)
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const hiringTrends = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    hiringTrends.push({ 
+      name: monthNames[d.getMonth()], 
+      month: d.getMonth(), 
+      year: d.getFullYear(), 
+      applications: 0, 
+      hires: 0 
+    });
+  }
+
+  const deptMap = {};
+
+  applications.forEach(app => {
+    // Trends
+    const appDate = new Date(app.createdAt);
+    const trend = hiringTrends.find(t => t.month === appDate.getMonth() && t.year === appDate.getFullYear());
+    if (trend) {
+      trend.applications++;
+      if (['Selected', 'Offer Sent', 'Joined'].includes(app.status)) {
+        trend.hires++;
+      }
+    }
+
+    // Department data
+    const dept = app.studentId?.university?.department || 'Unknown';
+    deptMap[dept] = (deptMap[dept] || 0) + 1;
+  });
+
+  const departmentData = Object.keys(deptMap).map(name => ({
+    name,
+    value: deptMap[name]
+  }));
+
   return {
     totalCandidates,
     bookmarkedCount: bookmarkCount,
@@ -52,6 +98,12 @@ const getRecruiterStats = async (recruiter) => {
     topCandidates,
     allowedColleges: recruiter.allowedColleges || [],
     allowedDepartments: recruiter.allowedDepartments || [],
+    totalJobs,
+    totalApplications,
+    totalInterviews,
+    totalHired,
+    hiringTrends,
+    departmentData: departmentData.length > 0 ? departmentData : [{ name: 'No Data', value: 1 }]
   };
 };
 

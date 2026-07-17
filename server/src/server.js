@@ -27,7 +27,6 @@ const recruiterRoutes = require('./routes/recruiterRoutes');
 const educationRoutes = require('./routes/educationRoutes');
 const leetcodeRoutes = require('./routes/leetcodeRoutes');
 const compatibilityRoutes = require('./routes/compatibilityRoutes');
-const teacherRoutes = require('./routes/teacherRoutes');
 const placementRoutes = require('./routes/placementRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const jobRoutes = require('./routes/jobRoutes');
@@ -102,6 +101,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+const jobRoutes = require('./routes/jobRoutes');
+const applicationRoutes = require('./routes/applicationRoutes');
+const communicationRoutes = require('./routes/communicationRoutes');
+
 // ─── API Routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/platforms', platformRoutes);
@@ -113,7 +116,6 @@ app.use('/api/verification', verificationRoutes);
 app.use('/api/recruiter', recruiterRoutes);
 app.use('/api/education', educationRoutes);
 app.use('/api/compatibility', compatibilityRoutes);
-app.use('/api/teacher', teacherRoutes);
 app.use('/api/leetcode', leetcodeRoutes);
 app.use('/api/placement', placementRoutes);
 app.use('/api/notifications', notificationRoutes);

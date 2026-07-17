@@ -2,43 +2,51 @@ const mongoose = require('mongoose');
 
 const placementDriveSchema = new mongoose.Schema(
   {
-    teacherId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    companyName: {
-      type: String,
-      required: true,
-    },
     title: {
       type: String,
+      required: [true, 'Placement drive title is required'],
+      trim: true,
+    },
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
       required: true,
     },
     description: {
       type: String,
       default: '',
     },
-    date: {
-      type: Date,
-      required: true,
+    eligibility: {
+      department: { type: [String], default: [] },
+      minScore: { type: Number, default: 0 },
+      batch: { type: [String], default: [] },
     },
-    eligibleDepartments: [{ type: String }],
-    eligibleBatches: [{ type: String }],
-    minScore: { type: Number, default: 0 },
-    assignedStudents: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-      }
-    ],
     status: {
       type: String,
-      enum: ['Upcoming', 'Ongoing', 'Completed'],
-      default: 'Upcoming',
-    }
+      enum: ['upcoming', 'ongoing', 'completed'],
+      default: 'upcoming',
+    },
+    date: {
+      type: Date,
+      required: [true, 'Drive date is required'],
+    },
+    students: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
   },
   { timestamps: true }
 );
+
+placementDriveSchema.index({ companyId: 1 });
+placementDriveSchema.index({ date: 1 });
+placementDriveSchema.index({ status: 1 });
 
 module.exports = mongoose.model('PlacementDrive', placementDriveSchema);

@@ -38,6 +38,30 @@ const AIInsights = React.lazy(() => import('./pages/AIInsights'));
 const ProjectManagement = React.lazy(() => import('./pages/ProjectManagement'));
 const CompatibilityPage = React.lazy(() => import('./pages/CompatibilityPage'));
 const StudentAvailability = React.lazy(() => import('./pages/StudentAvailability'));
+const StudentJobs = React.lazy(() => import('./pages/StudentJobs'));
+
+// Recruiter Pages (Lazy)
+const RecruiterOverview = React.lazy(() => import('./pages/recruiter/RecruiterOverview'));
+const RecruiterSearch = React.lazy(() => import('./pages/recruiter/RecruiterSearch'));
+const RecruiterBookmarks = React.lazy(() => import('./pages/recruiter/RecruiterBookmarks'));
+const RecruiterCompare = React.lazy(() => import('./pages/recruiter/RecruiterCompare'));
+const RecruitmentPipelinePage = React.lazy(() => import('./pages/recruiter/RecruitmentPipeline'));
+const CompanyProfile = React.lazy(() => import('./pages/recruiter/CompanyProfile'));
+const JobManagement = React.lazy(() => import('./pages/recruiter/JobManagement'));
+
+// Teacher Pages (Lazy)
+const TeacherDashboard = React.lazy(() => import('./pages/teacher/TeacherDashboard'));
+const TeacherStudents = React.lazy(() => import('./pages/teacher/TeacherStudents'));
+const TeacherReadiness = React.lazy(() => import('./pages/teacher/TeacherReadiness'));
+const TeacherLeaderboard = React.lazy(() => import('./pages/teacher/TeacherLeaderboard'));
+const PlacementDrives = React.lazy(() => import('./pages/teacher/PlacementDrives'));
+const StudentVerification = React.lazy(() => import('./pages/teacher/StudentVerification'));
+
+// Admin Pages (Lazy)
+const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
+
+// Messages (Lazy)
+const Messages = React.lazy(() => import('./pages/Messages'));
 
 // Public Pages (Lazy)
 const PublicPortfolio = React.lazy(() => import('./pages/PublicPortfolio'));
@@ -45,6 +69,7 @@ const PublicIdentity = React.lazy(() => import('./pages/PublicIdentity'));
 
 // Legacy Pages (Lazy)
 const CollegeDashboard = React.lazy(() => import('./pages/CollegeDashboard'));
+
 
 const App = () => {
   return (
@@ -88,7 +113,48 @@ const App = () => {
                 <StudentAvailability />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/jobs" element={
+              <ProtectedRoute roles={['user', 'admin']}>
+                <StudentJobs />
+              </ProtectedRoute>
+            } />
 
+            {/* ─── Recruiter Dashboard ───────────────────────────── */}
+            <Route path="/dashboard/recruiter" element={
+              <ProtectedRoute roles={['recruiter', 'admin']}>
+                <RecruiterOverview />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/recruiter/company" element={
+              <ProtectedRoute roles={['recruiter', 'admin']}>
+                <CompanyProfile />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/recruiter/jobs" element={
+              <ProtectedRoute roles={['recruiter', 'admin']}>
+                <JobManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/recruiter/search" element={
+              <ProtectedRoute roles={['recruiter', 'admin']}>
+                <RecruiterSearch />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/recruiter/bookmarks" element={
+              <ProtectedRoute roles={['recruiter', 'admin']}>
+                <RecruiterBookmarks />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/recruiter/compare" element={
+              <ProtectedRoute roles={['recruiter', 'admin']}>
+                <RecruiterCompare />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/recruiter/pipeline" element={
+              <ProtectedRoute roles={['recruiter', 'admin']}>
+                <RecruitmentPipelinePage />
+              </ProtectedRoute>
+            } />
 
             {/* ─── Teacher Dashboard ─────────────────────────────── */}
             <Route path="/dashboard/teacher" element={
@@ -96,6 +162,32 @@ const App = () => {
                 <CollegeDashboard />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/teacher/drives" element={
+              <ProtectedRoute roles={['teacher', 'admin']}>
+                <PlacementDrives />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/teacher/verification" element={
+              <ProtectedRoute roles={['teacher', 'admin']}>
+                <StudentVerification />
+              </ProtectedRoute>
+            } />
+
+            {/* ─── Super Admin Dashboard ─────────────────────────── */}
+            <Route path="/dashboard/admin" element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+
+            {/* ─── Communication Inbox ────────────────────────────── */}
+            <Route path="/dashboard/messages" element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            } />
+
+            {/* ─── Legacy Routes (backward compat) ──────────────── */}
             <Route path="/dashboard/college" element={
               <ProtectedRoute>
                 <CollegeDashboard />

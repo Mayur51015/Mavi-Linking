@@ -21,7 +21,11 @@ exports.generateNewInsights = async (req, res, next) => {
     const { insight, dna, ranking, analytics } = await aiAnalyzer.analyzeUser(user);
     res.status(200).json({ success: true, data: { insight, dna, ranking, analytics } });
   } catch (error) {
-    next(error);
+    console.error('AI Insights Generation Error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate AI insights. ' + (error.message || ''),
+    });
   }
 };
 

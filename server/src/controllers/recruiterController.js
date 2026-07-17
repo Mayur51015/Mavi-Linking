@@ -106,6 +106,46 @@ const updateBookmark = async (req, res, next) => {
   }
 };
 
+const CompanyProfile = require('../models/CompanyProfile');
+
+/**
+ * @desc    Get company profile
+ * @route   GET /api/recruiter/company
+ * @access  Private (recruiter)
+ */
+const getCompanyProfile = async (req, res, next) => {
+  try {
+    let company = await CompanyProfile.findOne({ recruiterId: req.user.id });
+    if (!company) {
+      company = await CompanyProfile.create({
+        recruiterId: req.user.id,
+        companyName: req.user.companyName || 'Unknown Company',
+      });
+    }
+    res.status(200).json({ success: true, data: company });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Update company profile
+ * @route   PUT /api/recruiter/company
+ * @access  Private (recruiter)
+ */
+const updateCompanyProfile = async (req, res, next) => {
+  try {
+    const company = await CompanyProfile.findOneAndUpdate(
+      { recruiterId: req.user.id },
+      req.body,
+      { new: true, runValidators: true }
+    );
+    res.status(200).json({ success: true, data: company });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getRecruiterStats,
   searchDevelopers,
@@ -114,4 +154,6 @@ module.exports = {
   removeBookmark,
   getBookmarks,
   updateBookmark,
+  getCompanyProfile,
+  updateCompanyProfile
 };

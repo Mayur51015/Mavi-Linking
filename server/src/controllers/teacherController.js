@@ -74,10 +74,76 @@ const getDepartmentStats = async (req, res, next) => {
   }
 };
 
+const PlacementDrive = require('../models/PlacementDrive');
+const User = require('../models/User');
+const RecruitmentNotification = require('../models/RecruitmentNotification');
+
+/**
+ * @desc    Create a placement drive
+ * @route   POST /api/teacher/drives
+ * @access  Private (teacher)
+ */
+const createPlacementDrive = async (req, res, next) => {
+  try {
+    const drive = await PlacementDrive.create({
+      ...req.body,
+      teacherId: req.user.id
+    });
+    res.status(201).json({ success: true, data: drive });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get placement drives
+ * @route   GET /api/teacher/drives
+ * @access  Private (teacher)
+ */
+const getPlacementDrives = async (req, res, next) => {
+  try {
+    const drives = await PlacementDrive.find({ teacherId: req.user.id }).populate('assignedStudents', 'name email scores');
+    res.status(200).json({ success: true, data: drives });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Verify a student
+ * @route   PUT /api/teacher/students/:studentId/verify
+ * @access  Private (teacher)
+ */
+const verifyStudent = async (req, res, next) => {
+  try {
+    const student = await User.findByIdAndUpdate(
+      req.params.studentId,
+      { isVerified: true },
+      { new: true }
+    );
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
+    
+    await RecruitmentNotification.create({
+      recipientId: student._id,
+      senderId: req.user.id,
+      type: 'general',
+      title: 'Profile Verified',
+      message: 'Your profile has been verified by your teacher.',
+    });
+    
+    res.status(200).json({ success: true, data: student });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getMyStudents,
   getStudentDetail,
   getReadiness,
   getLeaderboard,
   getDepartmentStats,
+  createPlacementDrive,
+  getPlacementDrives,
+  verifyStudent
 };

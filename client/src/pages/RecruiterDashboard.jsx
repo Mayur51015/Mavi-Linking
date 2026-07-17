@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Bookmark, Users, BadgeCheck, X, Eye } from 'lucide-react';
 import UserLayout from '../layouts/UserLayout';
@@ -34,8 +34,10 @@ const RecruiterDashboard = () => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line
     if (tab === 'search') fetchDevelopers();
     if (tab === 'bookmarks') fetchBookmarks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   const handleBookmark = async (devId) => {
@@ -65,17 +67,18 @@ const RecruiterDashboard = () => {
     <UserLayout>
       <header style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Recruiter Dashboard</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Search, compare, and bookmark developer talent.</p>
+        <p style={{ color: 'var(--text-secondary)' }}>Manage your bookmarks, compare candidates, and search.</p>
       </header>
 
-      <div className="tabs">
+      <div className="tabs" style={{ flexWrap: 'wrap', marginBottom: '2rem' }}>
         {[
           { key: 'search', label: 'Search', icon: <Search size={16} /> },
           { key: 'bookmarks', label: 'Bookmarks', icon: <Bookmark size={16} /> },
           { key: 'compare', label: 'Compare', icon: <Users size={16} /> },
         ].map(t => (
           <button key={t.key} className={`tab ${tab === t.key ? 'active' : ''}`}
-            onClick={() => setTab(t.key)} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            onClick={() => setTab(t.key)} 
+            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
             {t.icon} {t.label}
           </button>
         ))}
@@ -83,14 +86,22 @@ const RecruiterDashboard = () => {
 
       {tab === 'search' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-            <input className="input-field" placeholder="University..." value={filters.university}
-              onChange={e => setFilters(f => ({ ...f, university: e.target.value }))} style={{ flex: 2, minWidth: '180px' }} />
-            <input className="input-field" placeholder="Skills (comma separated)" value={filters.skills}
-              onChange={e => setFilters(f => ({ ...f, skills: e.target.value }))} style={{ flex: 1, minWidth: '150px' }} />
-            <input className="input-field" placeholder="Min Score" type="number" value={filters.minScore}
-              onChange={e => setFilters(f => ({ ...f, minScore: e.target.value }))} style={{ width: '120px' }} />
-            <button onClick={fetchDevelopers} className="btn btn-primary btn-sm"><Search size={16} /> Search</button>
+          <div className="glass-card" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', padding: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ flex: 1, minWidth: '200px' }}>
+              <input className="input-field" placeholder="Search by University (e.g., MIT)" value={filters.university}
+                onChange={e => setFilters(f => ({ ...f, university: e.target.value }))} style={{ width: '100%', background: 'rgba(0,0,0,0.2)' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: '200px' }}>
+              <input className="input-field" placeholder="Required Skills (e.g., React, Node)" value={filters.skills}
+                onChange={e => setFilters(f => ({ ...f, skills: e.target.value }))} style={{ width: '100%', background: 'rgba(0,0,0,0.2)' }} />
+            </div>
+            <div style={{ width: '150px' }}>
+              <input className="input-field" placeholder="Min Score (0-1000)" type="number" value={filters.minScore}
+                onChange={e => setFilters(f => ({ ...f, minScore: e.target.value }))} style={{ width: '100%', background: 'rgba(0,0,0,0.2)' }} />
+            </div>
+            <button onClick={fetchDevelopers} className="btn btn-primary" style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Search size={18} /> Search
+            </button>
           </div>
 
           {comparison.length >= 2 && (
@@ -124,7 +135,7 @@ const RecruiterDashboard = () => {
                       className={`btn btn-sm ${comparison.includes(dev._id) ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }}>
                       {comparison.includes(dev._id) ? '✓ Selected' : 'Compare'}
                     </button>
-                    <a href={`/u/${dev.username || dev.platforms?.github?.username}`} target="_blank" className="btn btn-ghost btn-sm">
+                    <a href={`/u/${dev.username || dev.platforms?.github?.username}`} target="_blank" className="btn btn-ghost btn-sm" rel="noreferrer">
                       <Eye size={14} />
                     </a>
                   </div>
@@ -152,25 +163,33 @@ const RecruiterDashboard = () => {
         </motion.div>
       )}
 
-      {tab === 'compare' && compareResult && (
+      {tab === 'compare' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${compareResult.length}, 1fr)`, gap: '1.5rem' }}>
-            {compareResult.map(dev => (
-              <div key={dev.id} className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
-                <div className="avatar-gradient" style={{ width: '56px', height: '56px', fontSize: '1.5rem', margin: '0 auto 0.75rem' }}>{dev.name?.charAt(0)}</div>
-                <div style={{ fontWeight: '600', marginBottom: '1rem' }}>{dev.name}</div>
-                {['development', 'problemSolving', 'knowledge', 'overall'].map(key => (
-                  <div key={key} style={{ marginBottom: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                      <span style={{ color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1')}</span>
-                      <span>{dev.scores?.[key] || 0}</span>
+          {!compareResult || compareResult.length < 2 ? (
+            <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
+              <Users size={48} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>No Candidates Selected</h3>
+              <p>Go to the <strong>Search</strong> tab and click "Compare" on at least 2 candidates to see them side-by-side here.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${compareResult.length}, 1fr)`, gap: '1.5rem' }}>
+              {compareResult.map(dev => (
+                <div key={dev.id} className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+                  <div className="avatar-gradient" style={{ width: '56px', height: '56px', fontSize: '1.5rem', margin: '0 auto 0.75rem' }}>{dev.name?.charAt(0)}</div>
+                  <div style={{ fontWeight: '600', marginBottom: '1rem' }}>{dev.name}</div>
+                  {['development', 'problemSolving', 'knowledge', 'overall'].map(key => (
+                    <div key={key} style={{ marginBottom: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                        <span style={{ color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1')}</span>
+                        <span>{dev.scores?.[key] || 0}</span>
+                      </div>
+                      <div className="progress-bar"><div className="progress-bar-fill" style={{ width: `${((dev.scores?.[key] || 0) / 1000) * 100}%` }} /></div>
                     </div>
-                    <div className="progress-bar"><div className="progress-bar-fill" style={{ width: `${((dev.scores?.[key] || 0) / 1000) * 100}%` }} /></div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
         </motion.div>
       )}
     </UserLayout>

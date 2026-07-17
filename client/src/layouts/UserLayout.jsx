@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   LogOut, LayoutDashboard, Link as LinkIcon, BarChart3,
-  Terminal, Briefcase, Heart, BadgeCheck, QrCode, User,
+  Terminal, Briefcase, Heart, BadgeCheck, QrCode, User, Search, PieChart, Building2
 } from 'lucide-react';
 import VerificationModal from '../components/VerificationModal';
 import NotificationBell from '../components/NotificationBell';
@@ -19,7 +19,7 @@ const UserLayout = ({ children }) => {
     navigate('/login');
   };
 
-  const navItems = [
+  const studentNav = [
     { name: 'Overview', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Projects', path: '/dashboard/projects', icon: <Briefcase size={20} /> },
     { name: 'Availability', path: '/dashboard/availability', icon: <User size={20} /> },
@@ -27,6 +27,21 @@ const UserLayout = ({ children }) => {
     { name: 'AI Insights', path: '/dashboard/insights', icon: <BarChart3 size={20} /> },
     { name: 'Compatibility', path: '/dashboard/compatibility', icon: <Heart size={20} /> },
   ];
+
+  const recruiterNav = [
+    { name: 'Search', path: '/dashboard/recruiter', icon: <Search size={20} /> },
+    { name: 'Pipeline', path: '/dashboard/recruiter/pipeline', icon: <LayoutDashboard size={20} /> },
+    { name: 'Jobs', path: '/dashboard/recruiter/jobs', icon: <Briefcase size={20} /> },
+    { name: 'Company', path: '/dashboard/recruiter/company', icon: <Building2 size={20} /> },
+    { name: 'Analytics', path: '/dashboard/recruiter/analytics', icon: <PieChart size={20} /> },
+  ];
+
+  const teacherNav = [
+    { name: 'Overview', path: '/dashboard/teacher', icon: <LayoutDashboard size={20} /> },
+  ];
+
+  const navItems = user?.role === 'recruiter' ? recruiterNav : user?.role === 'teacher' ? teacherNav : studentNav;
+  const dashboardTitle = user?.role === 'recruiter' ? 'Recruiter Dashboard' : user?.role === 'teacher' ? 'Teacher Dashboard' : 'Student Dashboard';
 
   const publicUsername = user?.username || user?.platforms?.github?.username;
 
@@ -61,7 +76,7 @@ const UserLayout = ({ children }) => {
                 {publicUsername && (
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>@{publicUsername}</span>
                 )}
-                <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '0.125rem 0.5rem' }}>Student</span>
+                <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '0.125rem 0.5rem', textTransform: 'capitalize' }}>{user?.role || 'student'}</span>
               </div>
             </div>
           </div>
@@ -69,7 +84,7 @@ const UserLayout = ({ children }) => {
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || (item.path === '/dashboard/recruiter' && location.pathname === '/dashboard/recruiter/');
             return (
               <Link
                 key={item.name}
@@ -139,7 +154,7 @@ const UserLayout = ({ children }) => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <User size={24} style={{ color: 'var(--accent-purple)' }} />
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Student Dashboard</h1>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>{dashboardTitle}</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <NotificationBell />
@@ -155,7 +170,7 @@ const UserLayout = ({ children }) => {
         </div>
       </main>
 
-      {showVerify && <VerificationModal onClose={() => setShowVerify(false)} />}
+      {showVerify && <VerificationModal onClose={() => setShowVerify(false)} userRole={user?.role} />}
     </div>
   );
 };

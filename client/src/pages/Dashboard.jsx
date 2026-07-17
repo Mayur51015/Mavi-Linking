@@ -358,7 +358,33 @@ const Dashboard = () => {
   const steps = ['Applied', 'Shortlisted', 'Interview Scheduled', 'Technical Round', 'HR Round', 'Selected', 'Offer Sent', 'Joined'];
   const activeStepIndex = activePipeline ? steps.indexOf(activePipeline.status) : -1;
 
+  // Certificate filter + sort function
+  const getFilteredCertificates = () => {
+    const certificates = user?.certificates || [];
+    let filtered = certificates.filter(cert => {
+      if (!cert) return false;
+      const searchLower = (certSearch || '').toLowerCase();
+      const matchesSearch =
+        !searchLower ||
+        (cert.title || '').toLowerCase().includes(searchLower) ||
+        (cert.issuer || '').toLowerCase().includes(searchLower);
+      const matchesCategory =
+        !certCategoryFilter ||
+        (cert.category || '') === certCategoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+
+    filtered = [...filtered].sort((a, b) => {
+      const dateA = a?.issueDate ? new Date(a.issueDate) : new Date(0);
+      const dateB = b?.issueDate ? new Date(b.issueDate) : new Date(0);
+      return certSortOrder === 'oldest' ? dateA - dateB : dateB - dateA;
+    });
+
+    return filtered;
+  };
+
   return (
+
     <UserLayout>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>

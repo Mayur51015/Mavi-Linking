@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   LogOut, LayoutDashboard, Link as LinkIcon, BarChart3,
-  Terminal, Briefcase, Heart, BadgeCheck, QrCode, User, Search, PieChart, Building2
+  Terminal, Briefcase, Heart, BadgeCheck, QrCode, User
 } from 'lucide-react';
 import VerificationModal from '../components/VerificationModal';
 import NotificationBell from '../components/NotificationBell';

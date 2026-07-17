@@ -9,8 +9,6 @@ import ActivityFeed from '../components/ActivityFeed';
 import GrowthChart from '../components/GrowthChart';
 import LeaderboardWidget from '../components/LeaderboardWidget';
 import ReportGenerator from '../components/ReportGenerator';
-import LeetCodeSection from '../components/leetcode/LeetCodeSection';
-
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
   const [scores, setScores] = useState(null);
@@ -149,8 +147,6 @@ const Dashboard = () => {
               <ActivityFeed />
               <ReportGenerator />
             </div>
-
-            <LeetCodeSection />
           </>
         )}
     </UserLayout>

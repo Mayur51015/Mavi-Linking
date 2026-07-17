@@ -18,6 +18,7 @@ const {
   assignStudentsToDrive,
   createAnnouncement,
   getAnnouncements,
+  updateAnnouncement,
   deleteAnnouncement,
 } = require('../controllers/teacherController');
 
@@ -59,6 +60,8 @@ router.route('/announcements')
   .get(getAnnouncements)
   .post(createAnnouncement);
 
-router.delete('/announcements/:id', deleteAnnouncement);
+router.route('/announcements/:id')
+  .put(updateAnnouncement)
+  .delete(deleteAnnouncement);
 
 module.exports = router;

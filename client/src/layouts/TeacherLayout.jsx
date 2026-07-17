@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   LogOut, Users, BarChart3, TrendingUp, Award,
-  Terminal, GraduationCap, Building2,
+  Terminal, GraduationCap, Building2, Megaphone, FolderOpen,
 } from 'lucide-react';
 
 const TeacherLayout = ({ children }) => {
@@ -21,6 +21,8 @@ const TeacherLayout = ({ children }) => {
     { name: 'Students', path: '/dashboard/teacher/students', icon: <Users size={20} /> },
     { name: 'Readiness', path: '/dashboard/teacher/readiness', icon: <TrendingUp size={20} /> },
     { name: 'Leaderboard', path: '/dashboard/teacher/leaderboard', icon: <Award size={20} /> },
+    { name: 'Announcements', path: '/dashboard/teacher/announcements', icon: <Megaphone size={20} /> },
+    { name: 'Shared Documents', path: '/dashboard/teacher/documents', icon: <FolderOpen size={20} /> },
   ];
 
   return (

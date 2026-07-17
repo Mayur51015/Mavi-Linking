@@ -15,6 +15,11 @@ const {
   githubLogin,
   logout,
 } = require('../controllers/authController');
+const {
+  upload,
+  uploadProfileDocument,
+  getProfileDocument,
+} = require('../controllers/userDocumentController');
 
 const router = express.Router();
 
@@ -90,5 +95,9 @@ router.post('/github', githubLogin);
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateProfileValidation, validate, updateProfile);
 router.post('/logout', protect, logout);
+
+// Profile Document upload/download/preview routes
+router.post('/document/:type', protect, upload.single('file'), uploadProfileDocument);
+router.get('/document/:type', protect, getProfileDocument);
 
 module.exports = router;

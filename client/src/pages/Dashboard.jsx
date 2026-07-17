@@ -1,9 +1,10 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axios';
 import {
   Globe, GitBranch, Code2, Timeline, CheckCircle, FileText,
-  Briefcase, Calendar, BarChart3, AlertCircle, Upload, QrCode
+  Briefcase, Calendar, BarChart3, AlertCircle, Upload, QrCode,
+  Eye, Download
 } from 'lucide-react';
 import UserLayout from '../layouts/UserLayout';
 import DNACard from '../components/DNACard';
@@ -103,21 +104,92 @@ const Dashboard = () => {
 
   const { score: completionScore, missing: missingSections } = calculateCompletion();
 
-  // Mock document uploader
-  const handleUploadDoc = async (type) => {
-    setUploadStatus(prev => ({ ...prev, [type]: 'Uploading...' }));
-    setTimeout(async () => {
-      try {
-        const mockUrl = `/public/uploads/mock_${type}_${Date.now()}.pdf`;
-        const updatedDocs = { ...user.documents, [type]: mockUrl };
-        const res = await api.put('/auth/me', { documents: updatedDocs });
-        setUser(res.data.data.user);
-        setUploadStatus(prev => ({ ...prev, [type]: 'Uploaded!' }));
-      } catch (err) {
-        console.error(err);
-        setUploadStatus(prev => ({ ...prev, [type]: 'Failed' }));
-      }
-    }, 1000);
+  // Document Upload, Download, and Preview handlers
+  const fileInputRef = useRef(null);
+  const [activeDocType, setActiveDocType] = useState(null);
+
+  const handleUploadClick = (docType) => {
+    setActiveDocType(docType);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !activeDocType) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File is too large. Max size is 10MB.');
+      e.target.value = '';
+      return;
+    }
+
+    const allowed = ['.pdf', '.jpg', '.jpeg', '.png'];
+    const name = file.name.toLowerCase();
+    const matches = allowed.some(ext => name.endsWith(ext));
+    if (!matches) {
+      alert(`Invalid file type. Allowed formats: ${allowed.join(', ')}`);
+      e.target.value = '';
+      return;
+    }
+
+    setUploadStatus(prev => ({ ...prev, [activeDocType]: 'Uploading...' }));
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await api.post(`/auth/document/${activeDocType}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setUser(res.data.data.user);
+      setUploadStatus(prev => ({ ...prev, [activeDocType]: 'Uploaded!' }));
+    } catch (err) {
+      console.error(err);
+      setUploadStatus(prev => ({ ...prev, [activeDocType]: 'Failed' }));
+      alert(err.response?.data?.message || 'Failed to upload document.');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleDownloadDoc = async (type) => {
+    try {
+      const res = await api.get(`/auth/document/${type}?download=true`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const fileUrl = user.documents[type];
+      const ext = fileUrl.substring(fileUrl.lastIndexOf('.'));
+      link.setAttribute('download', `${type}-${user.name.replace(/\s+/g, '_')}${ext}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to download document. It may be missing.');
+    }
+  };
+
+  const handlePreviewDoc = async (type) => {
+    try {
+      const res = await api.get(`/auth/document/${type}`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([res.data], { type: res.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to preview document. It may be missing.');
+    }
   };
 
   // Main student pipeline tracking
@@ -365,19 +437,39 @@ const Dashboard = () => {
               {/* Document Repository */}
               <div className="glass-card-static" style={{ padding: '2rem' }}>
                 <h3 style={{ marginBottom: '1.5rem' }}>Official Documents Repository</h3>
+                
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                />
+
                 <div style={{ display: 'grid', gap: '1rem' }}>
                   {['resume', 'aadhaar', 'pan', 'marksheet'].map(docType => {
                     const hasDoc = user?.documents?.[docType];
                     return (
-                      <div key={docType} className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem' }}>
+                      <div key={docType} className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                           <FileText style={{ color: hasDoc ? 'var(--accent-emerald)' : 'var(--text-muted)' }} />
                           <div style={{ textTransform: 'capitalize', fontWeight: '600' }}>{docType} Document</div>
                         </div>
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                          {hasDoc && <span style={{ color: 'var(--accent-emerald)', fontSize: '0.8rem', marginRight: '0.5rem' }}>✓ Uploaded</span>}
-                          <button onClick={() => handleUploadDoc(docType)} className="btn btn-outline" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', padding: '0.4rem 0.75rem', fontSize: '0.75rem' }}>
-                            <Upload size={12} /> {uploadStatus[docType] || 'Upload'}
+                          {hasDoc && (
+                            <>
+                              <span style={{ color: 'var(--accent-emerald)', fontSize: '0.8rem', marginRight: '0.5rem' }}>✓ Uploaded</span>
+                              <button onClick={() => handlePreviewDoc(docType)} className="btn btn-outline" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', padding: '0.4rem 0.75rem', fontSize: '0.75rem' }} title="Preview">
+                                <Eye size={12} /> Preview
+                              </button>
+                              <button onClick={() => handleDownloadDoc(docType)} className="btn btn-outline" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', padding: '0.4rem 0.75rem', fontSize: '0.75rem' }} title="Download">
+                                <Download size={12} /> Download
+                              </button>
+                            </>
+                          )}
+                          <button onClick={() => handleUploadClick(docType)} className="btn btn-primary" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', padding: '0.4rem 0.75rem', fontSize: '0.75rem' }}>
+                            <Upload size={12} /> {uploadStatus[docType] || (hasDoc ? 'Replace' : 'Upload')}
                           </button>
                         </div>
                       </div>

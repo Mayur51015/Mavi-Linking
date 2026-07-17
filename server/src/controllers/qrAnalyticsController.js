@@ -3,6 +3,7 @@ const UAParser = require('ua-parser-js');
 const geoip = require('geoip-lite');
 const User = require('../models/User');
 const QRScan = require('../models/QRScan');
+const mongoose = require('mongoose');
 
 const hashIp = (ip) => {
   return crypto.createHash('sha256').update(ip || '0.0.0.0').digest('hex');

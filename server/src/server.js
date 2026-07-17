@@ -34,6 +34,7 @@ const jobRoutes = require('./routes/jobRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
+const userRoutes = require('./routes/userRoutes');
 const { init } = require('./config/socket'); // socket.io
 const http = require('http');
 
@@ -121,6 +122,7 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', redirectRoutes);
 

@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import api from '../api/axios';
 
 const Messages = () => {
-  const { user } = useContext(AuthContext);
+  const { user, socket } = useContext(AuthContext);
   const [conversations, setConversations] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -26,17 +26,37 @@ const Messages = () => {
   };
 
   // Load chat history for selected user
+  // Helper to validate MongoDB ObjectId format
+  const isValidObjectId = (id) => /^[a-f0-9]{24}$/i.test(id);
+
   const loadChatHistory = async (otherUserId) => {
+    // Guard against invalid IDs (e.g., user typed a name instead of ID)
+    if (!isValidObjectId(otherUserId)) {
+      console.warn('Invalid user ID for chat history:', otherUserId);
+      setMessages([]);
+      return;
+    }
     try {
       const res = await api.get(`/messages/${otherUserId}`);
       setMessages(res.data.data || []);
     } catch (err) {
       console.error(err);
+      setMessages([]);
     }
   };
 
   useEffect(() => {
     loadConversations();
+
+    const params = new URLSearchParams(window.location.search);
+    const chatId = params.get('chat');
+    if (chatId && isValidObjectId(chatId)) {
+      api.get(`/users/${chatId}`)
+        .then(res => {
+          setActiveChat(res.data.data);
+        })
+        .catch(console.error);
+    }
   }, []);
 
   useEffect(() => {
@@ -45,26 +65,26 @@ const Messages = () => {
     }
   }, [activeChat]);
 
+  const activeChatRef = useRef(activeChat);
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
+
   // Socket listener for real-time messages
   useEffect(() => {
-    try {
-      const { getSocket } = require('../config/socket'); // hypothetical client-side socket helper or use local connection
-      // For Vite React client, normally it would be imported from a context, let's mock/setup listening:
-      const socket = window.socket || null; 
-      if (socket) {
-        const handleNewMessage = (msg) => {
-          if (activeChat && (msg.senderId === activeChat._id || msg.recipientId === activeChat._id)) {
-            setMessages(prev => [...prev, msg]);
-          }
-          loadConversations();
-        };
-        socket.on('new_message', handleNewMessage);
-        return () => socket.off('new_message', handleNewMessage);
+    if (!socket) return;
+
+    const handleNewMessage = (msg) => {
+      const currentActiveChat = activeChatRef.current;
+      if (currentActiveChat && (msg.senderId === currentActiveChat._id || msg.recipientId === currentActiveChat._id)) {
+        setMessages(prev => [...prev, msg]);
       }
-    } catch (err) {
-      // socket helper may not be mounted globally, fall back to polling or standard events
-    }
-  }, [activeChat]);
+      loadConversations();
+    };
+
+    socket.on('new_message', handleNewMessage);
+    return () => socket.off('new_message', handleNewMessage);
+  }, [socket]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -87,7 +107,7 @@ const Messages = () => {
       loadConversations();
     } catch (err) {
       console.error(err);
-      alert('Failed to send message.');
+      alert(err.response?.data?.message || 'Failed to send message.');
     }
   };
 
@@ -100,9 +120,19 @@ const Messages = () => {
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Secure communication between Students, Recruiters, and Faculty.</p>
         </div>
-        <button onClick={loadConversations} className="btn btn-outline" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', padding: '0.4rem 0.75rem', fontSize: '0.75rem' }}>
-          <RefreshCw size={12} /> Sync Inbox
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button onClick={loadConversations} className="btn btn-outline" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', padding: '0.4rem 0.75rem', fontSize: '0.75rem' }}>
+            <RefreshCw size={12} /> Sync Inbox
+          </button>
+          <button onClick={() => {
+            const recipientId = window.prompt('Enter recipient user ID (Mongo ObjectId)');
+            if (recipientId) {
+              setActiveChat({ _id: recipientId, name: 'New Chat' });
+            }
+          }} className="btn btn-primary" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', padding: '0.4rem 0.75rem', fontSize: '0.75rem' }}>
+            New Message
+          </button>
+        </div>
       </header>
 
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem', minHeight: 0 }}>

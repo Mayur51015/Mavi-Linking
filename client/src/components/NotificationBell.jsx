@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import ReactDOM from 'react-dom';
 import { Bell, CheckCheck } from 'lucide-react';
 import { NOTIFICATION_TYPES } from '../constants/placementConstants';
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 /**
  * NotificationBell — dropdown notification center for all layouts.
@@ -11,6 +12,7 @@ import api from '../api/axios';
  * parent stacking contexts (backdrop-filter, overflow, z-index).
  */
 const NotificationBell = () => {
+  const { socket } = useContext(AuthContext);
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -18,6 +20,22 @@ const NotificationBell = () => {
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
   const bellRef = useRef(null);
   const dropdownRef = useRef(null);
+
+  // Listen to real-time notification events
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewNotification = (notification) => {
+      setNotifications(prev => [notification, ...prev].slice(0, 15));
+      setUnreadCount(prev => prev + 1);
+    };
+
+    socket.on('notification', handleNewNotification);
+
+    return () => {
+      socket.off('notification', handleNewNotification);
+    };
+  }, [socket]);
 
   // Close on outside click
   useEffect(() => {

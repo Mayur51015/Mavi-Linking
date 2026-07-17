@@ -13,6 +13,7 @@ import GrowthChart from '../components/GrowthChart';
 import LeaderboardWidget from '../components/LeaderboardWidget';
 import ReportGenerator from '../components/ReportGenerator';
 import LeetCodeSection from '../components/leetcode/LeetCodeSection';
+import Messages from '../pages/Messages';
 
 const Dashboard = () => {
   const { user, setUser } = useContext(AuthContext);
@@ -156,7 +157,7 @@ const Dashboard = () => {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem', paddingBottom: '0.5rem' }}>
-        {['overview', 'placement', 'documents', 'announcements'].map(tab => (
+        {['overview', 'placement', 'documents', 'announcements', 'messages'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -171,7 +172,7 @@ const Dashboard = () => {
               textTransform: 'capitalize',
             }}
           >
-            {tab === 'placement' ? 'Timeline & Placements' : tab === 'documents' ? 'Documents & Build' : tab}
+            {tab === 'placement' ? 'Timeline & Placements' : tab === 'documents' ? 'Documents & Build' : tab === 'messages' ? 'Messages' : tab}
           </button>
         ))}
       </div>
@@ -230,6 +231,12 @@ const Dashboard = () => {
               </div>
 
               <LeetCodeSection />
+            </div>
+          )}
+
+          {activeTab === 'messages' && (
+            <div className="animate-fade-in">
+              <Messages />
             </div>
           )}
 

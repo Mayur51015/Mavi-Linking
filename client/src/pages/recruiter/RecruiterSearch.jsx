@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Bookmark, BadgeCheck, Eye, Users, GitPullRequest } from 'lucide-react';
+import { Search, Bookmark, BadgeCheck, Eye, Users, GitPullRequest, MessageSquare } from 'lucide-react';
 import RecruiterLayout from '../../layouts/RecruiterLayout';
 import PlacementBadge from '../../components/PlacementBadge';
 import { PLACEMENT_STATUSES } from '../../constants/placementConstants';
@@ -143,10 +143,20 @@ const RecruiterSearch = () => {
                   {comparison.includes(dev._id) ? '✓ Selected' : 'Compare'}
                 </button>
                 {dev.username && (
-                  <a href={`/u/${dev.username}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">
+                  <a href={`/u/${dev.username}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" title="View Profile">
                     <Eye size={14} />
                   </a>
                 )}
+                <button
+                  onClick={() => {
+                    window.location.href = `/dashboard/messages?chat=${dev._id}`;
+                  }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--accent-purple)' }}
+                  title="Send Message"
+                >
+                  <MessageSquare size={14} />
+                </button>
                 <button
                   onClick={() => {
                     const role = prompt('Enter role/position for this candidate:');

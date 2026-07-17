@@ -40,8 +40,11 @@ const register = async (req, res, next) => {
     if (bio) userData.bio = bio;
 
     // Role-specific fields
-    if (userData.role === 'user') {
+    if (userData.role === 'user' || userData.role === 'teacher') {
       if (university) userData.university = university;
+    }
+
+    if (userData.role === 'user') {
       if (degree) userData.degree = degree;
       if (graduationYear) userData.graduationYear = graduationYear;
       if (portfolioWebsite) userData.portfolioWebsite = portfolioWebsite;

@@ -32,6 +32,7 @@ exports.generateNewInsights = async (req, res, next) => {
 exports.getDNA = async (req, res, next) => {
   try {
     const dna = await DNA.findOne({ userId: req.user.id });
+    console.log('GET /ai/dna response:', dna);
     res.status(200).json({ success: true, data: dna });
   } catch (error) {
     next(error);

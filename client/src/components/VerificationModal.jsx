@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, BadgeCheck, Copy, Check, RefreshCw, ExternalLink } from 'lucide-react';
 import api from '../api/axios';
 
-const VerificationModal = ({ onClose, onVerified }) => {
+const VerificationModal = ({ onClose, onVerified, userRole = 'student' }) => {
   const [step, setStep] = useState('idle'); // idle, generated, verifying, verified, error
   const [code, setCode] = useState('');
   const [message, setMessage] = useState('');
@@ -54,17 +54,28 @@ const VerificationModal = ({ onClose, onVerified }) => {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <BadgeCheck size={20} className="text-gradient" /> GitHub Verification
+              <BadgeCheck size={20} className="text-gradient" /> {userRole === 'teacher' ? 'Account Verification' : 'GitHub Verification'}
             </h3>
             <button onClick={onClose} className="btn btn-ghost btn-sm" style={{ padding: '0.375rem' }}><X size={20} /></button>
           </div>
 
           {step === 'idle' && (
             <div style={{ textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                Verify your GitHub account to get a <span style={{ color: 'var(--accent-cyan)' }}>✓ Verified</span> badge on your profile.
-              </p>
-              <button onClick={handleGenerate} className="btn btn-primary">Generate Verification Code</button>
+              {userRole === 'teacher' ? (
+                <>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                    As a {userRole}, your account must be verified manually by our administration team using your official institutional or company credentials to receive the <span style={{ color: 'var(--accent-cyan)' }}>✓ Verified</span> badge.
+                  </p>
+                  <a href="mailto:support@mavilinking.com" className="btn btn-primary" style={{ display: 'inline-block' }}>Contact Support</a>
+                </>
+              ) : (
+                <>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                    Verify your GitHub account to get a <span style={{ color: 'var(--accent-cyan)' }}>✓ Verified</span> badge on your profile.
+                  </p>
+                  <button onClick={handleGenerate} className="btn btn-primary">Generate Verification Code</button>
+                </>
+              )}
             </div>
           )}
 

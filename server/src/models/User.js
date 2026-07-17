@@ -107,13 +107,29 @@ const userSchema = new mongoose.Schema(
       aadhaar: { type: String, default: '' },
       pan: { type: String, default: '' },
       marksheet: { type: String, default: '' },
+      list: [
+        {
+          title: { type: String, required: true },
+          type: { type: String, required: true },
+          fileUrl: { type: String, required: true },
+          uploadedAt: { type: Date, default: Date.now },
+          description: { type: String, default: '' },
+        }
+      ]
     },
     certificates: [
       {
         title: { type: String, required: true },
         issuer: { type: String, default: '' },
+        category: { type: String, default: '' },
         date: { type: Date, default: null },
+        issueDate: { type: Date, default: null },
+        expiryDate: { type: Date, default: null },
+        credentialId: { type: String, default: '' },
+        verificationUrl: { type: String, default: '' },
+        description: { type: String, default: '' },
         fileUrl: { type: String, default: '' },
+        uploadedAt: { type: Date, default: Date.now },
         isVerified: { type: Boolean, default: false },
         verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
       }

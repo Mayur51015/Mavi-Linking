@@ -18,7 +18,12 @@ const {
 const {
   upload,
   uploadProfileDocument,
+  deleteProfileDocument,
   getProfileDocument,
+  createCertificate,
+  updateCertificate,
+  deleteCertificate,
+  getCertificateFile,
 } = require('../controllers/userDocumentController');
 
 const router = express.Router();
@@ -98,6 +103,13 @@ router.post('/logout', protect, logout);
 
 // Profile Document upload/download/preview routes
 router.post('/document/:type', protect, upload.single('file'), uploadProfileDocument);
+router.delete('/document/:type', protect, deleteProfileDocument);
 router.get('/document/:type', protect, getProfileDocument);
+
+// Certificates CRUD routes
+router.post('/certificate', protect, upload.single('file'), createCertificate);
+router.put('/certificate/:id', protect, upload.single('file'), updateCertificate);
+router.delete('/certificate/:id', protect, deleteCertificate);
+router.get('/certificate/:id/file', protect, getCertificateFile);
 
 module.exports = router;

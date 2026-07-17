@@ -253,8 +253,13 @@ const getAnnouncements = async (req, res, next) => {
     const query = {};
     if (college) query.college = college;
     
-    // Default to teacher's department, but allow filtering
-    query.department = departmentFilter || department;
+    // Default to teacher's departments, but allow filtering
+    const teacherDepts = department.split(',').map(d => d.trim()).filter(Boolean);
+    if (departmentFilter) {
+      query.department = departmentFilter;
+    } else {
+      query.department = { $in: [...teacherDepts, 'All', ''] };
+    }
 
     if (search) {
       query.$or = [

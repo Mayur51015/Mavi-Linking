@@ -12,6 +12,7 @@ const TeacherAnnouncements = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [departmentFilter, setDepartmentFilter] = useState('');
   
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
@@ -25,7 +26,7 @@ const TeacherAnnouncements = () => {
   const fetchAnnouncements = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/teacher/announcements?search=${search}&page=${page}&limit=5`);
+      const res = await api.get(`/teacher/announcements?search=${search}&page=${page}&limit=5&departmentFilter=${departmentFilter}`);
       setAnnouncements(res.data.data || []);
       setTotalPages(res.data.pagination?.pages || 1);
     } catch (err) {
@@ -37,7 +38,7 @@ const TeacherAnnouncements = () => {
 
   useEffect(() => {
     fetchAnnouncements();
-  }, [page, search]);
+  }, [page, search, departmentFilter]);
 
   const handleOpenCreate = () => {
     setEditingAnn(null);
@@ -109,8 +110,8 @@ const TeacherAnnouncements = () => {
       </header>
 
       {/* Filter Row */}
-      <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
+      <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
           <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"
@@ -130,6 +131,27 @@ const TeacherAnnouncements = () => {
             }}
           />
         </div>
+
+        <select
+          value={departmentFilter}
+          onChange={(e) => { setDepartmentFilter(e.target.value); setPage(1); }}
+          style={{
+            padding: '0.625rem 1rem',
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '10px',
+            color: 'white',
+            fontSize: '0.9rem',
+            outline: 'none',
+            cursor: 'pointer',
+            minWidth: '180px',
+          }}
+        >
+          <option value="" style={{ background: '#09090b' }}>All Departments</option>
+          {(user?.university?.department?.split(',') || []).map(d => d.trim()).filter(Boolean).map(d => (
+            <option key={d} value={d} style={{ background: '#09090b' }}>{d}</option>
+          ))}
+        </select>
       </div>
 
       {loading ? (

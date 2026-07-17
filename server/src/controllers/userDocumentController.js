@@ -463,6 +463,162 @@ const getCertificateFile = async (req, res, next) => {
   }
 };
 
+// ─── Portfolio Documents (dynamic, unified) ──────────────────────────────────
+
+/**
+ * @desc    Create a new portfolio document
+ * @route   POST /api/auth/portfolio-doc
+ * @access  Private (Student/User)
+ */
+const createPortfolioDoc = async (req, res, next) => {
+  try {
+    const { title, category, description } = req.body;
+    if (!title || !title.trim()) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ success: false, message: 'Document title is required.' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    const allowedCategories = ['Resume', 'Certificate', 'Marksheet', 'Project Report', 'Internship', 'Achievement', 'Research Paper', 'Other'];
+    const safeCategory = allowedCategories.includes(category) ? category : 'Other';
+
+    const newDoc = {
+      title: title.trim(),
+      category: safeCategory,
+      description: description?.trim() || '',
+      fileUrl: req.file ? `/public/uploads/${req.file.filename}` : '',
+      originalName: req.file ? req.file.originalname : '',
+      uploadedAt: new Date(),
+    };
+
+    if (!user.portfolioDocs) user.portfolioDocs = [];
+    user.portfolioDocs.push(newDoc);
+    await user.save();
+
+    res.status(201).json({ success: true, message: 'Document added successfully.', data: { user } });
+  } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
+    next(error);
+  }
+};
+
+/**
+ * @desc    Update a portfolio document (metadata and optionally file)
+ * @route   PUT /api/auth/portfolio-doc/:id
+ * @access  Private (Student/User)
+ */
+const updatePortfolioDoc = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title, category, description } = req.body;
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    const doc = (user.portfolioDocs || []).find(d => d._id.toString() === id);
+    if (!doc) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ success: false, message: 'Document not found.' });
+    }
+
+    const allowedCategories = ['Resume', 'Certificate', 'Marksheet', 'Project Report', 'Internship', 'Achievement', 'Research Paper', 'Other'];
+
+    if (title?.trim()) doc.title = title.trim();
+    if (category && allowedCategories.includes(category)) doc.category = category;
+    if (description !== undefined) doc.description = description?.trim() || '';
+
+    if (req.file) {
+      // Delete old file
+      if (doc.fileUrl) {
+        const oldPath = path.join(__dirname, '..', '..', doc.fileUrl);
+        if (fs.existsSync(oldPath)) { try { fs.unlinkSync(oldPath); } catch (_) {} }
+      }
+      doc.fileUrl = `/public/uploads/${req.file.filename}`;
+      doc.originalName = req.file.originalname;
+    }
+
+    await user.save();
+    res.status(200).json({ success: true, message: 'Document updated successfully.', data: { user } });
+  } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
+    next(error);
+  }
+};
+
+/**
+ * @desc    Delete a portfolio document
+ * @route   DELETE /api/auth/portfolio-doc/:id
+ * @access  Private (Student/User)
+ */
+const deletePortfolioDoc = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    const idx = (user.portfolioDocs || []).findIndex(d => d._id.toString() === id);
+    if (idx === -1) return res.status(404).json({ success: false, message: 'Document not found.' });
+
+    const doc = user.portfolioDocs[idx];
+    if (doc.fileUrl) {
+      const filepath = path.join(__dirname, '..', '..', doc.fileUrl);
+      if (fs.existsSync(filepath)) { try { fs.unlinkSync(filepath); } catch (_) {} }
+    }
+
+    user.portfolioDocs.splice(idx, 1);
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Document deleted successfully.', data: { user } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Download or preview a portfolio document file
+ * @route   GET /api/auth/portfolio-doc/:id/file
+ * @access  Private
+ */
+const getPortfolioDocFile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { download } = req.query;
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    const doc = (user.portfolioDocs || []).find(d => d._id.toString() === id);
+    if (!doc || !doc.fileUrl) {
+      return res.status(404).json({ success: false, message: 'File not found.' });
+    }
+
+    const filepath = path.join(__dirname, '..', '..', doc.fileUrl);
+    if (!fs.existsSync(filepath)) {
+      return res.status(404).json({ success: false, message: 'Physical file is missing.' });
+    }
+
+    if (download === 'true') {
+      res.download(filepath, `${doc.title.replace(/\s+/g, '_')}${path.extname(filepath)}`);
+    } else {
+      res.sendFile(filepath);
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   upload,
   uploadProfileDocument,
@@ -472,4 +628,8 @@ module.exports = {
   updateCertificate,
   deleteCertificate,
   getCertificateFile,
+  createPortfolioDoc,
+  updatePortfolioDoc,
+  deletePortfolioDoc,
+  getPortfolioDocFile,
 };

@@ -134,6 +134,23 @@ const userSchema = new mongoose.Schema(
         verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
       }
     ],
+
+    // ─── Dynamic Portfolio Documents (replaces fixed required-doc cards) ───────
+    portfolioDocs: [
+      {
+        title:        { type: String, required: true },
+        category: {
+          type: String,
+          enum: ['Resume', 'Certificate', 'Marksheet', 'Project Report', 'Internship', 'Achievement', 'Research Paper', 'Other'],
+          default: 'Other',
+        },
+        description:  { type: String, default: '' },
+        fileUrl:      { type: String, default: '' },
+        originalName: { type: String, default: '' }, // original filename to show extension
+        uploadedAt:   { type: Date, default: Date.now },
+      }
+    ],
+
     achievements: [
       {
         title: { type: String, required: true },

@@ -24,6 +24,10 @@ const {
   updateCertificate,
   deleteCertificate,
   getCertificateFile,
+  createPortfolioDoc,
+  updatePortfolioDoc,
+  deletePortfolioDoc,
+  getPortfolioDocFile,
 } = require('../controllers/userDocumentController');
 
 const router = express.Router();
@@ -111,5 +115,11 @@ router.post('/certificate', protect, upload.single('file'), createCertificate);
 router.put('/certificate/:id', protect, upload.single('file'), updateCertificate);
 router.delete('/certificate/:id', protect, deleteCertificate);
 router.get('/certificate/:id/file', protect, getCertificateFile);
+
+// Portfolio Documents (dynamic) CRUD routes
+router.post('/portfolio-doc', protect, upload.single('file'), createPortfolioDoc);
+router.put('/portfolio-doc/:id', protect, upload.single('file'), updatePortfolioDoc);
+router.delete('/portfolio-doc/:id', protect, deletePortfolioDoc);
+router.get('/portfolio-doc/:id/file', protect, getPortfolioDocFile);
 
 module.exports = router;

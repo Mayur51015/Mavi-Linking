@@ -48,6 +48,29 @@ const Dashboard = () => {
   const [certSortOrder, setCertSortOrder] = useState('newest');
   const [savingCert, setSavingCert] = useState(false);
 
+  // ─── Portfolio Document states ────────────────────────────────────────────
+  const PORT_CATEGORIES = ['Resume', 'Certificate', 'Marksheet', 'Project Report', 'Internship', 'Achievement', 'Research Paper', 'Other'];
+  const CATEGORY_COLORS = {
+    'Resume':          'badge-blue',
+    'Certificate':     'badge-purple',
+    'Marksheet':       'badge-amber',
+    'Project Report':  'badge-cyan',
+    'Internship':      'badge-emerald',
+    'Achievement':     'badge-red',
+    'Research Paper':  'badge-indigo',
+    'Other':           'badge-gray',
+  };
+  const [docModalOpen,      setDocModalOpen]      = useState(false);
+  const [editingDoc,        setEditingDoc]        = useState(null);
+  const [docTitle,          setDocTitle]          = useState('');
+  const [docCategory,       setDocCategory]       = useState('Other');
+  const [docDescription,    setDocDescription]    = useState('');
+  const [docFile,           setDocFile]           = useState(null);
+  const [docSearch,         setDocSearch]         = useState('');
+  const [docCategoryFilter, setDocCategoryFilter] = useState('');
+  const [docSortOrder,      setDocSortOrder]      = useState('newest');
+  const [savingDoc,         setSavingDoc]         = useState(false);
+
   // AI State
   const [aiData, setAiData] = useState({ insight: null, dna: null, analytics: [] });
   const [generatingAI, setGeneratingAI] = useState(false);
@@ -383,6 +406,120 @@ const Dashboard = () => {
     return filtered;
   };
 
+  // ─── Portfolio Document CRUD handlers ─────────────────────────────────────
+
+  const openDocModal = (doc = null) => {
+    if (doc) {
+      setEditingDoc(doc);
+      setDocTitle(doc.title || '');
+      setDocCategory(doc.category || 'Other');
+      setDocDescription(doc.description || '');
+      setDocFile(null);
+    } else {
+      setEditingDoc(null);
+      setDocTitle('');
+      setDocCategory('Other');
+      setDocDescription('');
+      setDocFile(null);
+    }
+    setDocModalOpen(true);
+  };
+
+  const handleSaveDoc = async (e) => {
+    e.preventDefault();
+    if (!docTitle.trim()) return;
+    setSavingDoc(true);
+    try {
+      const formData = new FormData();
+      formData.append('title', docTitle.trim());
+      formData.append('category', docCategory);
+      formData.append('description', docDescription);
+      if (docFile) formData.append('file', docFile);
+      let res;
+      if (editingDoc) {
+        res = await api.put(`/auth/portfolio-doc/${editingDoc._id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      } else {
+        res = await api.post('/auth/portfolio-doc', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      }
+      setUser(res.data.data.user);
+      setDocModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to save document.');
+    } finally {
+      setSavingDoc(false);
+    }
+  };
+
+  const handleDeletePortfolioDoc = async (id) => {
+    if (!window.confirm('Delete this document permanently?')) return;
+    try {
+      const res = await api.delete(`/auth/portfolio-doc/${id}`);
+      setUser(res.data.data.user);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to delete document.');
+    }
+  };
+
+  const handlePreviewPortfolioDoc = async (id) => {
+    try {
+      const res = await api.get(`/auth/portfolio-doc/${id}/file`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: res.headers['content-type'] });
+      window.open(window.URL.createObjectURL(blob), '_blank');
+    } catch (err) {
+      console.error(err);
+      alert('Preview failed. File may be missing.');
+    }
+  };
+
+  const handleDownloadPortfolioDoc = async (doc) => {
+    try {
+      const res = await api.get(`/auth/portfolio-doc/${doc._id}/file?download=true`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const ext = doc.originalName ? doc.originalName.substring(doc.originalName.lastIndexOf('.')) : '.pdf';
+      link.setAttribute('download', `${doc.title.replace(/\s+/g, '_')}${ext}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert('Download failed.');
+    }
+  };
+
+  const getFilteredDocs = () => {
+    const docs = user?.portfolioDocs || [];
+    let filtered = docs.filter(doc => {
+      if (!doc) return false;
+      const q = (docSearch || '').toLowerCase();
+      const matchSearch = !q ||
+        (doc.title || '').toLowerCase().includes(q) ||
+        (doc.category || '').toLowerCase().includes(q) ||
+        (doc.description || '').toLowerCase().includes(q);
+      const matchCat = !docCategoryFilter || doc.category === docCategoryFilter;
+      return matchSearch && matchCat;
+    });
+    return [...filtered].sort((a, b) => {
+      const da = a.uploadedAt ? new Date(a.uploadedAt) : new Date(0);
+      const db = b.uploadedAt ? new Date(b.uploadedAt) : new Date(0);
+      return docSortOrder === 'oldest' ? da - db : db - da;
+    });
+  };
+
+  const getFileExt = (doc) => {
+    if (doc.originalName) {
+      return doc.originalName.substring(doc.originalName.lastIndexOf('.')).toLowerCase();
+    }
+    if (doc.fileUrl) {
+      return doc.fileUrl.substring(doc.fileUrl.lastIndexOf('.')).toLowerCase();
+    }
+    return '';
+  };
+
   return (
 
     <UserLayout>
@@ -590,11 +727,12 @@ const Dashboard = () => {
 
           {activeTab === 'documents' && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {/* Header/Completion banner */}
+
+              {/* Header / Completion banner */}
               <div className="glass-card-static" style={{ padding: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Professional Portfolio & Build</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Upload credentials, academic transcripts, and verify certificates for recruiter visibility.</p>
+                  <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>My Portfolio Documents</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Upload and manage your resume, certificates, transcripts, project reports, and more.</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ position: 'relative', width: '70px', height: '70px' }}>
@@ -609,7 +747,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <div style={{ fontSize: '0.85rem' }}>
-                    <div style={{ fontWeight: '700', color: 'white' }}>Profile Completion Score</div>
+                    <div style={{ fontWeight: '700', color: 'white' }}>Profile Completion</div>
                     {missingSections.length > 0 ? (
                       <span style={{ color: 'var(--accent-amber)' }}>Missing {missingSections.length} sections</span>
                     ) : (
@@ -619,218 +757,117 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Hidden file picker input for Required Documents */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-                accept=".pdf,.jpg,.jpeg,.png"
-              />
-
-              {/* Required Documents Section */}
-              <div>
-                <h4 style={{ marginBottom: '1rem', fontSize: '1.2rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <FileText size={20} className="text-gradient" /> Required Portfolio Documents
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                  {[
-                    { key: 'resume', label: 'Resume / CV' },
-                    { key: 'transcript', label: 'Academic Transcript / Marksheet' },
-                    { key: 'projectReport', label: 'Project Report' },
-                    { key: 'internshipOffer', label: 'Internship Offer Letter' },
-                    { key: 'internshipCompletion', label: 'Internship Completion Certificate' },
-                    { key: 'experienceLetter', label: 'Experience Letter' },
-                    { key: 'researchPaper', label: 'Research Paper (optional)' },
-                    { key: 'other', label: 'Other Document' }
-                  ].map(doc => {
-                    let hasDoc = false;
-                    if (user?.documents?.list) {
-                      hasDoc = user.documents.list.some(d => d.type === doc.key);
-                    }
-                    if (!hasDoc && user?.documents?.[doc.key]) {
-                      hasDoc = true;
-                    }
-                    
-                    return (
-                      <div key={doc.key} className="glass-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '1.25rem', gap: '1rem' }}>
-                        <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
-                            <span className={`badge ${hasDoc ? 'badge-emerald' : 'badge-amber'}`} style={{ fontSize: '0.7rem' }}>
-                              {hasDoc ? 'Uploaded' : 'Pending'}
-                            </span>
-                            {hasDoc && (
-                              <button onClick={() => handleDeleteDoc(doc.key)} style={{ background: 'none', border: 'none', color: 'var(--accent-red)', cursor: 'pointer', padding: '0.25rem' }} title="Delete">
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
-                          <h5 style={{ fontWeight: '700', fontSize: '0.95rem', color: 'white', marginBottom: '0.25rem' }}>{doc.label}</h5>
-                          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Supported formats: PDF, JPG, PNG (Max 10MB)</p>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                          {hasDoc ? (
-                            <>
-                              <button onClick={() => handlePreviewDoc(doc.key)} className="btn btn-outline" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', padding: '0.35rem 0.6rem', fontSize: '0.7rem', flex: 1, justifyContent: 'center' }}>
-                                <Eye size={12} /> View
-                              </button>
-                              <button onClick={() => handleDownloadDoc(doc.key)} className="btn btn-outline" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', padding: '0.35rem 0.6rem', fontSize: '0.7rem', flex: 1, justifyContent: 'center' }}>
-                                <Download size={12} /> Get
-                              </button>
-                              <button onClick={() => handleUploadClick(doc.key)} className="btn btn-primary" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', padding: '0.35rem 0.6rem', fontSize: '0.7rem', flex: '1 0 100%', justifyContent: 'center', marginTop: '0.25rem' }}>
-                                <Upload size={12} /> {uploadStatus[doc.key] || 'Replace'}
-                              </button>
-                            </>
-                          ) : (
-                            <button onClick={() => handleUploadClick(doc.key)} className="btn btn-primary" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', padding: '0.4rem 0.75rem', fontSize: '0.75rem', width: '100%', justifyContent: 'center' }}>
-                              <Upload size={12} /> {uploadStatus[doc.key] || 'Upload File'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+              {/* Controls row */}
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+                  <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                  <input
+                    type="text"
+                    placeholder="Search documents..."
+                    value={docSearch}
+                    onChange={e => setDocSearch(e.target.value)}
+                    style={{ width: '100%', padding: '0.55rem 1rem 0.55rem 2.25rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.85rem', outline: 'none' }}
+                  />
                 </div>
+                <select
+                  value={docCategoryFilter}
+                  onChange={e => setDocCategoryFilter(e.target.value)}
+                  style={{ padding: '0.55rem 1rem', background: '#09090b', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.85rem', outline: 'none', cursor: 'pointer', minWidth: '160px' }}
+                >
+                  <option value="">All Categories</option>
+                  {PORT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <select
+                  value={docSortOrder}
+                  onChange={e => setDocSortOrder(e.target.value)}
+                  style={{ padding: '0.55rem 1rem', background: '#09090b', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.85rem', outline: 'none', cursor: 'pointer', minWidth: '150px' }}
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                </select>
+                <button
+                  onClick={() => openDocModal()}
+                  className="btn btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1.25rem', whiteSpace: 'nowrap' }}
+                >
+                  <Plus size={16} /> Add Document
+                </button>
               </div>
 
-              {/* Certificates Section */}
-              <div style={{ marginTop: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                  <h4 style={{ fontSize: '1.2rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-                    <Globe size={20} className="text-gradient" /> Certificates Repository
-                  </h4>
-                  <button onClick={() => handleOpenCertModal()} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-                    <Plus size={16} /> Add Certificate
-                  </button>
-                </div>
-
-                {/* Filter / Search Controls Row */}
-                <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
-                    <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input
-                      type="text"
-                      placeholder="Search certificates or issuers..."
-                      value={certSearch}
-                      onChange={(e) => setCertSearch(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.5rem 1rem 0.5rem 2.25rem',
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '8px',
-                        color: 'white',
-                        fontSize: '0.85rem',
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-
-                  <select
-                    value={certCategoryFilter}
-                    onChange={(e) => setCertCategoryFilter(e.target.value)}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      background: '#09090b',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      color: 'white',
-                      fontSize: '0.85rem',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      minWidth: '150px',
-                    }}
-                  >
-                    <option value="">All Categories</option>
-                    <option value="Technical">Technical</option>
-                    <option value="Language">Language</option>
-                    <option value="Management">Management</option>
-                    <option value="Aptitude">Aptitude</option>
-                    <option value="Other">Other</option>
-                  </select>
-
-                  <select
-                    value={certSortOrder}
-                    onChange={(e) => setCertSortOrder(e.target.value)}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      background: '#09090b',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      color: 'white',
-                      fontSize: '0.85rem',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      minWidth: '150px',
-                    }}
-                  >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                  </select>
-                </div>
-
-                {/* Certificates Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                  {getFilteredCertificates().map(cert => (
-                    <div key={cert._id} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem', position: 'relative' }}>
+              {/* Document cards grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
+                {getFilteredDocs().map(doc => {
+                  const ext = getFileExt(doc);
+                  const extLabel = ext ? ext.replace('.', '').toUpperCase() : null;
+                  const badgeClass = CATEGORY_COLORS[doc.category] || 'badge-gray';
+                  return (
+                    <div key={doc._id} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}>
                       <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
-                          <span className="badge badge-purple" style={{ fontSize: '0.65rem' }}>{cert.category || 'Certificate'}</span>
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                            {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short' }) : 'N/A'}
-                          </span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                          <span className={`badge ${badgeClass}`} style={{ fontSize: '0.65rem', fontWeight: '600' }}>{doc.category || 'Other'}</span>
+                          {extLabel && (
+                            <span style={{ fontSize: '0.6rem', fontWeight: '700', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)', borderRadius: '4px', padding: '0.1rem 0.35rem', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                              {extLabel}
+                            </span>
+                          )}
                         </div>
-                        <h5 style={{ fontWeight: '700', fontSize: '1.05rem', color: 'white', marginBottom: '0.25rem' }}>{cert.title}</h5>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '500', marginBottom: '0.5rem' }}>
-                          Issued by <span style={{ color: 'var(--accent-purple)' }}>{cert.issuer || 'Unknown Organization'}</span>
-                        </div>
-                        {cert.credentialId && (
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                            ID: <code style={{ color: '#aaa', background: 'rgba(255,255,255,0.03)', padding: '0.1rem 0.3rem', borderRadius: '4px' }}>{cert.credentialId}</code>
-                          </div>
-                        )}
-                        {cert.description && (
-                          <p style={{ fontSize: '0.775rem', color: 'var(--text-secondary)', lineHeight: '1.4', margin: '0.5rem 0 0 0' }}>
-                            {cert.description}
+                        <h5 style={{ fontWeight: '700', fontSize: '1rem', color: 'white', marginBottom: '0.3rem', lineHeight: '1.3' }}>{doc.title}</h5>
+                        {doc.description && (
+                          <p style={{ fontSize: '0.775rem', color: 'var(--text-secondary)', lineHeight: '1.45', margin: '0.35rem 0 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {doc.description}
                           </p>
                         )}
                       </div>
-
-                      <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                        <div style={{ display: 'flex', gap: '0.25rem' }}>
-                          {cert.fileUrl && (
+                      <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                        </span>
+                        <div style={{ display: 'flex', gap: '0.3rem' }}>
+                          {doc.fileUrl && (
                             <>
-                              <button onClick={() => handlePreviewCertificate(cert._id)} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }} title="Preview">
+                              <button onClick={() => handlePreviewPortfolioDoc(doc._id)} className="btn btn-outline" style={{ padding: '0.3rem 0.55rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }} title="Preview">
                                 <Eye size={12} /> View
                               </button>
-                              <button onClick={() => handleDownloadCertificate(cert._id, cert.title)} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }} title="Download">
-                                <Download size={12} /> Get
+                              <button onClick={() => handleDownloadPortfolioDoc(doc)} className="btn btn-outline" style={{ padding: '0.3rem 0.55rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }} title="Download">
+                                <Download size={12} />
                               </button>
                             </>
                           )}
-                          {cert.verificationUrl && (
-                            <a href={cert.verificationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                              Verify
-                            </a>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.25rem' }}>
-                          <button onClick={() => handleOpenCertModal(cert)} className="btn btn-outline" style={{ padding: '0.35rem 0.5rem', color: 'var(--accent-purple)' }} title="Edit">
+                          <button onClick={() => openDocModal(doc)} className="btn btn-outline" style={{ padding: '0.3rem 0.45rem', color: 'var(--accent-purple)' }} title="Edit">
                             <Edit2 size={12} />
                           </button>
-                          <button onClick={() => handleDeleteCertificate(cert._id)} className="btn btn-outline" style={{ padding: '0.35rem 0.5rem', color: 'var(--accent-red)' }} title="Delete">
+                          <button onClick={() => handleDeletePortfolioDoc(doc._id)} className="btn btn-outline" style={{ padding: '0.3rem 0.45rem', color: 'var(--accent-red)' }} title="Delete">
                             <Trash2 size={12} />
                           </button>
                         </div>
                       </div>
                     </div>
-                  ))}
-                  {getFilteredCertificates().length === 0 && (
-                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }} className="glass-card">
-                      No certificates match your search or filter options.
+                  );
+                })}
+
+                {/* Empty state */}
+                {getFilteredDocs().length === 0 && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <div className="glass-card" style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
+                      <FileText size={48} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
+                      <div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white', marginBottom: '0.4rem' }}>
+                          {docSearch || docCategoryFilter ? 'No documents match your filters.' : 'No documents uploaded yet.'}
+                        </div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                          {docSearch || docCategoryFilter
+                            ? 'Try adjusting your search or filter.'
+                            : 'Click "Add Document" to upload your resume, certificates, and more.'}
+                        </p>
+                      </div>
+                      {!docSearch && !docCategoryFilter && (
+                        <button onClick={() => openDocModal()} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <Plus size={16} /> Add Your First Document
+                        </button>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -12,6 +12,7 @@ const {
   getCompanyProfile,
   updateCompanyProfile
 } = require('../controllers/recruiterController');
+const { getCompany, updateCompany } = require('../controllers/companyController');
 
 const router = express.Router();
 
@@ -38,5 +39,10 @@ router.route('/bookmarks')
 router.route('/bookmarks/:developerId')
   .put(updateBookmark)
   .delete(removeBookmark);
+
+// Company Details
+router.route('/company')
+  .get(getCompany)
+  .put(updateCompany);
 
 module.exports = router;

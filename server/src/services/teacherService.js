@@ -232,10 +232,199 @@ const getDepartmentStats = async (teacher) => {
   };
 };
 
+/**
+ * Verification: Approve certificates, projects, skills, achievements
+ */
+const verifyStudentItem = async (studentId, itemType, itemId, teacherId) => {
+  const student = await User.findById(studentId);
+  if (!student) throw new Error('Student not found');
+
+  if (itemType === 'projects') {
+    const project = await Project.findById(itemId);
+    if (!project) throw new Error('Project not found');
+    project.featured = true; // Mark as verified/featured
+    await project.save();
+  } else if (itemType === 'certificates') {
+    const cert = student.certificates.id(itemId);
+    if (!cert) throw new Error('Certificate not found');
+    cert.isVerified = true;
+    cert.verifiedBy = teacherId;
+    await student.save();
+  } else if (itemType === 'achievements') {
+    const ach = student.achievements.id(itemId);
+    if (!ach) throw new Error('Achievement not found');
+    ach.isVerified = true;
+    ach.verifiedBy = teacherId;
+    await student.save();
+  } else if (itemType === 'skillsList') {
+    const skill = student.skillsList.id(itemId);
+    if (!skill) throw new Error('Skill not found');
+    skill.isVerified = true;
+    skill.verifiedBy = teacherId;
+    await student.save();
+  } else if (itemType === 'platforms') {
+    student.isVerified = true;
+    await student.save();
+  } else {
+    throw new Error('Invalid item type for verification');
+  }
+
+  // Check if student has verified items and flag student profile as verified
+  const hasVerifiedProject = await Project.exists({ user: studentId, featured: true });
+  const hasVerifiedCert = student.certificates.some(c => c.isVerified);
+  if (hasVerifiedProject || hasVerifiedCert) {
+    student.isVerified = true;
+    await student.save();
+  }
+
+  // Create notification for student
+  const { createNotification } = require('./notificationService');
+  await createNotification({
+    recipientId: studentId,
+    senderId: teacherId,
+    type: 'general',
+    title: 'Verification Approved',
+    message: `Your ${itemType} item has been verified by your instructor.`,
+  });
+
+  return { success: true };
+};
+
+/**
+ * Recommend student to a recruiter
+ */
+const recommendStudent = async (studentId, recruiterId, teacherId) => {
+  const student = await User.findById(studentId);
+  const recruiter = await User.findById(recruiterId);
+  const teacher = await User.findById(teacherId);
+
+  if (!student || !recruiter) throw new Error('Student or Recruiter not found');
+
+  const { createNotification } = require('./notificationService');
+  await createNotification({
+    recipientId: recruiterId,
+    senderId: teacherId,
+    type: 'general',
+    title: 'Teacher Recommendation',
+    message: `${teacher.name} has recommended candidate ${student.name} (${student.preferredDomain || 'Software Developer'}) for recruitment.`,
+    metadata: { studentId: student._id },
+  });
+
+  return { success: true };
+};
+
+/**
+ * Batch comparison analytics
+ */
+const getBatchAnalytics = async (teacher) => {
+  const query = buildTeacherScopeQuery(teacher);
+  const students = await User.find(query).select('scores university placementStatus placementCTC');
+
+  const batches = ['2024', '2025', '2026'];
+  const analytics = {};
+
+  batches.forEach(b => {
+    analytics[b] = {
+      total: 0,
+      placed: 0,
+      avgScore: 0,
+      highestPackage: 0,
+      totalScore: 0,
+    };
+  });
+
+  students.forEach(s => {
+    const b = s.university?.batch || s.graduationYear || '2025';
+    if (analytics[b]) {
+      analytics[b].total += 1;
+      if (['Placed', 'Joined', 'Placed / Hired', 'Offer Accepted'].includes(s.placementStatus)) {
+        analytics[b].placed += 1;
+      }
+      analytics[b].totalScore += (s.scores?.overall || 0);
+
+      // CTC extraction
+      const ctcStr = s.placementCTC || '';
+      const ctcNum = parseFloat(ctcStr.replace(/[^0-9.]/g, ''));
+      if (!isNaN(ctcNum) && ctcNum > analytics[b].highestPackage) {
+        analytics[b].highestPackage = ctcNum;
+      }
+    }
+  });
+
+  batches.forEach(b => {
+    if (analytics[b].total > 0) {
+      analytics[b].avgScore = Math.round(analytics[b].totalScore / analytics[b].total);
+      analytics[b].placementRate = Math.round((analytics[b].placed / analytics[b].total) * 100);
+    } else {
+      analytics[b].placementRate = 0;
+    }
+  });
+
+  return analytics;
+};
+
+/**
+ * Generate PDF report inside memory stream
+ */
+const generatePdfReport = async (teacher, type) => {
+  const query = buildTeacherScopeQuery(teacher);
+  const students = await User.find(query).select('name email scores university placementStatus placementCTC');
+
+  const PDFDocument = require('pdfkit');
+  const doc = new PDFDocument({ margin: 50 });
+
+  // design styling
+  doc.fontSize(22)
+     .font('Helvetica-Bold')
+     .text('MAVI LINKING — CAMPUS PLACEMENT REPORT', 50, 50);
+
+  doc.fontSize(10)
+     .fillColor('#71717a')
+     .text(`Generated By: ${teacher.name} | Date: ${new Date().toLocaleDateString()}`, 50, 80);
+
+  doc.moveTo(50, 100).lineTo(550, 100).strokeColor('#8b5cf6').stroke();
+
+  doc.fontSize(14)
+     .fillColor('#000000')
+     .text(`Report Type: ${type.toUpperCase()}`, 50, 120);
+
+  let y = 160;
+  doc.fontSize(10).font('Helvetica-Bold').fillColor('#8b5cf6');
+  doc.text('Student Name', 50, y);
+  doc.text('Batch', 200, y);
+  doc.text('Score', 280, y);
+  doc.text('Status', 350, y);
+  doc.text('Package', 480, y);
+
+  doc.moveTo(50, y + 15).lineTo(550, y + 15).strokeColor('#a1a1aa').stroke();
+  y += 25;
+
+  doc.font('Helvetica').fillColor('#27272a');
+  students.forEach((s, idx) => {
+    if (y > doc.page.height - 80) {
+      doc.addPage();
+      y = 50;
+    }
+    doc.text(s.name, 50, y);
+    doc.text(s.university?.batch || 'N/A', 200, y);
+    doc.text((s.scores?.overall || 0).toString(), 280, y);
+    doc.text(s.placementStatus || 'Available', 350, y);
+    doc.text(s.placementCTC || 'N/A', 480, y);
+    y += 20;
+  });
+
+  doc.end();
+  return doc;
+};
+
 module.exports = {
   getStudentsForTeacher,
   getStudentDetail,
   getPlacementReadiness,
   getDepartmentLeaderboard,
   getDepartmentStats,
+  verifyStudentItem,
+  recommendStudent,
+  getBatchAnalytics,
+  generatePdfReport,
 };

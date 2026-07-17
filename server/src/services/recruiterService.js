@@ -113,7 +113,7 @@ const getRecruiterStats = async (recruiter) => {
 const searchDevelopers = async (filters = {}, recruiter = null) => {
   const {
     skills, minScore, maxScore, tier,
-    university, department,
+    university, department, graduationYear, experienceLevel, isVerified,
     page = 1, limit = 20, sortBy = 'scores.overall', order = 'desc',
   } = filters;
 
@@ -121,6 +121,9 @@ const searchDevelopers = async (filters = {}, recruiter = null) => {
 
   if (minScore) query['scores.overall'] = { ...query['scores.overall'], $gte: parseInt(minScore) };
   if (maxScore) query['scores.overall'] = { ...query['scores.overall'], $lte: parseInt(maxScore) };
+  if (graduationYear) query['university.batch'] = graduationYear;
+  if (experienceLevel) query['experienceLevel'] = experienceLevel;
+  if (isVerified !== undefined) query['isVerified'] = isVerified === 'true';
 
   // Apply recruiter's scoped access
   if (recruiter && recruiter.allowedColleges && recruiter.allowedColleges.length > 0) {

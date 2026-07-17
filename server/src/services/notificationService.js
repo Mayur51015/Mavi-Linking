@@ -52,8 +52,24 @@ const markAllAsRead = async (userId) => {
 };
 
 /**
- * Get unread notification count.
+ * Create a new notification and emit via socket.io
  */
+const createNotification = async (data) => {
+  const notification = await RecruitmentNotification.create(data);
+  try {
+    const { getIO } = require('../config/socket');
+    const io = getIO();
+    if (io) {
+      io.to(data.recipientId.toString()).emit('notification', {
+        ...notification.toObject(),
+      });
+    }
+  } catch (err) {
+    // Socket may not be initialized in tests — silently ignore
+  }
+  return notification;
+};
+
 const getUnreadCount = async (userId) => {
   return RecruitmentNotification.countDocuments({ recipientId: userId, isRead: false });
 };
@@ -63,4 +79,5 @@ module.exports = {
   markAsRead,
   markAllAsRead,
   getUnreadCount,
+  createNotification,
 };

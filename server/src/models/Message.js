@@ -7,23 +7,25 @@ const messageSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    receiverId: {
+    recipientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
     content: {
       type: String,
-      required: true,
+      required: [true, 'Message content is required'],
+      trim: true,
     },
-    isRead: {
-      type: Boolean,
-      default: false,
+    status: {
+      type: String,
+      enum: ['sent', 'delivered', 'read'],
+      default: 'sent',
     },
   },
   { timestamps: true }
 );
 
-messageSchema.index({ senderId: 1, receiverId: 1 });
+messageSchema.index({ senderId: 1, recipientId: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Message', messageSchema);

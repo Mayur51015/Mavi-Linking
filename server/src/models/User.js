@@ -94,6 +94,54 @@ const userSchema = new mongoose.Schema(
     placementCTC: { type: String, default: '' },
     placementDate: { type: Date, default: null },
 
+    // Security & Auth Upgrades
+    emailVerified: { type: Boolean, default: false },
+    verificationToken: { type: String, default: null },
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
+    refreshToken: { type: String, default: null },
+
+    // Documents & Profile sections
+    documents: {
+      resume: { type: String, default: '' },
+      aadhaar: { type: String, default: '' },
+      pan: { type: String, default: '' },
+      marksheet: { type: String, default: '' },
+    },
+    certificates: [
+      {
+        title: { type: String, required: true },
+        issuer: { type: String, default: '' },
+        date: { type: Date, default: null },
+        fileUrl: { type: String, default: '' },
+        isVerified: { type: Boolean, default: false },
+        verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      }
+    ],
+    achievements: [
+      {
+        title: { type: String, required: true },
+        description: { type: String, default: '' },
+        date: { type: Date, default: null },
+        isVerified: { type: Boolean, default: false },
+        verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      }
+    ],
+    skillsList: [
+      {
+        name: { type: String, required: true },
+        isVerified: { type: Boolean, default: false },
+        verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      }
+    ],
+
+    // QR Profile Views Analytics
+    qrAnalytics: {
+      scanCount: { type: Number, default: 0 },
+      lastScan: { type: Date, default: null },
+      devices: [{ type: String }],
+    },
+
     profileSettings: {
       theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
       showEmail: { type: Boolean, default: false },

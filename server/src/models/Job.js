@@ -9,7 +9,7 @@ const jobSchema = new mongoose.Schema(
     },
     companyId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'CompanyProfile',
+      ref: 'Company',
       required: true,
     },
     title: {
@@ -21,34 +21,37 @@ const jobSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Job description is required'],
     },
-    requiredSkills: [{ type: String }],
-    salary: {
-      type: String, // e.g., '10 LPA', '$100k - $120k'
-      default: 'Not disclosed',
+    skills: {
+      type: [String],
+      default: [],
+    },
+    department: {
+      type: [String],
+      default: [],
+    },
+    graduationYear: {
+      type: [String],
+      default: [],
     },
     experience: {
-      type: String, // e.g., 'Fresher', '1-3 Years'
-      default: '',
+      type: String,
+      default: 'Fresher',
     },
-    location: {
+    package: {
       type: String,
       default: '',
-    },
-    lastDate: {
-      type: Date,
-    },
-    employmentType: {
-      type: String,
-      enum: ['Full-time', 'Part-time', 'Internship', 'Contract'],
-      default: 'Full-time',
     },
     status: {
       type: String,
-      enum: ['Open', 'Closed'],
-      default: 'Open',
+      enum: ['open', 'closed'],
+      default: 'open',
     },
   },
   { timestamps: true }
 );
+
+jobSchema.index({ recruiterId: 1 });
+jobSchema.index({ companyId: 1 });
+jobSchema.index({ status: 1 });
 
 module.exports = mongoose.model('Job', jobSchema);

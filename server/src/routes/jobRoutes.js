@@ -3,23 +3,29 @@ const { protect } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleMiddleware');
 const {
   createJob,
-  getJobs,
-  getJobById,
+  getAllJobs,
+  getRecruiterJobs,
+  getJobDetails,
   updateJob,
-  deleteJob
+  deleteJob,
+  applyToJob,
 } = require('../controllers/jobController');
 
 const router = express.Router();
 
-// Publicly viewable jobs, but let's make it protected for now to candidates and recruiters
 router.use(protect);
 
-router.get('/', getJobs);
-router.get('/:id', getJobById);
+router.route('/')
+  .get(getAllJobs)
+  .post(requireRole('recruiter', 'admin'), createJob);
 
-router.use(requireRole('recruiter', 'admin'));
-router.post('/', createJob);
-router.put('/:id', updateJob);
-router.delete('/:id', deleteJob);
+router.get('/recruiter', requireRole('recruiter', 'admin'), getRecruiterJobs);
+
+router.route('/:id')
+  .get(getJobDetails)
+  .put(requireRole('recruiter', 'admin'), updateJob)
+  .delete(requireRole('recruiter', 'admin'), deleteJob);
+
+router.post('/:id/apply', requireRole('user', 'admin'), applyToJob);
 
 module.exports = router;

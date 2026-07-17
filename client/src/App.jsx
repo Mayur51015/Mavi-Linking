@@ -38,19 +38,37 @@ const AIInsights = React.lazy(() => import('./pages/AIInsights'));
 const ProjectManagement = React.lazy(() => import('./pages/ProjectManagement'));
 const CompatibilityPage = React.lazy(() => import('./pages/CompatibilityPage'));
 const StudentAvailability = React.lazy(() => import('./pages/StudentAvailability'));
+const StudentJobs = React.lazy(() => import('./pages/StudentJobs'));
 
 // Recruiter Pages (Lazy)
-const JobManagement = React.lazy(() => import('./pages/recruiter/JobManagement'));
+const RecruiterOverview = React.lazy(() => import('./pages/recruiter/RecruiterOverview'));
+const RecruiterSearch = React.lazy(() => import('./pages/recruiter/RecruiterSearch'));
+const RecruiterBookmarks = React.lazy(() => import('./pages/recruiter/RecruiterBookmarks'));
+const RecruiterCompare = React.lazy(() => import('./pages/recruiter/RecruiterCompare'));
+const RecruitmentPipelinePage = React.lazy(() => import('./pages/recruiter/RecruitmentPipeline'));
 const CompanyProfile = React.lazy(() => import('./pages/recruiter/CompanyProfile'));
-const Analytics = React.lazy(() => import('./pages/recruiter/Analytics'));
-const HiringPipeline = React.lazy(() => import('./pages/recruiter/HiringPipeline'));
+const JobManagement = React.lazy(() => import('./pages/recruiter/JobManagement'));
+
+// Teacher Pages (Lazy)
+const TeacherDashboard = React.lazy(() => import('./pages/teacher/TeacherDashboard'));
+const TeacherStudents = React.lazy(() => import('./pages/teacher/TeacherStudents'));
+const TeacherReadiness = React.lazy(() => import('./pages/teacher/TeacherReadiness'));
+const TeacherLeaderboard = React.lazy(() => import('./pages/teacher/TeacherLeaderboard'));
+const PlacementDrives = React.lazy(() => import('./pages/teacher/PlacementDrives'));
+const StudentVerification = React.lazy(() => import('./pages/teacher/StudentVerification'));
+
+// Admin Pages (Lazy)
+const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
+
+// Messages (Lazy)
+const Messages = React.lazy(() => import('./pages/Messages'));
 
 // Public Pages (Lazy)
 const PublicPortfolio = React.lazy(() => import('./pages/PublicPortfolio'));
 const PublicIdentity = React.lazy(() => import('./pages/PublicIdentity'));
 
 const CollegeDashboard = React.lazy(() => import('./pages/CollegeDashboard'));
-const RecruiterDashboard = React.lazy(() => import('./pages/RecruiterDashboard'));
+
 
 const App = () => {
   return (
@@ -94,6 +112,11 @@ const App = () => {
                 <StudentAvailability />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/jobs" element={
+              <ProtectedRoute roles={['user', 'admin']}>
+                <StudentJobs />
+              </ProtectedRoute>
+            } />
 
             {/* ─── Recruiter Dashboard ───────────────────────────── */}
             <Route path="/dashboard/recruiter" element={
@@ -101,7 +124,17 @@ const App = () => {
                 <RecruiterDashboard />
               </ProtectedRoute>
             } />
-            <Route path="/dashboard/recruiter/pipeline" element={
+            <Route path="/dashboard/recruiter/company" element={
+              <ProtectedRoute roles={['recruiter', 'admin']}>
+                <CompanyProfile />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/recruiter/jobs" element={
+              <ProtectedRoute roles={['recruiter', 'admin']}>
+                <JobManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/recruiter/search" element={
               <ProtectedRoute roles={['recruiter', 'admin']}>
                 <HiringPipeline />
               </ProtectedRoute>
@@ -118,7 +151,60 @@ const App = () => {
             } />
             <Route path="/dashboard/recruiter/analytics" element={
               <ProtectedRoute roles={['recruiter', 'admin']}>
-                <Analytics />
+                <RecruitmentPipelinePage />
+              </ProtectedRoute>
+            } />
+
+            {/* ─── Teacher Dashboard ─────────────────────────────── */}
+            <Route path="/dashboard/teacher" element={
+              <ProtectedRoute roles={['teacher', 'admin']}>
+                <TeacherDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/teacher/students" element={
+              <ProtectedRoute roles={['teacher', 'admin']}>
+                <TeacherStudents />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/teacher/readiness" element={
+              <ProtectedRoute roles={['teacher', 'admin']}>
+                <TeacherReadiness />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/teacher/leaderboard" element={
+              <ProtectedRoute roles={['teacher', 'admin']}>
+                <TeacherLeaderboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/teacher/drives" element={
+              <ProtectedRoute roles={['teacher', 'admin']}>
+                <PlacementDrives />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/teacher/verification" element={
+              <ProtectedRoute roles={['teacher', 'admin']}>
+                <StudentVerification />
+              </ProtectedRoute>
+            } />
+
+            {/* ─── Super Admin Dashboard ─────────────────────────── */}
+            <Route path="/dashboard/admin" element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+
+            {/* ─── Communication Inbox ────────────────────────────── */}
+            <Route path="/dashboard/messages" element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            } />
+
+            {/* ─── Legacy Routes (backward compat) ──────────────── */}
+            <Route path="/dashboard/college" element={
+              <ProtectedRoute>
+                <CollegeDashboard />
               </ProtectedRoute>
             } />
 

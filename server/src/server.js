@@ -23,7 +23,7 @@ const aiRoutes = require('./routes/aiRoutes'); // new AI routes
 const publicRoutes = require('./routes/publicRoutes');
 const redirectRoutes = require('./routes/redirectRoutes');
 const verificationRoutes = require('./routes/verificationRoutes');
-const recruiterRoutes = require('./routes/recruiterRoutes');
+
 const educationRoutes = require('./routes/educationRoutes');
 const leetcodeRoutes = require('./routes/leetcodeRoutes');
 const compatibilityRoutes = require('./routes/compatibilityRoutes');
@@ -98,6 +98,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+
+
 // ─── API Routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/platforms', platformRoutes);
@@ -106,13 +108,14 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/verification', verificationRoutes);
-app.use('/api/recruiter', recruiterRoutes);
+
 app.use('/api/education', educationRoutes);
 app.use('/api/compatibility', compatibilityRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/leetcode', leetcodeRoutes);
 app.use('/api/placement', placementRoutes);
 app.use('/api/notifications', notificationRoutes);
+
 app.use('/api', publicRoutes);
 app.use('/api', redirectRoutes);
 

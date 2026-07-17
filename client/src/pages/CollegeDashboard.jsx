@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Users, BarChart3, GraduationCap, TrendingUp } from 'lucide-react';
+import { Search, Users, BarChart3, GraduationCap, TrendingUp, Calendar, ShieldCheck, PieChart } from 'lucide-react';
 import UserLayout from '../layouts/UserLayout';
 import api from '../api/axios';
+
+import PlacementDrives from './teacher/PlacementDrives';
+import StudentVerification from './teacher/StudentVerification';
+import DepartmentAnalytics from './teacher/DepartmentAnalytics';
 
 const CollegeDashboard = () => {
   const [university, setUniversity] = useState('');
@@ -13,7 +17,7 @@ const CollegeDashboard = () => {
   const [tab, setTab] = useState('students');
   const [loading, setLoading] = useState(false);
 
-  const fetchStudents = async () => {
+  async function fetchStudents() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -25,7 +29,7 @@ const CollegeDashboard = () => {
     finally { setLoading(false); }
   };
 
-  const fetchReadiness = async () => {
+  async function fetchReadiness() {
     try {
       const params = new URLSearchParams();
       if (university) params.set('university', university);
@@ -35,7 +39,7 @@ const CollegeDashboard = () => {
     } catch (err) { console.error(err); }
   };
 
-  const fetchLeaderboard = async () => {
+  async function fetchLeaderboard() {
     try {
       const params = new URLSearchParams();
       if (university) params.set('university', university);
@@ -46,9 +50,13 @@ const CollegeDashboard = () => {
   };
 
   useEffect(() => {
-    if (tab === 'students') fetchStudents();
-    if (tab === 'readiness') fetchReadiness();
-    if (tab === 'leaderboard') fetchLeaderboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (tab === 'students') setTimeout(() => fetchStudents(), 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (tab === 'readiness') setTimeout(() => fetchReadiness(), 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (tab === 'leaderboard') setTimeout(() => fetchLeaderboard(), 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   const handleSearch = () => {
@@ -58,6 +66,10 @@ const CollegeDashboard = () => {
   };
 
   const readinessColors = { excellent: '#10b981', good: '#3b82f6', developing: '#f59e0b', beginner: '#ef4444' };
+
+  if (tab === 'drives') return <div style={{marginTop: '-2rem'}}><PlacementDrives /></div>;
+  if (tab === 'verify') return <div style={{marginTop: '-2rem'}}><StudentVerification /></div>;
+  if (tab === 'analytics') return <div style={{marginTop: '-2rem'}}><DepartmentAnalytics /></div>;
 
   return (
     <UserLayout>
@@ -77,8 +89,11 @@ const CollegeDashboard = () => {
         <button onClick={handleSearch} className="btn btn-primary btn-sm"><Search size={16} /> Search</button>
       </div>
 
-      <div className="tabs">
+      <div className="tabs" style={{ flexWrap: 'wrap', marginBottom: '2rem' }}>
         {[
+          { key: 'analytics', label: 'Analytics', icon: <PieChart size={16} /> },
+          { key: 'drives', label: 'Placement Drives', icon: <Calendar size={16} /> },
+          { key: 'verify', label: 'Verify Profiles', icon: <ShieldCheck size={16} /> },
           { key: 'students', label: 'Students', icon: <Users size={16} /> },
           { key: 'readiness', label: 'Placement Readiness', icon: <TrendingUp size={16} /> },
           { key: 'leaderboard', label: 'Leaderboard', icon: <BarChart3 size={16} /> },

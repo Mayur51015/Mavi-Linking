@@ -7,6 +7,9 @@ const {
   getReadiness,
   getLeaderboard,
   getDepartmentStats,
+  createPlacementDrive,
+  getPlacementDrives,
+  verifyStudent
 } = require('../controllers/teacherController');
 
 const router = express.Router();
@@ -14,11 +17,19 @@ const router = express.Router();
 // All teacher routes require authentication + teacher role
 router.use(protect, requireRole('teacher', 'admin'));
 
-// Teacher auto-scoped to their own college/department
-router.get('/students', getMyStudents);
-router.get('/students/:studentId', getStudentDetail);
+// Stats & Leaderboard
+router.get('/stats', getDepartmentStats);
 router.get('/readiness', getReadiness);
 router.get('/leaderboard', getLeaderboard);
-router.get('/stats', getDepartmentStats);
+
+// Placement Drives
+router.route('/drives')
+  .post(createPlacementDrive)
+  .get(getPlacementDrives);
+
+// Students
+router.get('/students', getMyStudents);
+router.get('/students/:studentId', getStudentDetail);
+router.put('/students/:studentId/verify', verifyStudent);
 
 module.exports = router;

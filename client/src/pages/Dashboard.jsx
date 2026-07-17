@@ -15,6 +15,7 @@ import GrowthChart from '../components/GrowthChart';
 import LeaderboardWidget from '../components/LeaderboardWidget';
 import ReportGenerator from '../components/ReportGenerator';
 import LeetCodeSection from '../components/leetcode/LeetCodeSection';
+import QRAnalyticsDashboard from '../components/QRAnalyticsDashboard';
 import Messages from '../pages/Messages';
 
 const Dashboard = () => {
@@ -627,6 +628,10 @@ const Dashboard = () => {
               </div>
 
               <LeetCodeSection />
+              
+              <div style={{ marginTop: '3rem' }}>
+                <QRAnalyticsDashboard />
+              </div>
             </div>
           )}
 

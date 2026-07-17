@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Terminal, GitBranch, Code2, Globe, Database, ExternalLink,
@@ -22,6 +22,7 @@ const tierColors = {
 
 const PublicIdentity = () => {
   const { username } = useParams();
+  const [searchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -41,6 +42,43 @@ const PublicIdentity = () => {
     };
     fetchProfile();
   }, [username]);
+
+  // QR Analytics Tracking
+  useEffect(() => {
+    const recordScan = async () => {
+      try {
+        let sessionId = sessionStorage.getItem('mavi_visitor_session');
+        if (!sessionId) {
+          sessionId = crypto.randomUUID();
+          sessionStorage.setItem('mavi_visitor_session', sessionId);
+        }
+        
+        let visitorType = 'Guest';
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            if (user.role) {
+              visitorType = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+            }
+          } catch(e) {}
+        }
+
+        const ref = searchParams.get('ref') || 'Unknown';
+        
+        // Always track if we have a ref, or if it's just a general visit we can track as 'Shared Link'
+        // But let's fire the event for all visits to ensure we capture analytics
+        await api.post(`/public/qr/${username}/scan`, {
+          ref,
+          visitorType,
+          sessionId
+        });
+      } catch (err) {
+        console.error('Failed to record analytics', err);
+      }
+    };
+    recordScan();
+  }, [username, searchParams]);
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

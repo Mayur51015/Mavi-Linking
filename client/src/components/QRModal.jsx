@@ -30,11 +30,22 @@ const QRModal = ({ username, onClose }) => {
     }
   };
 
-  const handleDownload = () => {
-    if (!qrData?.dataUrl) return;
+  const handleDownloadPng = () => {
+    if (!qrData?.fileUrl) return;
     const link = document.createElement('a');
+    link.href = qrData.fileUrl;
+    // Set target to _blank to open image directly since it's a cross-origin static file
+    link.target = '_blank';
     link.download = `mavi-qr-${username}.png`;
-    link.href = qrData.dataUrl;
+    link.click();
+  };
+
+  const handleDownloadSvg = () => {
+    if (!qrData?.svgUrl) return;
+    const link = document.createElement('a');
+    link.href = qrData.svgUrl;
+    link.target = '_blank';
+    link.download = `mavi-qr-${username}.svg`;
     link.click();
   };
 
@@ -81,10 +92,15 @@ const QRModal = ({ username, onClose }) => {
                 Scan to view <strong>@{username}</strong>'s developer identity
               </p>
 
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-                <button onClick={handleDownload} className="btn btn-primary btn-sm">
-                  <Download size={16} /> Download
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
+                <button onClick={handleDownloadPng} className="btn btn-primary btn-sm">
+                  <Download size={16} /> PNG
                 </button>
+                {qrData.svgUrl && (
+                  <button onClick={handleDownloadSvg} className="btn btn-outline btn-sm">
+                    <Download size={16} /> SVG
+                  </button>
+                )}
                 <button onClick={handleCopyLink} className="btn btn-outline btn-sm">
                   {copied ? <Check size={16} /> : <Copy size={16} />}
                   {copied ? 'Copied!' : 'Copy Link'}

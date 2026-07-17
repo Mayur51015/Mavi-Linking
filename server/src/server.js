@@ -36,6 +36,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
+const qrAnalyticsRoutes = require('./routes/qrAnalyticsRoutes');
 const { init } = require('./config/socket'); // socket.io
 const http = require('http');
 
@@ -125,6 +126,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/auth/qr-analytics', qrAnalyticsRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', redirectRoutes);
 

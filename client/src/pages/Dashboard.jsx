@@ -5,7 +5,7 @@ import api from '../api/axios';
 import {
   Globe, GitBranch, Code2, Timeline, CheckCircle, FileText,
   Briefcase, Calendar, BarChart3, AlertCircle, Upload, QrCode,
-  Eye, Download, Plus, Edit2, Trash2, Search
+  Eye, Download, Plus, Edit2, Trash2, Search, X
 } from 'lucide-react';
 import UserLayout from '../layouts/UserLayout';
 import DNACard from '../components/DNACard';
@@ -30,6 +30,16 @@ const Dashboard = () => {
   const [projectsCount, setProjectsCount] = useState(0);
   const [announcements, setAnnouncements] = useState([]);
   const [uploadStatus, setUploadStatus] = useState({});
+
+  // Toast notification state
+  const [toast, setToast] = useState(null); // { type: 'success' | 'error', message: '' }
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  // Doc form error state
+  const [docError, setDocError] = useState('');
 
   // Certificate states
   const [certModalOpen, setCertModalOpen] = useState(false);
@@ -136,12 +146,13 @@ const Dashboard = () => {
   const calculateCompletion = () => {
     let score = 0;
     const missing = [];
-    if (user?.avatar) score += 15; else missing.push('Profile Avatar');
-    if (user?.bio) score += 15; else missing.push('Bio Description');
+    if (user?.avatar) score += 10; else missing.push('Profile Avatar');
+    if (user?.bio) score += 10; else missing.push('Bio Description');
     if (user?.university?.name) score += 20; else missing.push('College Details');
     if (user?.platforms?.github?.username) score += 15; else missing.push('GitHub Link');
     if (projectsCount > 0) score += 15; else missing.push('Showcase Projects');
-    if (user?.certificates?.length > 0) score += 20; else missing.push('Certificates');
+    if (user?.certificates?.length > 0) score += 15; else missing.push('Certificates');
+    if (user?.portfolioDocs?.length > 0) score += 15; else missing.push('Portfolio Documents');
     return { score, missing };
   };
 
@@ -423,12 +434,33 @@ const Dashboard = () => {
       setDocDescription('');
       setDocFile(null);
     }
+    setDocError('');
     setDocModalOpen(true);
+  };
+
+  const validateDocFile = (file) => {
+    if (!file) return '';
+    const allowed = ['.pdf', '.jpg', '.jpeg', '.png'];
+    const name = file.name.toLowerCase();
+    const hasValidExt = allowed.some(ext => name.endsWith(ext));
+    if (!hasValidExt) return `Invalid file type. Allowed: ${allowed.join(', ')}`;
+    if (file.size > 10 * 1024 * 1024) return 'File is too large. Maximum size is 10 MB.';
+    return '';
   };
 
   const handleSaveDoc = async (e) => {
     e.preventDefault();
-    if (!docTitle.trim()) return;
+    setDocError('');
+    if (!docTitle.trim()) { setDocError('Document title is required.'); return; }
+    if (!docCategory) { setDocError('Please select a category.'); return; }
+
+    // File validation
+    if (!editingDoc && !docFile) { setDocError('Please select a file to upload.'); return; }
+    if (docFile) {
+      const fileErr = validateDocFile(docFile);
+      if (fileErr) { setDocError(fileErr); return; }
+    }
+
     setSavingDoc(true);
     try {
       const formData = new FormData();
@@ -444,9 +476,11 @@ const Dashboard = () => {
       }
       setUser(res.data.data.user);
       setDocModalOpen(false);
+      showToast('success', editingDoc ? 'Document updated successfully!' : 'Document uploaded successfully!');
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to save document.');
+      const msg = err.response?.data?.message || (err.code === 'ERR_NETWORK' ? 'Network error. Please check your connection.' : 'Failed to save document.');
+      setDocError(msg);
     } finally {
       setSavingDoc(false);
     }
@@ -1069,6 +1103,207 @@ const Dashboard = () => {
               </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Portfolio Document Modal */}
+      <AnimatePresence>
+        {docModalOpen && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, padding: '1rem'
+          }} onClick={(e) => { if (e.target === e.currentTarget && !savingDoc) setDocModalOpen(false); }}>
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card-static"
+              style={{ width: '100%', maxWidth: '560px', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => { if (!savingDoc) setDocModalOpen(false); }}
+                style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem' }}
+                title="Close"
+              >
+                <X size={20} />
+              </button>
+
+              <div>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.25rem' }}>
+                  {editingDoc ? 'Edit Document' : 'Add New Document'}
+                </h2>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {editingDoc ? 'Update document details or replace the file.' : 'Upload a document to your portfolio.'}
+                </p>
+              </div>
+
+              {/* Error banner */}
+              {docError && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.75rem 1rem', borderRadius: '8px',
+                  background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#f87171', fontSize: '0.8rem'
+                }}>
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                  {docError}
+                </div>
+              )}
+
+              <form onSubmit={handleSaveDoc} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {/* Title */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Document Title *</label>
+                  <input
+                    type="text"
+                    value={docTitle}
+                    onChange={(e) => { setDocTitle(e.target.value); setDocError(''); }}
+                    placeholder="e.g. Resume - July 2026"
+                    style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                {/* Category */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Category *</label>
+                  <select
+                    value={docCategory}
+                    onChange={(e) => { setDocCategory(e.target.value); setDocError(''); }}
+                    style={{ padding: '0.6rem 0.8rem', background: '#09090b', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem', outline: 'none', cursor: 'pointer' }}
+                  >
+                    {PORT_CATEGORIES.map(c => <option key={c} value={c}>{c === 'Marksheet' ? 'Marksheet / Transcript' : c}</option>)}
+                  </select>
+                </div>
+
+                {/* Description */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Description (optional)</label>
+                  <textarea
+                    rows={2}
+                    value={docDescription}
+                    onChange={(e) => setDocDescription(e.target.value)}
+                    placeholder="Brief description of this document..."
+                    style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
+                  />
+                </div>
+
+                {/* File picker */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                    Select File (PDF, JPG, PNG — Max 10MB) {editingDoc ? '' : '*'}
+                  </label>
+                  <div style={{
+                    border: '1px dashed var(--border-color)', borderRadius: '8px',
+                    padding: '1.25rem', textAlign: 'center',
+                    background: 'rgba(255,255,255,0.01)', cursor: 'pointer',
+                    transition: 'border-color 0.2s'
+                  }}
+                    onClick={() => document.getElementById('portfolio-doc-file-input')?.click()}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--accent-purple)'; }}
+                    onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.borderColor = 'var(--border-color)';
+                      const file = e.dataTransfer.files[0];
+                      if (file) { setDocFile(file); setDocError(''); }
+                    }}
+                  >
+                    {docFile ? (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+                        <FileText size={20} style={{ color: 'var(--accent-purple)' }} />
+                        <div style={{ textAlign: 'left' }}>
+                          <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white' }}>{docFile.name}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            {(docFile.size / 1024 / 1024).toFixed(2)} MB
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setDocFile(null); }}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.2rem' }}
+                          title="Remove file"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <Upload size={24} style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }} />
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          Click to browse or drag & drop
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem', opacity: 0.6 }}>
+                          PDF, JPG, JPEG, PNG — up to 10 MB
+                        </div>
+                      </div>
+                    )}
+                    <input
+                      id="portfolio-doc-file-input"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) { setDocFile(file); setDocError(''); }
+                        e.target.value = '';
+                      }}
+                    />
+                  </div>
+                  {editingDoc && !docFile && editingDoc.originalName && (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      Current file: {editingDoc.originalName}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', justifyContent: 'end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                  <button type="button" className="btn btn-outline" onClick={() => setDocModalOpen(false)} disabled={savingDoc}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={savingDoc} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    {savingDoc ? (
+                      <><span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin-rotate 0.8s linear infinite' }} /> Uploading...</>
+                    ) : (
+                      <><Upload size={15} /> {editingDoc ? 'Save Changes' : 'Upload Document'}</>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 30, x: '-50%' }}
+            style={{
+              position: 'fixed', bottom: '2rem', left: '50%',
+              transform: 'translateX(-50%)', zIndex: 9999,
+              padding: '0.85rem 1.5rem', borderRadius: '10px',
+              display: 'flex', alignItems: 'center', gap: '0.6rem',
+              fontSize: '0.85rem', fontWeight: '600',
+              background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+              border: `1px solid ${toast.type === 'success' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+              color: toast.type === 'success' ? '#34d399' : '#f87171',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
+            }}
+          >
+            {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+            {toast.message}
+            <button onClick={() => setToast(null)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: '0.1rem', marginLeft: '0.5rem' }}>
+              <X size={14} />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </UserLayout>

@@ -268,7 +268,7 @@ const checkAndAwardBadges = async (user, projects, scoreData) => {
  */
 const updateAnalytics = async (user, projects) => {
   const currentMonth = new Date().toISOString().substring(0, 7); // e.g. '2026-07'
-  const views = user.qrAnalytics?.scanCount || 0;
+  const views = 0;
   const codingScore = user.scores?.overall || 0;
 
   await CareerAnalytics.findOneAndUpdate(

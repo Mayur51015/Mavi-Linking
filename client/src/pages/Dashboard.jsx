@@ -15,7 +15,6 @@ import GrowthChart from '../components/GrowthChart';
 import LeaderboardWidget from '../components/LeaderboardWidget';
 import ReportGenerator from '../components/ReportGenerator';
 import LeetCodeSection from '../components/leetcode/LeetCodeSection';
-import QRAnalyticsDashboard from '../components/QRAnalyticsDashboard';
 import Messages from '../pages/Messages';
 import TimelineWidget from '../components/TimelineWidget';
 import BadgeShowcase from '../components/BadgeShowcase';
@@ -684,10 +683,6 @@ const Dashboard = () => {
               </div>
 
               <LeetCodeSection />
-              
-              <div style={{ marginTop: '3rem' }}>
-                <QRAnalyticsDashboard />
-              </div>
             </div>
           )}
 
@@ -977,7 +972,7 @@ const Dashboard = () => {
           )}
 
           {activeTab === 'announcements' && (
-            <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+            <div className="animate-fade-in">
               {/* College Announcements */}
               <div className="glass-card-static" style={{ padding: '2rem' }}>
                 <h3 style={{ marginBottom: '1.5rem' }}>Campus Placement Notices</h3>
@@ -996,31 +991,6 @@ const Dashboard = () => {
                       No notifications or drive announcements posted yet.
                     </div>
                   )}
-                </div>
-              </div>
-
-              {/* QR Analytics Widget */}
-              <div className="glass-card-static" style={{ padding: '2rem', textAlign: 'center' }}>
-                <h3 style={{ marginBottom: '1rem' }}>QR Analytics</h3>
-                <QrCode size={48} style={{ color: 'var(--accent-cyan)', margin: '0 auto 1.5rem auto' }} />
-                
-                <div style={{ display: 'grid', gap: '0.75rem', textAlign: 'left', fontSize: '0.85rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Scan Views</span>
-                    <span style={{ fontWeight: '700' }}>{user?.qrAnalytics?.scanCount || 0}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Last Scan</span>
-                    <span>{user?.qrAnalytics?.lastScan ? new Date(user.qrAnalytics.lastScan).toLocaleDateString() : 'Never'}</span>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Top Scanned Devices</span>
-                    <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                      {user?.qrAnalytics?.devices?.slice(0, 3).map((d, i) => (
-                        <span key={i} className="badge badge-emerald" style={{ fontSize: '0.65rem' }}>{d}</span>
-                      )) || <span style={{ color: 'var(--text-muted)' }}>None</span>}
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

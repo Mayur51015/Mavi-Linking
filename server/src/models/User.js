@@ -176,12 +176,6 @@ const userSchema = new mongoose.Schema(
       }
     ],
 
-    // QR Profile Views Analytics
-    qrAnalytics: {
-      scanCount: { type: Number, default: 0 },
-      lastScan: { type: Date, default: null },
-      devices: [{ type: String }],
-    },
 
     profileSettings: {
       theme: { type: String, enum: ['dark', 'light'], default: 'dark' },

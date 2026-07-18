@@ -1,19 +1,32 @@
 const express = require('express');
-const { protect, authorize } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 const careerController = require('../controllers/careerController');
 
 const router = express.Router();
 
-// Get chronological timeline
-router.get('/timeline/:userId', protect, careerController.getTimeline);
+router.use(protect);
 
-// Get Badges
-router.get('/badges/:userId', protect, careerController.getBadges);
+// Standard endpoints
+router.get('/dashboard', careerController.getDashboard);
+router.get('/score', careerController.getScore);
+router.get('/timeline', careerController.getTimeline);
+router.get('/badges', careerController.getBadges);
+router.get('/insights', careerController.getInsights);
+router.get('/dna', careerController.getDNA);
+router.get('/skills', careerController.getSkills);
+router.get('/analytics', careerController.getAnalytics);
+router.get('/analysis', careerController.getAnalysis);
+router.post('/recalculate', careerController.recalculate);
+router.post('/analyze', careerController.analyze);
 
-// Get AI Insights
-router.get('/insights/:userId', protect, careerController.getInsights);
-
-// Sync and recalculate profile manually
-router.post('/sync-coding-profiles', protect, careerController.syncProfiles);
+// Legacy/Param-based endpoints for back compatibility / cross-profile checks
+router.get('/timeline/:userId', careerController.getTimeline);
+router.get('/badges/:userId', careerController.getBadges);
+router.get('/insights/:userId', careerController.getInsights);
+router.get('/dna/:userId', careerController.getDNA);
+router.get('/skills/:userId', careerController.getSkills);
+router.get('/analytics/:userId', careerController.getAnalytics);
+router.get('/analysis/:userId', careerController.getAnalysis);
+router.post('/sync-coding-profiles', careerController.syncProfiles);
 
 module.exports = router;

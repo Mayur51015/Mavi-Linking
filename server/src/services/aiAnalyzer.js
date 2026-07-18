@@ -4,6 +4,7 @@ const DNA = require('../models/DNA');
 const Ranking = require('../models/Ranking');
 const Analytics = require('../models/Analytics');
 const Project = require('../models/Project');
+const CareerSkillAnalysis = require('../models/CareerSkillAnalysis');
 
 /**
  * Build a rich developer profile summary for AI analysis.
@@ -91,33 +92,50 @@ const analyzeUser = async (user) => {
 
   if (!apiKey) {
     // Generate clean mock result based on user details and actual projects
-    const topSkills = user.skillsList && user.skillsList.length > 0
-      ? user.skillsList.map(s => s.name)
-      : (projects.length > 0 ? Array.from(new Set(projects.flatMap(p => p.technologies))) : ["JavaScript", "Node.js", "React", "MongoDB", "Express"]);
-      
+    const userSkills = user.skillsList ? user.skillsList.map(s => s.name) : [];
+    const projectTechs = projects.flatMap(p => p.technologies || []);
+    const uniqueTechs = Array.from(new Set([...userSkills, ...projectTechs])).map(t => t.trim());
+    const selectedTechs = uniqueTechs.length > 0 ? uniqueTechs.slice(0, 8) : ["JavaScript", "Node.js", "React", "MongoDB", "Express"];
+    
+    // Construct dynamic radar axes with realistic confidence scores
+    const radar = selectedTechs.map((tech) => {
+      let baseScore = 65;
+      const projectCount = projects.filter(p => p.technologies?.some(t => t.toLowerCase() === tech.toLowerCase())).length;
+      baseScore += projectCount * 10;
+      if (user.skillsList?.some(s => s.name.toLowerCase() === tech.toLowerCase())) {
+        baseScore += 10;
+      }
+      return { axis: tech, score: Math.min(baseScore, 98) };
+    });
+
+    const specialization = user.preferredDomain || (projectTechs.some(t => ['react', 'vue', 'angular', 'html', 'css'].includes(t.toLowerCase())) && projectTechs.some(t => ['node', 'express', 'mongodb', 'sql'].includes(t.toLowerCase())) ? "Full Stack Engineer" : (projectTechs.some(t => ['react', 'vue', 'angular', 'html', 'css'].includes(t.toLowerCase())) ? "Frontend Developer" : "Backend Developer"));
+    const confidence = Math.min(Math.round(50 + (user.profileCompletion || 0)/2 + (projects.length * 5)), 98);
+
     const confidenceScores = {};
-    topSkills.forEach(skill => {
-      confidenceScores[skill] = Math.floor(Math.random() * 21) + 75; // 75-95
+    radar.forEach(item => {
+      confidenceScores[item.axis] = item.score;
     });
 
     result = {
       insight: {
-        specialization: user.preferredDomain || "Full Stack Developer",
-        topSkills,
-        techStack: topSkills,
+        specialization,
+        topSkills: selectedTechs.slice(0, 4),
+        techStack: selectedTechs,
         confidenceScores,
+        radar,
+        confidence,
         strengths: [
-          "Strong candidate with solid academic performance",
-          "Shows dedication to full-stack project building",
-          "Consistent developer profile layout"
+          `Competent in building dynamic profiles and projects using ${selectedTechs.slice(0, 2).join(', ')}`,
+          projects.length >= 3 ? "Demonstrates consistency through multiple repository implementations" : "Shows clear understanding of technical layouts",
+          user.githubUsername ? "Verified GitHub profile connection active" : "Maintains clear coding standards"
         ],
         improvements: [
-          "Can expand cloud deployment capabilities",
-          "Should focus more on automated tests frameworks"
+          !user.portfolioDocs?.some(d => d.category === 'Resume') ? "Upload a complete Resume to attract recruiters" : "Explore deployment strategies for system infrastructure",
+          selectedTechs.length < 5 ? "Expand tech stack representation to showcase wider diversity" : "Incorporate unit test frameworks to increase code coverage metrics"
         ],
         careerRecommendations: [
-          "Associate Software Engineer",
-          "Full Stack Developer"
+          `Junior/Associate ${specialization}`,
+          "Software Development Engineer"
         ]
       },
       dna: {
@@ -182,6 +200,13 @@ Format exactly as valid JSON:
     "topSkills": ["React", "Node.js", "MongoDB", "Python", "etc."],
     "techStack": ["JavaScript", "React", "Express", "MongoDB", "etc."],
     "confidenceScores": {"React": 90, "Node.js": 85, "MongoDB": 80},
+    "radar": [
+      { "axis": "React", "score": 92 },
+      { "axis": "Node.js", "score": 88 },
+      { "axis": "MongoDB", "score": 81 },
+      { "axis": "JavaScript", "score": 95 }
+    ],
+    "confidence": 94,
     "strengths": ["Strong problem-solving with X hard problems solved", "Active open-source contributor", "..."],
     "improvements": ["Could improve system design skills", "Should explore cloud technologies", "..."],
     "careerRecommendations": ["Senior Full Stack Developer at a startup", "..."]
@@ -233,10 +258,37 @@ Format exactly as valid JSON:
     trigger: 'analysis',
   } : null;
 
+  // Sanitize map keys for MongoDB compatibility
+  const sanitizedScores = {};
+  if (result.insight.confidenceScores) {
+    for (const [key, value] of Object.entries(result.insight.confidenceScores)) {
+      sanitizedScores[key.replace(/\./g, '_')] = value;
+    }
+  }
+
   // Save to DB
   const insight = await Insight.findOneAndUpdate(
     { userId: user._id },
-    { ...result.insight, userId: user._id, lastUpdated: new Date() },
+    {
+      ...result.insight,
+      confidenceScores: sanitizedScores,
+      userId: user._id,
+      lastUpdated: new Date()
+    },
+    { new: true, upsert: true }
+  );
+
+  // Save to career_skill_analysis collection
+  const careerSkillAnalysis = await CareerSkillAnalysis.findOneAndUpdate(
+    { userId: user._id },
+    {
+      specialization: result.insight.specialization || "Software Developer",
+      topSkills: result.insight.topSkills || [],
+      confidence: result.insight.confidence || 85,
+      radar: result.insight.radar || [],
+      generatedAt: new Date(),
+      analysisVersion: "1.0.0"
+    },
     { new: true, upsert: true }
   );
 

@@ -53,7 +53,7 @@ const TimelineWidget = ({ userId }) => {
   return (
     <div className="glass-card" style={{ height: '500px', overflowY: 'auto' }}>
       <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <Timeline size={24} color="var(--accent-blue)" />
+        <Calendar size={24} color="var(--accent-blue)" />
         Career Timeline
       </h3>
       

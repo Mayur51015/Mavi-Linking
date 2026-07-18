@@ -47,6 +47,7 @@ const userSchema = new mongoose.Schema(
     },
     // Student-specific fields
     degree: { type: String, default: '' },
+    cgpa: { type: Number, default: 0.0 },
     graduationYear: { type: String, default: '' },
     portfolioWebsite: { type: String, default: '' },
     githubUsername: { type: String, default: '' },

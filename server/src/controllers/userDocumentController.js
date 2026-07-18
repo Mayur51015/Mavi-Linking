@@ -121,10 +121,24 @@ const uploadProfileDocument = async (req, res, next) => {
 
     await user.save();
 
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'DOCUMENT',
+      `Uploaded required document: ${type.toUpperCase()}`,
+      description || '',
+      { type }
+    );
+
+    // Re-evaluate intelligence
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    const updatedUser = await evaluateUserIntelligence(req.user.id);
+
     res.status(200).json({
       success: true,
       message: `${type.toUpperCase()} uploaded successfully`,
-      data: { user }
+      data: { user: updatedUser || user }
     });
   } catch (error) {
     if (req.file && fs.existsSync(req.file.path)) {
@@ -177,10 +191,25 @@ const deleteProfileDocument = async (req, res, next) => {
     }
 
     await user.save();
+
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'DOCUMENT',
+      `Deleted required document: ${type.toUpperCase()}`,
+      '',
+      { type }
+    );
+
+    // Re-evaluate intelligence
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    const updatedUser = await evaluateUserIntelligence(req.user.id);
+
     res.status(200).json({
       success: true,
       message: 'Document deleted successfully',
-      data: { user }
+      data: { user: updatedUser || user }
     });
   } catch (error) {
     next(error);
@@ -292,10 +321,24 @@ const createCertificate = async (req, res, next) => {
     user.certificates.push(newCert);
     await user.save();
 
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'CERTIFICATE',
+      `Added Certificate: ${title}`,
+      description || '',
+      { title, issuer }
+    );
+
+    // Re-evaluate intelligence
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    const updatedUser = await evaluateUserIntelligence(req.user.id);
+
     res.status(201).json({
       success: true,
       message: 'Certificate uploaded successfully',
-      data: { user }
+      data: { user: updatedUser || user }
     });
   } catch (error) {
     if (req.file && fs.existsSync(req.file.path)) {
@@ -357,10 +400,25 @@ const updateCertificate = async (req, res, next) => {
     }
 
     await user.save();
+
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'CERTIFICATE',
+      `Updated Certificate: ${cert.title}`,
+      cert.description || '',
+      { title: cert.title, issuer: cert.issuer }
+    );
+
+    // Re-evaluate intelligence
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    const updatedUser = await evaluateUserIntelligence(req.user.id);
+
     res.status(200).json({
       success: true,
       message: 'Certificate updated successfully',
-      data: { user }
+      data: { user: updatedUser || user }
     });
   } catch (error) {
     if (req.file && fs.existsSync(req.file.path)) {
@@ -400,13 +458,27 @@ const deleteCertificate = async (req, res, next) => {
       }
     }
 
+    const deletedTitle = cert.title;
     user.certificates.splice(certIndex, 1);
     await user.save();
+
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'CERTIFICATE',
+      `Removed Certificate: ${deletedTitle}`,
+      ''
+    );
+
+    // Re-evaluate intelligence
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    const updatedUser = await evaluateUserIntelligence(req.user.id);
 
     res.status(200).json({
       success: true,
       message: 'Certificate deleted successfully',
-      data: { user }
+      data: { user: updatedUser || user }
     });
   } catch (error) {
     next(error);
@@ -562,7 +634,22 @@ const updatePortfolioDoc = async (req, res, next) => {
     }
 
     await user.save();
-    res.status(200).json({ success: true, message: 'Document updated successfully.', data: { user } });
+
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'DOCUMENT',
+      `Updated ${doc.category}: ${doc.title}`,
+      doc.description || '',
+      { category: doc.category }
+    );
+
+    // Re-evaluate intelligence
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    const updatedUser = await evaluateUserIntelligence(req.user.id);
+
+    res.status(200).json({ success: true, message: 'Document updated successfully.', data: { user: updatedUser || user } });
   } catch (error) {
     if (req.file && fs.existsSync(req.file.path)) {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
@@ -591,10 +678,25 @@ const deletePortfolioDoc = async (req, res, next) => {
       if (fs.existsSync(filepath)) { try { fs.unlinkSync(filepath); } catch (_) {} }
     }
 
+    const deletedTitle = doc.title;
+    const deletedCat = doc.category;
     user.portfolioDocs.splice(idx, 1);
     await user.save();
 
-    res.status(200).json({ success: true, message: 'Document deleted successfully.', data: { user } });
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'DOCUMENT',
+      `Deleted ${deletedCat}: ${deletedTitle}`,
+      ''
+    );
+
+    // Re-evaluate intelligence
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    const updatedUser = await evaluateUserIntelligence(req.user.id);
+
+    res.status(200).json({ success: true, message: 'Document deleted successfully.', data: { user: updatedUser || user } });
   } catch (error) {
     next(error);
   }

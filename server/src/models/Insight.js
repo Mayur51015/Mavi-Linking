@@ -19,6 +19,13 @@ const insightSchema = new mongoose.Schema(
     strengths: [String],
     improvements: [String],
     careerRecommendations: [String],
+    radar: [
+      {
+        axis: { type: String, required: true },
+        score: { type: Number, required: true }
+      }
+    ],
+    confidence: { type: Number, default: 80 },
     rawAiSummary: { type: String },
     lastUpdated: { type: Date, default: Date.now },
   },

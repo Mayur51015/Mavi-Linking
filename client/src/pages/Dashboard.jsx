@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useRef } from 'react';
+import React, { useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axios';
@@ -21,10 +21,11 @@ import TimelineWidget from '../components/TimelineWidget';
 import BadgeShowcase from '../components/BadgeShowcase';
 
 const Dashboard = () => {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, setUser, socket, refreshUser } = useContext(AuthContext);
   const [scores, setScores] = useState(null);
   const [rank, setRank] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingDNA, setLoadingDNA] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
   // Custom states for new modules
@@ -88,57 +89,76 @@ const Dashboard = () => {
   const [aiData, setAiData] = useState({ insight: null, dna: null, analytics: [] });
   const [generatingAI, setGeneratingAI] = useState(false);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const res = await api.get('/scores/me').catch(() => ({ data: { data: { scores: null, rank: null } } }));
-        setScores(res.data.data.scores);
-        setRank(res.data.data.rank);
-        
-        // Fetch data concurrently — every call has a .catch() so one failure never kills the rest
-        const emptyFallback = { data: { data: null } };
-        const arrayFallback = { data: { data: [] } };
+  const fetchDashboardData = useCallback(async () => {
+    setLoadingDNA(true);
+    try {
+      const res = await api.get('/career/score').catch(() => ({ data: { data: { overall: 0, development: 0, problemSolving: 0, community: 0 } } }));
+      setScores(res.data.data);
 
-        const [insightRes, dnaRes, analyticsRes, pipelineRes, projectRes, annRes] = await Promise.all([
-          api.get('/ai/insights').catch(() => emptyFallback),
-          api.get('/ai/dna').catch(() => emptyFallback),
-          api.get('/ai/analytics').catch(() => arrayFallback),
-          api.get('/placement/student/pipelines').catch(() => arrayFallback),
-          api.get('/projects').catch(() => ({ data: { data: [], count: 0 } })),
-          api.get('/announcements/my-college').catch(() => arrayFallback),
-        ]);
-        
-        setAiData({
-          insight: insightRes.data.data,
-          dna: dnaRes.data.data,
-          analytics: analyticsRes.data.data || []
-        });
+      // Fetch other indicators in parallel
+      const emptyFallback = { data: { data: null } };
+      const arrayFallback = { data: { data: [] } };
 
-        setPipelines(pipelineRes.data.data || []);
-        setProjectsCount(projectRes.data.count || projectRes.data.data?.length || 0);
-        setAnnouncements(annRes.data.data || []);
-        
-      } catch (error) {
-        console.error("Failed to fetch dashboard data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDashboardData();
+      const [insightRes, dnaRes, analyticsRes, pipelineRes, projectRes, annRes] = await Promise.all([
+        api.get('/career/insights').catch(() => emptyFallback),
+        api.get('/career/dna').catch(() => emptyFallback),
+        api.get('/ai/analytics').catch(() => arrayFallback),
+        api.get('/placement/student/pipelines').catch(() => arrayFallback),
+        api.get('/projects').catch(() => ({ data: { data: [], count: 0 } })),
+        api.get('/announcements/my-college').catch(() => arrayFallback),
+      ]);
+      
+      setAiData({
+        insight: insightRes.data.data,
+        dna: dnaRes.data.data,
+        analytics: analyticsRes.data.data || []
+      });
+
+      setPipelines(pipelineRes.data.data || []);
+      setProjectsCount(projectRes.data.count || projectRes.data.data?.length || 0);
+      setAnnouncements(annRes.data.data || []);
+      
+    } catch (error) {
+      console.error("Failed to fetch dashboard data", error);
+    } finally {
+      setLoading(false);
+      setLoadingDNA(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Real-time update via Socket.IO
+  useEffect(() => {
+    if (socket) {
+      const onCareerUpdate = async () => {
+        console.log('Real-time career update received over Socket.IO');
+        await refreshUser();
+        await fetchDashboardData();
+      };
+      socket.on('career_update', onCareerUpdate);
+      socket.on('new_timeline_event', onCareerUpdate);
+      return () => {
+        socket.off('career_update', onCareerUpdate);
+        socket.off('new_timeline_event', onCareerUpdate);
+      };
+    }
+  }, [socket, refreshUser, fetchDashboardData]);
 
   const handleGenerateAIInsights = async () => {
     setGeneratingAI(true);
     try {
-      const res = await api.post('/ai/insights/generate');
-      setAiData({
-        insight: res.data.data.insight,
-        dna: res.data.data.dna,
-        analytics: aiData.analytics
-      });
+      const res = await api.post('/career/recalculate');
+      if (res.data?.data) {
+        setUser(res.data.data);
+      }
+      await fetchDashboardData();
+      showToast('success', 'Insights recalculated successfully.');
     } catch (err) {
       console.error('AI generation error:', err);
-      // Don't use alert() — just silently log; the UI remains functional
+      showToast('error', err.response?.data?.message || 'Failed to recalculate.');
     } finally {
       setGeneratingAI(false);
     }
@@ -648,9 +668,9 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                {aiData.dna && <DNACard dna={aiData.dna} />}
-                {aiData.insight && <SkillRadar insights={aiData.insight} />}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                <DNACard dna={aiData.dna} loading={loadingDNA} />
+                <SkillRadar />
               </div>
               
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>

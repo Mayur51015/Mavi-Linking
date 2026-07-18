@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api/axios';
 import {
-  Globe, GitBranch, Code2, Timeline, CheckCircle, FileText,
+  Globe, GitBranch, Code2, CheckCircle, FileText,
   Briefcase, Calendar, BarChart3, AlertCircle, Upload, QrCode,
   Eye, Download, Plus, Edit2, Trash2, Search, X
 } from 'lucide-react';
@@ -17,6 +17,8 @@ import ReportGenerator from '../components/ReportGenerator';
 import LeetCodeSection from '../components/leetcode/LeetCodeSection';
 import QRAnalyticsDashboard from '../components/QRAnalyticsDashboard';
 import Messages from '../pages/Messages';
+import TimelineWidget from '../components/TimelineWidget';
+import BadgeShowcase from '../components/BadgeShowcase';
 
 const Dashboard = () => {
   const { user, setUser } = useContext(AuthContext);
@@ -588,7 +590,7 @@ const Dashboard = () => {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem', paddingBottom: '0.5rem' }}>
-        {['overview', 'placement', 'documents', 'announcements', 'messages'].map(tab => (
+        {['overview', 'career', 'placement', 'documents', 'announcements', 'messages'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -603,7 +605,7 @@ const Dashboard = () => {
               textTransform: 'capitalize',
             }}
           >
-            {tab === 'placement' ? 'Timeline & Placements' : tab === 'documents' ? 'Documents & Build' : tab === 'messages' ? 'Messages' : tab}
+            {tab === 'placement' ? 'Placements' : tab === 'documents' ? 'Documents & Build' : tab === 'career' ? 'Career Intelligence' : tab === 'messages' ? 'Messages' : tab}
           </button>
         ))}
       </div>
@@ -665,6 +667,49 @@ const Dashboard = () => {
               
               <div style={{ marginTop: '3rem' }}>
                 <QRAnalyticsDashboard />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'career' && (
+            <div className="animate-fade-in">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Performance Score</h3>
+                  <div style={{ position: 'relative', width: '150px', height: '150px' }}>
+                    <svg viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}>
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--accent-blue)" strokeWidth="3" strokeDasharray={`${Math.max(0, (user?.scores?.overall || 0) / 10)}, 100`} />
+                    </svg>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>{user?.scores?.overall || 0}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>/ 1000</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="glass-card">
+                  <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>AI Insights</h3>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <h4 style={{ fontSize: '0.875rem', color: 'var(--accent-emerald)', marginBottom: '0.5rem' }}>Strengths</h4>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                      {(user?.aiAnalysis?.strengths || []).map((s, i) => <li key={i} style={{ marginBottom: '0.25rem' }}>• {s}</li>)}
+                      {!(user?.aiAnalysis?.strengths?.length > 0) && <li style={{ color: 'var(--text-muted)' }}>No strengths generated yet.</li>}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '0.875rem', color: 'var(--accent-red)', marginBottom: '0.5rem' }}>Areas for Growth</h4>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                      {(user?.aiAnalysis?.weaknesses || []).map((w, i) => <li key={i} style={{ marginBottom: '0.25rem' }}>• {w}</li>)}
+                      {!(user?.aiAnalysis?.weaknesses?.length > 0) && <li style={{ color: 'var(--text-muted)' }}>No weaknesses generated yet.</li>}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                <TimelineWidget userId={user?._id} />
+                <BadgeShowcase userId={user?._id} />
               </div>
             </div>
           )}

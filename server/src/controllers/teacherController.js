@@ -139,6 +139,20 @@ const exportPdfReport = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get mentoring alerts
+ * @route   GET /api/teacher/mentoring-alerts
+ * @access  Private (teacher)
+ */
+const getMentoringAlerts = async (req, res, next) => {
+  try {
+    const alerts = await teacherService.getMentoringAlerts(req.user);
+    res.status(200).json({ success: true, data: alerts });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ─── Placement Drives CRUD ──────────────────────────────────────────────────
 
 const createPlacementDrive = async (req, res, next) => {
@@ -353,4 +367,5 @@ module.exports = {
   getAnnouncements,
   updateAnnouncement,
   deleteAnnouncement,
+  getMentoringAlerts,
 };

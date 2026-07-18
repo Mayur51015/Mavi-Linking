@@ -20,6 +20,7 @@ const {
   getAnnouncements,
   updateAnnouncement,
   deleteAnnouncement,
+  getMentoringAlerts,
 } = require('../controllers/teacherController');
 
 const router = express.Router();
@@ -36,6 +37,7 @@ router.get('/stats', getDepartmentStats);
 
 // Student Verification & Recommendations
 router.put('/verify/:studentId/:itemType/:itemId', verifyStudentItem);
+router.get('/mentoring-alerts', getMentoringAlerts);
 router.post('/recommend/:studentId/:recruiterId', recommendStudent);
 
 // Batch & Comparative Analytics

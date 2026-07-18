@@ -37,6 +37,11 @@ const projectSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    views: { type: Number, default: 0 },
+    stars: { type: Number, default: 0 },
+    forks: { type: Number, default: 0 },
+    contributors: { type: Number, default: 1 },
+    complexityScore: { type: Number, default: 0 },
   },
   {
     timestamps: true,

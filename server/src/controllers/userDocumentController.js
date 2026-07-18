@@ -500,6 +500,20 @@ const createPortfolioDoc = async (req, res, next) => {
     user.portfolioDocs.push(newDoc);
     await user.save();
 
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'DOCUMENT',
+      `Uploaded ${safeCategory}: ${title}`,
+      description?.substring(0, 50),
+      { category: safeCategory }
+    );
+
+    // Re-evaluate intelligence asynchronously
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    evaluateUserIntelligence(req.user.id).catch(err => console.error('AI Eval Error:', err));
+
     res.status(201).json({ success: true, message: 'Document added successfully.', data: { user } });
   } catch (error) {
     if (req.file && fs.existsSync(req.file.path)) {
@@ -596,8 +610,23 @@ const getPortfolioDocFile = async (req, res, next) => {
     const { id } = req.params;
     const { download } = req.query;
 
-    const user = await User.findById(req.user.id);
+    let targetUserId = req.user.id;
+    if (req.query.userId && req.user.role !== 'user') {
+      targetUserId = req.query.userId;
+    }
+
+    const user = await User.findById(targetUserId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    if (req.user.role === 'user' && targetUserId !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+
+    if (req.user.role !== 'admin' && req.user.id !== targetUserId) {
+      if (req.user.university?.name && user.university?.name !== req.user.university.name) {
+        return res.status(403).json({ success: false, message: 'Access denied.' });
+      }
+    }
 
     const doc = (user.portfolioDocs || []).find(d => d._id.toString() === id);
     if (!doc || !doc.fileUrl) {

@@ -19,6 +19,20 @@ const createProject = async (req, res, next) => {
       featured,
     });
 
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'PROJECT',
+      `Added New Project: ${title}`,
+      description.substring(0, 50) + '...',
+      { projectId: project._id }
+    );
+
+    // Re-evaluate intelligence asynchronously
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    evaluateUserIntelligence(req.user.id).catch(err => console.error('AI Eval Error:', err));
+
     res.status(201).json({
       success: true,
       data: project,

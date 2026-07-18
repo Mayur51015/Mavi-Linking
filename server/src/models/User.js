@@ -146,14 +146,21 @@ const userSchema = new mongoose.Schema(
         },
         description:  { type: String, default: '' },
         fileUrl:      { type: String, default: '' },
-        originalName: { type: String, default: '' }, // original filename to show extension
+        originalName: { type: String, default: '' },
         uploadedAt:   { type: Date, default: Date.now },
+        isVerified:   { type: Boolean, default: false },
+        verifiedBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
       }
     ],
 
     achievements: [
       {
         title: { type: String, required: true },
+        category: {
+          type: String,
+          enum: ['Hackathon', 'Competition', 'Award', 'Scholarship', 'Publication', 'Leadership', 'Volunteer', 'Open Source', 'Other'],
+          default: 'Other'
+        },
         description: { type: String, default: '' },
         date: { type: Date, default: null },
         isVerified: { type: Boolean, default: false },
@@ -234,6 +241,15 @@ const userSchema = new mongoose.Schema(
       knowledge: { type: Number, default: 0 },
       overall: { type: Number, default: 0 },
     },
+    // AI Career Intelligence Fields
+    aiAnalysis: {
+      strengths: [{ type: String }],
+      weaknesses: [{ type: String }],
+      recommendedRoles: [{ type: String }],
+      hiringRecommendation: { type: String, default: '' },
+    },
+    placementReadinessScore: { type: Number, default: 0 },
+    profileCompletion: { type: Number, default: 0 },
     lastSyncedAt: {
       type: Date,
       default: null,

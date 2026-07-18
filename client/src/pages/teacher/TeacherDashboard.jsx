@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, TrendingUp, BarChart3, Award, GraduationCap, Activity } from 'lucide-react';
+import { Users, TrendingUp, BarChart3, Award, GraduationCap, Activity, AlertCircle } from 'lucide-react';
 import TeacherLayout from '../../layouts/TeacherLayout';
 import api from '../../api/axios';
 
 const TeacherDashboard = () => {
   const [stats, setStats] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [mentoringAlerts, setMentoringAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsRes, leaderboardRes] = await Promise.all([
+        const [statsRes, leaderboardRes, alertsRes] = await Promise.all([
           api.get('/teacher/stats'),
           api.get('/teacher/leaderboard?limit=5'),
+          api.get('/teacher/mentoring-alerts'),
         ]);
         setStats(statsRes.data.data);
         setLeaderboard(leaderboardRes.data.data || []);
+        setMentoringAlerts(alertsRes.data.data || []);
       } catch (err) {
         console.error('Failed to load teacher dashboard:', err);
       } finally {
@@ -160,8 +163,9 @@ const TeacherDashboard = () => {
         </motion.div>
       </div>
 
-      {/* Top Students */}
-      <motion.div
+      {/* Top Students and Mentoring Alerts */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+        <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
@@ -192,6 +196,39 @@ const TeacherDashboard = () => {
           )}
         </div>
       </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        className="glass-card-static"
+        style={{ padding: '1.5rem' }}
+      >
+        <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <AlertCircle size={20} style={{ color: 'var(--accent-red)' }} /> Mentoring Alerts
+        </h3>
+        <div style={{ display: 'grid', gap: '0.5rem' }}>
+          {mentoringAlerts.map(s => (
+            <div key={s._id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.875rem 1.5rem' }}>
+              <div className="avatar-gradient" style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}>{s.name?.charAt(0)}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '600' }}>{s.name}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--accent-red)' }}>
+                  {s.aiAnalysis?.hiringRecommendation || 'Needs Attention'}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)' }}>{s.scores?.overall || 0} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>/ 1000</span></div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Readiness: {s.placementReadinessScore || 0}%</div>
+              </div>
+            </div>
+          ))}
+          {mentoringAlerts.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No alerts. All students are on track!</div>
+          )}
+        </div>
+      </motion.div>
+    </div>
     </TeacherLayout>
   );
 };

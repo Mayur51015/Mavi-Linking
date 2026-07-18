@@ -17,7 +17,7 @@ const apiBaseUrl = rawApiUrl
       const trimmed = rawApiUrl.replace(/\/+$/u, '');
       return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
     })()
-  : 'http://localhost:5000/api';
+  : 'http://127.0.0.1:5000/api';
 
 const api = axios.create({
   baseURL: apiBaseUrl,

@@ -262,6 +262,12 @@ const verifyStudentItem = async (studentId, itemType, itemId, teacherId) => {
     skill.isVerified = true;
     skill.verifiedBy = teacherId;
     await student.save();
+  } else if (itemType === 'portfolioDocs') {
+    const doc = student.portfolioDocs.id(itemId);
+    if (!doc) throw new Error('Document not found');
+    doc.isVerified = true;
+    doc.verifiedBy = teacherId;
+    await student.save();
   } else if (itemType === 'platforms') {
     student.isVerified = true;
     await student.save();
@@ -417,6 +423,30 @@ const generatePdfReport = async (teacher, type) => {
   return doc;
 };
 
+/**
+ * Get mentoring alerts for students needing attention
+ */
+const getMentoringAlerts = async (teacher) => {
+  const scopeQuery = buildTeacherScopeQuery(teacher);
+  
+  const query = {
+    $and: [
+      scopeQuery,
+      {
+        $or: [
+          { placementReadinessScore: { $lt: 50 } },
+          { 'scores.overall': { $lt: 400 } }
+        ]
+      }
+    ]
+  };
+
+  return User.find(query)
+    .select('name username avatar scores placementReadinessScore aiAnalysis preferredDomain')
+    .sort({ placementReadinessScore: 1 })
+    .limit(20);
+};
+
 module.exports = {
   getStudentsForTeacher,
   getStudentDetail,
@@ -427,4 +457,5 @@ module.exports = {
   recommendStudent,
   getBatchAnalytics,
   generatePdfReport,
+  getMentoringAlerts,
 };

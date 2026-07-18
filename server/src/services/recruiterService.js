@@ -60,7 +60,7 @@ const getRecruiterStats = async (recruiter) => {
  */
 const searchDevelopers = async (filters = {}, recruiter = null) => {
   const {
-    skills, minScore, maxScore, tier,
+    skills, minScore, maxScore, minReadiness, tier,
     university, department, graduationYear, experienceLevel, isVerified,
     page = 1, limit = 20, sortBy = 'scores.overall', order = 'desc',
   } = filters;
@@ -91,6 +91,7 @@ const searchDevelopers = async (filters = {}, recruiter = null) => {
 
   if (minScore) query['scores.overall'] = { ...query['scores.overall'], $gte: parseInt(minScore) };
   if (maxScore) query['scores.overall'] = { ...query['scores.overall'], $lte: parseInt(maxScore) };
+  if (minReadiness) query['placementReadinessScore'] = { $gte: parseInt(minReadiness) };
   if (graduationYear) query['university.batch'] = graduationYear;
   if (experienceLevel) query['experienceLevel'] = experienceLevel;
   if (isVerified !== undefined) query['isVerified'] = isVerified === 'true';
@@ -145,7 +146,7 @@ const searchDevelopers = async (filters = {}, recruiter = null) => {
 
   const [users, total] = await Promise.all([
     User.find(query)
-      .select('name username avatar scores platforms.github.username university isVerified preferredDomain experienceLevel placementStatus availabilitySettings placedCompany placedRole')
+      .select('name username avatar scores placementReadinessScore aiAnalysis platforms.github.username university isVerified preferredDomain experienceLevel placementStatus availabilitySettings placedCompany placedRole')
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(parseInt(limit)),

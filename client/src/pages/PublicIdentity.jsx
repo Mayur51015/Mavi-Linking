@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Terminal, GitBranch, Code2, Globe, Database, ExternalLink,
@@ -22,6 +22,7 @@ const tierColors = {
 
 const PublicIdentity = () => {
   const { username } = useParams();
+  const [searchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -41,6 +42,7 @@ const PublicIdentity = () => {
     };
     fetchProfile();
   }, [username]);
+
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

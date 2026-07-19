@@ -47,6 +47,7 @@ const userSchema = new mongoose.Schema(
     },
     // Student-specific fields
     degree: { type: String, default: '' },
+    cgpa: { type: Number, default: 0.0 },
     graduationYear: { type: String, default: '' },
     portfolioWebsite: { type: String, default: '' },
     githubUsername: { type: String, default: '' },
@@ -93,6 +94,88 @@ const userSchema = new mongoose.Schema(
     placedRole: { type: String, default: '' },
     placementCTC: { type: String, default: '' },
     placementDate: { type: Date, default: null },
+
+    // Security & Auth Upgrades
+    emailVerified: { type: Boolean, default: false },
+    verificationToken: { type: String, default: null },
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
+    refreshToken: { type: String, default: null },
+
+    // Documents & Profile sections
+    documents: {
+      resume: { type: String, default: '' },
+      aadhaar: { type: String, default: '' },
+      pan: { type: String, default: '' },
+      marksheet: { type: String, default: '' },
+      list: [
+        {
+          title: { type: String, required: true },
+          type: { type: String, required: true },
+          fileUrl: { type: String, required: true },
+          uploadedAt: { type: Date, default: Date.now },
+          description: { type: String, default: '' },
+        }
+      ]
+    },
+    certificates: [
+      {
+        title: { type: String, required: true },
+        issuer: { type: String, default: '' },
+        category: { type: String, default: '' },
+        date: { type: Date, default: null },
+        issueDate: { type: Date, default: null },
+        expiryDate: { type: Date, default: null },
+        credentialId: { type: String, default: '' },
+        verificationUrl: { type: String, default: '' },
+        description: { type: String, default: '' },
+        fileUrl: { type: String, default: '' },
+        uploadedAt: { type: Date, default: Date.now },
+        isVerified: { type: Boolean, default: false },
+        verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      }
+    ],
+
+    // ─── Dynamic Portfolio Documents (replaces fixed required-doc cards) ───────
+    portfolioDocs: [
+      {
+        title:        { type: String, required: true },
+        category: {
+          type: String,
+          enum: ['Resume', 'Certificate', 'Marksheet', 'Project Report', 'Internship', 'Achievement', 'Research Paper', 'Other'],
+          default: 'Other',
+        },
+        description:  { type: String, default: '' },
+        fileUrl:      { type: String, default: '' },
+        originalName: { type: String, default: '' },
+        uploadedAt:   { type: Date, default: Date.now },
+        isVerified:   { type: Boolean, default: false },
+        verifiedBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      }
+    ],
+
+    achievements: [
+      {
+        title: { type: String, required: true },
+        category: {
+          type: String,
+          enum: ['Hackathon', 'Competition', 'Award', 'Scholarship', 'Publication', 'Leadership', 'Volunteer', 'Open Source', 'Other'],
+          default: 'Other'
+        },
+        description: { type: String, default: '' },
+        date: { type: Date, default: null },
+        isVerified: { type: Boolean, default: false },
+        verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      }
+    ],
+    skillsList: [
+      {
+        name: { type: String, required: true },
+        isVerified: { type: Boolean, default: false },
+        verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      }
+    ],
+
 
     profileSettings: {
       theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
@@ -153,6 +236,15 @@ const userSchema = new mongoose.Schema(
       knowledge: { type: Number, default: 0 },
       overall: { type: Number, default: 0 },
     },
+    // AI Career Intelligence Fields
+    aiAnalysis: {
+      strengths: [{ type: String }],
+      weaknesses: [{ type: String }],
+      recommendedRoles: [{ type: String }],
+      hiringRecommendation: { type: String, default: '' },
+    },
+    placementReadinessScore: { type: Number, default: 0 },
+    profileCompletion: { type: Number, default: 0 },
     lastSyncedAt: {
       type: Date,
       default: null,

@@ -4,10 +4,11 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   LogOut, LayoutDashboard, Link as LinkIcon, BarChart3,
   Terminal, Briefcase, Heart, BadgeCheck, QrCode, User,
+  Megaphone, FolderOpen,
 } from 'lucide-react';
 import VerificationModal from '../components/VerificationModal';
 import NotificationBell from '../components/NotificationBell';
-
+import ThemeToggle from '../components/ThemeToggle';
 const UserLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ const UserLayout = ({ children }) => {
     { name: 'Link Accounts', path: '/dashboard/link', icon: <LinkIcon size={20} /> },
     { name: 'AI Insights', path: '/dashboard/insights', icon: <BarChart3 size={20} /> },
     { name: 'Compatibility', path: '/dashboard/compatibility', icon: <Heart size={20} /> },
+    { name: 'Announcements', path: '/dashboard/announcements', icon: <Megaphone size={20} /> },
+    { name: 'Shared Documents', path: '/dashboard/documents', icon: <FolderOpen size={20} /> },
   ];
 
   const publicUsername = user?.username || user?.platforms?.github?.username;
@@ -142,8 +145,8 @@ const UserLayout = ({ children }) => {
             <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Student Dashboard</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <NotificationBell />
-            <button onClick={handleLogout} className="btn btn-danger">
+<ThemeToggle />
+            <NotificationBell />            <button onClick={handleLogout} className="btn btn-danger">
               <LogOut size={18} />
               <span className="hide-mobile">Sign Out</span>
             </button>

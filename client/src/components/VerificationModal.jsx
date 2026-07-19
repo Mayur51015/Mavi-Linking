@@ -1,13 +1,85 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, BadgeCheck, Copy, Check, RefreshCw, ExternalLink } from 'lucide-react';
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 const VerificationModal = ({ onClose, onVerified }) => {
-  const [step, setStep] = useState('idle'); // idle, generated, verifying, verified, error
+  const { socket, refreshUser } = useContext(AuthContext);
+  const [step, setStep] = useState('loading'); // loading, idle, generated, verifying, verified, error
   const [code, setCode] = useState('');
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // Fetch current verification status on mount
+  useEffect(() => {
+    let active = true;
+    const fetchStatus = async () => {
+      try {
+        setStep('loading');
+        const res = await api.get('/verification/status');
+        if (!active) return;
+        const { isVerified, verification } = res.data.data;
+        if (isVerified) {
+          setStep('verified');
+        } else if (verification && verification.status === 'pending' && new Date(verification.expiresAt) > new Date()) {
+          setCode(verification.code);
+          setStep('generated');
+        } else {
+          setStep('idle');
+        }
+      } catch (err) {
+        if (active) {
+          setMessage(err.response?.data?.message || 'Failed to fetch verification status');
+          setStep('error');
+        }
+      }
+    };
+    fetchStatus();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const refreshUserRef = React.useRef(refreshUser);
+  const onVerifiedRef = React.useRef(onVerified);
+
+  useEffect(() => {
+    refreshUserRef.current = refreshUser;
+    onVerifiedRef.current = onVerified;
+  }, [refreshUser, onVerified]);
+
+  // Listen to real-time verification events
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleVerificationStatus = (data) => {
+      if (data.status === 'verified') {
+        setStep('verified');
+        refreshUserRef.current();
+        onVerifiedRef.current?.();
+      } else if (data.status === 'failed') {
+        setMessage(data.message);
+        setStep('generated');
+      }
+    };
+
+    socket.on('verification_status', handleVerificationStatus);
+
+    return () => {
+      socket.off('verification_status', handleVerificationStatus);
+    };
+  }, [socket]);
+
+  // Automatically close modal after successful verification
+  useEffect(() => {
+    if (step === 'verified') {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [step, onClose]);
 
   const handleGenerate = async () => {
     try {
@@ -27,6 +99,7 @@ const VerificationModal = ({ onClose, onVerified }) => {
       const res = await api.post('/verification/verify');
       if (res.data.data.verified) {
         setStep('verified');
+        refreshUser();
         onVerified?.();
       } else {
         setMessage(res.data.data.message);
@@ -59,6 +132,19 @@ const VerificationModal = ({ onClose, onVerified }) => {
             <button onClick={onClose} className="btn btn-ghost btn-sm" style={{ padding: '0.375rem' }}><X size={20} /></button>
           </div>
 
+          {step === 'loading' && (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                style={{ display: 'inline-block', marginBottom: '1rem' }}
+              >
+                <RefreshCw size={24} className="text-gradient" />
+              </motion.div>
+              <p style={{ color: 'var(--text-secondary)' }}>Checking verification status...</p>
+            </div>
+          )}
+
           {step === 'idle' && (
             <div style={{ textAlign: 'center' }}>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
@@ -70,8 +156,14 @@ const VerificationModal = ({ onClose, onVerified }) => {
 
           {step === 'generating' && (
             <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <RefreshCw size={24} className="animate-pulse" style={{ marginBottom: '1rem' }} />
-              <p>Generating code...</p>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                style={{ display: 'inline-block', marginBottom: '1rem' }}
+              >
+                <RefreshCw size={24} className="text-gradient" />
+              </motion.div>
+              <p style={{ color: 'var(--text-secondary)' }}>Generating code...</p>
             </div>
           )}
 
@@ -98,8 +190,14 @@ const VerificationModal = ({ onClose, onVerified }) => {
 
           {step === 'verifying' && (
             <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <RefreshCw size={24} className="animate-pulse" style={{ marginBottom: '1rem' }} />
-              <p>Checking your GitHub bio...</p>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                style={{ display: 'inline-block', marginBottom: '1rem' }}
+              >
+                <RefreshCw size={24} className="text-gradient" />
+              </motion.div>
+              <p style={{ color: 'var(--text-secondary)' }}>Checking your GitHub bio...</p>
             </div>
           )}
 

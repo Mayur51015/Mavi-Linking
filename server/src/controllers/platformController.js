@@ -99,8 +99,18 @@ const linkPlatform = async (req, res, next) => {
     );
 
     // Auto-recalculate scores after linking
-    user.scores = calculateAggregatedScores(user.platformData);
-    await user.save();
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    
+    await logTimelineEvent(
+      user._id,
+      'PLATFORM',
+      `Linked account: ${capitalize(platform)}`,
+      `Linked username: ${sanitized.username}`,
+      { platform }
+    );
+
+    const updatedUser = await evaluateUserIntelligence(user._id);
 
     res.status(200).json({
       success: true,
@@ -108,8 +118,9 @@ const linkPlatform = async (req, res, next) => {
       data: {
         platform,
         username: sanitized.username,
-        linkedAt: user.platforms[platform].linkedAt,
+        linkedAt: (updatedUser || user).platforms[platform].linkedAt,
         platformData,
+        user: updatedUser || user
       },
     });
   } catch (error) {
@@ -153,13 +164,23 @@ const unlinkPlatform = async (req, res, next) => {
     let userToUpdate = await User.findByIdAndUpdate(req.user.id, { $set: updateQuery }, { new: true });
     
     // Auto-recalculate scores after unlinking
-    userToUpdate.scores = calculateAggregatedScores(userToUpdate.platformData);
-    await userToUpdate.save();
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+
+    await logTimelineEvent(
+      req.user.id,
+      'PLATFORM',
+      `Unlinked account: ${capitalize(platform)}`,
+      `Removed platform integration`,
+      { platform }
+    );
+
+    const updatedUser = await evaluateUserIntelligence(req.user.id);
 
     res.status(200).json({
       success: true,
       message: `${capitalize(platform)} account unlinked successfully`,
-      data: { platform },
+      data: { platform, user: updatedUser },
     });
   } catch (error) {
     next(error);
@@ -227,8 +248,22 @@ const linkMultiplePlatforms = async (req, res, next) => {
     if (Object.keys(updateQuery).length > 0) {
       updateQuery.lastSyncedAt = new Date();
       let userObj = await User.findByIdAndUpdate(req.user.id, { $set: updateQuery }, { new: true });
-      userObj.scores = calculateAggregatedScores(userObj.platformData);
-      await userObj.save();
+      
+      const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+      const { logTimelineEvent } = require('../utils/timelineLogger');
+
+      for (const item of results.linked) {
+        await logTimelineEvent(
+          req.user.id,
+          'PLATFORM',
+          `Linked account: ${capitalize(item.platform)}`,
+          `Linked username: ${item.username}`,
+          { platform: item.platform }
+        );
+      }
+
+      const updatedUser = await evaluateUserIntelligence(req.user.id);
+      results.user = updatedUser;
     }
 
     const statusCode = results.errors.length > 0

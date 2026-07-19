@@ -30,6 +30,12 @@ const compatibilityRoutes = require('./routes/compatibilityRoutes');
 const teacherRoutes = require('./routes/teacherRoutes');
 const placementRoutes = require('./routes/placementRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const jobRoutes = require('./routes/jobRoutes');
+const messageRoutes = require('./routes/messageRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const announcementRoutes = require('./routes/announcementRoutes');
+const userRoutes = require('./routes/userRoutes');
+const documentRoutes = require('./routes/documentRoutes');
 const { init } = require('./config/socket'); // socket.io
 const http = require('http');
 
@@ -41,9 +47,9 @@ const PORT = process.env.PORT || 5000;
 // ─── Security Middleware ────────────────────────────────────────────────────
 app.use(helmet()); // Security headers
 
-// Allow multiple CORS origins (local dev + production)
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://127.0.0.1:5173',
   process.env.CLIENT_URL, // e.g. https://mavi-linking-mq7d.vercel.app
 ].filter(Boolean);
 
@@ -98,6 +104,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+const careerRoutes = require('./routes/careerRoutes');
+
 // ─── API Routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/platforms', platformRoutes);
@@ -113,9 +121,15 @@ app.use('/api/teacher', teacherRoutes);
 app.use('/api/leetcode', leetcodeRoutes);
 app.use('/api/placement', placementRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/career', careerRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', redirectRoutes);
-
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 app.use('*', (req, res) => {
@@ -154,7 +168,7 @@ const startServer = async () => {
     const server = http.createServer(app);
     init(server); // Initialize socket.io
 
-    server.listen(PORT, () => {
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`\n🚀 MaVi Linking API Server`);
       console.log(`   Environment: ${process.env.NODE_ENV}`);
       console.log(`   Port:        ${PORT}`);

@@ -31,11 +31,17 @@ const recruitmentPipelineSchema = new mongoose.Schema(
       enum: [
         'Applied',
         'Under Review',
+        'Shortlisted',
         'Interview Scheduled',
+        'Technical Round',
+        'HR Round',
+        'Selected',
+        'Offer Sent',
         'Offer Received',
         'Offer Accepted',
-        'Rejected',
+        'Joined',
         'Placed',
+        'Rejected',
       ],
       default: 'Applied',
     },
@@ -43,6 +49,9 @@ const recruitmentPipelineSchema = new mongoose.Schema(
     availabilityStatus: { type: String, default: '' },
 
     recruiterMessage: { type: String, default: '' },
+    recruiterNotes: { type: String, default: '' },
+    nextAction: { type: String, default: '' },
+    joiningLetterUrl: { type: String, default: '' },
 
     interviewDetails: {
       interviewDate: { type: Date, default: null },

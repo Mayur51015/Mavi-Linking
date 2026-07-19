@@ -19,6 +19,20 @@ const createProject = async (req, res, next) => {
       featured,
     });
 
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'PROJECT',
+      `Added New Project: ${title}`,
+      description.substring(0, 50) + '...',
+      { projectId: project._id }
+    );
+
+    // Re-evaluate intelligence asynchronously
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    evaluateUserIntelligence(req.user.id).catch(err => console.error('AI Eval Error:', err));
+
     res.status(201).json({
       success: true,
       data: project,
@@ -70,6 +84,20 @@ const updateProject = async (req, res, next) => {
       runValidators: true,
     });
 
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'PROJECT',
+      `Updated Project: ${project.title}`,
+      project.description ? (project.description.substring(0, 50) + '...') : '',
+      { projectId: project._id }
+    );
+
+    // Re-evaluate intelligence asynchronously
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    evaluateUserIntelligence(req.user.id).catch(err => console.error('AI Eval Error:', err));
+
     res.status(200).json({
       success: true,
       data: project,
@@ -97,7 +125,21 @@ const deleteProject = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Not authorized to delete this project' });
     }
 
+    const deletedTitle = project.title;
     await project.deleteOne();
+
+    // Log timeline event
+    const { logTimelineEvent } = require('../utils/timelineLogger');
+    await logTimelineEvent(
+      req.user.id,
+      'PROJECT',
+      `Removed Project: ${deletedTitle}`,
+      ''
+    );
+
+    // Re-evaluate intelligence asynchronously
+    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+    evaluateUserIntelligence(req.user.id).catch(err => console.error('AI Eval Error:', err));
 
     res.status(200).json({
       success: true,

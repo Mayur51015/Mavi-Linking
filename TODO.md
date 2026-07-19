@@ -15,11 +15,11 @@
    - Add SEO/OpenGraph via meta fetch (client-side) and/or Next/Vite static integration as best fit.
 
 ### Progress
-- [ ] Step 1
-- [ ] Step 2
-- [ ] Step 3
-- [ ] Step 4
-- [ ] Step 5
+- [x] Step 1
+- [x] Step 2
+- [x] Step 3
+- [x] Step 4
+- [x] Step 5
 
 
 ## Next (Not started yet)

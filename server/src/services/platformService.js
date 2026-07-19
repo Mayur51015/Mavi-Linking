@@ -44,6 +44,28 @@ const fetchGitHubProfile = async (username) => {
     throw new Error(message);
   }
 
+  // Also fetch user public repositories for richer AI analysis
+  let reposList = [];
+  try {
+    const reposUrl = `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=10&sort=updated`;
+    const reposResponse = await fetch(reposUrl, { headers });
+    if (reposResponse.ok) {
+      const reposPayload = await reposResponse.json();
+      if (Array.isArray(reposPayload)) {
+        reposList = reposPayload.map(r => ({
+          name: r.name,
+          description: r.description || '',
+          language: r.language || '',
+          stars: r.stargazers_count || 0,
+          forks: r.forks_count || 0,
+          updatedAt: r.updated_at
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn('Unable to fetch GitHub repositories list:', err.message);
+  }
+
   return {
     username: payload.login,
     displayName: payload.name || null,
@@ -57,6 +79,7 @@ const fetchGitHubProfile = async (username) => {
     following: payload.following || 0,
     createdAt: payload.created_at || null,
     fetchedAt: new Date(),
+    repos: reposList
   };
 };
 

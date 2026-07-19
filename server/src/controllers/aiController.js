@@ -21,13 +21,18 @@ exports.generateNewInsights = async (req, res, next) => {
     const { insight, dna, ranking, analytics } = await aiAnalyzer.analyzeUser(user);
     res.status(200).json({ success: true, data: { insight, dna, ranking, analytics } });
   } catch (error) {
-    next(error);
+    console.error('AI Insights Generation Error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate AI insights. ' + (error.message || ''),
+    });
   }
 };
 
 exports.getDNA = async (req, res, next) => {
   try {
     const dna = await DNA.findOne({ userId: req.user.id });
+    console.log('GET /ai/dna response:', dna);
     res.status(200).json({ success: true, data: dna });
   } catch (error) {
     next(error);

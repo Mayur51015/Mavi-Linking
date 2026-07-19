@@ -1,5 +1,7 @@
+const crypto = require('crypto');
 const User = require('../models/User');
 const Activity = require('../models/Activity');
+const ActivityLog = require('../models/ActivityLog');
 const { getIO } = require('../config/socket');
 
 /**
@@ -38,8 +40,11 @@ const register = async (req, res, next) => {
     if (bio) userData.bio = bio;
 
     // Role-specific fields
-    if (userData.role === 'user') {
+    if (userData.role === 'user' || userData.role === 'teacher') {
       if (university) userData.university = university;
+    }
+
+    if (userData.role === 'user') {
       if (degree) userData.degree = degree;
       if (graduationYear) userData.graduationYear = graduationYear;
       if (portfolioWebsite) userData.portfolioWebsite = portfolioWebsite;
@@ -54,9 +59,13 @@ const register = async (req, res, next) => {
       if (allowedDepartments) userData.allowedDepartments = allowedDepartments;
     }
 
-    if (userData.role === 'teacher') {
-      if (university) userData.university = university;
-    }
+    // Generate verification token and refresh token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+
+    userData.verificationToken = verificationToken;
+    userData.refreshToken = refreshToken;
+    userData.emailVerified = false;
 
     // Create user (password is hashed via pre-save hook)
     const user = await User.create(userData);
@@ -64,7 +73,7 @@ const register = async (req, res, next) => {
     // Generate JWT
     const token = user.generateAuthToken();
 
-    // Log Activity
+    // Log Activity Feed
     try {
       const roleLabels = { user: 'developer', recruiter: 'recruiter', teacher: 'teacher' };
       const activity = await Activity.create({
@@ -79,12 +88,27 @@ const register = async (req, res, next) => {
       console.error('Activity Error:', err.message);
     }
 
+    // Log Security Audit Activity
+    try {
+      await ActivityLog.create({
+        userId: user._id,
+        action: 'Register',
+        details: `Registered new account as ${user.role}. Verification token generated.`,
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+      });
+    } catch (auditErr) {
+      console.error('Audit Log Error:', auditErr.message);
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Account created successfully',
+      message: 'Account created successfully. Please verify your email.',
       data: {
         user,
         token,
+        refreshToken,
+        verificationToken, // return for easy dev/test flow
       },
     });
   } catch (error) {
@@ -119,8 +143,24 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Generate JWT
+    // Generate JWT and Refresh Token
     const token = user.generateAuthToken();
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // Log Security Audit Activity
+    try {
+      await ActivityLog.create({
+        userId: user._id,
+        action: 'Login',
+        details: 'Logged in successfully',
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+      });
+    } catch (auditErr) {
+      console.error('Audit Log Error:', auditErr.message);
+    }
 
     res.status(200).json({
       success: true,
@@ -128,6 +168,7 @@ const login = async (req, res, next) => {
       data: {
         user,
         token,
+        refreshToken,
       },
     });
   } catch (error) {
@@ -165,7 +206,7 @@ const updateProfile = async (req, res, next) => {
       name, avatar, username, bio, university, profileSettings, isPublic,
       degree, graduationYear, portfolioWebsite, githubUsername,
       preferredDomain, experienceLevel, companyName,
-      allowedColleges, allowedDepartments,
+      allowedColleges, allowedDepartments, documents,
     } = req.body;
     const updateFields = {};
 
@@ -183,6 +224,12 @@ const updateProfile = async (req, res, next) => {
       if (profileSettings.theme !== undefined) updateFields['profileSettings.theme'] = profileSettings.theme;
       if (profileSettings.showEmail !== undefined) updateFields['profileSettings.showEmail'] = profileSettings.showEmail;
       if (profileSettings.resumeTemplate !== undefined) updateFields['profileSettings.resumeTemplate'] = profileSettings.resumeTemplate;
+    }
+    if (documents) {
+      if (documents.resume !== undefined) updateFields['documents.resume'] = documents.resume;
+      if (documents.aadhaar !== undefined) updateFields['documents.aadhaar'] = documents.aadhaar;
+      if (documents.pan !== undefined) updateFields['documents.pan'] = documents.pan;
+      if (documents.marksheet !== undefined) updateFields['documents.marksheet'] = documents.marksheet;
     }
 
     // Student-specific updates
@@ -204,8 +251,16 @@ const updateProfile = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
-    // Log Activity
+    // Log Activity & Timeline Event
     try {
+      const { logTimelineEvent } = require('../utils/timelineLogger');
+      await logTimelineEvent(
+        user._id,
+        'ACCOUNT',
+        'Profile Updated',
+        'Updated profile information'
+      );
+
       const activity = await Activity.create({
         userId: user._id,
         type: 'Other',
@@ -215,17 +270,306 @@ const updateProfile = async (req, res, next) => {
       const io = getIO();
       if (io) io.to(user._id.toString()).emit('new_activity', activity);
     } catch (err) {
-      console.error('Activity Error:', err.message);
+      console.error('Activity/Timeline Error:', err.message);
+    }
+
+    // Re-evaluate intelligence
+    let updatedUser = user;
+    try {
+      const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+      const recalculated = await evaluateUserIntelligence(user._id);
+      if (recalculated) updatedUser = recalculated;
+    } catch (err) {
+      console.error('Intelligence Re-eval Error:', err.message);
     }
 
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      data: { user },
+      data: { user: updatedUser },
     });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { register, login, getMe, updateProfile };
+/**
+ * @desc    Refresh access token using refresh token
+ * @route   POST /api/auth/refresh
+ * @access  Public
+ */
+const refreshToken = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Refresh token is required' });
+    }
+    const user = await User.findOne({ refreshToken: token });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid refresh token' });
+    }
+
+    const newAccessToken = user.generateAuthToken();
+    const newRefreshToken = crypto.randomBytes(40).toString('hex');
+
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        token: newAccessToken,
+        refreshToken: newRefreshToken,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Verify email address using token
+ * @route   POST /api/auth/verify-email
+ * @access  Public
+ */
+const verifyEmail = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Verification token is required' });
+    }
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired verification token' });
+    }
+
+    user.emailVerified = true;
+    user.verificationToken = null;
+    await user.save();
+
+    await ActivityLog.create({
+      userId: user._id,
+      action: 'Verify Email',
+      details: 'Email successfully verified',
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully!',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Request password reset link
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
+ */
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found with this email' });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset link sent (simulated).',
+      data: { resetToken },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Reset password using token
+ * @route   POST /api/auth/reset-password
+ * @access  Public
+ */
+const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
+    }
+
+    user.password = password;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    await ActivityLog.create({
+      userId: user._id,
+      action: 'Reset Password',
+      details: 'Password was updated successfully via reset token',
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful. You can now log in.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Mock Google Login/Register
+ * @route   POST /api/auth/google
+ * @access  Public
+ */
+const googleLogin = async (req, res, next) => {
+  try {
+    const { token, role = 'user' } = req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'ID token is required' });
+    }
+    const mockEmail = `${token.toLowerCase().replace(/\s+/g, '')}@gmail.com`;
+    const mockName = token.split('_')[0] || 'Google User';
+
+    let user = await User.findOne({ email: mockEmail });
+    let isNew = false;
+    if (!user) {
+      user = await User.create({
+        name: mockName,
+        email: mockEmail,
+        password: crypto.randomBytes(16).toString('hex'),
+        role: role,
+        emailVerified: true,
+      });
+      isNew = true;
+    }
+
+    const jwtToken = user.generateAuthToken();
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    await ActivityLog.create({
+      userId: user._id,
+      action: 'Google Login',
+      details: isNew ? 'Created account via Google Auth' : 'Logged in via Google Auth',
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { user, token: jwtToken, refreshToken },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Mock GitHub Login/Register
+ * @route   POST /api/auth/github
+ * @access  Public
+ */
+const githubLogin = async (req, res, next) => {
+  try {
+    const { code, role = 'user' } = req.body;
+    if (!code) {
+      return res.status(400).json({ success: false, message: 'Auth code is required' });
+    }
+    const mockUsername = code.toLowerCase().trim();
+    const mockEmail = `${mockUsername}@github.com`;
+    const mockName = code.charAt(0).toUpperCase() + code.slice(1);
+
+    let user = await User.findOne({ email: mockEmail });
+    let isNew = false;
+    if (!user) {
+      user = await User.create({
+        name: mockName,
+        email: mockEmail,
+        password: crypto.randomBytes(16).toString('hex'),
+        role: role,
+        githubUsername: mockUsername,
+        platforms: { github: { username: mockUsername, linkedAt: new Date() } },
+        emailVerified: true,
+      });
+      isNew = true;
+    }
+
+    const jwtToken = user.generateAuthToken();
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    await ActivityLog.create({
+      userId: user._id,
+      action: 'GitHub Login',
+      details: isNew ? 'Created account via GitHub Auth' : 'Logged in via GitHub Auth',
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { user, token: jwtToken, refreshToken },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Logout user & clear session tokens
+ * @route   POST /api/auth/logout
+ * @access  Private
+ */
+const logout = async (req, res, next) => {
+  try {
+    if (req.user) {
+      const user = await User.findById(req.user.id);
+      if (user) {
+        user.refreshToken = null;
+        await user.save();
+
+        await ActivityLog.create({
+          userId: user._id,
+          action: 'Logout',
+          details: 'Logged out successfully',
+          ipAddress: req.ip || '',
+          userAgent: req.headers['user-agent'] || '',
+        });
+      }
+    }
+    res.status(200).json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  getMe,
+  updateProfile,
+  refreshToken,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
+  googleLogin,
+  githubLogin,
+  logout,
+};

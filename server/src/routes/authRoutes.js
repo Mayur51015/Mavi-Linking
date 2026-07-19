@@ -7,7 +7,28 @@ const {
   login,
   getMe,
   updateProfile,
+  refreshToken,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
+  googleLogin,
+  githubLogin,
+  logout,
 } = require('../controllers/authController');
+const {
+  upload,
+  uploadProfileDocument,
+  deleteProfileDocument,
+  getProfileDocument,
+  createCertificate,
+  updateCertificate,
+  deleteCertificate,
+  getCertificateFile,
+  createPortfolioDoc,
+  updatePortfolioDoc,
+  deletePortfolioDoc,
+  getPortfolioDocFile,
+} = require('../controllers/userDocumentController');
 
 const router = express.Router();
 
@@ -71,10 +92,34 @@ const updateProfileValidation = [
 
 router.post('/register', registerValidation, validate, register);
 router.post('/login', loginValidation, validate, login);
+router.post('/refresh', refreshToken);
+router.post('/verify-email', verifyEmail);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
+router.post('/google', googleLogin);
+router.post('/github', githubLogin);
 
 // ─── Protected Routes ───────────────────────────────────────────────────────
 
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateProfileValidation, validate, updateProfile);
+router.post('/logout', protect, logout);
+
+// Profile Document upload/download/preview routes
+router.post('/document/:type', protect, upload.single('file'), uploadProfileDocument);
+router.delete('/document/:type', protect, deleteProfileDocument);
+router.get('/document/:type', protect, getProfileDocument);
+
+// Certificates CRUD routes
+router.post('/certificate', protect, upload.single('file'), createCertificate);
+router.put('/certificate/:id', protect, upload.single('file'), updateCertificate);
+router.delete('/certificate/:id', protect, deleteCertificate);
+router.get('/certificate/:id/file', protect, getCertificateFile);
+
+// Portfolio Documents (dynamic) CRUD routes
+router.post('/portfolio-doc', protect, upload.single('file'), createPortfolioDoc);
+router.put('/portfolio-doc/:id', protect, upload.single('file'), updatePortfolioDoc);
+router.delete('/portfolio-doc/:id', protect, deletePortfolioDoc);
+router.get('/portfolio-doc/:id/file', protect, getPortfolioDocFile);
 
 module.exports = router;

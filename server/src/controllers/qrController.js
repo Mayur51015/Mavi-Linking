@@ -12,9 +12,9 @@ const getQrForUsername = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'username is required' });
     }
 
-    const targetUrl = `${getProfileBaseUrl()}/u/${encodeURIComponent(username)}`;
+    const targetUrl = `${getProfileBaseUrl()}/u/${encodeURIComponent(username)}?ref=qr`;
 
-    const { dataUrl, fileUrl } = await generateQrForUsername({ username, targetUrl });
+    const { dataUrl, fileUrl, svgUrl } = await generateQrForUsername({ username, targetUrl });
 
     res.status(200).json({
       success: true,
@@ -23,6 +23,7 @@ const getQrForUsername = async (req, res, next) => {
         targetUrl,
         dataUrl,
         fileUrl,
+        svgUrl,
       },
     });
   } catch (error) {
@@ -35,7 +36,7 @@ const downloadQr = async (req, res, next) => {
     const { username } = req.params;
     if (!username) return res.status(400).json({ success: false, message: 'username is required' });
 
-    const targetUrl = `${getProfileBaseUrl()}/u/${encodeURIComponent(username)}`;
+    const targetUrl = `${getProfileBaseUrl()}/u/${encodeURIComponent(username)}?ref=qr`;
     const { fileUrl } = await generateQrForUsername({ username, targetUrl });
 
     // Stream via redirect since fileUrl is already a static file

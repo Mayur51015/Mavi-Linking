@@ -55,6 +55,8 @@ const verifyGitHubBio = async (userId) => {
 
   // Persist legacy GitHub username into platforms.github for consistency
   if (!user.platforms?.github?.username && user.githubUsername) {
+    if (!user.platforms) user.platforms = {};
+    if (!user.platforms.github) user.platforms.github = {};
     user.platforms.github.username = user.githubUsername;
     user.platforms.github.linkedAt = user.platforms.github.linkedAt || new Date();
     await user.save();
@@ -88,10 +90,41 @@ const verifyGitHubBio = async (userId) => {
       verificationCode: verification.code,
     });
 
+    // Emit real-time verification success via socket.io
+    try {
+      const { getIO } = require('../config/socket');
+      const io = getIO();
+      if (io) {
+        io.to(userId.toString()).emit('verification_status', {
+          verified: true,
+          status: 'verified',
+          message: 'GitHub account verified successfully!'
+        });
+      }
+    } catch (err) {
+      console.error('Socket emission failed during verification success:', err.message);
+    }
+
     return { verified: true, message: 'GitHub account verified successfully!' };
   }
 
   await verification.save();
+
+  // Emit failure status via socket
+  try {
+    const { getIO } = require('../config/socket');
+    const io = getIO();
+    if (io) {
+      io.to(userId.toString()).emit('verification_status', {
+        verified: false,
+        status: 'failed',
+        message: `Verification code not found in your GitHub bio. Attempt ${verification.attempts}. Please add "${verification.code}" to your GitHub bio and try again.`
+      });
+    }
+  } catch (err) {
+    console.error('Socket emission failed during verification failure:', err.message);
+  }
+
   return {
     verified: false,
     message: `Verification code not found in your GitHub bio. Attempt ${verification.attempts}. Please add "${verification.code}" to your GitHub bio and try again.`,

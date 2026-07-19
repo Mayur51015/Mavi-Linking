@@ -6,7 +6,7 @@ import {
   Terminal, Building2, UserCheck, GitPullRequest,
 } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
-
+import ThemeToggle from '../components/ThemeToggle';
 const RecruiterLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -126,8 +126,8 @@ const RecruiterLayout = ({ children }) => {
             <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Recruiter Dashboard</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <NotificationBell />
-            <button onClick={handleLogout} className="btn btn-danger">
+<ThemeToggle />
+            <NotificationBell />            <button onClick={handleLogout} className="btn btn-danger">
               <LogOut size={18} />
               <span className="hide-mobile">Sign Out</span>
             </button>

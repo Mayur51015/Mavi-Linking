@@ -1,0 +1,32 @@
+const express = require('express');
+const { protect } = require('../middleware/auth');
+const careerController = require('../controllers/careerController');
+
+const router = express.Router();
+
+router.use(protect);
+
+// Standard endpoints
+router.get('/dashboard', careerController.getDashboard);
+router.get('/score', careerController.getScore);
+router.get('/timeline', careerController.getTimeline);
+router.get('/badges', careerController.getBadges);
+router.get('/insights', careerController.getInsights);
+router.get('/dna', careerController.getDNA);
+router.get('/skills', careerController.getSkills);
+router.get('/analytics', careerController.getAnalytics);
+router.get('/analysis', careerController.getAnalysis);
+router.post('/recalculate', careerController.recalculate);
+router.post('/analyze', careerController.analyze);
+
+// Legacy/Param-based endpoints for back compatibility / cross-profile checks
+router.get('/timeline/:userId', careerController.getTimeline);
+router.get('/badges/:userId', careerController.getBadges);
+router.get('/insights/:userId', careerController.getInsights);
+router.get('/dna/:userId', careerController.getDNA);
+router.get('/skills/:userId', careerController.getSkills);
+router.get('/analytics/:userId', careerController.getAnalytics);
+router.get('/analysis/:userId', careerController.getAnalysis);
+router.post('/sync-coding-profiles', careerController.syncProfiles);
+
+module.exports = router;

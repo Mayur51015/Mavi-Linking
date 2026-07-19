@@ -56,6 +56,12 @@ const TeacherReadiness = React.lazy(() => import('./pages/teacher/TeacherReadine
 const TeacherLeaderboard = React.lazy(() => import('./pages/teacher/TeacherLeaderboard'));
 const PlacementDrives = React.lazy(() => import('./pages/teacher/PlacementDrives'));
 const StudentVerification = React.lazy(() => import('./pages/teacher/StudentVerification'));
+const TeacherAnnouncements = React.lazy(() => import('./pages/teacher/TeacherAnnouncements'));
+const TeacherDocuments = React.lazy(() => import('./pages/teacher/TeacherDocuments'));
+
+// Student New Pages (Lazy)
+const StudentAnnouncements = React.lazy(() => import('./pages/StudentAnnouncements'));
+const StudentDocuments = React.lazy(() => import('./pages/StudentDocuments'));
 
 // Admin Pages (Lazy)
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
@@ -116,6 +122,16 @@ const App = () => {
             <Route path="/dashboard/jobs" element={
               <ProtectedRoute roles={['user', 'admin']}>
                 <StudentJobs />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/announcements" element={
+              <ProtectedRoute roles={['user', 'admin']}>
+                <StudentAnnouncements />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/documents" element={
+              <ProtectedRoute roles={['user', 'admin']}>
+                <StudentDocuments />
               </ProtectedRoute>
             } />
 
@@ -185,6 +201,16 @@ const App = () => {
             <Route path="/dashboard/teacher/verification" element={
               <ProtectedRoute roles={['teacher', 'admin']}>
                 <StudentVerification />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/teacher/announcements" element={
+              <ProtectedRoute roles={['teacher', 'admin']}>
+                <TeacherAnnouncements />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/teacher/documents" element={
+              <ProtectedRoute roles={['teacher', 'admin']}>
+                <TeacherDocuments />
               </ProtectedRoute>
             } />
 

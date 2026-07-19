@@ -139,6 +139,20 @@ const exportPdfReport = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get mentoring alerts
+ * @route   GET /api/teacher/mentoring-alerts
+ * @access  Private (teacher)
+ */
+const getMentoringAlerts = async (req, res, next) => {
+  try {
+    const alerts = await teacherService.getMentoringAlerts(req.user);
+    res.status(200).json({ success: true, data: alerts });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ─── Placement Drives CRUD ──────────────────────────────────────────────────
 
 const createPlacementDrive = async (req, res, next) => {
@@ -210,13 +224,33 @@ const assignStudentsToDrive = async (req, res, next) => {
 
 const createAnnouncement = async (req, res, next) => {
   try {
-    const { title, content } = req.body;
+    const { title, content, department } = req.body;
+    if (!title || !content) {
+      return res.status(400).json({ success: false, message: 'Title and content are required.' });
+    }
+
+    let targetDept = department || '';
+    if (req.user.role !== 'admin' && req.user.university?.department) {
+      const allowedDepts = req.user.university.department.split(',').map(d => d.trim()).filter(Boolean);
+      if (targetDept && targetDept !== 'All' && !allowedDepts.includes(targetDept)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Invalid department. Allowed departments: ${allowedDepts.join(', ')}` 
+        });
+      }
+      if (!targetDept) {
+        targetDept = allowedDepts[0] || 'All';
+      }
+    } else if (!targetDept) {
+      targetDept = 'All';
+    }
+
     const ann = await TeacherAnnouncement.create({
       title,
       content,
       teacherId: req.user.id,
       college: req.user.university?.name || '',
-      department: req.user.university?.department || '',
+      department: targetDept,
     });
     res.status(201).json({ success: true, data: ann });
   } catch (error) {
@@ -228,14 +262,68 @@ const getAnnouncements = async (req, res, next) => {
   try {
     const college = req.user.university?.name || '';
     const department = req.user.university?.department || '';
+    const { search, page = 1, limit = 10, departmentFilter } = req.query;
+
     const query = {};
     if (college) query.college = college;
-    if (department) query.department = department;
+    
+    // Default to teacher's departments, but allow filtering
+    const teacherDepts = department.split(',').map(d => d.trim()).filter(Boolean);
+    if (departmentFilter) {
+      query.department = departmentFilter;
+    } else {
+      query.department = { $in: [...teacherDepts, 'All', ''] };
+    }
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await TeacherAnnouncement.countDocuments(query);
 
     const anns = await TeacherAnnouncement.find(query)
       .populate('teacherId', 'name')
-      .sort({ createdAt: -1 });
-    res.status(200).json({ success: true, data: anns });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      data: anns,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateAnnouncement = async (req, res, next) => {
+  try {
+    const { title, content } = req.body;
+    const ann = await TeacherAnnouncement.findById(req.params.id);
+    if (!ann) {
+      return res.status(404).json({ success: false, message: 'Announcement not found' });
+    }
+
+    // Permission check
+    if (req.user.role !== 'admin' && ann.teacherId.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Access denied. You can only edit your own announcements.' });
+    }
+
+    if (title) ann.title = title;
+    if (content) ann.content = content;
+
+    await ann.save();
+    res.status(200).json({ success: true, data: ann });
   } catch (error) {
     next(error);
   }
@@ -243,6 +331,16 @@ const getAnnouncements = async (req, res, next) => {
 
 const deleteAnnouncement = async (req, res, next) => {
   try {
+    const ann = await TeacherAnnouncement.findById(req.params.id);
+    if (!ann) {
+      return res.status(404).json({ success: false, message: 'Announcement not found' });
+    }
+
+    // Permission check
+    if (req.user.role !== 'admin' && ann.teacherId.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Access denied. You can only delete your own announcements.' });
+    }
+
     await TeacherAnnouncement.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, message: 'Announcement deleted' });
   } catch (error) {
@@ -267,5 +365,7 @@ module.exports = {
   assignStudentsToDrive,
   createAnnouncement,
   getAnnouncements,
+  updateAnnouncement,
   deleteAnnouncement,
+  getMentoringAlerts,
 };

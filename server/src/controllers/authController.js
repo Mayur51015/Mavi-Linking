@@ -40,8 +40,11 @@ const register = async (req, res, next) => {
     if (bio) userData.bio = bio;
 
     // Role-specific fields
-    if (userData.role === 'user') {
+    if (userData.role === 'user' || userData.role === 'teacher') {
       if (university) userData.university = university;
+    }
+
+    if (userData.role === 'user') {
       if (degree) userData.degree = degree;
       if (graduationYear) userData.graduationYear = graduationYear;
       if (portfolioWebsite) userData.portfolioWebsite = portfolioWebsite;
@@ -248,8 +251,16 @@ const updateProfile = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
-    // Log Activity
+    // Log Activity & Timeline Event
     try {
+      const { logTimelineEvent } = require('../utils/timelineLogger');
+      await logTimelineEvent(
+        user._id,
+        'ACCOUNT',
+        'Profile Updated',
+        'Updated profile information'
+      );
+
       const activity = await Activity.create({
         userId: user._id,
         type: 'Other',
@@ -259,13 +270,23 @@ const updateProfile = async (req, res, next) => {
       const io = getIO();
       if (io) io.to(user._id.toString()).emit('new_activity', activity);
     } catch (err) {
-      console.error('Activity Error:', err.message);
+      console.error('Activity/Timeline Error:', err.message);
+    }
+
+    // Re-evaluate intelligence
+    let updatedUser = user;
+    try {
+      const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+      const recalculated = await evaluateUserIntelligence(user._id);
+      if (recalculated) updatedUser = recalculated;
+    } catch (err) {
+      console.error('Intelligence Re-eval Error:', err.message);
     }
 
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      data: { user },
+      data: { user: updatedUser },
     });
   } catch (error) {
     next(error);

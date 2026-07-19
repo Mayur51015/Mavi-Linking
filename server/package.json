@@ -28,10 +28,12 @@
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "express-validator": "^7.2.1",
+    "geoip-lite": "^1.4.10",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
     "morgan": "^1.10.0",
+    "multer": "^2.2.0",
     "nitro": "^3.0.260429-beta",
     "node-cache": "^5.1.2",
     "openai": "^6.36.0",
@@ -39,6 +41,7 @@
     "qrcode": "^1.5.4",
     "rollup": "^4.60.3",
     "socket.io": "^4.8.3",
+    "ua-parser-js": "^2.0.10",
     "workflow": "^4.2.4"
   },
   "devDependencies": {

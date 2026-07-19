@@ -42,20 +42,36 @@ const generateQrForUsername = async ({ username, targetUrl }) => {
     },
   });
 
-  // Persist as PNG for download.
+  const svgData = await QRCode.toString(targetUrl, {
+    type: 'svg',
+    errorCorrectionLevel: 'M',
+    margin: 1,
+    color: {
+      dark: '#0f172a',
+      light: '#ffffff',
+    },
+  });
+
+  // Persist as PNG and SVG for download.
   const publicReportsDir = path.join(__dirname, '..', '..', 'public', 'qr');
   ensureDir(publicReportsDir);
 
-  const filename = `qr_${encodeURIComponent(username)}_${Date.now()}.png`;
-  const filePath = qrToFilePath(publicReportsDir, filename);
+  const timestamp = Date.now();
+  const filenamePng = `qr_${encodeURIComponent(username)}_${timestamp}.png`;
+  const filenameSvg = `qr_${encodeURIComponent(username)}_${timestamp}.svg`;
+  
+  const filePathPng = qrToFilePath(publicReportsDir, filenamePng);
+  const filePathSvg = qrToFilePath(publicReportsDir, filenameSvg);
 
   const base64 = dataUrl.split(',')[1];
-  fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
+  fs.writeFileSync(filePathPng, Buffer.from(base64, 'base64'));
+  fs.writeFileSync(filePathSvg, svgData, 'utf8');
 
   const serverUrl = process.env.SERVER_URL || 'http://localhost:5000';
-  const fileUrl = `${serverUrl}/public/qr/${filename}`;
+  const fileUrl = `${serverUrl}/public/qr/${filenamePng}`;
+  const svgUrl = `${serverUrl}/public/qr/${filenameSvg}`;
 
-  const result = { dataUrl, fileUrl };
+  const result = { dataUrl, fileUrl, svgUrl };
   memoryCache.set(key, { value: result, updatedAt: now });
   return result;
 };

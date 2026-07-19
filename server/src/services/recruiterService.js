@@ -60,15 +60,38 @@ const getRecruiterStats = async (recruiter) => {
  */
 const searchDevelopers = async (filters = {}, recruiter = null) => {
   const {
-    skills, minScore, maxScore, tier,
+    skills, minScore, maxScore, minReadiness, tier,
     university, department, graduationYear, experienceLevel, isVerified,
     page = 1, limit = 20, sortBy = 'scores.overall', order = 'desc',
   } = filters;
 
   const query = { role: 'user', isPublic: true };
 
+  // Resolve skill filter beforehand to ensure correct database pagination
+  if (skills && skills.length > 0) {
+    const insights = await Insight.find({
+      topSkills: { $in: skills }
+    }).select('userId');
+    const skillUserIds = insights.map(i => i.userId.toString());
+    query._id = { $in: skillUserIds };
+  }
+
+  // Resolve tier filter beforehand
+  if (tier) {
+    const rankings = await Ranking.find({ tier }).select('userId');
+    const tierUserIds = rankings.map(r => r.userId.toString());
+    if (query._id) {
+      const currentIds = new Set(query._id.$in);
+      const intersection = tierUserIds.filter(id => currentIds.has(id));
+      query._id = { $in: intersection };
+    } else {
+      query._id = { $in: tierUserIds };
+    }
+  }
+
   if (minScore) query['scores.overall'] = { ...query['scores.overall'], $gte: parseInt(minScore) };
   if (maxScore) query['scores.overall'] = { ...query['scores.overall'], $lte: parseInt(maxScore) };
+  if (minReadiness) query['placementReadinessScore'] = { $gte: parseInt(minReadiness) };
   if (graduationYear) query['university.batch'] = graduationYear;
   if (experienceLevel) query['experienceLevel'] = experienceLevel;
   if (isVerified !== undefined) query['isVerified'] = isVerified === 'true';
@@ -123,27 +146,15 @@ const searchDevelopers = async (filters = {}, recruiter = null) => {
 
   const [users, total] = await Promise.all([
     User.find(query)
-      .select('name username avatar scores platforms.github.username university isVerified preferredDomain experienceLevel placementStatus availabilitySettings placedCompany placedRole')
+      .select('name username avatar scores placementReadinessScore aiAnalysis platforms.github.username university isVerified preferredDomain experienceLevel placementStatus availabilitySettings placedCompany placedRole')
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(parseInt(limit)),
     User.countDocuments(query),
   ]);
 
-  // If skill filter is provided, post-filter using insights
-  let results = users;
-  if (skills && skills.length > 0) {
-    const userIds = users.map(u => u._id);
-    const insights = await Insight.find({
-      userId: { $in: userIds },
-      topSkills: { $in: skills },
-    });
-    const matchedIds = new Set(insights.map(i => i.userId.toString()));
-    results = users.filter(u => matchedIds.has(u._id.toString()));
-  }
-
   return {
-    developers: results,
+    developers: users,
     pagination: {
       total,
       page: parseInt(page),

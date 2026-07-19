@@ -15,6 +15,20 @@ const {
   githubLogin,
   logout,
 } = require('../controllers/authController');
+const {
+  upload,
+  uploadProfileDocument,
+  deleteProfileDocument,
+  getProfileDocument,
+  createCertificate,
+  updateCertificate,
+  deleteCertificate,
+  getCertificateFile,
+  createPortfolioDoc,
+  updatePortfolioDoc,
+  deletePortfolioDoc,
+  getPortfolioDocFile,
+} = require('../controllers/userDocumentController');
 
 const router = express.Router();
 
@@ -90,5 +104,22 @@ router.post('/github', githubLogin);
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateProfileValidation, validate, updateProfile);
 router.post('/logout', protect, logout);
+
+// Profile Document upload/download/preview routes
+router.post('/document/:type', protect, upload.single('file'), uploadProfileDocument);
+router.delete('/document/:type', protect, deleteProfileDocument);
+router.get('/document/:type', protect, getProfileDocument);
+
+// Certificates CRUD routes
+router.post('/certificate', protect, upload.single('file'), createCertificate);
+router.put('/certificate/:id', protect, upload.single('file'), updateCertificate);
+router.delete('/certificate/:id', protect, deleteCertificate);
+router.get('/certificate/:id/file', protect, getCertificateFile);
+
+// Portfolio Documents (dynamic) CRUD routes
+router.post('/portfolio-doc', protect, upload.single('file'), createPortfolioDoc);
+router.put('/portfolio-doc/:id', protect, upload.single('file'), updatePortfolioDoc);
+router.delete('/portfolio-doc/:id', protect, deletePortfolioDoc);
+router.get('/portfolio-doc/:id/file', protect, getPortfolioDocFile);
 
 module.exports = router;

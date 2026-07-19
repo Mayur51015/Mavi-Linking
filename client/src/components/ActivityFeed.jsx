@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { io } from 'socket.io-client';
 import { AuthContext } from '../context/AuthContext';
 import { Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/axios';
 
 const ActivityFeed = () => {
-  const { user } = useContext(AuthContext);
+  const { user, socket } = useContext(AuthContext);
   const [activities, setActivities] = useState([]);
 
   useEffect(() => {
@@ -14,22 +13,21 @@ const ActivityFeed = () => {
 
     // Fetch historical
     api.get('/ai/activities').then(res => setActivities(res.data.data)).catch(console.error);
-
-    // Setup Socket
-    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
-      withCredentials: true
-    });
-
-    socket.on('connect', () => {
-      socket.emit('joinRoom', user._id);
-    });
-
-    socket.on('new_activity', (activity) => {
-      setActivities(prev => [activity, ...prev].slice(0, 50));
-    });
-
-    return () => socket.disconnect();
   }, [user]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewActivity = (activity) => {
+      setActivities(prev => [activity, ...prev].slice(0, 50));
+    };
+
+    socket.on('new_activity', handleNewActivity);
+
+    return () => {
+      socket.off('new_activity', handleNewActivity);
+    };
+  }, [socket]);
 
   return (
     <div className="glass-card" style={{ padding: '2rem', height: '400px', display: 'flex', flexDirection: 'column' }}>

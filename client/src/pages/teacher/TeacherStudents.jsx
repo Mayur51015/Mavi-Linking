@@ -131,6 +131,15 @@ const TeacherStudents = () => {
               </div>
             )}
 
+            <button
+              onClick={() => {
+                window.location.href = `/dashboard/messages?chat=${selectedStudent.student?._id}`;
+              }}
+              className="btn btn-primary"
+              style={{ width: '100%', marginBottom: '0.75rem' }}
+            >
+              Message Student
+            </button>
             <button onClick={() => setSelectedStudent(null)} className="btn btn-outline" style={{ width: '100%' }}>
               Close
             </button>

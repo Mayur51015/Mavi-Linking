@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Bookmark, BadgeCheck, Eye, Users, GitPullRequest } from 'lucide-react';
+import { Search, Bookmark, BadgeCheck, Eye, Users, GitPullRequest, MessageSquare, BrainCircuit, X } from 'lucide-react';
 import RecruiterLayout from '../../layouts/RecruiterLayout';
 import PlacementBadge from '../../components/PlacementBadge';
 import { PLACEMENT_STATUSES } from '../../constants/placementConstants';
@@ -8,15 +8,17 @@ import api from '../../api/axios';
 
 const RecruiterSearch = () => {
   const [developers, setDevelopers] = useState([]);
-  const [filters, setFilters] = useState({ minScore: '', skills: '', university: '', department: '' });
+  const [filters, setFilters] = useState({ minScore: '', minReadiness: '', skills: '', university: '', department: '' });
   const [loading, setLoading] = useState(false);
   const [comparison, setComparison] = useState([]);
+  const [insightModal, setInsightModal] = useState(null);
 
   const fetchDevelopers = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (filters.minScore) params.set('minScore', filters.minScore);
+      if (filters.minReadiness) params.set('minReadiness', filters.minReadiness);
       if (filters.skills) params.set('skills', filters.skills);
       if (filters.university) params.set('university', filters.university);
       if (filters.department) params.set('department', filters.department);
@@ -77,6 +79,8 @@ const RecruiterSearch = () => {
           onChange={e => setFilters(f => ({ ...f, skills: e.target.value }))} style={{ flex: 1, minWidth: '150px' }} />
         <input className="input-field" placeholder="Min Score" type="number" value={filters.minScore}
           onChange={e => setFilters(f => ({ ...f, minScore: e.target.value }))} style={{ width: '120px' }} />
+        <input className="input-field" placeholder="Min Readiness %" type="number" value={filters.minReadiness}
+          onChange={e => setFilters(f => ({ ...f, minReadiness: e.target.value }))} style={{ width: '150px' }} />
         <button onClick={fetchDevelopers} className="btn btn-primary btn-sm"><Search size={16} /> Search</button>
       </div>
 
@@ -118,7 +122,10 @@ const RecruiterSearch = () => {
                     {dev.university?.name || 'N/A'} • {dev.university?.department || 'N/A'}
                   </div>
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '700', fontFamily: 'Outfit' }}>{dev.scores?.overall || 0}</div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '700', fontFamily: 'Outfit' }}>{dev.scores?.overall || 0}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--accent-purple)' }}>Readiness: {dev.placementReadinessScore || 0}%</div>
+                </div>
               </div>
 
               {/* Placement Status */}
@@ -143,10 +150,28 @@ const RecruiterSearch = () => {
                   {comparison.includes(dev._id) ? '✓ Selected' : 'Compare'}
                 </button>
                 {dev.username && (
-                  <a href={`/u/${dev.username}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">
+                  <a href={`/u/${dev.username}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" title="View Profile">
                     <Eye size={14} />
                   </a>
                 )}
+                <button
+                  onClick={() => setInsightModal(dev)}
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--accent-cyan)' }}
+                  title="AI Insights"
+                >
+                  <BrainCircuit size={14} />
+                </button>
+                <button
+                  onClick={() => {
+                    window.location.href = `/dashboard/messages?chat=${dev._id}`;
+                  }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--accent-purple)' }}
+                  title="Send Message"
+                >
+                  <MessageSquare size={14} />
+                </button>
                 <button
                   onClick={() => {
                     const role = prompt('Enter role/position for this candidate:');
@@ -171,6 +196,57 @@ const RecruiterSearch = () => {
       {!loading && developers.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
           No candidates found matching your filters or access scope.
+        </div>
+      )}
+
+      {/* AI Insights Modal */}
+      {insightModal && (
+        <div className="modal-overlay" onClick={() => setInsightModal(null)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="modal-content"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '600px' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <BrainCircuit size={24} color="var(--accent-cyan)" />
+                AI Insights: {insightModal.name}
+              </h2>
+              <button onClick={() => setInsightModal(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '1rem' }}>
+              <h4 style={{ color: 'var(--accent-emerald)', marginBottom: '0.5rem' }}>Recommendation</h4>
+              <p style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                {insightModal.aiAnalysis?.hiringRecommendation || 'Not enough data to form a recommendation.'}
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <h4 style={{ color: 'var(--accent-blue)', marginBottom: '0.5rem' }}>Strengths</h4>
+                <ul style={{ listStyle: 'inside', color: 'var(--text-secondary)' }}>
+                  {insightModal.aiAnalysis?.strengths?.map((s, i) => <li key={i}>{s}</li>)}
+                  {!insightModal.aiAnalysis?.strengths?.length && <li>No specific strengths identified.</li>}
+                </ul>
+              </div>
+              <div>
+                <h4 style={{ color: 'var(--accent-red)', marginBottom: '0.5rem' }}>Weaknesses</h4>
+                <ul style={{ listStyle: 'inside', color: 'var(--text-secondary)' }}>
+                  {insightModal.aiAnalysis?.weaknesses?.map((w, i) => <li key={i}>{w}</li>)}
+                  {!insightModal.aiAnalysis?.weaknesses?.length && <li>No specific weaknesses identified.</li>}
+                </ul>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setInsightModal(null)} className="btn btn-secondary">Close</button>
+            </div>
+          </motion.div>
         </div>
       )}
     </RecruiterLayout>

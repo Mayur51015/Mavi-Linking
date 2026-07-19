@@ -226,8 +226,7 @@ const Register = () => {
           </div>
           <div className="input-group">
             <label className="input-label">Preferred Career Domain</label>
-            <select className="input-field" value={formData.preferredDomain} onChange={e => updateField('preferredDomain', e.target.value)}
-              style={{ background: 'rgba(0,0,0,0.2)' }}>
+            <select className="input-field" value={formData.preferredDomain} onChange={e => updateField('preferredDomain', e.target.value)}>
               <option value="">Select Domain</option>
               {DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
             </select>

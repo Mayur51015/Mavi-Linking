@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Terminal, Code, Cpu, Users, GraduationCap, Search, Sparkles, Shield, Zap, ArrowRight, PlayCircle } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import Footer from '../components/Footer';
-
+import ThemeToggle from '../components/ThemeToggle';
 const Home = () => {
   const { user, getDashboardPath } = useContext(AuthContext);
   const observerRef = useRef(null);
@@ -42,6 +42,7 @@ const Home = () => {
             <span>MaVi Linking</span>
           </div>
           <div className="nav-links">
+            <ThemeToggle />
             {user ? (
               <Link to={getDashboardPath()} className="btn btn-primary" aria-label="Dashboard">Dashboard</Link>
             ) : (

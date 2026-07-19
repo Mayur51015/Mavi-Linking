@@ -5,7 +5,7 @@ import {
   LogOut, Users, BarChart3, TrendingUp, Award,
   Terminal, GraduationCap, Building2, Megaphone, FolderOpen,
 } from 'lucide-react';
-
+import ThemeToggle from '../components/ThemeToggle';
 const TeacherLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -128,11 +128,13 @@ const TeacherLayout = ({ children }) => {
             <GraduationCap size={24} style={{ color: 'var(--accent-emerald)' }} />
             <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Teacher Dashboard</h1>
           </div>
-          <button onClick={handleLogout} className="btn btn-danger">
-            <LogOut size={18} />
-            <span className="hide-mobile">Sign Out</span>
-          </button>
-        </header>
+<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <ThemeToggle />
+            <button onClick={handleLogout} className="btn btn-danger">
+              <LogOut size={18} />
+              <span className="hide-mobile">Sign Out</span>
+            </button>
+          </div>        </header>
 
         <div style={{ flex: 1, padding: '2rem 4rem', overflowY: 'auto' }}>
           {children}

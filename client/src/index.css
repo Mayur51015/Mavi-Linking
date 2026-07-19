@@ -400,6 +400,25 @@ code, .mono {
   color: var(--text-muted);
 }
 
+/* Select / Dropdown Overrides */
+select.input-field {
+  background-color: #1a1a2e;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+select.input-field option {
+  background-color: #12121c;
+  color: #ffffff;
+  padding: 0.5rem;
+}
+
 /* Search Input */
 .search-input {
   width: 100%;
@@ -882,59 +901,6 @@ html {
   box-shadow: 0 0 0 2px var(--accent-purple);
 }
 
-/* ─── Floating Scroll To Top Button ─────────────────────────────── */
-.floating-scroll-top-btn {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--gradient-primary);
-  color: white;
-  border: none;
-  cursor: pointer;
-  z-index: 60;
-  box-shadow: var(--shadow-card);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(16px);
-  transition: opacity 0.3s ease, transform 0.3s ease,
-    box-shadow 0.3s ease, visibility 0.3s ease;
-}
 
-.floating-scroll-top-btn.is-visible {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.floating-scroll-top-btn:hover,
-.floating-scroll-top-btn:focus-visible {
-  box-shadow: var(--shadow-glow-strong);
-  transform: translateY(-4px);
-  outline: none;
-}
-
-.floating-scroll-top-btn:focus-visible {
-  box-shadow: 0 0 0 3px var(--accent-purple);
-}
-
-@media (max-width: 480px) {
-  .floating-scroll-top-btn {
-    bottom: 1.25rem;
-    right: 1.25rem;
-    width: 42px;
-    height: 42px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .floating-scroll-top-btn {
-    transition: opacity 0.15s ease, visibility 0.15s ease;
-    transform: none !important;
   }
 }

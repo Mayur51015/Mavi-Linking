@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './routes/ProtectedRoute';
-
+import CustomCursor from './components/CustomCursor';
 // Page Loader Component for Router Suspense
 const PageLoader = () => (
   <div style={{
@@ -81,6 +81,7 @@ const App = () => {
   return (
     <Router>
       <div className="app-container">
+        <CustomCursor />
         <React.Suspense fallback={<PageLoader />}>
           <Routes>
             {/* ─── Public Routes ─────────────────────────────────── */}

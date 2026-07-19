@@ -881,3 +881,60 @@ html {
   outline: none;
   box-shadow: 0 0 0 2px var(--accent-purple);
 }
+
+/* ─── Floating Scroll To Top Button ─────────────────────────────── */
+.floating-scroll-top-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  z-index: 60;
+  box-shadow: var(--shadow-card);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px);
+  transition: opacity 0.3s ease, transform 0.3s ease,
+    box-shadow 0.3s ease, visibility 0.3s ease;
+}
+
+.floating-scroll-top-btn.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.floating-scroll-top-btn:hover,
+.floating-scroll-top-btn:focus-visible {
+  box-shadow: var(--shadow-glow-strong);
+  transform: translateY(-4px);
+  outline: none;
+}
+
+.floating-scroll-top-btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-purple);
+}
+
+@media (max-width: 480px) {
+  .floating-scroll-top-btn {
+    bottom: 1.25rem;
+    right: 1.25rem;
+    width: 42px;
+    height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-scroll-top-btn {
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    transform: none !important;
+  }
+}

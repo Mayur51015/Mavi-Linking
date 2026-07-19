@@ -81,6 +81,7 @@ const App = () => {
   return (
     <Router>
       <div className="app-container">
+
         <React.Suspense fallback={<PageLoader />}>
           <Routes>
             {/* ─── Public Routes ─────────────────────────────────── */}

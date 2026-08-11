@@ -295,6 +295,14 @@ Mavi-Linking/
 
 ## 🤝 Contributing
 
+We welcome contributions!
+
+Please read our
+[Contributing Guide](CONTRIBUTING.md)
+before claiming an issue.
+
+> **Issue assignment is generally first-come, first-served. Please wait for maintainer confirmation before starting work.**
+
 Contributions, issues, and feature requests are welcome!  
 Feel free to check the [issues page](https://github.com/Mayur51015/Mavi-Linking/issues).
 

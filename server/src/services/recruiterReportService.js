@@ -7,6 +7,8 @@ const Ranking = require('../models/Ranking');
 const Project = require('../models/Project');
 const aiAnalyzer = require('./aiAnalyzer');
 
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const toText = (value, fallback = 'Not available') => {
   if (value === null || value === undefined || value === '') return fallback;
   if (Array.isArray(value)) return value.length ? value.join(', ') : fallback;
@@ -17,21 +19,19 @@ const toText = (value, fallback = 'Not available') => {
 
 const scopedCandidateQuery = (candidateId, recruiter) => {
   const query = { _id: candidateId, role: 'user', isPublic: true };
-  const conditions = [];
 
   if (recruiter.allowedColleges?.length) {
-    conditions.push({
-      'university.name': { $in: recruiter.allowedColleges.map((college) => new RegExp(`^${String(college).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')) },
-    });
+    query['university.name'] = {
+      $in: recruiter.allowedColleges.map((college) => new RegExp(`^${escapeRegex(college)}$`, 'i')),
+    };
   }
 
   if (recruiter.allowedDepartments?.length) {
-    conditions.push({
-      'university.department': { $in: recruiter.allowedDepartments.map((department) => new RegExp(`^${String(department).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')) },
-    });
+    query['university.department'] = {
+      $in: recruiter.allowedDepartments.map((department) => new RegExp(`^${escapeRegex(department)}$`, 'i')),
+    };
   }
 
-  if (conditions.length) query.$or = conditions;
   return query;
 };
 
@@ -56,8 +56,6 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
     Project.find({ user: user._id }).sort({ featured: -1, updatedAt: -1 }).lean(),
   ]);
 
-  // Use persisted AI data first. A fresh analysis is attempted, but AI outages
-  // must never prevent the verified profile data from becoming a PDF.
   let aiData = user.aiAnalysis || {};
   let aiAvailable = Boolean(insight?.rawAiSummary || aiData?.hiringRecommendation);
 
@@ -83,9 +81,16 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
     ? `${process.env.CLIENT_URL || 'http://localhost:5173'}/u/${user.username}`
     : null;
 
-  const qrDataUrl = publicProfile ? await QRCode.toDataURL(publicProfile, { margin: 1, width: 120 }) : null;
+  let qrDataUrl = null;
+  if (publicProfile) {
+    try {
+      qrDataUrl = await QRCode.toDataURL(publicProfile, { margin: 1, width: 120 });
+    } catch (error) {
+      console.warn(`Recruiter report QR generation skipped for ${user._id}: ${error.message}`);
+    }
+  }
 
-  const report = {
+  return {
     candidate: user,
     insight,
     dna,
@@ -97,8 +102,6 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
     publicProfile,
     qrDataUrl,
   };
-
-  return report;
 };
 
 const writeSection = (doc, title, lines) => {
@@ -119,7 +122,7 @@ const writeRecruiterReportPdf = async (report, res) => {
   res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
   res.setHeader('Cache-Control', 'no-store');
 
-  const doc = new PDFDocument({ size: 'A4', margin: 45, bufferPages: true });
+  const doc = new PDFDocument({ size: 'A4', margin: 45 });
   doc.pipe(res);
 
   doc.fontSize(25).fillColor('#111').text('MAVI-Linking', { align: 'center' });

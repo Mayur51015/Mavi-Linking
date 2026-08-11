@@ -76,6 +76,9 @@ const PublicIdentity = React.lazy(() => import('./pages/PublicIdentity'));
 // Legacy Pages (Lazy)
 const CollegeDashboard = React.lazy(() => import('./pages/CollegeDashboard'));
 
+// Error Pages (Lazy)
+const NotFound = React.lazy(() => import('./pages/NotFound'));
+
 
 const App = () => {
   return (
@@ -239,6 +242,9 @@ const App = () => {
             {/* ─── Public Identity & Portfolio ────────────────────── */}
             <Route path="/u/:username" element={<PublicIdentity />} />
             <Route path="/portfolio/:id" element={<PublicPortfolio />} />
+
+            {/* ─── 404 Not Found (catch-all, must be last) ────────── */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </React.Suspense>
       </div>

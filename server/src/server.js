@@ -44,6 +44,11 @@ const http = require('http');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust the first proxy hop (Render, etc.) so req.ip reflects the real
+// client IP from X-Forwarded-For instead of the proxy's IP — required for
+// express-rate-limit to key limits per actual client, not per proxy.
+app.set('trust proxy', 1);
+
 // ─── Security Middleware ────────────────────────────────────────────────────
 app.use(helmet()); // Security headers
 

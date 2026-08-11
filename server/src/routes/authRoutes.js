@@ -2,6 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const validate = require('../middleware/validate');
 const { protect } = require('../middleware/auth');
+const authLimiter = require('../middleware/authLimiter');
 const {
   register,
   login,
@@ -90,12 +91,12 @@ const updateProfileValidation = [
 
 // ─── Public Routes ──────────────────────────────────────────────────────────
 
-router.post('/register', registerValidation, validate, register);
-router.post('/login', loginValidation, validate, login);
+router.post('/register', authLimiter, registerValidation, validate, register);
+router.post('/login', authLimiter, loginValidation, validate, login);
 router.post('/refresh', refreshToken);
 router.post('/verify-email', verifyEmail);
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 router.post('/google', googleLogin);
 router.post('/github', githubLogin);
 

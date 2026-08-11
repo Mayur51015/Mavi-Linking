@@ -1,53 +1,111 @@
 # Contributing Guide
 
-Thank you for contributing to this project! 🚀
+Thank you for contributing to the project! 🚀
 
-## Issue Claiming Policy
+## Issue Claiming & Assignment Policy
 
-To avoid duplicate work and conflicts, please follow these rules:
+We want to make contribution opportunities fair while ensuring that
+issues are handled effectively.
 
-### 1. Check Before Starting
+### 1. Check the Issue First
 
-Before working on an issue, check whether someone has already claimed it or is working on it.
+Before requesting an issue, check whether it is already assigned or
+actively being worked on.
 
-### 2. Claim the Issue
+### 2. Express Your Interest
 
-Comment on the issue:
+You can comment on an issue using:
 
-> /claim
+/claim
 
 or:
 
-> I would like to work on this issue. Please assign it to me.
+> I would like to work on this issue.
 
-### 3. Wait for Maintainer Confirmation
+You may also briefly describe your proposed approach.
 
-Please **do not start implementation immediately after commenting**.
+### 3. Claiming Does Not Guarantee Assignment
 
-Wait until a maintainer assigns the issue to you.
+A `/claim` comment is a request to work on an issue, not an automatic
+assignment.
 
-### 4. First-Come, First-Served
+Maintainers will review the requests before assigning the issue.
 
-Issues are generally assigned on a **first-come, first-served basis**.
+### 4. Maintainer Assignment
 
-If multiple contributors request the same issue, the contributor who requested it first will normally receive the assignment.
+When multiple contributors are interested in the same issue, maintainers
+may consider:
 
-### 5. One Issue = One Contributor
+- Relevant technical skills
+- Previous contributions to the project
+- Understanding of the issue
+- Proposed implementation approach
+- Quality of previous PRs
+- Availability and ability to complete the work
 
-An issue should normally have only **one active contributor** at a time.
+The goal is to assign the issue to the contributor who is the best fit
+for the task.
 
-Please do not work on an issue that is already assigned to someone else.
+### 5. Equal Opportunity
 
-### 6. Pull Requests
+Being a new contributor does not automatically disqualify you.
 
-After completing the work:
+Contributors are encouraged to explain their approach and demonstrate
+their understanding of the issue.
 
-1. Create a new branch.
+Maintainers will make assignments based on the requirements of the issue,
+not personal preference.
+
+### 6. Do Not Start Duplicate Work
+
+Please wait until the issue is officially assigned to you before
+starting significant implementation.
+
+If another contributor is selected, please respect the assignment and
+choose another available issue.
+
+### 7. Multiple Interested Contributors
+
+If multiple contributors are interested in the same issue, maintainers
+may ask contributors to provide a short proposed approach.
+
+The maintainer may then select the most suitable contributor.
+
+### 8. Security-Critical Issues
+
+For security-sensitive issues, maintainers may prioritize contributors
+with relevant security/backend experience.
+
+Contributors should never post sensitive credentials, tokens, private
+data, or exploitable details publicly.
+
+### 9. Inactive Assignments
+
+If an assigned contributor does not make reasonable progress within the
+agreed timeframe, maintainers may unassign the issue and make it
+available to another contributor.
+
+### 10. Pull Requests
+
+After completing an assigned issue:
+
+1. Create a dedicated branch.
 2. Implement the changes.
 3. Test your changes.
 4. Push your branch.
 5. Open a Pull Request.
-6. Link the issue using:
+6. Reference the issue in the PR.
 
-```text
-Closes #ISSUE_NUMBER
+For example:
+
+Closes #123
+
+### 11. Maintainer Decision
+
+Maintainers have the final decision regarding issue assignments,
+reassignments, and contribution eligibility.
+
+Our goal is to provide a fair, transparent, and welcoming environment
+while maintaining the quality of the project.
+
+Thank you for contributing! ❤️

@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Download, FileText, CheckCircle, RotateCcw } from 'lucide-react';
 import api from '../api/axios';
+
+const REPORT_FILENAME = 'MAVI-Linking-Recruiter-AI-Report.pdf';
 
 const ReportGenerator = ({ candidateId }) => {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
+  const [reportUrl, setReportUrl] = useState('');
+
+  useEffect(() => {
+    return () => {
+      if (reportUrl) window.URL.revokeObjectURL(reportUrl);
+    };
+  }, [reportUrl]);
 
   const handleGenerate = async () => {
     if (!candidateId) {
@@ -24,7 +33,7 @@ const ReportGenerator = ({ candidateId }) => {
       });
 
       const contentType = response.headers['content-type'] || '';
-      if (!contentType.includes('application/pdf')) {
+      if (!contentType.toLowerCase().includes('application/pdf')) {
         const text = await response.data.text();
         let message = 'The server did not return a valid PDF.';
         try {
@@ -38,17 +47,13 @@ const ReportGenerator = ({ candidateId }) => {
 
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const objectUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = 'MAVI-Linking-Recruiter-AI-Report.pdf';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(objectUrl);
+      setReportUrl(objectUrl);
       setReady(true);
     } catch (err) {
-      console.error('Recruiter AI report download failed:', err);
-      if (err.response?.status === 403) {
+      console.error('Recruiter AI report generation failed:', err);
+      if (err.response?.status === 401) {
+        setError('Your recruiter session has expired. Please sign in again.');
+      } else if (err.response?.status === 403) {
         setError('You are not authorized to generate this candidate report.');
       } else if (err.response?.status === 404) {
         setError('Candidate not found or outside your authorized access scope.');
@@ -60,6 +65,20 @@ const ReportGenerator = ({ candidateId }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDownload = () => {
+    if (!reportUrl) {
+      setError('Generate the report before downloading it.');
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = reportUrl;
+    link.download = REPORT_FILENAME;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   return (
@@ -74,16 +93,19 @@ const ReportGenerator = ({ candidateId }) => {
 
       {!ready ? (
         <button onClick={handleGenerate} disabled={loading} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'center' }}>
-          <Download size={20} />
+          <FileText size={20} />
           {loading ? 'Generating...' : 'Generate Report'}
         </button>
       ) : (
         <div style={{ width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: '#10b981', marginBottom: '1rem' }}>
-            <CheckCircle size={20} /> Report downloaded successfully!
+            <CheckCircle size={20} /> Report generated successfully!
           </div>
+          <button onClick={handleDownload} className="btn btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            <Download size={18} /> Download AI Report
+          </button>
           <button onClick={handleGenerate} disabled={loading} className="btn btn-outline" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-            <Download size={18} /> Download AI Report Again
+            <RotateCcw size={18} /> {loading ? 'Generating...' : 'Regenerate Report'}
           </button>
         </div>
       )}

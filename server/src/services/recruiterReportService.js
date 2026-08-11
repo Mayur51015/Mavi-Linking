@@ -5,6 +5,7 @@ const Insight = require('../models/Insight');
 const DNA = require('../models/DNA');
 const Ranking = require('../models/Ranking');
 const Project = require('../models/Project');
+const Analytics = require('../models/Analytics');
 const aiAnalyzer = require('./aiAnalyzer');
 
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -49,27 +50,34 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
     throw error;
   }
 
-  const [insight, dna, ranking, projects] = await Promise.all([
+  let [insight, dna, ranking, projects, analytics] = await Promise.all([
     Insight.findOne({ userId: user._id }).lean(),
     DNA.findOne({ userId: user._id }).lean(),
     Ranking.findOne({ userId: user._id }).lean(),
     Project.find({ user: user._id }).sort({ featured: -1, updatedAt: -1 }).lean(),
+    Analytics.findOne({ userId: user._id }).sort({ month: -1, updatedAt: -1 }).lean(),
   ]);
 
   let aiData = user.aiAnalysis || {};
-  let aiAvailable = Boolean(insight?.rawAiSummary || aiData?.hiringRecommendation);
+  let aiAvailable = Boolean(insight || dna || ranking || analytics);
 
   try {
     const analysis = await Promise.race([
       aiAnalyzer.analyzeUser(user),
       new Promise((_, reject) => setTimeout(() => reject(new Error('AI analysis timeout')), 12000)),
     ]);
-    if (analysis?.insight || analysis?.dna || analysis?.ranking) {
+
+    if (analysis) {
       aiAvailable = true;
+      insight = analysis.insight || insight;
+      dna = analysis.dna || dna;
+      ranking = analysis.ranking || ranking;
+      analytics = analysis.analytics || analytics;
       aiData = {
         ...aiData,
         strengths: analysis.insight?.strengths || aiData.strengths || [],
         weaknesses: analysis.insight?.improvements || aiData.weaknesses || [],
+        recommendedRoles: analysis.insight?.careerRecommendations || aiData.recommendedRoles || [],
         hiringRecommendation: aiData.hiringRecommendation || '',
       };
     }
@@ -96,6 +104,7 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
     dna,
     ranking,
     projects,
+    analytics,
     aiData,
     aiAvailable,
     generatedAt: new Date(),
@@ -196,11 +205,11 @@ const writeRecruiterReportPdf = async (report, res) => {
 
   writeSection(doc, 'AI Summary & Recommendation', [
     `AI Analysis Status: ${report.aiAvailable ? 'Available' : 'Temporarily unavailable — report generated from verified profile/database data.'}`,
-    `AI Summary: ${toText(report.insight?.rawAiSummary)}`,
+    `AI Summary: ${toText(report.insight?.rawAiSummary || report.analytics?.aiSummary)}`,
     `Strengths: ${toText(report.insight?.strengths || report.aiData?.strengths)}`,
     `Improvement Areas: ${toText(report.insight?.improvements || report.aiData?.weaknesses)}`,
-    `Recommended Roles: ${toText(report.insight?.careerRecommendations || candidate.aiAnalysis?.recommendedRoles)}`,
-    `Recruiter Recommendation: ${toText(candidate.aiAnalysis?.hiringRecommendation)}`,
+    `Recommended Roles: ${toText(report.insight?.careerRecommendations || report.aiData?.recommendedRoles)}`,
+    `Recruiter Recommendation: ${toText(candidate.aiAnalysis?.hiringRecommendation || report.analytics?.careerInsight)}`,
   ]);
 
   if (report.publicProfile) {

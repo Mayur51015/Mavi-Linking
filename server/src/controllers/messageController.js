@@ -226,27 +226,14 @@ const sendMessage = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Recipient ID and content are required' });
     }
 
-    // Temporary Debug Logging
-    console.log('=== MESSAGE FLOW DEBUG START ===');
-    console.log('Incoming Headers:', JSON.stringify(req.headers, null, 2));
-    console.log('Authorization Header:', req.headers.authorization);
-    console.log('Request Body:', JSON.stringify(req.body, null, 2));
-    console.log('Sender (req.user):', JSON.stringify(req.user, null, 2));
-    console.log('Sender Role:', req.user?.role);
-
     // Load recipient user to enforce scope rules
     const recipient = await User.findById(recipientId).select('name role university allowedColleges allowedDepartments');
-    console.log('Recipient:', JSON.stringify(recipient, null, 2));
 
     if (!recipient) {
-      console.log('Result: 404 Recipient not found');
-      console.log('=== MESSAGE FLOW DEBUG END ===');
       return res.status(404).json({ success: false, message: 'Recipient not found' });
     }
 
     const authResult = isMessageAllowed(req.user, recipient);
-    console.log('isMessageAllowed Result:', authResult);
-    console.log('=== MESSAGE FLOW DEBUG END ===');
 
     if (!authResult.allowed) {
       return res.status(403).json({

@@ -1,6 +1,7 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
 const TeacherAnnouncement = require('../models/TeacherAnnouncement');
+const { buildSearchFilter, parsePagination, totalPages } = require('../utils/queryHelpers');
 
 const router = express.Router();
 
@@ -12,7 +13,8 @@ const router = express.Router();
 router.get('/my-college', protect, async (req, res, next) => {
   try {
     const college = req.user.university?.name || '';
-    const { search, page = 1, limit = 10, departmentFilter } = req.query;
+    const { search, departmentFilter } = req.query;
+    const { page, limit, skip } = parsePagination(req.query);
     const query = {};
 
     // Scope by college if available
@@ -22,30 +24,27 @@ router.get('/my-college', protect, async (req, res, next) => {
       query.department = departmentFilter;
     }
 
-    if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { content: { $regex: search, $options: 'i' } }
-      ];
+    const searchFilter = buildSearchFilter(search, ['title', 'content']);
+    if (searchFilter) {
+      Object.assign(query, searchFilter);
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await TeacherAnnouncement.countDocuments(query);
 
     const announcements = await TeacherAnnouncement.find(query)
       .populate('teacherId', 'name')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(limit);
 
     res.status(200).json({
       success: true,
       data: announcements,
       pagination: {
         total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / limit)
+        page,
+        limit,
+        pages: totalPages(total, limit)
       }
     });
   } catch (error) {

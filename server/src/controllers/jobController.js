@@ -4,6 +4,7 @@ const User = require('../models/User');
 const RecruitmentPipeline = require('../models/RecruitmentPipeline');
 const ActivityLog = require('../models/ActivityLog');
 const { createNotification } = require('../services/notificationService');
+const { buildSearchFilter, buildExactRegex } = require('../utils/queryHelpers');
 
 /**
  * @desc    Create a new job opening
@@ -61,17 +62,17 @@ const getAllJobs = async (req, res, next) => {
     const { search, department, skill } = req.query;
     const query = { status: 'open' };
 
-    if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-      ];
+    const searchFilter = buildSearchFilter(search, ['title', 'description']);
+    if (searchFilter) {
+      Object.assign(query, searchFilter);
     }
+    // department and skill are exact (case-insensitive) matches, so anchor them
+    // instead of letting the caller supply an arbitrary pattern.
     if (department) {
-      query.department = { $in: [new RegExp(department, 'i')] };
+      query.department = { $in: [buildExactRegex(department)] };
     }
     if (skill) {
-      query.skills = { $in: [new RegExp(skill, 'i')] };
+      query.skills = { $in: [buildExactRegex(skill)] };
     }
 
     const jobs = await Job.find(query)

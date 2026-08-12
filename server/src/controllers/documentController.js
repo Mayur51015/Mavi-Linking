@@ -2,6 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const SharedDocument = require('../models/SharedDocument');
+const { buildSearchFilter, parsePagination, totalPages } = require('../utils/queryHelpers');
 
 // Ensure upload directory exists
 const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads');
@@ -103,7 +104,8 @@ const uploadDocument = async (req, res, next) => {
  */
 const getDocuments = async (req, res, next) => {
   try {
-    const { search, page = 1, limit = 10, departmentFilter } = req.query;
+    const { search, departmentFilter } = req.query;
+    const { page, limit, skip } = parsePagination(req.query);
     const userRole = req.user.role;
     const college = req.user.university?.name || '';
     const department = req.user.university?.department || '';
@@ -134,32 +136,29 @@ const getDocuments = async (req, res, next) => {
       }
     }
 
-    // Search query
-    if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { fileName: { $regex: search, $options: 'i' } },
-      ];
+    // Search query — the term is escaped, so it can't widen the department and
+    // college scoping applied above or be used as a backtracking bomb.
+    const searchFilter = buildSearchFilter(search, ['title', 'description', 'fileName']);
+    if (searchFilter) {
+      Object.assign(query, searchFilter);
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await SharedDocument.countDocuments(query);
-    
+
     const docs = await SharedDocument.find(query)
       .populate('uploadedBy', 'name')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(limit);
 
     res.status(200).json({
       success: true,
       data: docs,
       pagination: {
         total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / limit),
+        page,
+        limit,
+        pages: totalPages(total, limit),
       }
     });
   } catch (error) {

@@ -38,8 +38,7 @@ export const SkeletonCard = ({ lines = 3, showAvatar = false, height }) => (
 );
 
 /** A grid of SkeletonCards, for listing pages (projects, search results, etc). */
-export const SkeletonGrid = ({ count = 3, columns = 'repeat(auto-fill, minmax(320px, 1fr))', cardProps = {} }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: columns, gap: '1.5rem' }}>
+export const SkeletonGrid = ({ count = 3, columns = 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', cardProps = {} }) => (  <div style={{ display: 'grid', gridTemplateColumns: columns, gap: '1.5rem' }}>
     {Array.from({ length: count }).map((_, i) => <SkeletonCard key={i} {...cardProps} />)}
   </div>
 );

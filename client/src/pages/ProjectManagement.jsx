@@ -132,7 +132,7 @@ const handleSubmit = async (e) => {
           <p style={{ color: 'var(--text-secondary)' }}>No projects added yet. Click "New Project" to showcase your work.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '1.5rem' }}>
           {projects.map(proj => (
             <div key={proj._id} className="glass-card animate-fade-in" style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>

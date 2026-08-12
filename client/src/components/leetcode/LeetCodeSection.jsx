@@ -35,11 +35,11 @@ const LeetCodeSection = () => {
 
 if (loading) return (
     <div style={{ marginTop: '2rem' }} aria-busy="true" aria-label="Loading LeetCode statistics">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
         <SkeletonCard lines={4} height="220px" />
         <SkeletonCard lines={4} height="220px" />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.5rem' }}>
         <SkeletonCard lines={3} height="200px" />
         <SkeletonCard lines={3} height="200px" />
       </div>
@@ -54,7 +54,7 @@ if (loading) return (
 
       {data ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.5rem' }}>
             <LeetCodeStatsCard data={data} />
             <ProblemBreakdownChart data={data} />
           </div>
@@ -63,7 +63,7 @@ if (loading) return (
             <AIInsightCard insight={data.aiInsight} />
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.5rem' }}>
             <RecentSubmissions submissions={data.recentSubmissions} />
             <BadgeList badges={data.badges} />
           </div>

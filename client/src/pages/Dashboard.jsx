@@ -579,10 +579,9 @@ const Dashboard = () => {
   return (
 
     <UserLayout>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+<header className="dashboard-header-row" style={{ marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Welcome, {user?.name}</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Manage your developer portfolio, campus placements, and recruiter feedback.</p>
+          <h1 className="dashboard-title" style={{ marginBottom: '0.5rem' }}>Welcome, {user?.name}</h1>          <p style={{ color: 'var(--text-secondary)' }}>Manage your developer portfolio, campus placements, and recruiter feedback.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -608,7 +607,7 @@ const Dashboard = () => {
       </header>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem', paddingBottom: '0.5rem' }}>
+<div className="dashboard-tabs" style={{ borderBottom: '1px solid var(--border-color)', marginBottom: '2rem', paddingBottom: '0.5rem' }}>
         {['overview', 'career', 'placement', 'documents', 'announcements', 'messages'].map(tab => (
           <button
             key={tab}
@@ -622,9 +621,9 @@ const Dashboard = () => {
               cursor: 'pointer',
               fontWeight: '600',
               textTransform: 'capitalize',
+              whiteSpace: 'nowrap',
             }}
-          >
-            {tab === 'placement' ? 'Placements' : tab === 'documents' ? 'Documents & Build' : tab === 'career' ? 'Career Intelligence' : tab === 'messages' ? 'Messages' : tab}
+          >            {tab === 'placement' ? 'Placements' : tab === 'documents' ? 'Documents & Build' : tab === 'career' ? 'Career Intelligence' : tab === 'messages' ? 'Messages' : tab}
           </button>
         ))}
       </div>
@@ -636,7 +635,7 @@ const Dashboard = () => {
             <SkeletonCard lines={1} height="110px" />
             <SkeletonCard lines={1} height="110px" />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
             <SkeletonCard lines={4} height="320px" />
             <SkeletonCard lines={4} height="320px" />
           </div>
@@ -680,7 +679,7 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                 <DNACard dna={aiData.dna} loading={loadingDNA} />
                 <SkillRadar />
               </div>
@@ -907,7 +906,7 @@ const Dashboard = () => {
               </div>
 
               {/* Document cards grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>
                 {getFilteredDocs().map(doc => {
                   const ext = getFileExt(doc);
                   const extLabel = ext ? ext.replace('.', '').toUpperCase() : null;

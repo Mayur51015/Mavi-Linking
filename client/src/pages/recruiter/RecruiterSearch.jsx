@@ -97,7 +97,7 @@ const RecruiterSearch = () => {
       )}
 
       {/* Results */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '1rem' }}>
 {loading ? (
           [1, 2, 3].map(i => <SkeletonCard key={i} showAvatar lines={3} height="180px" />)
         ) : (          developers.map(dev => (

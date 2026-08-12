@@ -339,7 +339,7 @@ if (loading) return (
                 <p>No projects showcased yet.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(350px, 100%), 1fr))', gap: '1.5rem' }}>
                 {projects.map(proj => (
                   <div key={proj._id} className="glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>{proj.title}</h3>

@@ -5,15 +5,15 @@ import {
   LogOut, LayoutDashboard, Link as LinkIcon, BarChart3,
   Terminal, Briefcase, Heart, BadgeCheck, QrCode, User,
   Megaphone, FolderOpen, Menu, X,
-} from 'lucide-react';import VerificationModal from '../components/VerificationModal';
+} from 'lucide-react';
+import VerificationModal from '../components/VerificationModal';
 import NotificationBell from '../components/NotificationBell';
 import ThemeToggle from '../components/ThemeToggle';
 const UserLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
-const [showVerify, setShowVerify] = React.useState(false);
-  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+const [showVerify, setShowVerify] = React.useState(false);  const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -43,11 +43,15 @@ return (
       {/* Sidebar */}
       <aside className={`dashboard-sidebar${sidebarOpen ? ' sidebar-open' : ''}`}>        <Link to="/" className="nav-brand" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
 <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+<div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem' }}>
           <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Terminal size={24} className="text-gradient" />
             <span className="text-gradient">MaVi Linking</span>
           </Link>
-          <button className="mobile-close-btn" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
+          <button className="sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
+            <X size={22} />
+          </button>
+        </div>          <button className="mobile-close-btn" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
             <X size={22} />
           </button>
         </div>
@@ -133,14 +137,16 @@ return (
             )}
           </div>
         </nav>
-      </aside>
+</aside>
 
-      {/* Main Content */}
-<main className="dashboard-main"><header className="dashboard-header">
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
+      {/* Main Content */}<main className="dashboard-main"><header className="dashboard-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
               <Menu size={22} />
             </button>
+            
             <User size={24} style={{ color: 'var(--accent-purple)' }} />
             <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Student Dashboard</h1>
           </div>          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -152,10 +158,9 @@ return (
           </div>
         </header>
 
-<div style={{ flex: 1, padding: '2rem 4rem', overflowY: 'auto' }}>
+<div className="dashboard-content" style={{ flex: 1, overflowY: 'auto' }}>
           {children}
-        </div>
-      </main>
+        </div>      </main>
       {showVerify && <VerificationModal onClose={() => setShowVerify(false)} />}
     </div>
   );

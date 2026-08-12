@@ -24,6 +24,27 @@ function buildApp() {
   return app;
 }
 
+/**
+ * A stand-in for a Mongoose Query: awaitable, and chainable via .select().
+ *
+ * Whether the controller calls .select() depends on which fields are marked
+ * select:false on the schema, so the mock behaves correctly either way rather
+ * than baking in one shape and breaking when that changes.
+ */
+function mockQuery(result) {
+  const query = {
+    select: jest.fn(() => query),
+    lean: jest.fn(() => query),
+    then: (resolve, reject) => Promise.resolve(result).then(resolve, reject),
+  };
+  return query;
+}
+
+/** Point User.findOne at a result, via the query-like wrapper above. */
+function whenUserFound(result) {
+  User.findOne.mockReturnValue(mockQuery(result));
+}
+
 function fakeUser(overrides = {}) {
   return {
     _id: 'user-id-1',
@@ -47,7 +68,7 @@ afterEach(() => {
 
 describe('POST /forgot-password', () => {
   it('returns 200 with a generic message when the account does not exist', async () => {
-    User.findOne.mockResolvedValue(null);
+    whenUserFound(null);
 
     const res = await request(buildApp())
       .post('/forgot-password')
@@ -59,10 +80,10 @@ describe('POST /forgot-password', () => {
   });
 
   it('returns an identical status and message for an existing account', async () => {
-    User.findOne.mockResolvedValue(null);
+    whenUserFound(null);
     const missing = await request(buildApp()).post('/forgot-password').send({ email: 'nobody@example.com' });
 
-    User.findOne.mockResolvedValue(fakeUser());
+    whenUserFound(fakeUser());
     const existing = await request(buildApp()).post('/forgot-password').send({ email: 'victim@example.com' });
 
     // The whole point: an attacker can't tell these two apart.
@@ -79,7 +100,7 @@ describe('POST /forgot-password', () => {
   it('stores the hash of the token, never the token itself', async () => {
     process.env.NODE_ENV = 'development';
     const user = fakeUser();
-    User.findOne.mockResolvedValue(user);
+    whenUserFound(user);
 
     const res = await request(buildApp()).post('/forgot-password').send({ email: user.email });
 
@@ -92,7 +113,7 @@ describe('POST /forgot-password', () => {
 
   it('sets an expiry roughly one hour out', async () => {
     const user = fakeUser();
-    User.findOne.mockResolvedValue(user);
+    whenUserFound(user);
 
     await request(buildApp()).post('/forgot-password').send({ email: user.email });
 
@@ -103,7 +124,7 @@ describe('POST /forgot-password', () => {
 
   it('does NOT return the reset token when NODE_ENV is production', async () => {
     process.env.NODE_ENV = 'production';
-    User.findOne.mockResolvedValue(fakeUser());
+    whenUserFound(fakeUser());
 
     const res = await request(buildApp()).post('/forgot-password').send({ email: 'victim@example.com' });
 
@@ -114,7 +135,7 @@ describe('POST /forgot-password', () => {
 
   it('returns the reset token outside production so the flow stays testable', async () => {
     process.env.NODE_ENV = 'development';
-    User.findOne.mockResolvedValue(fakeUser());
+    whenUserFound(fakeUser());
 
     const res = await request(buildApp()).post('/forgot-password').send({ email: 'victim@example.com' });
 
@@ -125,7 +146,7 @@ describe('POST /forgot-password', () => {
 describe('POST /reset-password', () => {
   it('looks the user up by the hashed token, not the raw one', async () => {
     const user = fakeUser();
-    User.findOne.mockResolvedValue(user);
+    whenUserFound(user);
 
     await request(buildApp())
       .post('/reset-password')
@@ -138,7 +159,7 @@ describe('POST /reset-password', () => {
   });
 
   it('rejects an unknown or expired token', async () => {
-    User.findOne.mockResolvedValue(null);
+    whenUserFound(null);
 
     const res = await request(buildApp())
       .post('/reset-password')
@@ -158,7 +179,7 @@ describe('POST /reset-password', () => {
 
   it('clears the reset token so it cannot be replayed', async () => {
     const user = fakeUser();
-    User.findOne.mockResolvedValue(user);
+    whenUserFound(user);
 
     await request(buildApp()).post('/reset-password').send({ token: 'abc', password: 'NewPassw0rd' });
 
@@ -168,7 +189,7 @@ describe('POST /reset-password', () => {
 
   it('revokes the refresh token so an existing session cannot survive the reset', async () => {
     const user = fakeUser({ refreshToken: 'attacker-held-token' });
-    User.findOne.mockResolvedValue(user);
+    whenUserFound(user);
 
     await request(buildApp()).post('/reset-password').send({ token: 'abc', password: 'NewPassw0rd' });
 
@@ -178,7 +199,7 @@ describe('POST /reset-password', () => {
   it('stamps passwordChangedAt so previously issued JWTs are rejected', async () => {
     const user = fakeUser();
     const before = Date.now();
-    User.findOne.mockResolvedValue(user);
+    whenUserFound(user);
 
     await request(buildApp()).post('/reset-password').send({ token: 'abc', password: 'NewPassw0rd' });
 
@@ -188,7 +209,7 @@ describe('POST /reset-password', () => {
 
   it('assigns the new password and persists in a single save', async () => {
     const user = fakeUser();
-    User.findOne.mockResolvedValue(user);
+    whenUserFound(user);
 
     const res = await request(buildApp())
       .post('/reset-password')
@@ -200,7 +221,7 @@ describe('POST /reset-password', () => {
   });
 
   it('writes an audit log entry noting the session revocation', async () => {
-    User.findOne.mockResolvedValue(fakeUser());
+    whenUserFound(fakeUser());
 
     await request(buildApp()).post('/reset-password').send({ token: 'abc', password: 'NewPassw0rd' });
 

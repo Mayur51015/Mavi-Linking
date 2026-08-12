@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import api from '../api/axios';
 import QRModal from '../components/QRModal';
-
+import { SkeletonCircle, SkeletonText, SkeletonCard } from '../components/ui/Skeleton';
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
 const tierColors = {
@@ -44,12 +44,21 @@ const PublicIdentity = () => {
   }, [username]);
 
 
-  if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="animate-pulse" style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>Loading identity...</div>
-    </div>
+if (loading) return (
+    <main className="container" style={{ paddingBottom: '5rem', maxWidth: '1000px' }} aria-busy="true" aria-label="Loading developer profile">
+      <div className="glass-card-static" style={{ display: 'flex', alignItems: 'center', gap: '2rem', padding: '3rem', marginTop: '2rem', marginBottom: '2rem' }}>
+        <SkeletonCircle size="100px" />
+        <div style={{ flex: 1 }}>
+          <SkeletonText lines={3} />
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+        <SkeletonCard lines={2} height="140px" />
+        <SkeletonCard lines={2} height="140px" />
+        <SkeletonCard lines={2} height="140px" />
+      </div>
+    </main>
   );
-
   if (error) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
       <div style={{ fontSize: '3rem' }}>🔍</div>
@@ -330,7 +339,7 @@ const PublicIdentity = () => {
                 <p>No projects showcased yet.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(350px, 100%), 1fr))', gap: '1.5rem' }}>
                 {projects.map(proj => (
                   <div key={proj._id} className="glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>{proj.title}</h3>

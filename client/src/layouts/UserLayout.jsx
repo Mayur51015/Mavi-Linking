@@ -4,7 +4,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   LogOut, LayoutDashboard, Link as LinkIcon, BarChart3,
   Terminal, Briefcase, Heart, BadgeCheck, QrCode, User,
-  Megaphone, FolderOpen,
+  Megaphone, FolderOpen, Menu, X,
 } from 'lucide-react';
 import VerificationModal from '../components/VerificationModal';
 import NotificationBell from '../components/NotificationBell';
@@ -13,8 +13,7 @@ const UserLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
-  const [showVerify, setShowVerify] = React.useState(false);
-
+const [showVerify, setShowVerify] = React.useState(false);  const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -33,19 +32,29 @@ const UserLayout = ({ children }) => {
 
   const publicUsername = user?.username || user?.platforms?.github?.username;
 
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Sidebar */}
-      <aside style={{
-        width: '280px', background: 'var(--bg-glass)', borderRight: '1px solid var(--border-color)',
-        padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column',
-        backdropFilter: 'blur(12px)',
-      }}>
-        <Link to="/" className="nav-brand" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Terminal size={24} className="text-gradient" />
-          <span className="text-gradient">MaVi Linking</span>
-        </Link>
+return (
+    <div className="dashboard-shell">
+      {/* Mobile overlay — tapping it closes the sidebar */}
+      <div
+        className={`sidebar-overlay${sidebarOpen ? ' active' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
 
+      {/* Sidebar */}
+      <aside className={`dashboard-sidebar${sidebarOpen ? ' sidebar-open' : ''}`}>        <Link to="/" className="nav-brand" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+<div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+<div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem' }}>
+          <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Terminal size={24} className="text-gradient" />
+            <span className="text-gradient">MaVi Linking</span>
+          </Link>
+          <button className="sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
+            <X size={22} />
+          </button>
+        </div>          <button className="mobile-close-btn" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
+            <X size={22} />
+          </button>
+        </div>
         {/* User Info */}
         <div style={{
           background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px',
@@ -74,14 +83,14 @@ const UserLayout = ({ children }) => {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Link
+<Link
                 key={item.name}
                 to={item.path}
+                onClick={() => setSidebarOpen(false)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.75rem',
                   padding: '0.625rem 1rem', borderRadius: '10px',
-                  background: isActive ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
-                  color: isActive ? 'white' : 'var(--text-secondary)',
+                  background: isActive ? 'rgba(139, 92, 246, 0.1)' : 'transparent',                  color: isActive ? 'white' : 'var(--text-secondary)',
                   borderLeft: isActive ? '3px solid var(--accent-purple)' : '3px solid transparent',
                   transition: 'all 0.2s',
                   fontSize: '0.9rem',
@@ -128,23 +137,19 @@ const UserLayout = ({ children }) => {
             )}
           </div>
         </nav>
-      </aside>
+</aside>
 
-      {/* Main Content */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-        <header style={{ 
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-          width: '100%', padding: '1rem 1.5rem', 
-          borderBottom: '1px solid var(--border-color)', 
-          background: 'rgba(18, 18, 28, 0.5)',
-          backdropFilter: 'blur(12px)',
-          minHeight: '72px'
-        }}>
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
+      {/* Main Content */}<main className="dashboard-main"><header className="dashboard-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+              <Menu size={22} />
+            </button>
+            
             <User size={24} style={{ color: 'var(--accent-purple)' }} />
             <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Student Dashboard</h1>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          </div>          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
 <ThemeToggle />
             <NotificationBell />            <button onClick={handleLogout} className="btn btn-danger">
               <LogOut size={18} />
@@ -153,11 +158,9 @@ const UserLayout = ({ children }) => {
           </div>
         </header>
 
-        <div style={{ flex: 1, padding: '2rem 4rem', overflowY: 'auto' }}>
+<div className="dashboard-content" style={{ flex: 1, overflowY: 'auto' }}>
           {children}
-        </div>
-      </main>
-
+        </div>      </main>
       {showVerify && <VerificationModal onClose={() => setShowVerify(false)} />}
     </div>
   );

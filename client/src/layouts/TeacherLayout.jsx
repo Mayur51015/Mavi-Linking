@@ -3,16 +3,15 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   LogOut, Users, BarChart3, TrendingUp, Award,
-  Terminal, GraduationCap, Building2, Megaphone, FolderOpen,
-} from 'lucide-react';
-import ThemeToggle from '../components/ThemeToggle';
+  Terminal, GraduationCap, Building2, Megaphone, FolderOpen, Menu, X,
+} from 'lucide-react';import ThemeToggle from '../components/ThemeToggle';
 const TeacherLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-  const location = useLocation();
+const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = () => {    logout();
     navigate('/login');
   };
 
@@ -79,14 +78,14 @@ const TeacherLayout = ({ children }) => {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Link
+<Link
                 key={item.name}
                 to={item.path}
+                onClick={() => setSidebarOpen(false)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.75rem',
                   padding: '0.625rem 1rem', borderRadius: '10px',
-                  background: isActive ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
-                  color: isActive ? 'white' : 'var(--text-secondary)',
+                  background: isActive ? 'rgba(16, 185, 129, 0.1)' : 'transparent',                  color: isActive ? 'white' : 'var(--text-secondary)',
                   borderLeft: isActive ? '3px solid var(--accent-emerald)' : '3px solid transparent',
                   transition: 'all 0.2s',
                   fontSize: '0.9rem',
@@ -116,19 +115,14 @@ const TeacherLayout = ({ children }) => {
 
       {/* Main Content */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-        <header style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          width: '100%', padding: '1rem 1.5rem',
-          borderBottom: '1px solid var(--border-color)',
-          background: 'rgba(18, 18, 28, 0.5)',
-          backdropFilter: 'blur(12px)',
-          minHeight: '72px'
-        }}>
+<header className="dashboard-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+              <Menu size={22} />
+            </button>
             <GraduationCap size={24} style={{ color: 'var(--accent-emerald)' }} />
             <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Teacher Dashboard</h1>
-          </div>
-<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          </div><div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <ThemeToggle />
             <button onClick={handleLogout} className="btn btn-danger">
               <LogOut size={18} />

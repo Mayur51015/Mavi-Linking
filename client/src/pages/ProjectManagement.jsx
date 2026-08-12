@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import UserLayout from '../layouts/UserLayout';
 import api from '../api/axios';
 import { Briefcase, Plus, Trash2, ExternalLink, GitBranch } from 'lucide-react';
-
+import { SkeletonGrid } from '../components/ui/Skeleton';import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
+import { getErrorMessage } from '../utils/errorMessage';
 const ProjectManagement = () => {
-  const [projects, setProjects] = useState([]);
+const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  
+  const [saving, setSaving] = useState(false);  const toast = useToast();
+  const confirm = useConfirm();  
   // Form State
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -20,8 +23,8 @@ const ProjectManagement = () => {
     try {
       const res = await api.get('/projects');
       setProjects(res.data.data);
-    } catch (error) {
-      console.error(error);
+} catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to load your projects.'));
     } finally {
       setLoading(false);
     }
@@ -30,9 +33,9 @@ const ProjectManagement = () => {
   useEffect(() => {
     fetchProjects();
   }, []);
-
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
+    setSaving(true);
     try {
       const techArray = technologies.split(',').map(t => t.trim()).filter(t => t);
       await api.post('/projects', {
@@ -53,19 +56,24 @@ const ProjectManagement = () => {
     } catch (error) {
       console.error("Failed to add project", error);
       alert('Failed to add project. Ensure all URLs are valid and titles are provided.');
+    } finally {
+      setSaving(false);
     }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) return;
+  };const handleDelete = async (id) => {
+    const confirmed = await confirm({
+      title: 'Delete project?',
+      message: 'This will permanently remove the project from your portfolio. This action cannot be undone.',
+      confirmLabel: 'Delete',
+    });
+    if (!confirmed) return;
     try {
       await api.delete(`/projects/${id}`);
+      toast.success('Project deleted.');
       fetchProjects();
     } catch (error) {
-      console.error("Failed to delete", error);
+      toast.error(getErrorMessage(error, 'Failed to delete the project.'));
     }
   };
-
   return (
     <UserLayout>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem' }}>
@@ -112,21 +120,19 @@ const ProjectManagement = () => {
             </div>
 
             <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <button type="submit" className="btn btn-primary">Save Project</button>
-            </div>
+<button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Project'}</button>            </div>
           </form>
         </div>
       )}
 
-      {loading ? (
-        <div style={{ color: 'var(--text-secondary)' }}>Loading projects...</div>
-      ) : projects.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: 'center', padding: '3rem' }}>
+{loading ? (
+        <SkeletonGrid count={3} cardProps={{ lines: 3, height: '220px' }} />
+      ) : projects.length === 0 ? (        <div className="glass-card" style={{ textAlign: 'center', padding: '3rem' }}>
           <Briefcase size={48} color="var(--text-muted)" style={{ margin: '0 auto 1rem auto', opacity: 0.5 }} />
           <p style={{ color: 'var(--text-secondary)' }}>No projects added yet. Click "New Project" to showcase your work.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '1.5rem' }}>
           {projects.map(proj => (
             <div key={proj._id} className="glass-card animate-fade-in" style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>

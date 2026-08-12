@@ -3,6 +3,15 @@ const User = require('../models/User');
 const Activity = require('../models/Activity');
 const ActivityLog = require('../models/ActivityLog');
 const { getIO } = require('../config/socket');
+const { hashToken, createHashedToken } = require('../utils/tokenUtils');
+
+// Reset tokens are valid for one hour from issue.
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+
+// Email delivery is not wired up yet, so in development the reset token is
+// echoed back to make the flow testable. In production it must never leave the
+// server — returning it there turns forgot-password into a takeover endpoint.
+const shouldExposeResetToken = () => process.env.NODE_ENV !== 'production';
 
 /**
  * @desc    Register a new user (supports user/recruiter/teacher roles)
@@ -372,21 +381,38 @@ const verifyEmail = async (req, res, next) => {
 const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found with this email' });
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    // Same wording and status code whether or not the account exists, so this
+    // endpoint can't be used to enumerate registered addresses. This matches
+    // how the login handler already treats unknown emails.
+    const genericResponse = {
+      success: true,
+      message: 'If an account exists for that email, a password reset link has been sent.',
+    };
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(200).json(genericResponse);
+    }
+
+    // Only the digest is persisted; the raw token exists solely in the reply.
+    const { rawToken, hashedToken } = createHashedToken();
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + RESET_TOKEN_TTL_MS;
     await user.save();
 
-    res.status(200).json({
-      success: true,
-      message: 'Password reset link sent (simulated).',
-      data: { resetToken },
-    });
+    const payload = { ...genericResponse };
+    if (shouldExposeResetToken()) {
+      payload.data = { resetToken: rawToken };
+      payload.devNote =
+        'resetToken is returned because NODE_ENV is not "production". It is omitted in production builds.';
+    }
+
+    res.status(200).json(payload);
   } catch (error) {
     next(error);
   }
@@ -400,8 +426,17 @@ const forgotPassword = async (req, res, next) => {
 const resetPassword = async (req, res, next) => {
   try {
     const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Both a reset token and a new password are required',
+      });
+    }
+
+    // The database stores the digest, so hash the incoming token to look it up.
     const user = await User.findOne({
-      resetPasswordToken: token,
+      resetPasswordToken: hashToken(token),
       resetPasswordExpires: { $gt: Date.now() },
     });
 
@@ -412,12 +447,19 @@ const resetPassword = async (req, res, next) => {
     user.password = password;
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
+
+    // Evict every existing session. Without this, an attacker who already has
+    // a refresh token or an unexpired JWT keeps their access after the victim
+    // resets — which is usually the exact reason the reset was triggered.
+    user.refreshToken = null;
+    user.passwordChangedAt = new Date();
+
     await user.save();
 
     await ActivityLog.create({
       userId: user._id,
       action: 'Reset Password',
-      details: 'Password was updated successfully via reset token',
+      details: 'Password was updated successfully via reset token. All active sessions were revoked.',
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });

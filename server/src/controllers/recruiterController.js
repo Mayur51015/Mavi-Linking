@@ -1,4 +1,5 @@
 const recruiterService = require('../services/recruiterService');
+const { generateRecruiterReport, writeRecruiterReportPdf } = require('../services/recruiterReportService');
 
 /**
  * @desc    Get recruiter dashboard stats
@@ -106,6 +107,20 @@ const updateBookmark = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Generate a recruiter-authorized PDF report for a candidate
+ * @route   GET /api/recruiter/reports/:candidateId
+ * @access  Private (recruiter/admin)
+ */
+const generateCandidateReport = async (req, res, next) => {
+  try {
+    const report = await generateRecruiterReport(req.params.candidateId, req.user);
+    await writeRecruiterReportPdf(report, res);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getRecruiterStats,
   searchDevelopers,
@@ -114,4 +129,5 @@ module.exports = {
   removeBookmark,
   getBookmarks,
   updateBookmark,
+  generateCandidateReport,
 };

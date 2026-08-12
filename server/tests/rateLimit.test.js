@@ -3,10 +3,10 @@ const request = require('supertest');
 const { authLimiter, loginLimiter } = require('../src/middleware/authLimiter');
 const apiLimiter = require('../src/middleware/apiLimiter');
 
-function buildApp(middleware) {
+function buildApp(middleware, status = 200) {
   const app = express();
   app.use(middleware);
-  app.get('/test', (req, res) => res.status(200).json({ success: true }));
+  app.get('/test', (req, res) => res.status(status).json({ success: status < 400 }));
   return app;
 }
 
@@ -18,7 +18,9 @@ describe('loginLimiter', () => {
   });
 
   it('blocks requests once the limit is exceeded and returns 429 with a generic message', async () => {
-    const app = buildApp(loginLimiter);
+    // loginLimiter sets skipSuccessfulRequests, so only failed attempts count
+    // towards the limit — the route has to answer 401 for this to exercise it.
+    const app = buildApp(loginLimiter, 401);
     for (let i = 0; i < 5; i++) {
       await request(app).get('/test');
     }

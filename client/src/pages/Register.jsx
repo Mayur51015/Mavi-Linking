@@ -75,19 +75,21 @@ const { register } = useContext(AuthContext);
         };
       }
 
-await register(payload);
+      await register(payload);
       toast.success('Account created successfully!');
 
-      // Navigate to role-specific dashboard      switch (role) {
+      // Navigate to role-specific dashboard
+      switch (role) {
         case 'recruiter': navigate('/dashboard/recruiter'); break;
         case 'teacher': navigate('/dashboard/teacher'); break;
         default: navigate('/dashboard'); break;
       }
-} catch (err) {
+    } catch (err) {
       setError(getErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
       setLoading(false);
-    }  };
+    }
+  };
 
   const renderRoleSelection = () => (
     <div className="animate-fade-in">

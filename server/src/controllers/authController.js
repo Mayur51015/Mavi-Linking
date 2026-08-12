@@ -8,10 +8,12 @@ const { hashToken, createHashedToken } = require('../utils/tokenUtils');
 // Reset tokens are valid for one hour from issue.
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
-// Email delivery is not wired up yet, so in development the reset token is
-// echoed back to make the flow testable. In production it must never leave the
-// server — returning it there turns forgot-password into a takeover endpoint.
-const shouldExposeResetToken = () => process.env.NODE_ENV !== 'production';
+// Email delivery is not wired up yet, so outside production the reset and
+// verification tokens are echoed back to keep those flows testable. In
+// production neither may leave the server: the reset token turns
+// forgot-password into an account-takeover endpoint, and the verification
+// token lets a caller mark an address as verified without receiving mail.
+const shouldExposeDevToken = () => process.env.NODE_ENV !== 'production';
 
 /**
  * @desc    Register a new user (supports user/recruiter/teacher roles)
@@ -110,15 +112,16 @@ const register = async (req, res, next) => {
       console.error('Audit Log Error:', auditErr.message);
     }
 
+    const responseData = { user, token, refreshToken };
+    if (shouldExposeDevToken()) {
+      // Dev/test convenience only — see shouldExposeDevToken above.
+      responseData.verificationToken = verificationToken;
+    }
+
     res.status(201).json({
       success: true,
       message: 'Account created successfully. Please verify your email.',
-      data: {
-        user,
-        token,
-        refreshToken,
-        verificationToken, // return for easy dev/test flow
-      },
+      data: responseData,
     });
   } catch (error) {
     next(error);
@@ -406,7 +409,7 @@ const forgotPassword = async (req, res, next) => {
     await user.save();
 
     const payload = { ...genericResponse };
-    if (shouldExposeResetToken()) {
+    if (shouldExposeDevToken()) {
       payload.data = { resetToken: rawToken };
       payload.devNote =
         'resetToken is returned because NODE_ENV is not "production". It is omitted in production builds.';

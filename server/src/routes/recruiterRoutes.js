@@ -9,7 +9,6 @@ const {
   getBookmarks,
   updateBookmark,
   getRecruiterStats,
-  generateCandidateReport,
 } = require('../controllers/recruiterController');
 const { getCompany, updateCompany } = require('../controllers/companyController');
 
@@ -24,9 +23,6 @@ router.get('/stats', getRecruiterStats);
 // Search & Compare
 router.get('/search', searchDevelopers);
 router.post('/compare', compareDevelopers);
-
-// Recruiter AI candidate report
-router.get('/reports/:candidateId', generateCandidateReport);
 
 // Bookmarks
 router.route('/bookmarks')

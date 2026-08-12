@@ -102,3 +102,17 @@ Example:
 
 ```text
 Closes #123
+
+## Reporting Violations
+
+If you experience or witness behavior that violates this Code of Conduct,
+please report it privately to the project maintainers.
+
+When making a report, provide as much relevant information as possible,
+including what happened, when it happened, and where it occurred.
+
+Please do not publicly share private information, credentials, or sensitive
+security details while reporting an incident.
+
+Project maintainers will review reports and take appropriate action based
+on the circumstances.

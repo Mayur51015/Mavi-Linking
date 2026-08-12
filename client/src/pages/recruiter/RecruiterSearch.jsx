@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, Bookmark, BadgeCheck, Eye, Users, GitPullRequest, MessageSquare, BrainCircuit, FileText, X } from 'lucide-react';
 import RecruiterLayout from '../../layouts/RecruiterLayout';
 import PlacementBadge from '../../components/PlacementBadge';
-import ReportGenerator from '../../components/ReportGenerator';
+
 import api from '../../api/axios';
 
 const RecruiterSearch = () => {
@@ -80,8 +80,7 @@ const RecruiterSearch = () => {
           onChange={e => setFilters(f => ({ ...f, minScore: e.target.value }))} style={{ width: '120px' }} />
         <input className="input-field" placeholder="Min Readiness %" type="number" value={filters.minReadiness}
           onChange={e => setFilters(f => ({ ...f, minReadiness: e.target.value }))} style={{ width: '150px' }} />
-        <button onClick={fetchDevelopers} className="btn btn-primary btn-sm"><Search size={16} /> Search</button>
-      </div>
+<button onClick={fetchDevelopers} className="btn btn-primary btn-sm" disabled={loading}><Search size={16} /> {loading ? 'Searching...' : 'Search'}</button>      </div>
 
       {comparison.length >= 2 && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="glass-card-static"
@@ -91,12 +90,7 @@ const RecruiterSearch = () => {
         </motion.div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
-        {loading ? (
-          [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '180px' }} />)
-        ) : (
-          developers.map(dev => (
-            <motion.div key={dev._id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card" style={{ padding: '1.25rem' }}>
+
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                 <div className="avatar-gradient" style={{ width: '44px', height: '44px', fontSize: '1.1rem', flexShrink: 0 }}>{dev.name?.charAt(0)}</div>
                 <div style={{ flex: 1 }}>

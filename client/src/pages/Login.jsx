@@ -2,37 +2,32 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Terminal } from 'lucide-react';
-
+import { useToast } from '../context/ToastContext';
+import { getErrorMessage } from '../utils/errorMessage';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   
-  const { login, getDashboardPath } = useContext(AuthContext);
+const { login, getDashboardPath } = useContext(AuthContext);
   const navigate = useNavigate();
-
+  const toast = useToast();
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      const res = await login(email, password);
-      // Navigate based on user role (handles legacy roles too)
-      const userRole = res?.user?.role;
+const res = await login(email, password);
+      toast.success('Welcome back! You are now signed in.');
+      // Navigate based on user role (handles legacy roles too)      const userRole = res?.user?.role;
       switch (userRole) {
         case 'recruiter': navigate('/dashboard/recruiter'); break;
         case 'teacher':
         case 'professor': navigate('/dashboard/teacher'); break;
         default: navigate('/dashboard'); break;
       }
-    } catch (err) {
-      const data = err.response?.data;
-      if (data?.errors && data.errors.length > 0) {
-        setError(data.errors[0].message);
-      } else {
-        setError(data?.message || 'Login failed. Please try again.');
-      }
-    }
-  };
+} catch (err) {
+      setError(getErrorMessage(err, 'Login failed. Please try again.'));
+    }  };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>

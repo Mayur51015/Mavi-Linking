@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import UserLayout from '../layouts/UserLayout';
 import api from '../api/axios';
 import { GitBranch, Code2, Database, Trash2, Link as LinkIcon } from 'lucide-react';
-
+import { useToast } from '../context/ToastContext';
+import { getErrorMessage } from '../utils/errorMessage';
 const PlatformCard = ({ platform, info, onLink, onUnlink }) => {
   const [username, setUsername] = useState('');
 
@@ -64,14 +65,14 @@ const PlatformCard = ({ platform, info, onLink, onUnlink }) => {
 const AccountLinking = () => {
   const [platforms, setPlatforms] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState({ text: '', type: '' });
+  const toast = useToast();
 
   const fetchPlatforms = async () => {
     try {
       const res = await api.get('/platforms');
       setPlatforms(res.data.data.platforms);
     } catch (error) {
-      console.error(error);
+      toast.error(getErrorMessage(error, 'Failed to load connected accounts.'));
     } finally {
       setLoading(false);
     }
@@ -82,46 +83,30 @@ const AccountLinking = () => {
   }, []);
 
   const handleLink = async (platform, username) => {
-    setMessage({ text: 'Linking...', type: 'info' });
     try {
       await api.put(`/platforms/${platform}`, { username });
-      setMessage({ text: `${platform} successfully linked!`, type: 'success' });
+      toast.success(`${platform} successfully linked!`);
       fetchPlatforms();
     } catch (error) {
-      setMessage({ text: error.response?.data?.message || 'Failed to link account.', type: 'error' });
+      toast.error(getErrorMessage(error, `Failed to link ${platform}. Please check the username (GitHub/LeetCode) and try again.`));
     }
   };
 
   const handleUnlink = async (platform) => {
-    setMessage({ text: 'Unlinking...', type: 'info' });
     try {
       await api.delete(`/platforms/${platform}`);
-      setMessage({ text: `${platform} unlinked.`, type: 'success' });
+      toast.success(`${platform} unlinked.`);
       fetchPlatforms();
     } catch (error) {
-      setMessage({ text: error.response?.data?.message || 'Failed to unlink account.', type: 'error' });
+      toast.error(getErrorMessage(error, `Failed to unlink ${platform}.`));
     }
   };
-
   return (
     <UserLayout>
       <header style={{ marginBottom: '3rem' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Account Linking</h1>
         <p style={{ color: 'var(--text-secondary)' }}>Connect your external developer platforms to aggregate your intelligence data.</p>
       </header>
-
-      {message.text && (
-        <div style={{ 
-          padding: '1rem', 
-          borderRadius: '8px', 
-          marginBottom: '2rem', 
-          background: message.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(52, 211, 153, 0.1)',
-          color: message.type === 'error' ? '#fca5a5' : '#6ee7b7',
-          border: `1px solid ${message.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(52, 211, 153, 0.3)'}`
-        }}>
-          {message.text}
-        </div>
-      )}
 
       {loading ? (
         <div style={{ color: 'var(--text-secondary)' }}>Loading accounts...</div>

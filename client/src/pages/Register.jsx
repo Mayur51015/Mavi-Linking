@@ -2,7 +2,8 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Terminal, User, Search, GraduationCap, ChevronRight, ChevronLeft } from 'lucide-react';
-
+import { useToast } from '../context/ToastContext';
+import { getErrorMessage } from '../utils/errorMessage';
 const ROLES = [
   { key: 'user', label: 'Student / Developer', icon: <User size={32} />, desc: 'Create your developer profile and showcase your skills.', color: 'var(--accent-purple)' },
   { key: 'recruiter', label: 'Recruiter', icon: <Search size={32} />, desc: 'Discover and recruit top developer talent.', color: 'var(--accent-cyan)' },
@@ -29,9 +30,9 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { register } = useContext(AuthContext);
+const { register } = useContext(AuthContext);
   const navigate = useNavigate();
-
+  const toast = useToast();
   const updateField = (key, value) => setFormData(prev => ({ ...prev, [key]: value }));
 
   const handleSubmit = async (e) => {
@@ -74,25 +75,19 @@ const Register = () => {
         };
       }
 
-      await register(payload);
+await register(payload);
+      toast.success('Account created successfully!');
 
-      // Navigate to role-specific dashboard
-      switch (role) {
+      // Navigate to role-specific dashboard      switch (role) {
         case 'recruiter': navigate('/dashboard/recruiter'); break;
         case 'teacher': navigate('/dashboard/teacher'); break;
         default: navigate('/dashboard'); break;
       }
-    } catch (err) {
-      const data = err.response?.data;
-      if (data?.errors && data.errors.length > 0) {
-        setError(data.errors[0].message);
-      } else {
-        setError(data?.message || 'Registration failed. Please try again.');
-      }
+} catch (err) {
+      setError(getErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
       setLoading(false);
-    }
-  };
+    }  };
 
   const renderRoleSelection = () => (
     <div className="animate-fade-in">

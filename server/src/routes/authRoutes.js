@@ -2,8 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const validate = require('../middleware/validate');
 const { protect } = require('../middleware/auth');
-const authLimiter = require('../middleware/authLimiter');
-const {
+const { authLimiter, loginLimiter } = require('../middleware/authLimiter');const {
   register,
   login,
   getMe,
@@ -92,14 +91,13 @@ const updateProfileValidation = [
 // ─── Public Routes ──────────────────────────────────────────────────────────
 
 router.post('/register', authLimiter, registerValidation, validate, register);
-router.post('/login', authLimiter, loginValidation, validate, login);
-router.post('/refresh', refreshToken);
-router.post('/verify-email', verifyEmail);
+router.post('/login', loginLimiter, loginValidation, validate, login);
+router.post('/refresh', authLimiter, refreshToken);
+router.post('/verify-email', authLimiter, verifyEmail);
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);
-router.post('/google', googleLogin);
-router.post('/github', githubLogin);
-
+router.post('/google', authLimiter, googleLogin);
+router.post('/github', authLimiter, githubLogin);
 // ─── Protected Routes ───────────────────────────────────────────────────────
 
 router.get('/me', protect, getMe);

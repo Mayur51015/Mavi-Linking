@@ -1,5 +1,5 @@
 import axios from 'axios';
-
+import { notify } from '../context/ToastContext';
 // ─── Centralized API Instance ───────────────────────────────────────────────
 // All API calls go through this single instance.
 // baseURL is set via VITE_API_URL env var. If the provided URL omits /api,
@@ -43,14 +43,22 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // No response at all means the request never reached the server —
+    // give visible feedback instead of a silent console-only failure.
+    if (!error.response) {
+      notify('error', 'Network error. Please check your connection and try again.');
+      return Promise.reject(error);
+    }
+
     // Auto-logout on 401 (expired/invalid token)
-    if (error.response && error.response.status === 401) {
+    if (error.response.status === 401) {
       const token = localStorage.getItem('token');
       if (token) {
         localStorage.removeItem('token');
         // Only redirect if not already on login/register page
         const path = window.location.pathname;
         if (path !== '/login' && path !== '/register') {
+          notify('warning', 'Your session has expired. Please log in again.');
           window.location.href = '/login';
         }
       }
@@ -58,5 +66,4 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
 export default api;

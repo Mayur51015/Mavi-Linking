@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import UserLayout from '../layouts/UserLayout';
 import api from '../api/axios';
 import { Briefcase, Plus, Trash2, ExternalLink, GitBranch } from 'lucide-react';
-
+import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
+import { getErrorMessage } from '../utils/errorMessage';
 const ProjectManagement = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  
+  const toast = useToast();
+  const confirm = useConfirm();  
   // Form State
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -20,8 +23,8 @@ const ProjectManagement = () => {
     try {
       const res = await api.get('/projects');
       setProjects(res.data.data);
-    } catch (error) {
-      console.error(error);
+} catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to load your projects.'));
     } finally {
       setLoading(false);
     }
@@ -30,7 +33,6 @@ const ProjectManagement = () => {
   useEffect(() => {
     fetchProjects();
   }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -48,24 +50,28 @@ const ProjectManagement = () => {
       setTechnologies('');
       setGithubUrl('');
       setLiveUrl('');
-      setShowForm(false);
+setShowForm(false);
       fetchProjects();
+      toast.success('Project added successfully.');
     } catch (error) {
-      console.error("Failed to add project", error);
-      alert('Failed to add project. Ensure all URLs are valid and titles are provided.');
+      toast.error(getErrorMessage(error, 'Failed to add project. Ensure all URLs are valid and titles are provided.'));
     }
   };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) return;
+const handleDelete = async (id) => {
+    const confirmed = await confirm({
+      title: 'Delete project?',
+      message: 'This will permanently remove the project from your portfolio. This action cannot be undone.',
+      confirmLabel: 'Delete',
+    });
+    if (!confirmed) return;
     try {
       await api.delete(`/projects/${id}`);
+      toast.success('Project deleted.');
       fetchProjects();
     } catch (error) {
-      console.error("Failed to delete", error);
+      toast.error(getErrorMessage(error, 'Failed to delete the project.'));
     }
   };
-
   return (
     <UserLayout>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem' }}>

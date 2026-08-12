@@ -6,7 +6,7 @@ import ProblemBreakdownChart from './ProblemBreakdownChart';
 import AIInsightCard from './AIInsightCard';
 import RecentSubmissions from './RecentSubmissions';
 import BadgeList from './BadgeList';
-
+import { SkeletonCard } from '../ui/Skeleton';
 const LeetCodeSection = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,8 +33,18 @@ const LeetCodeSection = () => {
     setData(newData);
   };
 
-  if (loading) return <div style={{ color: 'var(--text-secondary)' }}>Loading LeetCode Intelligence...</div>;
-
+if (loading) return (
+    <div style={{ marginTop: '2rem' }} aria-busy="true" aria-label="Loading LeetCode statistics">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        <SkeletonCard lines={4} height="220px" />
+        <SkeletonCard lines={4} height="220px" />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+        <SkeletonCard lines={3} height="200px" />
+        <SkeletonCard lines={3} height="200px" />
+      </div>
+    </div>
+  );
   return (
     <div style={{ marginTop: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>

@@ -18,7 +18,7 @@ import LeetCodeSection from '../components/leetcode/LeetCodeSection';
 import Messages from '../pages/Messages';
 import TimelineWidget from '../components/TimelineWidget';
 import BadgeShowcase from '../components/BadgeShowcase';
-
+import { SkeletonCard } from '../components/ui/Skeleton';
 const Dashboard = () => {
   const { user, setUser, socket, refreshUser } = useContext(AuthContext);
   const [scores, setScores] = useState(null);
@@ -629,10 +629,23 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>Loading intelligence dashboard...</div>
-      ) : (
-        <>
+{loading ? (
+        <div className="animate-fade-in" aria-busy="true" aria-label="Loading dashboard">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <SkeletonCard lines={1} height="110px" />
+            <SkeletonCard lines={1} height="110px" />
+            <SkeletonCard lines={1} height="110px" />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <SkeletonCard lines={4} height="320px" />
+            <SkeletonCard lines={4} height="320px" />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+            <SkeletonCard lines={3} height="260px" />
+            <SkeletonCard lines={3} height="260px" />
+          </div>
+        </div>
+      ) : (        <>
           {activeTab === 'overview' && (
             <div className="animate-fade-in">
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>

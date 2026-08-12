@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, Bookmark, BadgeCheck, Eye, Users, GitPullRequest, MessageSquare, BrainCircuit, X } from 'lucide-react';
 import RecruiterLayout from '../../layouts/RecruiterLayout';
 import PlacementBadge from '../../components/PlacementBadge';
-import { PLACEMENT_STATUSES } from '../../constants/placementConstants';
+import { SkeletonCard } from '../../components/ui/Skeleton';import { PLACEMENT_STATUSES } from '../../constants/placementConstants';
 import api from '../../api/axios';
 
 const RecruiterSearch = () => {
@@ -81,8 +81,7 @@ const RecruiterSearch = () => {
           onChange={e => setFilters(f => ({ ...f, minScore: e.target.value }))} style={{ width: '120px' }} />
         <input className="input-field" placeholder="Min Readiness %" type="number" value={filters.minReadiness}
           onChange={e => setFilters(f => ({ ...f, minReadiness: e.target.value }))} style={{ width: '150px' }} />
-        <button onClick={fetchDevelopers} className="btn btn-primary btn-sm"><Search size={16} /> Search</button>
-      </div>
+<button onClick={fetchDevelopers} className="btn btn-primary btn-sm" disabled={loading}><Search size={16} /> {loading ? 'Searching...' : 'Search'}</button>      </div>
 
       {/* Compare Bar */}
       {comparison.length >= 2 && (
@@ -99,10 +98,9 @@ const RecruiterSearch = () => {
 
       {/* Results */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
-        {loading ? (
-          [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '180px' }} />)
-        ) : (
-          developers.map(dev => (
+{loading ? (
+          [1, 2, 3].map(i => <SkeletonCard key={i} showAvatar lines={3} height="180px" />)
+        ) : (          developers.map(dev => (
             <motion.div
               key={dev._id}
               initial={{ opacity: 0, scale: 0.95 }}

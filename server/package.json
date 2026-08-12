@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "description": "AI-Powered Developer Intelligence System - Backend",
   "main": "src/server.js",
-  "scripts": {
+"scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "dev:workflows": "nitro dev",
-    "build:workflows": "nitro build"
+    "build:workflows": "nitro build",
+    "test": "jest --runInBand"
   },
-  "keywords": [
+    "keywords": [
     "developer",
     "intelligence",
     "analytics",
@@ -44,7 +45,8 @@
     "ua-parser-js": "^2.0.10",
     "workflow": "^4.6.0"
   },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
-  }
-}
+"devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.9",
+    "supertest": "^7.0.0"
+  }}

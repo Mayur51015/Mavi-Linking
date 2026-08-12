@@ -10,8 +10,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-
+const apiLimiter = require('./middleware/apiLimiter');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
@@ -75,19 +74,7 @@ app.use(
 );
 
 // Rate limiting — 1000 requests per 15 minutes per IP
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 1000,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many requests. Please try again after 15 minutes.',
-  },
-});
-app.use('/api', limiter);
-
-// ─── Body Parsing ───────────────────────────────────────────────────────────
+app.use('/api', apiLimiter);// ─── Body Parsing ───────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' })); // Limit body size for security
 app.use(express.urlencoded({ extended: true }));
 

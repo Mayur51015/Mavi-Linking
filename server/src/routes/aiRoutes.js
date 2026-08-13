@@ -17,6 +17,7 @@ router.get('/ranking/leaderboard', aiController.getLeaderboard);
 router.get('/analytics', aiController.getAnalytics);
 
 router.get('/activities', aiController.getActivities);
+router.post('/activities/github/sync', aiController.syncGitHubActivities);
 router.post('/activities', aiController.logActivity);
 
 router.get('/report/generate', aiController.generateReport);

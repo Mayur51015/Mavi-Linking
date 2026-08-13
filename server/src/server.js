@@ -54,7 +54,8 @@ app.use(helmet()); // Security headers
 const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  process.env.CLIENT_URL, // e.g. https://mavi-linking-mq7d.vercel.app
+  'https://mavi-linking-mq7d.vercel.app',
+  process.env.CLIENT_URL,
 ].filter(Boolean);
 
 app.use(

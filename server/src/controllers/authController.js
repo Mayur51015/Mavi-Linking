@@ -1,8 +1,13 @@
 const crypto = require('crypto');
+const axios = require('axios');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const Activity = require('../models/Activity');
 const ActivityLog = require('../models/ActivityLog');
 const { getIO } = require('../config/socket');
+
+const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+const oauth2Client = new OAuth2Client(googleClientId);
 
 /**
  * @desc    Register a new user (supports user/recruiter/teacher roles)
@@ -460,24 +465,38 @@ const googleLogin = async (req, res, next) => {
 
     let googlePayload = null;
 
-    // Verify Google ID token via Google's OAuth2 tokeninfo endpoint
+    // Verify Google ID token using google-auth-library / tokeninfo verification
     try {
-      const googleRes = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
-      googlePayload = googleRes.data;
-    } catch (err) {
-      if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
-        const mockName = idToken.split('_')[0] || 'Google User';
-        googlePayload = {
-          sub: `google_mock_${idToken}`,
-          email: `${idToken.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`,
-          email_verified: true,
-          name: mockName,
-        };
-      } else {
-        return res.status(401).json({
-          success: false,
-          message: 'Google ID token verification failed. Please try signing in again.',
+      if (googleClientId) {
+        const ticket = await oauth2Client.verifyIdToken({
+          idToken,
+          audience: googleClientId,
         });
+        googlePayload = ticket.getPayload();
+      } else {
+        const googleRes = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+        googlePayload = googleRes.data;
+      }
+    } catch (err) {
+      // Fallback verification for test/dev environment or fallback tokeninfo endpoint
+      try {
+        const googleRes = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+        googlePayload = googleRes.data;
+      } catch (tokeninfoErr) {
+        if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
+          const mockName = idToken.split('_')[0] || 'Google User';
+          googlePayload = {
+            sub: `google_mock_${idToken}`,
+            email: `${idToken.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`,
+            email_verified: true,
+            name: mockName,
+          };
+        } else {
+          return res.status(401).json({
+            success: false,
+            message: 'Google ID token verification failed. Please try signing in again.',
+          });
+        }
       }
     }
 

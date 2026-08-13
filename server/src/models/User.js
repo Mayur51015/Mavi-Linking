@@ -3,6 +3,23 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 /**
+ * Credential-bearing fields that must never reach an API response.
+ *
+ * Each of these is also declared `select: false` on the schema, so the usual
+ * way to get one is to ask for it explicitly (`.select('+refreshToken')`).
+ * The list is re-applied in `toJSON()` as a backstop: an explicit select is
+ * for server-side use, not for handing the value back to a client.
+ */
+const SENSITIVE_FIELDS = [
+  'password',
+  'refreshToken',
+  'resetPasswordToken',
+  'resetPasswordExpires',
+  'verificationToken',
+  'verificationCode',
+];
+
+/**
  * User Schema — stores credentials and linked platform profiles.
  * Passwords are auto-hashed via pre-save middleware.
  * The `platforms` subdocument is scaffolded here for Phase 2.
@@ -39,7 +56,7 @@ const userSchema = new mongoose.Schema(
     },
     isPublic: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
-    verificationCode: { type: String, default: null },
+    verificationCode: { type: String, default: null, select: false },
     university: {
       name: { type: String, default: '' },
       department: { type: String, default: '' },
@@ -96,11 +113,13 @@ const userSchema = new mongoose.Schema(
     placementDate: { type: Date, default: null },
 
     // Security & Auth Upgrades
+    // The four token fields below are credentials, not profile data — they are
+    // `select: false` so they only load when a handler explicitly asks for them.
     emailVerified: { type: Boolean, default: false },
-    verificationToken: { type: String, default: null },
-    resetPasswordToken: { type: String, default: null },
-    resetPasswordExpires: { type: Date, default: null },
-    refreshToken: { type: String, default: null },
+    verificationToken: { type: String, default: null, select: false },
+    resetPasswordToken: { type: String, default: null, select: false },
+    resetPasswordExpires: { type: Date, default: null, select: false },
+    refreshToken: { type: String, default: null, select: false },
 
     // Documents & Profile sections
     documents: {
@@ -290,11 +309,17 @@ userSchema.methods.generateAuthToken = function () {
 };
 
 // ─── Instance method: Return user data without sensitive fields ─────────────
+// Called automatically by res.json(), so this is the last line of defence for
+// anything that made it onto the document via an explicit `+field` select.
 userSchema.methods.toJSON = function () {
   const user = this.toObject();
-  delete user.password;
+  SENSITIVE_FIELDS.forEach((field) => delete user[field]);
   delete user.__v;
   return user;
 };
+
+// Exposed so callers and tests can assert against one source of truth rather
+// than re-typing the list (e.g. User.SENSITIVE_FIELDS).
+userSchema.statics.SENSITIVE_FIELDS = SENSITIVE_FIELDS;
 
 module.exports = mongoose.model('User', userSchema);

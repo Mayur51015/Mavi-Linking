@@ -959,7 +959,7 @@ select.input-field option {
 /* Touch-friendly tap targets */
 @media (max-width: 768px) {
   .btn, .input-field, select.input-field, button { min-height: 44px; }
-}}
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }

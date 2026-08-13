@@ -81,7 +81,10 @@ const RecruiterSearch = () => {
           onChange={e => setFilters(f => ({ ...f, minScore: e.target.value }))} style={{ width: '120px' }} />
         <input className="input-field" placeholder="Min Readiness %" type="number" value={filters.minReadiness}
           onChange={e => setFilters(f => ({ ...f, minReadiness: e.target.value }))} style={{ width: '150px' }} />
-<button onClick={fetchDevelopers} className="btn btn-primary btn-sm" disabled={loading}><Search size={16} /> {loading ? 'Searching...' : 'Search'}</button>      </div>
+        <button onClick={fetchDevelopers} className="btn btn-primary btn-sm" disabled={loading}>
+          <Search size={16} /> {loading ? 'Searching...' : 'Search'}
+        </button>
+      </div>
 
       {/* Compare Bar */}
       {comparison.length >= 2 && (
@@ -96,15 +99,6 @@ const RecruiterSearch = () => {
         </motion.div>
       )}
 
-      {/* Results */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '1rem' }}>
-{loading ? (
-          [1, 2, 3].map(i => <SkeletonCard key={i} showAvatar lines={3} height="180px" />)
-        ) : (          developers.map(dev => (
-            <motion.div
-              key={dev._id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
               className="glass-card"
               style={{ padding: '1.25rem' }}
             >

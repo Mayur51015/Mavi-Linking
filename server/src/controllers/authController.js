@@ -304,7 +304,8 @@ const refreshToken = async (req, res, next) => {
     if (!token) {
       return res.status(400).json({ success: false, message: 'Refresh token is required' });
     }
-    const user = await User.findOne({ refreshToken: token });
+    // refreshToken is select:false — ask for it so the rotation below persists.
+    const user = await User.findOne({ refreshToken: token }).select('+refreshToken');
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid refresh token' });
     }
@@ -338,7 +339,7 @@ const verifyEmail = async (req, res, next) => {
     if (!token) {
       return res.status(400).json({ success: false, message: 'Verification token is required' });
     }
-    const user = await User.findOne({ verificationToken: token });
+    const user = await User.findOne({ verificationToken: token }).select('+verificationToken');
     if (!user) {
       return res.status(400).json({ success: false, message: 'Invalid or expired verification token' });
     }
@@ -403,7 +404,7 @@ const resetPassword = async (req, res, next) => {
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() },
-    });
+    }).select('+resetPasswordToken +resetPasswordExpires');
 
     if (!user) {
       return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
@@ -540,7 +541,7 @@ const githubLogin = async (req, res, next) => {
 const logout = async (req, res, next) => {
   try {
     if (req.user) {
-      const user = await User.findById(req.user.id);
+      const user = await User.findById(req.user.id).select('+refreshToken');
       if (user) {
         user.refreshToken = null;
         await user.save();

@@ -1,0 +1,16 @@
+{
+  "name": "Mavi-Linking",
+  "version": "1.0.0",
+  "description": "AI-Powered Developer Intelligence System",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces"
+  }
+}

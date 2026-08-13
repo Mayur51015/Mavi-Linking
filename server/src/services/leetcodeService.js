@@ -6,6 +6,10 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const cache = new NodeCache({ stdTTL: 21600 });
 const BASE_URL = 'https://alfa-leetcode-api.onrender.com';
 
+// Timeout for external LeetCode API requests (the proxy is on Render free
+// tier and can take a while to cold-start)
+const EXTERNAL_TIMEOUT_MS = 15000;
+
 const generateAiInsights = async (stats) => {
   try {
     const apiKey = process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY;
@@ -46,21 +50,32 @@ const fetchLeetCodeData = async (username) => {
   if (cachedData) return cachedData;
 
   try {
+    const reqConfig = { timeout: EXTERNAL_TIMEOUT_MS };
     const [profileRes, contestRes, badgesRes, submissionsRes] = await Promise.allSettled([
-      axios.get(`${BASE_URL}/userProfile/${username}`),
-      axios.get(`${BASE_URL}/${username}/contest`),
-      axios.get(`${BASE_URL}/${username}/badges`),
-      axios.get(`${BASE_URL}/${username}/acSubmission`)
+      axios.get(`${BASE_URL}/userProfile/${username}`, reqConfig),
+      axios.get(`${BASE_URL}/${username}/contest`, reqConfig),
+      axios.get(`${BASE_URL}/${username}/badges`, reqConfig),
+      axios.get(`${BASE_URL}/${username}/acSubmission`, reqConfig)
     ]);
 
-    if (profileRes.status === 'rejected' || !profileRes.value.data) {
-      throw new Error('Could not fetch LeetCode profile or user not found');
+    if (profileRes.status === 'rejected') {
+      const reason = profileRes.reason?.message || 'Unknown error';
+      console.error(`LeetCode profile fetch failed for "${username}":`, reason);
+      throw new Error(
+        reason.includes('timeout')
+          ? 'LeetCode service is temporarily unavailable. Please try again in a moment.'
+          : `Could not fetch LeetCode profile for "${username}". Please verify the username.`
+      );
+    }
+
+    if (!profileRes.value?.data) {
+      throw new Error(`LeetCode user "${username}" not found.`);
     }
 
     const profile = profileRes.value.data;
-    const contest = contestRes.status === 'fulfilled' ? contestRes.value.data.contestParticipation : [];
-    const badges = badgesRes.status === 'fulfilled' ? badgesRes.value.data.badges : [];
-    const submissions = submissionsRes.status === 'fulfilled' ? submissionsRes.value.data.submission : [];
+    const contest = contestRes.status === 'fulfilled' ? (contestRes.value.data?.contestParticipation || []) : [];
+    const badges = badgesRes.status === 'fulfilled' ? (badgesRes.value.data?.badges || []) : [];
+    const submissions = submissionsRes.status === 'fulfilled' ? (submissionsRes.value.data?.submission || []) : [];
 
     const latestContest = contest && contest.length > 0 ? contest[contest.length - 1] : null;
 
@@ -78,17 +93,26 @@ const fetchLeetCodeData = async (username) => {
       recentSubmissions: submissions ? submissions.slice(0, 10) : []
     };
 
-    const aiInsight = await generateAiInsights(data);
-    if (aiInsight) {
-      data.aiInsight = {
-        ...aiInsight,
-        generatedAt: new Date()
-      };
+    // AI insights are best-effort — never let them block or crash the sync
+    try {
+      const aiInsight = await generateAiInsights(data);
+      if (aiInsight) {
+        data.aiInsight = {
+          ...aiInsight,
+          generatedAt: new Date()
+        };
+      }
+    } catch (aiErr) {
+      console.error('AI insights skipped during sync:', aiErr.message);
     }
 
     cache.set(cacheKey, data);
     return data;
   } catch (error) {
+    // Re-throw with original message if it's already user-friendly
+    if (error.message && !error.message.startsWith('LeetCode API failed')) {
+      throw error;
+    }
     throw new Error('LeetCode API failed: ' + error.message);
   }
 };

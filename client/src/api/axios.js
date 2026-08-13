@@ -5,19 +5,17 @@ import { notify } from '../context/ToastContext';
 // baseURL is set via VITE_API_URL env var. If the provided URL omits /api,
 // normalize it to avoid production 404s when the frontend and backend are hosted separately.
 const rawApiUrl = import.meta.env.VITE_API_URL;
+const isProd = import.meta.env.PROD || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
 
-if (import.meta.env.PROD && !rawApiUrl) {
-  console.warn(
-    'VITE_API_URL is not configured for production. The frontend will fall back to localhost:5000, which will fail in deployed environments.'
-  );
-}
+const DEFAULT_PROD_API = 'https://mavi-server-4yvl.onrender.com/api';
+const DEFAULT_DEV_API = 'http://localhost:5000/api';
 
 const apiBaseUrl = rawApiUrl
   ? (() => {
       const trimmed = rawApiUrl.replace(/\/+$/u, '');
       return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
     })()
-  : 'http://127.0.0.1:5000/api';
+  : (isProd ? DEFAULT_PROD_API : DEFAULT_DEV_API);
 
 const api = axios.create({
   baseURL: apiBaseUrl,
@@ -43,10 +41,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // No response at all means the request never reached the server —
-    // give visible feedback instead of a silent console-only failure.
     if (!error.response) {
-      notify('error', 'Network error. Please check your connection and try again.');
+      console.error('API Network/Connection Error:', error.message);
       return Promise.reject(error);
     }
 

@@ -1,17 +1,17 @@
-// Turns an axios error into a short, safe, user-facing message.
-// Never surfaces raw stack traces, validation objects, or backend
-// internals — only a message meant to be read by the end user.
 export function getErrorMessage(error, fallback = 'Something went wrong. Please try again.') {
   // No response at all means the request never reached the server
   // (offline, DNS failure, server down, CORS, timeout, etc.)
   if (!error?.response) {
-    return 'Network error. Please check your internet connection and try again.';
+    if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+      return 'Request timed out. Please check your internet connection and try again.';
+    }
+    return 'Unable to reach the server. Please check your connection and try again.';
   }
 
-  const data = error.response.data;
+  const { status, data } = error.response;
 
   // express-validator style: { errors: [{ message }] }
-  if (data?.errors && data.errors.length > 0 && data.errors[0]?.message) {
+  if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0 && data.errors[0]?.message) {
     return data.errors[0].message;
   }
 
@@ -20,5 +20,19 @@ export function getErrorMessage(error, fallback = 'Something went wrong. Please 
     return data.message;
   }
 
-  return fallback;
+  // Status code default fallbacks
+  switch (status) {
+    case 401:
+      return 'Invalid email or password.';
+    case 403:
+      return 'Your account is not authorized for this action.';
+    case 404:
+      return 'Authentication service endpoint was not found.';
+    case 500:
+      return 'Something went wrong on the server. Please try again later.';
+    case 503:
+      return 'The authentication service is temporarily unavailable.';
+    default:
+      return fallback;
+  }
 }

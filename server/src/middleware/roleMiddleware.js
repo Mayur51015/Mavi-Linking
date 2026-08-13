@@ -23,10 +23,23 @@ const requireRole = (...roles) => {
       });
     }
 
+    // Admins bypass role checks
+    if (req.user.role === 'admin') {
+      return next();
+    }
+
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: `Access denied. This resource requires one of the following roles: ${roles.join(', ')}.`,
+        message: `Access denied. Authorized role (${roles.join(', ')}) required.`,
+      });
+    }
+
+    // If role is pending approval, block access to privileged role endpoints
+    if (req.user.roleStatus === 'pending' && req.user.role !== 'user') {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. Your ${req.user.role} role verification is pending administrator approval.`,
       });
     }
 

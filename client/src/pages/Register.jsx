@@ -4,6 +4,8 @@ import { AuthContext } from '../context/AuthContext';
 import { Terminal, User, Search, GraduationCap, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
+import GoogleSignInButton from '../components/GoogleSignInButton';
+
 const ROLES = [
   { key: 'user', label: 'Student / Developer', icon: <User size={32} />, desc: 'Create your developer profile and showcase your skills.', color: 'var(--accent-purple)' },
   { key: 'recruiter', label: 'Recruiter', icon: <Search size={32} />, desc: 'Discover and recruit top developer talent.', color: 'var(--accent-cyan)' },
@@ -30,10 +32,32 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-const { register } = useContext(AuthContext);
+  const { register, loginWithGoogle } = useContext(AuthContext);
   const navigate = useNavigate();
   const toast = useToast();
   const updateField = (key, value) => setFormData(prev => ({ ...prev, [key]: value }));
+
+  const handleNavigationByRole = (userRole) => {
+    switch (userRole) {
+      case 'recruiter': navigate('/dashboard/recruiter'); break;
+      case 'teacher': navigate('/dashboard/teacher'); break;
+      default: navigate('/dashboard'); break;
+    }
+  };
+
+  const handleGoogleRegister = async (credential) => {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await loginWithGoogle(credential, role);
+      toast.success('Signed up with Google successfully!');
+      handleNavigationByRole(res?.user?.role);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Google registration failed. Please try again.'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,15 +99,9 @@ const { register } = useContext(AuthContext);
         };
       }
 
-      await register(payload);
+      const res = await register(payload);
       toast.success('Account created successfully!');
-
-      // Navigate to role-specific dashboard
-      switch (role) {
-        case 'recruiter': navigate('/dashboard/recruiter'); break;
-        case 'teacher': navigate('/dashboard/teacher'); break;
-        default: navigate('/dashboard'); break;
-      }
+      handleNavigationByRole(res?.user?.role);
     } catch (err) {
       setError(getErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
@@ -136,11 +154,19 @@ const { register } = useContext(AuthContext);
         <ChevronLeft size={16} /> Back to role selection
       </button>
       <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', fontSize: '1.75rem' }}>Create Your Account</h2>
-      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
         Signing up as <span style={{ color: ROLES.find(r => r.key === role)?.color, fontWeight: '600' }}>
           {ROLES.find(r => r.key === role)?.label}
         </span>
       </p>
+
+      <GoogleSignInButton onSuccess={handleGoogleRegister} onError={(err) => setError(err)} text="signup_with" requestedRole={role} />
+
+      <div style={{ display: 'flex', alignItems: 'center', margin: '1.5rem 0' }}>
+        <div style={{ flex: 1, borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.1))' }}></div>
+        <span style={{ padding: '0 0.75rem', color: 'var(--text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase' }}>OR WITH EMAIL</span>
+        <div style={{ flex: 1, borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.1))' }}></div>
+      </div>
 
       <div className="input-group">
         <label className="input-label">Full Name *</label>

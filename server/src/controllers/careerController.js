@@ -69,8 +69,15 @@ exports.getDashboard = async (req, res, next) => {
 exports.getScore = async (req, res, next) => {
   try {
     const targetUserId = getTargetUserId(req);
-    const score = await CareerScore.findOne({ user: targetUserId });
-    
+    let score = await CareerScore.findOne({ user: targetUserId });
+
+    // If no score exists or all fields are zero, calculate it on the fly
+    if (!score || (score.overall === 0 && score.development === 0 && score.problemSolving === 0 && score.community === 0)) {
+      const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+      await evaluateUserIntelligence(targetUserId);
+      score = await CareerScore.findOne({ user: targetUserId });
+    }
+
     res.status(200).json({
       success: true,
       data: score || { overall: 0, development: 0, problemSolving: 0, community: 0 }

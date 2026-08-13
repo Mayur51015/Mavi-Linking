@@ -183,10 +183,118 @@ const getAuditLogs = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get pending role verification requests
+ * @route   GET /api/admin/role-requests
+ * @access  Private (admin)
+ */
+const getRoleRequests = async (req, res, next) => {
+  try {
+    const { status = 'pending' } = req.query;
+    const query = { roleStatus: status };
+
+    const requests = await User.find(query)
+      .select('name email role requestedRole roleStatus roleVerification createdAt')
+      .sort({ 'roleVerification.submittedAt': -1, createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: requests,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Approve role request for a user
+ * @route   POST /api/admin/role-requests/:id/approve
+ * @access  Private (admin)
+ */
+const approveRoleRequest = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (!user.requestedRole || user.requestedRole === 'none') {
+      return res.status(400).json({ success: false, message: 'User has no pending role request.' });
+    }
+
+    const previousRole = user.role;
+    const targetRole = user.requestedRole;
+
+    user.role = targetRole;
+    user.roleStatus = 'approved';
+    user.roleVerification.reviewedAt = new Date();
+    user.roleVerification.reviewedBy = req.user.id;
+
+    await user.save();
+
+    await ActivityLog.create({
+      userId: req.user.id,
+      action: 'Admin Approve Role',
+      details: `Approved role upgrade for ${user.email} from ${previousRole} to ${targetRole}`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully approved ${targetRole} role for ${user.email}`,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Reject role request for a user
+ * @route   POST /api/admin/role-requests/:id/reject
+ * @access  Private (admin)
+ */
+const rejectRoleRequest = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.roleStatus = 'rejected';
+    user.roleVerification.reviewedAt = new Date();
+    user.roleVerification.reviewedBy = req.user.id;
+    user.roleVerification.rejectionReason = reason || 'Verification requirements not met.';
+
+    await user.save();
+
+    await ActivityLog.create({
+      userId: req.user.id,
+      action: 'Admin Reject Role',
+      details: `Rejected role upgrade for ${user.email} (requested: ${user.requestedRole}, reason: ${reason || 'None provided'})`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Role request rejected for ${user.email}`,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAdminStats,
   getAllUsers,
   updateUser,
   deleteUser,
   getAuditLogs,
+  getRoleRequests,
+  approveRoleRequest,
+  rejectRoleRequest,
 };

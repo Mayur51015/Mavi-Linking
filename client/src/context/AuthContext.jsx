@@ -36,7 +36,9 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (userId && token) {
-      const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+      const isProd = import.meta.env.PROD || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+      const defaultSocket = isProd ? 'https://mavi-server-4yvl.onrender.com' : 'http://localhost:5000';
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || defaultSocket;
       console.log('Initializing socket connection to:', socketUrl);
       
       const newSocket = io(socketUrl, {
@@ -60,14 +62,12 @@ export const AuthProvider = ({ children }) => {
       newSocket.on('disconnect', (reason) => {
         console.log(`Socket disconnected: ${newSocket.id}, reason: ${reason}`);
         if (reason === 'io server disconnect') {
-          // Reconnect manually if server dropped connection
           newSocket.connect();
         }
       });
 
       newSocket.on('connect_error', (error) => {
         console.error('Socket connection error:', error.message);
-        // Retry connection with refreshed token if available
         const freshToken = localStorage.getItem('token');
         if (freshToken) {
           newSocket.auth = { token: freshToken };
@@ -93,9 +93,22 @@ export const AuthProvider = ({ children }) => {
     return res.data.data;
   }, []);
 
+  const loginWithGoogle = useCallback(async (googleCredential, requestedRole = 'user') => {
+    const res = await api.post('/auth/google', { credential: googleCredential, requestedRole });
+    localStorage.setItem('token', res.data.data.token);
+    setUser(res.data.data.user);
+    return res.data.data;
+  }, []);
+
   const register = useCallback(async (userData) => {
     const res = await api.post('/auth/register', userData);
     localStorage.setItem('token', res.data.data.token);
+    setUser(res.data.data.user);
+    return res.data.data;
+  }, []);
+
+  const requestRoleUpgrade = useCallback(async (requestedRole, verificationDetails) => {
+    const res = await api.post('/auth/request-role-upgrade', { requestedRole, verificationDetails });
     setUser(res.data.data.user);
     return res.data.data;
   }, []);
@@ -131,13 +144,15 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     login,
+    loginWithGoogle,
     register,
+    requestRoleUpgrade,
     logout,
     refreshUser,
     getDashboardPath,
     setUser,
     socket,
-  }), [user, loading, socket, login, register, logout, refreshUser, getDashboardPath]);
+  }), [user, loading, socket, login, loginWithGoogle, register, requestRoleUpgrade, logout, refreshUser, getDashboardPath]);
 
   return (
     <AuthContext.Provider value={contextValue}>

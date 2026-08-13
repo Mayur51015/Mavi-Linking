@@ -52,7 +52,10 @@ const syncLeetCode = async (req, res, next) => {
 
     res.status(200).json({ success: true, data: analytics });
   } catch (error) {
-    next(error);
+    console.error(`LeetCode sync failed for user ${req.user?.id}:`, error.message);
+    const msg = error.message || 'LeetCode synchronization failed.';
+    const isUpstream = msg.includes('temporarily unavailable') || msg.includes('API failed');
+    return res.status(isUpstream ? 502 : 400).json({ success: false, message: msg });
   }
 };
 

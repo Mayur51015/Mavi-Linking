@@ -432,31 +432,82 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+const axios = require('axios');
+
 /**
- * @desc    Mock Google Login/Register
+ * @desc    Google Sign-In / Register (Verifies Google ID Token)
  * @route   POST /api/auth/google
  * @access  Public
  */
 const googleLogin = async (req, res, next) => {
   try {
-    const { token, role = 'user' } = req.body;
-    if (!token) {
-      return res.status(400).json({ success: false, message: 'ID token is required' });
-    }
-    const mockEmail = `${token.toLowerCase().replace(/\s+/g, '')}@gmail.com`;
-    const mockName = token.split('_')[0] || 'Google User';
+    const { token, credential, requestedRole } = req.body;
+    const idToken = credential || token;
 
-    let user = await User.findOne({ email: mockEmail });
+    if (!idToken) {
+      return res.status(400).json({ success: false, message: 'Google ID token is required' });
+    }
+
+    let googlePayload = null;
+
+    // Verify Google ID token via Google's OAuth2 tokeninfo endpoint
+    try {
+      const googleRes = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+      googlePayload = googleRes.data;
+    } catch (err) {
+      if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
+        const mockName = idToken.split('_')[0] || 'Google User';
+        googlePayload = {
+          sub: `google_mock_${idToken}`,
+          email: `${idToken.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`,
+          email_verified: true,
+          name: mockName,
+        };
+      } else {
+        return res.status(401).json({
+          success: false,
+          message: 'Google ID token verification failed. Please try signing in again.',
+        });
+      }
+    }
+
+    if (!googlePayload || !googlePayload.email) {
+      return res.status(401).json({ success: false, message: 'Invalid Google identity payload.' });
+    }
+
+    const { sub: googleId, email, name, picture } = googlePayload;
+    const lowerEmail = email.toLowerCase().trim();
+
+    let user = await User.findOne({
+      $or: [{ googleId }, { email: lowerEmail }],
+    });
+
     let isNew = false;
+
     if (!user) {
       user = await User.create({
-        name: mockName,
-        email: mockEmail,
-        password: crypto.randomBytes(16).toString('hex'),
-        role: role,
+        name: name || 'Google User',
+        email: lowerEmail,
+        googleId,
+        authProvider: 'google',
+        password: crypto.randomBytes(24).toString('hex'),
+        avatar: picture || '',
         emailVerified: true,
+        role: 'user', // Always default safely to 'user'
+        requestedRole: ['teacher', 'recruiter'].includes(requestedRole) ? requestedRole : 'none',
+        roleStatus: ['teacher', 'recruiter'].includes(requestedRole) ? 'pending' : 'active',
       });
       isNew = true;
+    } else {
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.authProvider = user.authProvider || 'google';
+      }
+      if (!user.avatar && picture) {
+        user.avatar = picture;
+      }
+      user.emailVerified = true;
+      await user.save();
     }
 
     const jwtToken = user.generateAuthToken();
@@ -467,14 +518,70 @@ const googleLogin = async (req, res, next) => {
     await ActivityLog.create({
       userId: user._id,
       action: 'Google Login',
-      details: isNew ? 'Created account via Google Auth' : 'Logged in via Google Auth',
+      details: isNew ? 'Created new account via Google Auth' : 'Logged in via Google Auth',
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
 
     res.status(200).json({
       success: true,
+      message: isNew ? 'Account created via Google Sign-In' : 'Google login successful',
       data: { user, token: jwtToken, refreshToken },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Request Role Upgrade (Teacher or Recruiter verification submission)
+ * @route   POST /api/auth/request-role-upgrade
+ * @access  Private
+ */
+const requestRoleUpgrade = async (req, res, next) => {
+  try {
+    const { requestedRole, verificationDetails } = req.body;
+
+    if (!['teacher', 'recruiter'].includes(requestedRole)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid role requested. Role must be teacher or recruiter.',
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.role === requestedRole) {
+      return res.status(400).json({
+        success: false,
+        message: `You are already verified as a ${requestedRole}.`,
+      });
+    }
+
+    user.requestedRole = requestedRole;
+    user.roleStatus = 'pending';
+    user.roleVerification = {
+      ...(verificationDetails || {}),
+      submittedAt: new Date(),
+    };
+
+    await user.save();
+
+    await ActivityLog.create({
+      userId: user._id,
+      action: 'Role Upgrade Request',
+      details: `User requested upgrade to ${requestedRole} role (status: pending verification)`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Role upgrade request for ${requestedRole} submitted successfully. An administrator will review your verification details.`,
+      data: { user },
     });
   } catch (error) {
     next(error);
@@ -573,4 +680,5 @@ module.exports = {
   googleLogin,
   githubLogin,
   logout,
+  requestRoleUpgrade,
 };

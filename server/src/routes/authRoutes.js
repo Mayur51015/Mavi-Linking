@@ -14,6 +14,7 @@ const { authLimiter, loginLimiter } = require('../middleware/authLimiter');const
   googleLogin,
   githubLogin,
   logout,
+  requestRoleUpgrade,
 } = require('../controllers/authController');
 const {
   upload,
@@ -103,6 +104,7 @@ router.post('/github', authLimiter, githubLogin);
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateProfileValidation, validate, updateProfile);
 router.post('/logout', protect, logout);
+router.post('/request-role-upgrade', protect, authLimiter, requestRoleUpgrade);
 
 // Profile Document upload/download/preview routes
 router.post('/document/:type', protect, upload.single('file'), uploadProfileDocument);

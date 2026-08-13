@@ -7,6 +7,9 @@ const {
   updateUser,
   deleteUser,
   getAuditLogs,
+  getRoleRequests,
+  approveRoleRequest,
+  rejectRoleRequest,
 } = require('../controllers/adminController');
 
 const router = express.Router();
@@ -19,5 +22,10 @@ router.get('/users', getAllUsers);
 router.put('/users/:id', updateUser);
 router.delete('/users/:id', deleteUser);
 router.get('/logs', getAuditLogs);
+
+// Role Approval & Management Routes
+router.get('/role-requests', getRoleRequests);
+router.post('/role-requests/:id/approve', approveRoleRequest);
+router.post('/role-requests/:id/reject', rejectRoleRequest);
 
 module.exports = router;

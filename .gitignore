@@ -1,1 +1,12 @@
 node_modules
+
+# ── Environment files with secrets ──────────────────────────────────
+# .env.development and .env.production are safe to track (no secrets).
+# .env and .env.local may contain real credentials — never commit them.
+.env
+.env.local
+.env.*.local
+client/.env
+client/.env.local
+server/.env
+server/.env.local

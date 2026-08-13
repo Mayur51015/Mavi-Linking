@@ -44,32 +44,109 @@ Respond EXACTLY with valid JSON:
   }
 };
 
+const fetchOfficialLeetCodeGraphQL = async (username) => {
+  try {
+    const query = `
+      query getUserProfile($username: String!) {
+        matchedUser(username: $username) {
+          username
+          profile {
+            ranking
+            reputation
+          }
+          submitStatsGlobal {
+            acSubmissionNum {
+              difficulty
+              count
+            }
+          }
+        }
+        userContestRanking(username: $username) {
+          rating
+          globalRanking
+        }
+      }
+    `;
+
+    const res = await axios.post('https://leetcode.com/graphql', {
+      query,
+      variables: { username }
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': `https://leetcode.com/${username}/`
+      },
+      timeout: 10000
+    });
+
+    if (res.data?.data?.matchedUser) {
+      const user = res.data.data.matchedUser;
+      const ac = user.submitStatsGlobal?.acSubmissionNum || [];
+      const getCount = (diff) => ac.find(a => a.difficulty.toLowerCase() === diff.toLowerCase())?.count || 0;
+
+      return {
+        username: user.username || username,
+        totalSolved: getCount('All'),
+        easySolved: getCount('Easy'),
+        mediumSolved: getCount('Medium'),
+        hardSolved: getCount('Hard'),
+        ranking: user.profile?.ranking || 0,
+        contributionPoints: 0,
+        reputation: user.profile?.reputation || 0,
+        contestRating: res.data.data.userContestRanking?.rating ? Math.round(res.data.data.userContestRanking.rating) : null,
+        badges: [],
+        recentSubmissions: []
+      };
+    }
+  } catch (err) {
+    console.warn(`LeetCode official GraphQL query fallback for "${username}": ${err.message}`);
+  }
+  return null;
+};
+
 const fetchLeetCodeData = async (username) => {
-  const cacheKey = `leetcode_${username}`;
+  const cleanUsername = username.trim();
+  const cacheKey = `leetcode_${cleanUsername}`;
   const cachedData = cache.get(cacheKey);
   if (cachedData) return cachedData;
 
+  // 1. Try official LeetCode GraphQL API first
+  const graphqlResult = await fetchOfficialLeetCodeGraphQL(cleanUsername);
+  if (graphqlResult) {
+    try {
+      const aiInsight = await generateAiInsights(graphqlResult);
+      if (aiInsight) {
+        graphqlResult.aiInsight = { ...aiInsight, generatedAt: new Date() };
+      }
+    } catch (_) {}
+
+    cache.set(cacheKey, graphqlResult);
+    return graphqlResult;
+  }
+
+  // 2. Fallback to proxy API
   try {
     const reqConfig = { timeout: EXTERNAL_TIMEOUT_MS };
     const [profileRes, contestRes, badgesRes, submissionsRes] = await Promise.allSettled([
-      axios.get(`${BASE_URL}/userProfile/${username}`, reqConfig),
-      axios.get(`${BASE_URL}/${username}/contest`, reqConfig),
-      axios.get(`${BASE_URL}/${username}/badges`, reqConfig),
-      axios.get(`${BASE_URL}/${username}/acSubmission`, reqConfig)
+      axios.get(`${BASE_URL}/userProfile/${cleanUsername}`, reqConfig),
+      axios.get(`${BASE_URL}/${cleanUsername}/contest`, reqConfig),
+      axios.get(`${BASE_URL}/${cleanUsername}/badges`, reqConfig),
+      axios.get(`${BASE_URL}/${cleanUsername}/acSubmission`, reqConfig)
     ]);
 
     if (profileRes.status === 'rejected') {
       const reason = profileRes.reason?.message || 'Unknown error';
-      console.error(`LeetCode profile fetch failed for "${username}":`, reason);
+      console.error(`LeetCode profile fetch failed for "${cleanUsername}":`, reason);
       throw new Error(
         reason.includes('timeout')
           ? 'LeetCode service is temporarily unavailable. Please try again in a moment.'
-          : `Could not fetch LeetCode profile for "${username}". Please verify the username.`
+          : `Could not fetch LeetCode profile for "${cleanUsername}". Please verify the username.`
       );
     }
 
-    if (!profileRes.value?.data) {
-      throw new Error(`LeetCode user "${username}" not found.`);
+    if (!profileRes.value?.data || profileRes.value.data.errors) {
+      throw new Error(`LeetCode user "${cleanUsername}" not found.`);
     }
 
     const profile = profileRes.value.data;
@@ -80,7 +157,7 @@ const fetchLeetCodeData = async (username) => {
     const latestContest = contest && contest.length > 0 ? contest[contest.length - 1] : null;
 
     const data = {
-      username,
+      username: cleanUsername,
       totalSolved: profile.totalSolved || 0,
       easySolved: profile.easySolved || 0,
       mediumSolved: profile.mediumSolved || 0,
@@ -93,7 +170,7 @@ const fetchLeetCodeData = async (username) => {
       recentSubmissions: submissions ? submissions.slice(0, 10) : []
     };
 
-    // AI insights are best-effort — never let them block or crash the sync
+    // AI insights are best-effort
     try {
       const aiInsight = await generateAiInsights(data);
       if (aiInsight) {
@@ -109,7 +186,6 @@ const fetchLeetCodeData = async (username) => {
     cache.set(cacheKey, data);
     return data;
   } catch (error) {
-    // Re-throw with original message if it's already user-friendly
     if (error.message && !error.message.startsWith('LeetCode API failed')) {
       throw error;
     }

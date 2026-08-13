@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Terminal, GitBranch, Code2, Globe, Database, ExternalLink,
   BadgeCheck, QrCode, Download, Share2, Award, TrendingUp,
-  Cpu, Users, Star, Briefcase,
+  Cpu, Users, Star, Briefcase, FileText, X,
 } from 'lucide-react';
 import api from '../api/axios';
 import QRModal from '../components/QRModal';
+import ReportGenerator from '../components/ReportGenerator';
+import { AuthContext } from '../context/AuthContext';
 import { SkeletonCircle, SkeletonText, SkeletonCard } from '../components/ui/Skeleton';
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
@@ -21,12 +23,14 @@ const tierColors = {
 };
 
 const PublicIdentity = () => {
+  const { user } = useContext(AuthContext);
   const { username } = useParams();
   const [searchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showQR, setShowQR] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -81,6 +85,11 @@ if (loading) return (
             <span>MaVi Linking</span>
           </Link>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            {['recruiter', 'admin'].includes(user?.role) && (
+              <button className="btn btn-primary btn-sm" onClick={() => setShowReport(true)} title="Generate Recruiter AI Report">
+                <FileText size={16} /> AI Report
+              </button>
+            )}
             <button className="btn btn-ghost btn-sm" onClick={() => setShowQR(true)}>
               <QrCode size={18} /> QR
             </button>
@@ -363,6 +372,27 @@ if (loading) return (
 
       {/* QR Modal */}
       {showQR && <QRModal username={profile.username} onClose={() => setShowQR(false)} />}
+
+      {/* Recruiter AI Report Modal */}
+      {showReport && (
+        <div className="modal-overlay" onClick={() => setShowReport(false)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="modal-content"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '560px' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.35rem' }}>Recruiter AI Report: {profile.name}</h2>
+              <button onClick={() => setShowReport(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={24} />
+              </button>
+            </div>
+            <ReportGenerator candidateId={profile._id} candidate={profile} />
+          </motion.div>
+        </div>
+      )}
     </>
   );
 };

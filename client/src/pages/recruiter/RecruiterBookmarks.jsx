@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Bookmark, X, Eye, BadgeCheck } from 'lucide-react';
+import { Bookmark, X, Eye, BadgeCheck, FileText } from 'lucide-react';
 import RecruiterLayout from '../../layouts/RecruiterLayout';
+import ReportGenerator from '../../components/ReportGenerator';
 import api from '../../api/axios';
 
 const RecruiterBookmarks = () => {
   const [bookmarks, setBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reportCandidate, setReportCandidate] = useState(null);
 
   const fetchBookmarks = async () => {
     setLoading(true);
@@ -105,17 +107,48 @@ const RecruiterBookmarks = () => {
                 {bm.status || 'reviewing'}
               </span>
 
+              {bm.developerId?._id && (
+                <button
+                  onClick={() => setReportCandidate(bm.developerId)}
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--accent-blue)' }}
+                  title="Recruiter AI Report"
+                >
+                  <FileText size={16} />
+                </button>
+              )}
+
               {bm.developerId?.username && (
-                <a href={`/u/${bm.developerId.username}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">
+                <a href={`/u/${bm.developerId.username}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" title="View Profile">
                   <Eye size={16} />
                 </a>
               )}
 
-              <button onClick={() => handleRemoveBookmark(bm.developerId?._id)} className="btn btn-ghost btn-sm" style={{ color: '#fca5a5' }}>
+              <button onClick={() => handleRemoveBookmark(bm.developerId?._id)} className="btn btn-ghost btn-sm" style={{ color: '#fca5a5' }} title="Remove Bookmark">
                 <X size={16} />
               </button>
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {reportCandidate && (
+        <div className="modal-overlay" onClick={() => setReportCandidate(null)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="modal-content"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '560px' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.35rem' }}>Recruiter AI Report: {reportCandidate.name}</h2>
+              <button onClick={() => setReportCandidate(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={24} />
+              </button>
+            </div>
+            <ReportGenerator candidateId={reportCandidate._id} candidate={reportCandidate} />
+          </motion.div>
         </div>
       )}
     </RecruiterLayout>

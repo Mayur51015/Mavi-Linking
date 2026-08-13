@@ -715,7 +715,7 @@ const Dashboard = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
                 <ActivityFeed />
-                <ReportGenerator />
+                <ReportGenerator candidateId={user?._id} candidate={user} />
               </div>
 
               <LeetCodeSection />

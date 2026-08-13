@@ -5,18 +5,19 @@ const { fetchLeetCodeData } = require('../services/leetcodeService');
 const syncLeetCode = async (req, res, next) => {
   try {
     const { username } = req.body;
-    if (!username) {
+    if (!username || !String(username).trim()) {
       return res.status(400).json({ success: false, message: 'LeetCode username is required' });
     }
 
+    const cleanUsername = String(username).trim();
     const userId = req.user.id;
     
     // Fetch from API
-    const data = await fetchLeetCodeData(username);
+    const data = await fetchLeetCodeData(cleanUsername);
 
     // Update User schema
     await User.findByIdAndUpdate(userId, {
-      'platforms.leetcode.username': username,
+      'platforms.leetcode.username': cleanUsername,
       'platforms.leetcode.linkedAt': new Date(),
       'platformData.leetcode': {
         solved: data.totalSolved,
@@ -65,10 +66,10 @@ const getMyLeetCode = async (req, res, next) => {
     const analytics = await LeetCodeAnalytics.findOne({ user: userId });
     
     if (!analytics) {
-      return res.status(404).json({ success: false, message: 'LeetCode data not found. Please sync first.' });
+      return res.status(200).json({ success: true, data: null, synced: false, message: 'LeetCode profile not synced yet.' });
     }
 
-    res.status(200).json({ success: true, data: analytics });
+    res.status(200).json({ success: true, data: analytics, synced: true });
   } catch (error) {
     next(error);
   }

@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { generateRecruiterReport, writeRecruiterReportPdf } = require('../services/recruiterReportService');
 
 /**
  * @desc Get list of users filtered by role
@@ -14,6 +15,20 @@ const getUsersByRole = async (req, res, next) => {
     }
     const users = await User.find(filter).select('name username avatar role companyName');
     res.status(200).json({ success: true, data: users });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc Get authenticated user's own AI report PDF
+ * @route GET /api/users/me/report
+ * @access Private
+ */
+const getMyReport = async (req, res, next) => {
+  try {
+    const report = await generateRecruiterReport(req.user.id, req.user);
+    await writeRecruiterReportPdf(report, res);
   } catch (error) {
     next(error);
   }
@@ -36,4 +51,4 @@ const getUserById = async (req, res, next) => {
   }
 };
 
-module.exports = { getUsersByRole, getUserById };
+module.exports = { getUsersByRole, getUserById, getMyReport };

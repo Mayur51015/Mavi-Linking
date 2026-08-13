@@ -4,11 +4,13 @@ import api from '../api/axios';
 
 const REPORT_FILENAME = 'MAVI-Linking-Recruiter-AI-Report.pdf';
 
-const ReportGenerator = ({ candidateId }) => {
+const ReportGenerator = ({ candidateId, candidate }) => {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [reportUrl, setReportUrl] = useState('');
+
+  const targetId = candidateId || candidate?._id || candidate?.id;
 
   useEffect(() => {
     return () => {
@@ -17,17 +19,14 @@ const ReportGenerator = ({ candidateId }) => {
   }, [reportUrl]);
 
   const handleGenerate = async () => {
-    if (!candidateId) {
-      setError('Candidate information is missing. Please open a candidate profile and try again.');
-      return;
-    }
-
     setLoading(true);
     setError('');
     setReady(false);
 
     try {
-      const response = await api.get(`/recruiter/reports/${candidateId}`, {
+      const endpoint = targetId ? `/recruiter/reports/${targetId}` : `/users/me/report`;
+
+      const response = await api.get(endpoint, {
         responseType: 'blob',
         headers: { Accept: 'application/pdf' },
       });

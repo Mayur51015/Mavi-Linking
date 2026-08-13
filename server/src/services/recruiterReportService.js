@@ -19,18 +19,37 @@ const toText = (value, fallback = 'Not available') => {
 };
 
 const scopedCandidateQuery = (candidateId, recruiter) => {
-  const query = { _id: candidateId, role: 'user', isPublic: true };
+  const query = { _id: candidateId, role: { $in: ['user', 'developer'] }, isPublic: true };
 
+  if (!recruiter || recruiter.role === 'admin') {
+    return query;
+  }
+
+  const scopeConditions = [];
   if (recruiter.allowedColleges?.length) {
-    query['university.name'] = {
-      $in: recruiter.allowedColleges.map((college) => new RegExp(`^${escapeRegex(college)}$`, 'i')),
-    };
+    scopeConditions.push({
+      'university.name': {
+        $in: recruiter.allowedColleges.map((college) => new RegExp(escapeRegex(college), 'i')),
+      },
+    });
   }
 
   if (recruiter.allowedDepartments?.length) {
-    query['university.department'] = {
-      $in: recruiter.allowedDepartments.map((department) => new RegExp(`^${escapeRegex(department)}$`, 'i')),
+    scopeConditions.push({
+      'university.department': {
+        $in: recruiter.allowedDepartments.map((department) => new RegExp(escapeRegex(department), 'i')),
+      },
+    });
+  }
+
+  if (scopeConditions.length > 0) {
+    const unaffiliatedCondition = {
+      $or: [
+        { 'university.name': { $in: ['', null] } },
+        { 'university.name': { $exists: false } },
+      ],
     };
+    query.$or = [...scopeConditions, unaffiliatedCondition];
   }
 
   return query;
@@ -89,10 +108,10 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
     ? `${process.env.CLIENT_URL || 'http://localhost:5173'}/u/${user.username}`
     : null;
 
-  let qrDataUrl = null;
+  let qrBuffer = null;
   if (publicProfile) {
     try {
-      qrDataUrl = await QRCode.toDataURL(publicProfile, { margin: 1, width: 120 });
+      qrBuffer = await QRCode.toBuffer(publicProfile, { margin: 1, width: 120 });
     } catch (error) {
       console.warn(`Recruiter report QR generation skipped for ${user._id}: ${error.message}`);
     }
@@ -103,13 +122,13 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
     insight,
     dna,
     ranking,
-    projects,
+    projects: projects || [],
     analytics,
     aiData,
     aiAvailable,
     generatedAt: new Date(),
     publicProfile,
-    qrDataUrl,
+    qrBuffer,
   };
 };
 
@@ -164,7 +183,7 @@ const writeRecruiterReportPdf = async (report, res) => {
     `Overall Score: ${toText(candidate.scores?.overall)}`,
   ]);
 
-  writeSection(doc, 'Projects', report.projects.length
+  writeSection(doc, 'Projects', report.projects && report.projects.length
     ? report.projects.map((project) => `${project.title}: ${project.description} | Technologies: ${toText(project.technologies)}${project.githubUrl ? ` | GitHub: ${project.githubUrl}` : ''}`)
     : ['No projects available.']);
 
@@ -214,9 +233,13 @@ const writeRecruiterReportPdf = async (report, res) => {
 
   if (report.publicProfile) {
     writeSection(doc, 'Public Profile', [`Profile: ${report.publicProfile}`]);
-    if (report.qrDataUrl) {
-      doc.image(report.qrDataUrl, { fit: [100, 100], align: 'center' });
-      doc.fontSize(8).fillColor('#777').text('Scan to open the candidate public profile.', { align: 'center' });
+    if (report.qrBuffer) {
+      try {
+        doc.image(report.qrBuffer, { fit: [100, 100], align: 'center' });
+        doc.fontSize(8).fillColor('#777').text('Scan to open the candidate public profile.', { align: 'center' });
+      } catch (qrErr) {
+        console.warn(`Failed to embed QR code image in PDF: ${qrErr.message}`);
+      }
     }
   }
 

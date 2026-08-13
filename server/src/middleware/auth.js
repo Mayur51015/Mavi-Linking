@@ -38,6 +38,15 @@ const protect = async (req, res, next) => {
       });
     }
 
+    // A password reset revokes every session issued before it, so a token that
+    // predates the last reset is refused even though its signature is valid.
+    if (user.isTokenStale(decoded.iat)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Session expired because the account password was changed. Please login again.',
+      });
+    }
+
     // ─── Backward Compatibility: migrate old role names ─────────────
     const roleMigration = { developer: 'user', professor: 'teacher' };
     if (roleMigration[user.role]) {

@@ -218,6 +218,10 @@ const userSchema = new mongoose.Schema(
       minlength: [6, 'Password must be at least 6 characters'],
       select: false, // Never return password in queries by default
     },
+    // Stamped whenever the password is reset. JWTs issued before this moment
+    // are rejected by the auth middleware, which is what makes a reset able to
+    // evict sessions an attacker may already hold.
+    passwordChangedAt: { type: Date, default: null },
     avatar: {
       type: String,
       default: '',
@@ -297,6 +301,19 @@ userSchema.pre('save', async function (next) {
 // ─── Instance method: Compare candidate password with stored hash ───────────
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+// ─── Instance method: Was this JWT issued before the last password change? ──
+/**
+ * @param {number} issuedAtSeconds the `iat` claim from a verified JWT
+ * @returns {boolean} true when the token predates the most recent password
+ *   reset and must therefore be rejected
+ */
+userSchema.methods.isTokenStale = function (issuedAtSeconds) {
+  if (!this.passwordChangedAt || !issuedAtSeconds) return false;
+  // `iat` has one-second granularity, so a token minted in the same second as
+  // the change compares as stale. Erring that way is the safe direction.
+  return issuedAtSeconds * 1000 < this.passwordChangedAt.getTime();
 };
 
 // ─── Instance method: Generate signed JWT ───────────────────────────────────

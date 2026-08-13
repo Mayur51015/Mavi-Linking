@@ -158,6 +158,20 @@ return (
         </header>
 
         <div className="dashboard-content" style={{ flex: 1, overflowY: 'auto' }}>
+          {user?.roleStatus === 'pending' && (
+            <div style={{
+              background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)',
+              color: '#fde047', padding: '1rem 1.25rem', borderRadius: '12px', marginBottom: '1.5rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem'
+            }}>
+              <div>
+                <strong style={{ fontSize: '0.95rem' }}>Role Verification Pending ({user.requestedRole?.toUpperCase()})</strong>
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: '#fef08a' }}>
+                  Your request for <strong>{user.requestedRole}</strong> role access is currently under verification by an administrator. You can build your developer profile while your request is being reviewed.
+                </p>
+              </div>
+            </div>
+          )}
           {children}
         </div>
       </main>

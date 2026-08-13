@@ -78,9 +78,25 @@ exports.getScore = async (req, res, next) => {
       score = await CareerScore.findOne({ user: targetUserId });
     }
 
+    const overallScore = score?.overall || 0;
+    let rank = null;
+    let totalUsers = 0;
+
+    if (overallScore > 0) {
+      const higherScoresCount = await User.countDocuments({
+        'scores.overall': { $gt: overallScore }
+      });
+      rank = higherScoresCount + 1;
+      totalUsers = await User.countDocuments({ 'scores.overall': { $gt: 0 } });
+    }
+
+    const scoreData = score ? (score.toObject ? score.toObject() : { ...score }) : { overall: 0, development: 0, problemSolving: 0, community: 0 };
+    scoreData.rank = rank;
+    scoreData.totalUsers = totalUsers;
+
     res.status(200).json({
       success: true,
-      data: score || { overall: 0, development: 0, problemSolving: 0, community: 0 }
+      data: scoreData
     });
   } catch (error) {
     next(error);

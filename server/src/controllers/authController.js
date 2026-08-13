@@ -29,34 +29,44 @@ const register = async (req, res, next) => {
       });
     }
 
-    // Build user data based on role
+    // Build user data with zero-trust role security (always default role to 'user')
     const userData = { name, email, password };
+    userData.role = 'user';
 
-    // Validate and set role (default to 'user')
-    const validRoles = ['user', 'recruiter', 'teacher'];
-    userData.role = validRoles.includes(role) ? role : 'user';
+    const isPrivilegedRequest = ['recruiter', 'teacher'].includes(role);
+    userData.requestedRole = isPrivilegedRequest ? role : 'none';
+    userData.roleStatus = isPrivilegedRequest ? 'pending' : 'active';
 
     // Common optional fields
     if (bio) userData.bio = bio;
 
-    // Role-specific fields
-    if (userData.role === 'user' || userData.role === 'teacher') {
-      if (university) userData.university = university;
-    }
+    // Student fields
+    if (university) userData.university = university;
+    if (degree) userData.degree = degree;
+    if (graduationYear) userData.graduationYear = graduationYear;
+    if (portfolioWebsite) userData.portfolioWebsite = portfolioWebsite;
+    if (githubUsername) userData.githubUsername = githubUsername;
+    if (preferredDomain) userData.preferredDomain = preferredDomain;
+    if (experienceLevel) userData.experienceLevel = experienceLevel;
 
-    if (userData.role === 'user') {
-      if (degree) userData.degree = degree;
-      if (graduationYear) userData.graduationYear = graduationYear;
-      if (portfolioWebsite) userData.portfolioWebsite = portfolioWebsite;
-      if (githubUsername) userData.githubUsername = githubUsername;
-      if (preferredDomain) userData.preferredDomain = preferredDomain;
-      if (experienceLevel) userData.experienceLevel = experienceLevel;
-    }
-
-    if (userData.role === 'recruiter') {
+    // Recruiter verification details
+    if (role === 'recruiter') {
       if (companyName) userData.companyName = companyName;
       if (allowedColleges) userData.allowedColleges = allowedColleges;
       if (allowedDepartments) userData.allowedDepartments = allowedDepartments;
+      userData.roleVerification = {
+        companyName: companyName || '',
+        submittedAt: new Date(),
+      };
+    }
+
+    // Teacher verification details
+    if (role === 'teacher') {
+      userData.roleVerification = {
+        institution: university?.name || '',
+        department: university?.department || '',
+        submittedAt: new Date(),
+      };
     }
 
     // Generate verification token and refresh token

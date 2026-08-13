@@ -22,7 +22,7 @@ import { SkeletonCard } from '../components/ui/Skeleton';
 const Dashboard = () => {
   const { user, setUser, socket, refreshUser } = useContext(AuthContext);
   const [scores, setScores] = useState(null);
-  const [rank, setRank] = useState(null);
+  const [rankStatus, setRankStatus] = useState({ loading: true, value: null, error: false });
   const [loading, setLoading] = useState(true);
   const [loadingDNA, setLoadingDNA] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -90,9 +90,27 @@ const Dashboard = () => {
 
   const fetchDashboardData = useCallback(async () => {
     setLoadingDNA(true);
+    setRankStatus(prev => ({ ...prev, loading: true, error: false }));
     try {
-      const res = await api.get('/career/score').catch(() => ({ data: { data: { overall: 0, development: 0, problemSolving: 0, community: 0 } } }));
-      setScores(res.data.data);
+      let scoreRes;
+      try {
+        scoreRes = await api.get('/career/score');
+      } catch (scoreErr) {
+        console.warn('Failed to fetch career score:', scoreErr.message);
+        setRankStatus({ loading: false, value: null, error: true });
+        scoreRes = { data: { data: { overall: 0, development: 0, problemSolving: 0, community: 0, rank: null } } };
+      }
+
+      const scoreData = scoreRes.data?.data;
+      setScores(scoreData);
+
+      if (scoreData && scoreData.rank !== undefined && scoreData.rank !== null) {
+        setRankStatus({ loading: false, value: scoreData.rank, error: false });
+      } else if (!scoreRes.data?.data) {
+        // Leave error status if request threw
+      } else {
+        setRankStatus({ loading: false, value: null, error: false });
+      }
 
       // Fetch other indicators in parallel
       const emptyFallback = { data: { data: null } };
@@ -591,7 +609,13 @@ const Dashboard = () => {
             <div>
               <div style={{ fontWeight: '600', fontSize: '0.8rem' }}>Global Rank</div>
               <div className="text-gradient" style={{ fontSize: '1rem', fontWeight: '800' }}>
-                {rank ? `#${rank}` : 'Unranked'}
+                {rankStatus.loading
+                  ? 'Loading...'
+                  : rankStatus.error
+                  ? 'Unavailable'
+                  : rankStatus.value !== null && rankStatus.value !== undefined
+                  ? `#${rankStatus.value.toLocaleString()}`
+                  : 'Unranked'}
               </div>
             </div>
           </div>

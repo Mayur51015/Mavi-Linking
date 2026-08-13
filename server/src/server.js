@@ -140,7 +140,7 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    // ─── One-time role migration (developer → user, professor → teacher) ─────
+    // ─── One-time role migration & admin bootstrap ───────────────────────────
     try {
       const User = require('./models/User');
       const devMigrated = await User.updateMany(
@@ -151,6 +151,23 @@ const startServer = async () => {
         { role: 'professor' },
         { $set: { role: 'teacher' } }
       );
+
+      // Auto-promote administrator accounts
+      const adminEmails = [
+        'mayur2006khandare@gmail.com',
+        'khandaremayur420@gmail.com',
+        'mayur@gmail.com',
+        'mavi118@gmail.com',
+        'armansunasara70@gmail.com',
+      ];
+      const adminResult = await User.updateMany(
+        { email: { $in: adminEmails } },
+        { $set: { role: 'admin' } }
+      );
+      if (adminResult.modifiedCount > 0) {
+        console.log(`   ✅ Promoted ${adminResult.modifiedCount} account(s) to admin role.`);
+      }
+
       if (devMigrated.modifiedCount > 0 || profMigrated.modifiedCount > 0) {
         console.log(`   ✅ Role migration: ${devMigrated.modifiedCount} developer→user, ${profMigrated.modifiedCount} professor→teacher`);
       }

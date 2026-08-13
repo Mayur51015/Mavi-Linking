@@ -3,6 +3,7 @@ const Job = require('../models/Job');
 const Company = require('../models/Company');
 const PlacementDrive = require('../models/PlacementDrive');
 const ActivityLog = require('../models/ActivityLog');
+const { buildSearchFilter, parsePagination, totalPages } = require('../utils/queryHelpers');
 
 /**
  * @desc    Get Admin Dashboard metrics
@@ -41,21 +42,19 @@ const getAdminStats = async (req, res, next) => {
  */
 const getAllUsers = async (req, res, next) => {
   try {
-    const { role, search, page = 1, limit = 50 } = req.query;
+    const { role, search } = req.query;
+    const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 50 });
     const query = {};
 
     if (role) query.role = role;
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-      ];
+
+    const searchFilter = buildSearchFilter(search, ['name', 'email']);
+    if (searchFilter) {
+      Object.assign(query, searchFilter);
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
     const [users, total] = await Promise.all([
-      User.find(query).select('-password').skip(skip).limit(parseInt(limit)).sort({ createdAt: -1 }),
+      User.find(query).select('-password').skip(skip).limit(limit).sort({ createdAt: -1 }),
       User.countDocuments(query),
     ]);
 
@@ -65,8 +64,9 @@ const getAllUsers = async (req, res, next) => {
         users,
         pagination: {
           total,
-          page: parseInt(page),
-          pages: Math.ceil(total / parseInt(limit)),
+          page,
+          limit,
+          pages: totalPages(total, limit),
         },
       },
     });

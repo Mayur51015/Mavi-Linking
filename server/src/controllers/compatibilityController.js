@@ -1,5 +1,6 @@
 const { compareUsers } = require('../services/compatibilityService');
 const User = require('../models/User');
+const { escapeRegex } = require('../utils/queryHelpers');
 
 /**
  * @desc    Compare developers for team compatibility
@@ -34,7 +35,8 @@ const searchUsers = async (req, res, next) => {
       return res.status(200).json({ success: true, data: [] });
     }
 
-    const regex = new RegExp(q.trim(), 'i');
+    // Escaped so the caller supplies a literal substring, not a pattern.
+    const regex = new RegExp(escapeRegex(q.trim().slice(0, 100)), 'i');
     const users = await User.find({
       role: 'user',
       _id: { $ne: req.user._id },

@@ -3,6 +3,7 @@ const PlacementDrive = require('../models/PlacementDrive');
 const TeacherAnnouncement = require('../models/TeacherAnnouncement');
 const Company = require('../models/Company');
 const ActivityLog = require('../models/ActivityLog');
+const { buildSearchFilter, parsePagination, totalPages } = require('../utils/queryHelpers');
 
 /**
  * @desc    Get students from teacher's own college + department
@@ -262,11 +263,12 @@ const getAnnouncements = async (req, res, next) => {
   try {
     const college = req.user.university?.name || '';
     const department = req.user.university?.department || '';
-    const { search, page = 1, limit = 10, departmentFilter } = req.query;
+    const { search, departmentFilter } = req.query;
+    const { page, limit, skip } = parsePagination(req.query);
 
     const query = {};
     if (college) query.college = college;
-    
+
     // Default to teacher's departments, but allow filtering
     const teacherDepts = department.split(',').map(d => d.trim()).filter(Boolean);
     if (departmentFilter) {
@@ -275,30 +277,27 @@ const getAnnouncements = async (req, res, next) => {
       query.department = { $in: [...teacherDepts, 'All', ''] };
     }
 
-    if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { content: { $regex: search, $options: 'i' } }
-      ];
+    const searchFilter = buildSearchFilter(search, ['title', 'content']);
+    if (searchFilter) {
+      Object.assign(query, searchFilter);
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
     const total = await TeacherAnnouncement.countDocuments(query);
 
     const anns = await TeacherAnnouncement.find(query)
       .populate('teacherId', 'name')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(limit);
 
     res.status(200).json({
       success: true,
       data: anns,
       pagination: {
         total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / limit)
+        page,
+        limit,
+        pages: totalPages(total, limit)
       }
     });
   } catch (error) {

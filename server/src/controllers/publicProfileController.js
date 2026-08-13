@@ -4,12 +4,14 @@ const Insight = require('../models/Insight');
 const DNA = require('../models/DNA');
 const Ranking = require('../models/Ranking');
 const Analytics = require('../models/Analytics');
+const { buildExactRegex } = require('../utils/queryHelpers');
 
 const normalizeUsername = (s) => (s || '').toString().trim().toLowerCase();
 
 const findUserByHandle = async (username) => {
-  const usernameRegex = new RegExp(`^${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
-  
+  // Same escaping this file already did, now shared with the other handlers.
+  const usernameRegex = buildExactRegex(username);
+
   const user = await User.findOne({
     isPublic: { $ne: false },
     $or: [

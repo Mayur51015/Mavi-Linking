@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   LogOut, Users, BarChart3, TrendingUp, Award,
-  Terminal, GraduationCap, Building2, Megaphone, FolderOpen, Menu, X,
+  Terminal, GraduationCap, Building2, Megaphone, FolderOpen, Menu, X, Shield,
 } from 'lucide-react';import ThemeToggle from '../components/ThemeToggle';
 const TeacherLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
@@ -22,6 +22,7 @@ const location = useLocation();
     { name: 'Leaderboard', path: '/dashboard/teacher/leaderboard', icon: <Award size={20} /> },
     { name: 'Announcements', path: '/dashboard/teacher/announcements', icon: <Megaphone size={20} /> },
     { name: 'Shared Documents', path: '/dashboard/teacher/documents', icon: <FolderOpen size={20} /> },
+    ...(user?.role === 'admin' ? [{ name: 'Admin Dashboard', path: '/dashboard/admin', icon: <Shield size={20} /> }] : []),
   ];
 
   return (

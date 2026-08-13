@@ -30,6 +30,7 @@ const fetchGitHubProfile = async (username) => {
   const url = `https://api.github.com/users/${encodeURIComponent(username)}`;
   const headers = {
     Accept: 'application/vnd.github+json',
+    'User-Agent': 'MaVi-Linking-App',
   };
 
   if (GITHUB_TOKEN) {
@@ -40,7 +41,9 @@ const fetchGitHubProfile = async (username) => {
   const payload = await response.json();
 
   if (!response.ok) {
-    const message = payload.message || 'Unable to fetch GitHub profile';
+    const message = response.status === 404
+      ? `GitHub user "${username}" was not found.`
+      : payload.message || 'Unable to fetch GitHub profile';
     throw new Error(message);
   }
 

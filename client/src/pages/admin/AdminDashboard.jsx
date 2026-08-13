@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Users, FileText, BarChart3, Edit, Trash2, Save, Filter, RefreshCw } from 'lucide-react';
+import UserLayout from '../../layouts/UserLayout';
 import api from '../../api/axios';
 
 const AdminDashboard = () => {
@@ -79,7 +80,8 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', color: 'white' }}>
+    <UserLayout>
+      <div style={{ padding: '1rem', maxWidth: '1200px', margin: '0 auto', color: 'white' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <div>
           <h1 style={{ fontSize: '2.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -312,6 +314,7 @@ const AdminDashboard = () => {
         </div>
       )}
     </div>
+    </UserLayout>
   );
 };
 

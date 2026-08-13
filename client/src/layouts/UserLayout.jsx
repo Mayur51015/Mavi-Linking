@@ -4,7 +4,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   LogOut, LayoutDashboard, Link as LinkIcon, BarChart3,
   Terminal, Briefcase, Heart, BadgeCheck, QrCode, User,
-  Megaphone, FolderOpen, Menu, X,
+  Megaphone, FolderOpen, Menu, X, Shield,
 } from 'lucide-react';
 import VerificationModal from '../components/VerificationModal';
 import NotificationBell from '../components/NotificationBell';
@@ -29,6 +29,7 @@ const UserLayout = ({ children }) => {
     { name: 'Compatibility', path: '/dashboard/compatibility', icon: <Heart size={20} /> },
     { name: 'Announcements', path: '/dashboard/announcements', icon: <Megaphone size={20} /> },
     { name: 'Shared Documents', path: '/dashboard/documents', icon: <FolderOpen size={20} /> },
+    ...(user?.role === 'admin' ? [{ name: 'Admin Dashboard', path: '/dashboard/admin', icon: <Shield size={20} /> }] : []),
   ];
 
   const publicUsername = user?.username || user?.platforms?.github?.username;

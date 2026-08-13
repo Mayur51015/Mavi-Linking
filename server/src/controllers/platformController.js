@@ -73,12 +73,26 @@ const linkPlatform = async (req, res, next) => {
       });
     }
 
+    // Check if another user has already linked this platform username
+    const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const existingUser = await User.findOne({
+      _id: { $ne: req.user.id },
+      [`platforms.${platform}.username`]: { $regex: new RegExp(`^${escapeRegex(sanitized.username)}$`, 'i') },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: `This ${capitalize(platform)} account (@${sanitized.username}) is already linked to another MAVI Linking user.`,
+      });
+    }
+
     // Fetch external platform profile and cache it
     let platformData;
     try {
       platformData = await fetchPlatformProfile(platform, sanitized.username);
     } catch (fetchError) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: fetchError.message || `Unable to fetch ${capitalize(platform)} profile for "${sanitized.username}". Please check the username and try again.`,
       });
@@ -400,7 +414,29 @@ const getPlatformData = async (req, res, next) => {
 /**
  * Validate and sanitize username based on platform-specific rules.
  */
-function sanitizeUsername(platform, username) {
+function sanitizeUsername(platform, rawInput) {
+  let username = String(rawInput || '').trim();
+
+  // Strip leading @ if entered as @username
+  if (username.startsWith('@')) {
+    username = username.slice(1).trim();
+  }
+
+  // Extract username if user pasted a full URL or domain path
+  if (username.includes('/') || username.includes('http')) {
+    try {
+      const urlString = username.startsWith('http') ? username : `https://${username}`;
+      const parsedUrl = new URL(urlString);
+      const segments = parsedUrl.pathname.split('/').filter(Boolean);
+      if (segments.length > 0) {
+        // Handle codeforces.com/profile/handle or stackoverflow.com/users/id
+        username = (segments[0] === 'profile' || segments[0] === 'users' || segments[0] === 'u') && segments[1]
+          ? segments[1]
+          : segments[segments.length - 1];
+      }
+    } catch (_) {}
+  }
+
   const rules = {
     github: {
       pattern: /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/,
@@ -418,7 +454,6 @@ function sanitizeUsername(platform, username) {
       message: 'LeetCode username must be 1-30 chars (letters, digits, underscores, hyphens)',
     },
     stackoverflow: {
-      // Stack Overflow uses numeric user IDs in their API
       pattern: /^\d{1,15}$/,
       maxLength: 15,
       message: 'Stack Overflow requires your numeric user ID (found in your profile URL)',

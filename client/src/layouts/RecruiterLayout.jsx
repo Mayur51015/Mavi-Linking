@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   LogOut, Search, Bookmark, Users, BarChart3,
-  Terminal, Building2, UserCheck, GitPullRequest, Menu, X,
+  Terminal, Building2, UserCheck, GitPullRequest, Menu, X, Shield,
 } from 'lucide-react';import NotificationBell from '../components/NotificationBell';
 import ThemeToggle from '../components/ThemeToggle';
 const RecruiterLayout = ({ children }) => {
@@ -22,6 +22,7 @@ const location = useLocation();
     { name: 'Pipeline', path: '/dashboard/recruiter/pipeline', icon: <GitPullRequest size={20} /> },
     { name: 'Bookmarks', path: '/dashboard/recruiter/bookmarks', icon: <Bookmark size={20} /> },
     { name: 'Compare', path: '/dashboard/recruiter/compare', icon: <Users size={20} /> },
+    ...(user?.role === 'admin' ? [{ name: 'Admin Dashboard', path: '/dashboard/admin', icon: <Shield size={20} /> }] : []),
   ];
 
   return (

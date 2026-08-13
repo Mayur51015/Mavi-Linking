@@ -3,6 +3,7 @@ const Job = require('../models/Job');
 const Company = require('../models/Company');
 const PlacementDrive = require('../models/PlacementDrive');
 const ActivityLog = require('../models/ActivityLog');
+const RecruitmentNotification = require('../models/RecruitmentNotification');
 
 /**
  * @desc    Get Admin Dashboard metrics
@@ -240,6 +241,16 @@ const approveRoleRequest = async (req, res, next) => {
       userAgent: req.headers['user-agent'] || '',
     });
 
+    try {
+      await RecruitmentNotification.create({
+        recipientId: user._id,
+        senderId: req.user.id,
+        type: 'general',
+        title: 'Verification Request Approved! 🎉',
+        message: `Your verification request for the ${targetRole.toUpperCase()} role has been approved by an admin. You now have full access to the ${targetRole} dashboard.`,
+      });
+    } catch (_) {}
+
     res.status(200).json({
       success: true,
       message: `Successfully approved ${targetRole} role for ${user.email}`,
@@ -277,6 +288,16 @@ const rejectRoleRequest = async (req, res, next) => {
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
+
+    try {
+      await RecruitmentNotification.create({
+        recipientId: user._id,
+        senderId: req.user.id,
+        type: 'general',
+        title: 'Verification Request Update',
+        message: `Your verification request for the ${user.requestedRole || 'requested'} role was not approved. Reason: ${reason || 'Verification requirements not met.'}`,
+      });
+    } catch (_) {}
 
     res.status(200).json({
       success: true,

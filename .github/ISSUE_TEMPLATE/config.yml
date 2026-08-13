@@ -1,0 +1,11 @@
+# Keep the blank-issue escape hatch — maintainers filing quick notes shouldn't
+# have to fight a template.
+blank_issues_enabled: true
+
+contact_links:
+  - name: 💬 Questions and discussion
+    url: https://github.com/Mayur51015/Mavi-Linking/discussions
+    about: Ask a question or discuss an idea before opening an issue.
+  - name: 📖 Contributing guide
+    url: https://github.com/Mayur51015/Mavi-Linking/blob/main/CONTRIBUTING.md
+    about: Setup steps, branch naming, and how to get a PR reviewed.

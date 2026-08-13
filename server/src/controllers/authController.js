@@ -447,7 +447,6 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
-const axios = require('axios');
 
 /**
  * @desc    Google Sign-In / Register (Verifies Google ID Token)

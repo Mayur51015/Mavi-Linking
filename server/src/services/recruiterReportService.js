@@ -6,6 +6,9 @@ const DNA = require('../models/DNA');
 const Ranking = require('../models/Ranking');
 const Project = require('../models/Project');
 const Analytics = require('../models/Analytics');
+const CareerScore = require('../models/CareerScore');
+const CareerInsight = require('../models/CareerInsight');
+const LeetCodeAnalytics = require('../models/LeetCodeAnalytics');
 const aiAnalyzer = require('./aiAnalyzer');
 
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -19,7 +22,7 @@ const toText = (value, fallback = 'Not available') => {
 };
 
 const scopedCandidateQuery = (candidateId, recruiter) => {
-  const query = { _id: candidateId, role: { $in: ['user', 'developer'] }, isPublic: true };
+  const query = { _id: candidateId, role: { $in: ['user', 'developer', 'student'] }, isPublic: { $ne: false } };
 
   if (!recruiter || recruiter.role === 'admin') {
     return query;
@@ -69,16 +72,36 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
     throw error;
   }
 
-  let [insight, dna, ranking, projects, analytics] = await Promise.all([
-    Insight.findOne({ userId: user._id }).lean(),
-    DNA.findOne({ userId: user._id }).lean(),
-    Ranking.findOne({ userId: user._id }).lean(),
-    Project.find({ user: user._id }).sort({ featured: -1, updatedAt: -1 }).lean(),
-    Analytics.findOne({ userId: user._id }).sort({ month: -1, updatedAt: -1 }).lean(),
+  let [insight, dna, ranking, projects, analytics, careerScore, careerInsight, leetcodeData] = await Promise.all([
+    Insight.findOne({ userId: user._id }).lean().catch(() => null),
+    DNA.findOne({ userId: user._id }).lean().catch(() => null),
+    Ranking.findOne({ userId: user._id }).lean().catch(() => null),
+    Project.find({ user: user._id }).sort({ featured: -1, updatedAt: -1 }).lean().catch(() => []),
+    Analytics.findOne({ userId: user._id }).sort({ month: -1, updatedAt: -1 }).lean().catch(() => null),
+    CareerScore.findOne({ user: user._id }).lean().catch(() => null),
+    CareerInsight.findOne({ user: user._id }).lean().catch(() => null),
+    LeetCodeAnalytics.findOne({ user: user._id }).lean().catch(() => null),
   ]);
 
+  // Compute live global rank matching backend source of truth
+  let globalRank = null;
+  if (user.scores && user.scores.overall > 0) {
+    const higherScoresCount = await User.countDocuments({
+      'scores.overall': { $gt: user.scores.overall },
+    });
+    globalRank = higherScoresCount + 1;
+  }
+
+  const rankingData = {
+    globalRank: globalRank ? `#${globalRank.toLocaleString()}` : (ranking?.globalRank ? `#${ranking.globalRank}` : 'Unranked'),
+    tier: ranking?.tier || (user.scores?.overall > 800 ? 'Elite Developer' : user.scores?.overall > 600 ? 'Gold' : user.scores?.overall > 400 ? 'Silver' : 'Bronze'),
+    score: user.scores?.overall || careerScore?.overall || 0,
+    universityRank: ranking?.universityRank || 'N/A',
+    departmentRank: ranking?.departmentRank || 'N/A',
+  };
+
   let aiData = user.aiAnalysis || {};
-  let aiAvailable = Boolean(insight || dna || ranking || analytics);
+  let aiAvailable = Boolean(insight || dna || ranking || analytics || careerInsight);
 
   try {
     const analysis = await Promise.race([
@@ -94,10 +117,10 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
       analytics = analysis.analytics || analytics;
       aiData = {
         ...aiData,
-        strengths: analysis.insight?.strengths || aiData.strengths || [],
-        weaknesses: analysis.insight?.improvements || aiData.weaknesses || [],
-        recommendedRoles: analysis.insight?.careerRecommendations || aiData.recommendedRoles || [],
-        hiringRecommendation: aiData.hiringRecommendation || '',
+        strengths: analysis.insight?.strengths || aiData.strengths || careerInsight?.strengths || [],
+        weaknesses: analysis.insight?.improvements || aiData.weaknesses || careerInsight?.improvements || [],
+        recommendedRoles: analysis.insight?.careerRecommendations || aiData.recommendedRoles || careerInsight?.recommendedRoles || [],
+        hiringRecommendation: aiData.hiringRecommendation || careerInsight?.hiringRecommendation || '',
       };
     }
   } catch (error) {
@@ -119,11 +142,12 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
 
   return {
     candidate: user,
-    insight,
+    insight: insight || careerInsight,
     dna,
-    ranking,
+    ranking: rankingData,
     projects: projects || [],
     analytics,
+    leetcodeData,
     aiData,
     aiAvailable,
     generatedAt: new Date(),
@@ -193,9 +217,17 @@ const writeRecruiterReportPdf = async (report, res) => {
     ...(candidate.certificates?.length || candidate.achievements?.length ? [] : ['No certifications or achievements available.']),
   ]);
 
+  const lcUsername = candidate.platforms?.leetcode?.username || report.leetcodeData?.username;
+  const lcStats = report.leetcodeData;
+  const lcText = lcStats
+    ? `${lcUsername} (Total Solved: ${lcStats.totalSolved || 0} [Easy: ${lcStats.easySolved || 0}, Medium: ${lcStats.mediumSolved || 0}, Hard: ${lcStats.hardSolved || 0}])`
+    : lcUsername
+    ? `${lcUsername} (Stats not synced)`
+    : 'Not connected';
+
   writeSection(doc, 'GitHub & Coding Profiles', [
     `GitHub: ${toText(candidate.platforms?.github?.username || candidate.githubUsername)}`,
-    `LeetCode: ${toText(candidate.platforms?.leetcode?.username)}`,
+    `LeetCode: ${lcText}`,
     `Codeforces: ${toText(candidate.platforms?.codeforces?.username)}`,
     `Stack Overflow: ${toText(candidate.platforms?.stackoverflow?.username)}`,
     `Portfolio: ${toText(candidate.portfolioWebsite)}`,

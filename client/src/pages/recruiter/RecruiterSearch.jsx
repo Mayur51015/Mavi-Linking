@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, Bookmark, BadgeCheck, Eye, Users, GitPullRequest, MessageSquare, BrainCircuit, FileText, X } from 'lucide-react';
 import RecruiterLayout from '../../layouts/RecruiterLayout';
 import PlacementBadge from '../../components/PlacementBadge';
+import ReportGenerator from '../../components/ReportGenerator';
 
 import api from '../../api/axios';
 
@@ -174,7 +175,7 @@ const RecruiterSearch = () => {
               <h2 style={{ fontSize: '1.35rem' }}>Recruiter AI Report: {reportCandidate.name}</h2>
               <button onClick={() => setReportCandidate(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={24} /></button>
             </div>
-            <ReportGenerator candidateId={reportCandidate._id} />
+            <ReportGenerator candidateId={reportCandidate._id || reportCandidate.id} candidate={reportCandidate} />
           </motion.div>
         </div>
       )}

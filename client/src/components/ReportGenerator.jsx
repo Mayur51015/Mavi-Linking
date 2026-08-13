@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Download, FileText, CheckCircle, RotateCcw } from 'lucide-react';
 import api from '../api/axios';
 
@@ -39,7 +39,7 @@ const ReportGenerator = ({ candidateId }) => {
         try {
           const parsed = JSON.parse(text);
           message = parsed.message || message;
-        } catch (_) {
+        } catch {
           // Keep the generic message for non-JSON responses.
         }
         throw new Error(message);
@@ -51,16 +51,27 @@ const ReportGenerator = ({ candidateId }) => {
       setReady(true);
     } catch (err) {
       console.error('Recruiter AI report generation failed:', err);
+      let customMsg = '';
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const parsed = JSON.parse(text);
+          if (parsed.message) customMsg = parsed.message;
+        } catch {
+          // Ignore non-JSON blob parsing errors.
+        }
+      }
+
       if (err.response?.status === 401) {
-        setError('Your recruiter session has expired. Please sign in again.');
+        setError(customMsg || 'Your recruiter session has expired. Please sign in again.');
       } else if (err.response?.status === 403) {
-        setError('You are not authorized to generate this candidate report.');
+        setError(customMsg || 'You are not authorized to generate this candidate report.');
       } else if (err.response?.status === 404) {
-        setError('Candidate not found or outside your authorized access scope.');
+        setError(customMsg || 'Candidate not found or outside your authorized access scope.');
       } else if (err.response?.status === 503) {
-        setError('The report service is temporarily unavailable. Please retry.');
+        setError(customMsg || 'The report service is temporarily unavailable. Please retry.');
       } else {
-        setError(err.message || 'Failed to generate the AI report. Please retry.');
+        setError(customMsg || err.message || 'Failed to generate the AI report. Please retry.');
       }
     } finally {
       setLoading(false);

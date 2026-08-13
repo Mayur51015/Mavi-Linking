@@ -1150,3 +1150,144 @@ html {
   outline: none;
   box-shadow: 0 0 0 2px var(--accent-purple);
 }
+
+/* ─── Premium Liquid Glass Google Sign-In Button ───────────────── */
+.google-btn-container {
+  width: 100%;
+  position: relative;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.google-btn-liquid-glass {
+  position: relative;
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.875rem;
+  padding: 0 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md, 12px);
+  color: var(--text-primary, #ffffff);
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Translucent reflective sheen */
+.google-btn-liquid-glass::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  opacity: 0.6;
+}
+
+.google-btn-liquid-glass:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(139, 92, 246, 0.45);
+  transform: translateY(-1px);
+  box-shadow: 
+    0 6px 24px rgba(139, 92, 246, 0.25),
+    0 0 16px rgba(59, 130, 246, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25);
+}
+
+.google-btn-liquid-glass:hover::before {
+  opacity: 1;
+}
+
+.google-btn-liquid-glass:active {
+  transform: scale(0.98) translateY(0);
+  box-shadow: 
+    0 2px 10px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.google-btn-liquid-glass:focus-visible {
+  outline: none;
+  border-color: var(--accent-purple, #8b5cf6);
+  box-shadow: 
+    0 0 0 3px rgba(139, 92, 246, 0.4),
+    0 4px 20px rgba(139, 92, 246, 0.3);
+}
+
+.google-btn-liquid-glass.disabled,
+.google-btn-liquid-glass:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Icon Badge Container */
+.google-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.google-btn-liquid-glass:hover .google-icon-wrapper {
+  transform: scale(1.06);
+}
+
+/* Text label */
+.google-btn-text {
+  position: relative;
+  z-index: 1;
+}
+
+/* Transparent GIS Overlay */
+.google-gis-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.001;
+  overflow: hidden;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.google-gis-overlay iframe {
+  width: 100% !important;
+  height: 100% !important;
+  cursor: pointer !important;
+}
+

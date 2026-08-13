@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { io } from 'socket.io-client';
 import api from '../api/axios';
+import { getAccessToken, setTokens, clearTokens } from '../api/tokenStorage';
 
 export const AuthContext = createContext();
 
@@ -11,7 +12,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const token = localStorage.getItem('token');
+      const token = getAccessToken();
       if (!token) {
         setLoading(false);
         return;
@@ -21,8 +22,10 @@ export const AuthProvider = ({ children }) => {
         const res = await api.get('/auth/me');
         setUser(res.data.data.user);
       } catch (error) {
+        // A 401 here has already been through the refresh interceptor, so if we
+        // land in this branch the session is genuinely gone.
         console.error('Error fetching user', error);
-        localStorage.removeItem('token');
+        clearTokens();
       } finally {
         setLoading(false);
       }
@@ -34,14 +37,15 @@ export const AuthProvider = ({ children }) => {
   // Establish persistent Socket.IO connection when authenticated
   const userId = user?._id || user?.id;
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
     if (userId && token) {
       const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
       console.log('Initializing socket connection to:', socketUrl);
       
       const newSocket = io(socketUrl, {
         auth: (cb) => {
-          cb({ token: localStorage.getItem('token') });
+          // Read at connect time so a refreshed token is picked up automatically.
+          cb({ token: getAccessToken() });
         },
         withCredentials: true,
         transports: ['polling', 'websocket'],
@@ -68,7 +72,7 @@ export const AuthProvider = ({ children }) => {
       newSocket.on('connect_error', (error) => {
         console.error('Socket connection error:', error.message);
         // Retry connection with refreshed token if available
-        const freshToken = localStorage.getItem('token');
+        const freshToken = getAccessToken();
         if (freshToken) {
           newSocket.auth = { token: freshToken };
           newSocket.connect();
@@ -88,20 +92,32 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
-    localStorage.setItem('token', res.data.data.token);
+    const { token, refreshToken } = res.data.data;
+    setTokens({ token, refreshToken });
     setUser(res.data.data.user);
     return res.data.data;
   }, []);
 
   const register = useCallback(async (userData) => {
     const res = await api.post('/auth/register', userData);
-    localStorage.setItem('token', res.data.data.token);
+    const { token, refreshToken } = res.data.data;
+    setTokens({ token, refreshToken });
     setUser(res.data.data.user);
     return res.data.data;
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
+  const logout = useCallback(async () => {
+    // Tell the server to drop the refresh token, otherwise it stays valid
+    // indefinitely after the user thinks they've signed out. Best-effort: the
+    // local session is cleared either way, so a failed call can't strand a
+    // user in a half-logged-in state.
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout request failed; clearing local session anyway', error);
+    }
+
+    clearTokens();
     setUser(null);
   }, []);
 

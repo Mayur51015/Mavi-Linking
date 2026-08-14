@@ -83,8 +83,8 @@ const updateProfileValidation = [
     .withMessage('Name must be between 2 and 50 characters'),
   body('avatar')
     .optional()
-    .isURL()
-    .withMessage('Avatar must be a valid URL'),
+    .isString()
+    .withMessage('Avatar must be a valid string'),
 ];
 
 // ─── Public Routes ──────────────────────────────────────────────────────────

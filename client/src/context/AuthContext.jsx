@@ -126,6 +126,14 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const updateProfile = useCallback(async (profileData) => {
+    const res = await api.put('/auth/me', profileData);
+    if (res.data?.data?.user) {
+      setUser(res.data.data.user);
+    }
+    return res.data;
+  }, []);
+
   /**
    * Get the dashboard path based on user role
    */
@@ -146,12 +154,13 @@ export const AuthProvider = ({ children }) => {
     changePassword,
     register,
     requestRoleUpgrade,
+    updateProfile,
     logout,
     refreshUser,
     getDashboardPath,
     setUser,
     socket,
-  }), [user, loading, socket, login, changePassword, register, requestRoleUpgrade, logout, refreshUser, getDashboardPath]);
+  }), [user, loading, socket, login, changePassword, register, requestRoleUpgrade, updateProfile, logout, refreshUser, getDashboardPath]);
 
   return (
     <AuthContext.Provider value={contextValue}>

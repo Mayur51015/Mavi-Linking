@@ -36,13 +36,58 @@ import { AuthContext } from '../context/AuthContext';
 import UserLayout from '../layouts/UserLayout';
 import Messages from '../pages/Messages';
 const Dashboard = () => {
-  const { user, setUser, socket, refreshUser } = useContext(AuthContext);
+  const { user, setUser, updateProfile, socket, refreshUser } = useContext(AuthContext);
   const [scores, setScores] = useState(null);
   const [rankStatus, setRankStatus] = useState({ loading: true, value: null, error: false });
   const [loading, setLoading] = useState(true);
   const [loadingDNA, setLoadingDNA] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
+  // Edit Profile States
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({
+    name: '',
+    bio: '',
+    degree: '',
+    graduationYear: '',
+    portfolioWebsite: '',
+    githubUsername: '',
+    preferredDomain: '',
+  });
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const openEditProfileModal = () => {
+    setEditProfileData({
+      name: user?.name || '',
+      bio: user?.bio || '',
+      degree: user?.degree || '',
+      graduationYear: user?.graduationYear || '',
+      portfolioWebsite: user?.portfolioWebsite || '',
+      githubUsername: user?.githubUsername || '',
+      preferredDomain: user?.preferredDomain || '',
+    });
+    setShowEditProfileModal(true);
+  };
+
+  const handleSaveProfileSubmit = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      if (updateProfile) {
+        await updateProfile(editProfileData);
+      } else {
+        const res = await api.put('/auth/me', editProfileData);
+        if (res.data?.data?.user) setUser(res.data.data.user);
+      }
+      showToast('success', 'Profile updated successfully!');
+      setShowEditProfileModal(false);
+    } catch (err) {
+      showToast('error', err.response?.data?.message || 'Failed to update profile.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   // Custom states for new modules
   const [pipelines, setPipelines] = useState([]);
   const [projectsCount, setProjectsCount] = useState(0);
@@ -663,6 +708,14 @@ const Dashboard = () => {
             </div>
           </div>
           
+          <button 
+            onClick={openEditProfileModal}
+            className="btn btn-outline"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <Edit2 size={16} /> Edit Profile
+          </button>
+
           <button 
             onClick={handleGenerateAIInsights} 
             disabled={generatingAI} 
@@ -1479,6 +1532,119 @@ const Dashboard = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Edit Profile Modal */}
+      {showEditProfileModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <form onSubmit={handleSaveProfileSubmit} className="glass-card-static animate-fade-in" style={{ width: '100%', maxWidth: '540px', padding: '2rem', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'white' }}>Edit Profile Information</h3>
+              <button type="button" onClick={() => setShowEditProfileModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem', maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
+              <div className="input-group">
+                <label className="input-label">Full Name *</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={editProfileData.name}
+                  onChange={(e) => setEditProfileData({ ...editProfileData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Assigned Institution (Protected / Read-Only)</label>
+                <div className="input-field" style={{ background: 'rgba(255,255,255,0.03)', color: '#fde047', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
+                  <span>{user?.institutionId?.name || user?.collegeName || 'Zeal College of Engineering and Research'}</span>
+                  <span style={{ fontSize: '0.75rem', color: '#eab308', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold' }}>
+                    <Lock size={12} /> Managed by Institution Admin
+                  </span>
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Bio / About Me</label>
+                <textarea
+                  className="input-field"
+                  rows={3}
+                  placeholder="Tell recruiters and peers about yourself..."
+                  value={editProfileData.bio}
+                  onChange={(e) => setEditProfileData({ ...editProfileData, bio: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="input-group">
+                  <label className="input-label">Degree / Program</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. B.Tech Computer Engineering"
+                    value={editProfileData.degree}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, degree: e.target.value })}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Graduation Year</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. 2026"
+                    value={editProfileData.graduationYear}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, graduationYear: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="input-group">
+                  <label className="input-label">Portfolio Website</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="https://myportfolio.com"
+                    value={editProfileData.portfolioWebsite}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, portfolioWebsite: e.target.value })}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">GitHub Username</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="username"
+                    value={editProfileData.githubUsername}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, githubUsername: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Preferred Technical Domain</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="e.g. Full Stack Development / AI / Data Engineering"
+                  value={editProfileData.preferredDomain}
+                  onChange={(e) => setEditProfileData({ ...editProfileData, preferredDomain: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button type="button" onClick={() => setShowEditProfileModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
+              <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={savingProfile}>
+                {savingProfile ? 'Saving...' : 'Save Profile'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </UserLayout>
   );
 };

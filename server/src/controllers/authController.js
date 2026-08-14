@@ -339,15 +339,21 @@ const updateProfile = async (req, res, next) => {
       name, avatar, username, bio, university, profileSettings, isPublic,
       degree, graduationYear, portfolioWebsite, githubUsername,
       preferredDomain, experienceLevel, companyName,
-      allowedColleges, allowedDepartments, documents,
+      allowedColleges, allowedDepartments, documents, phone, headline, skills,
     } = req.body;
     const updateFields = {};
 
-    if (name) updateFields.name = name;
-    if (avatar !== undefined) updateFields.avatar = avatar;
-    if (username !== undefined) updateFields.username = username.toLowerCase().trim();
+    if (name && name.trim()) updateFields.name = name.trim();
+    if (avatar !== undefined && avatar !== null) updateFields.avatar = avatar;
+    if (username && username.trim().length >= 3 && /^[a-z0-9_-]{3,30}$/i.test(username.trim())) {
+      updateFields.username = username.toLowerCase().trim();
+    }
     if (bio !== undefined) updateFields.bio = bio;
+    if (phone !== undefined) updateFields.phone = phone;
+    if (headline !== undefined) updateFields.headline = headline;
+    if (skills !== undefined) updateFields.skills = Array.isArray(skills) ? skills : [];
     if (isPublic !== undefined) updateFields.isPublic = isPublic;
+
     if (university) {
       if (university.name !== undefined) updateFields['university.name'] = university.name;
       if (university.department !== undefined) updateFields['university.department'] = university.department;
@@ -382,7 +388,11 @@ const updateProfile = async (req, res, next) => {
       req.user.id,
       { $set: updateFields },
       { new: true, runValidators: true }
-    );
+    ).populate('institutionId', 'name tenantId shortName domain');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
     // Log Activity & Timeline Event
     try {
@@ -406,20 +416,10 @@ const updateProfile = async (req, res, next) => {
       console.error('Activity/Timeline Error:', err.message);
     }
 
-    // Re-evaluate intelligence
-    let updatedUser = user;
-    try {
-      const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
-      const recalculated = await evaluateUserIntelligence(user._id);
-      if (recalculated) updatedUser = recalculated;
-    } catch (err) {
-      console.error('Intelligence Re-eval Error:', err.message);
-    }
-
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      data: { user: updatedUser },
+      data: { user },
     });
   } catch (error) {
     next(error);

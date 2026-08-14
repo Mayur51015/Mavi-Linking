@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import SuperAdminLayout from '../../layouts/SuperAdminLayout';
 import api from '../../api/axios';
+import VoluntaryChangePasswordForm from '../../components/VoluntaryChangePasswordForm';
 import { AuthContext } from '../../context/AuthContext';
 
 const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
@@ -868,33 +869,39 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
 
             {/* ─── 11. SUPER ADMIN PROFILE VIEW ──────────────────────────────── */}
             {activeTab === 'profile' && (
-              <div className="animate-fade-in glass-card-static" style={{ padding: '2rem', maxWidth: '640px' }}>
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <User size={22} style={{ color: '#ef4444' }} /> Super Administrator Credentials
-                </h3>
-                <div style={{ display: 'grid', gap: '1rem', fontSize: '0.9rem' }}>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Full Name:</span>
-                    <span style={{ fontWeight: 'bold' }}>{currentUser?.name}</span>
-                  </div>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Official Email:</span>
-                    <span style={{ fontWeight: 'bold' }}>{currentUser?.email}</span>
-                  </div>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Super Admin ID:</span>
-                    <span style={{ fontFamily: 'monospace', color: '#ef4444', fontWeight: 'bold' }}>{currentUser?.adminId || currentUser?.maviId || 'MAVI-SA-MASTER'}</span>
-                  </div>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>MAVI Identity ID:</span>
-                    <span style={{ fontFamily: 'monospace', color: 'var(--accent-emerald)' }}>{currentUser?.maviId}</span>
-                  </div>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Governance Authority:</span>
-                    <span style={{ textTransform: 'capitalize', fontWeight: 'bold', color: '#ef4444' }}>Global Super Admin</span>
+              <>
+                <div className="animate-fade-in glass-card-static" style={{ padding: '2rem', maxWidth: '640px' }}>
+                  <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <User size={22} style={{ color: '#ef4444' }} /> Super Administrator Credentials
+                  </h3>
+                  <div style={{ display: 'grid', gap: '1rem', fontSize: '0.9rem' }}>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Full Name:</span>
+                      <span style={{ fontWeight: 'bold' }}>{currentUser?.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Official Email:</span>
+                      <span style={{ fontWeight: 'bold' }}>{currentUser?.email}</span>
+                    </div>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Super Admin ID:</span>
+                      <span style={{ fontFamily: 'monospace', color: '#ef4444', fontWeight: 'bold' }}>{currentUser?.adminId || currentUser?.maviId || 'MAVI-SA-MASTER'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>MAVI Identity ID:</span>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-emerald)' }}>{currentUser?.maviId}</span>
+                    </div>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Governance Authority:</span>
+                      <span style={{ textTransform: 'capitalize', fontWeight: 'bold', color: '#ef4444' }}>Global Super Admin</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                <div style={{ marginTop: '2rem', maxWidth: '640px' }}>
+                  <VoluntaryChangePasswordForm />
+                </div>
+              </>
             )}
           </>
         )}

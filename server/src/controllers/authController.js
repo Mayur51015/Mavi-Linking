@@ -1051,7 +1051,7 @@ const acceptAdminInvite = async (req, res, next) => {
 };
 
 /**
- * @desc    Change User Password (supports mandatory password change requirement)
+ * @desc    Change User Password (supports both mandatory and voluntary password changes)
  * @route   POST /api/auth/change-password
  * @access  Private
  */
@@ -1073,22 +1073,41 @@ const changePassword = async (req, res, next) => {
       });
     }
 
-    if (newPassword.length < 6) {
+    // Password strength check (min 6 chars, uppercase, lowercase, number)
+    const passwordPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (newPassword.length < 6 || !passwordPolicy.test(newPassword)) {
       return res.status(400).json({
         success: false,
-        message: 'New password must be at least 6 characters.',
+        message: 'New password must be at least 6 characters and contain an uppercase letter, lowercase letter, and number.',
       });
     }
 
+    // Fetch user securely using req.user.id from JWT
     const user = await User.findById(req.user.id).select('+password');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User account not found' });
     }
 
-    // Verify current password if user is not using mandatory temporary password or if currentPassword provided
-    if (currentPassword) {
-      const isMatch = await user.comparePassword(currentPassword);
-      if (!isMatch) {
+    // Voluntary password change REQUIRES valid current password
+    if (!user.mustChangePassword) {
+      if (!currentPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Current password is required to perform a password update.',
+        });
+      }
+
+      const isCurrentMatch = await user.comparePassword(currentPassword);
+      if (!isCurrentMatch) {
+        return res.status(401).json({
+          success: false,
+          message: 'Current password is incorrect.',
+        });
+      }
+    } else if (currentPassword) {
+      // Mandatory change with current password provided — verify if correct
+      const isCurrentMatch = await user.comparePassword(currentPassword);
+      if (!isCurrentMatch) {
         return res.status(401).json({
           success: false,
           message: 'Current password is incorrect.',
@@ -1096,24 +1115,49 @@ const changePassword = async (req, res, next) => {
       }
     }
 
-    user.password = newPassword;
+    // Ensure new password is different from current password
+    const isSameAsOld = await user.comparePassword(newPassword);
+    if (isSameAsOld) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be different from your current or temporary password.',
+      });
+    }
+
+    // Update password credentials securely
+    user.password = newPassword; // Pre-save hook hashes new password with bcrypt
     user.mustChangePassword = false;
     user.temporaryPasswordExpiresAt = null;
     user.passwordChangedAt = new Date();
+
+    // Rotate refresh token & session JWT
+    const newAuthToken = user.generateAuthToken();
+    const newRefreshToken = crypto.randomBytes(40).toString('hex');
+    user.refreshToken = newRefreshToken;
+
     await user.save();
 
     await ActivityLog.create({
       userId: user._id,
       action: 'Change Password',
-      details: 'Password was updated successfully. Mandatory change requirement resolved.',
+      details: user.mustChangePassword ? 'Mandatory temporary password updated.' : 'Voluntary password changed from account security settings.',
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
 
+    // Strip password field before returning user payload
+    const userPayload = user.toObject();
+    delete userPayload.password;
+    delete userPayload.refreshToken;
+
     res.status(200).json({
       success: true,
-      message: 'Password updated successfully. You now have full platform access.',
-      data: { user },
+      message: 'Your password has been changed successfully.',
+      data: {
+        user: userPayload,
+        token: newAuthToken,
+        refreshToken: newRefreshToken,
+      },
     });
   } catch (error) {
     next(error);

@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import InstitutionAdminLayout from '../../layouts/InstitutionAdminLayout';
 import api from '../../api/axios';
+import VoluntaryChangePasswordForm from '../../components/VoluntaryChangePasswordForm';
 import { AuthContext } from '../../context/AuthContext';
 
 const AdminDashboard = ({ activeTab: propActiveTab }) => {
@@ -966,42 +967,48 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
             {/* ─── 13. ADMIN PROFILE VIEW ────────────────────────────────────── */}
             {activeTab === 'profile' && (
-              <div className="animate-fade-in glass-card-static" style={{ padding: '2rem', maxWidth: '640px' }}>
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <UserCheck size={22} style={{ color: 'var(--accent-purple)' }} /> Administrator Profile
-                </h3>
+              <>
+                <div className="animate-fade-in glass-card-static" style={{ padding: '2rem', maxWidth: '640px' }}>
+                  <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <UserCheck size={22} style={{ color: 'var(--accent-purple)' }} /> Administrator Profile
+                  </h3>
 
-                <div style={{ display: 'grid', gap: '1rem', fontSize: '0.9rem' }}>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Full Name:</span>
-                    <span style={{ fontWeight: 'bold' }}>{currentUser?.name}</span>
-                  </div>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Official Email:</span>
-                    <span style={{ fontWeight: 'bold' }}>{currentUser?.email}</span>
-                  </div>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Designation:</span>
-                    <span>{currentUser?.designation || 'Academic Administrator'}</span>
-                  </div>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Admin ID:</span>
-                    <span style={{ fontFamily: 'monospace', color: 'var(--accent-cyan)', fontWeight: 'bold' }}>{currentUser?.adminId || currentUser?.adminLoginId || 'MAVI-ADM-001'}</span>
-                  </div>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Tenant ID:</span>
-                    <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)', fontWeight: 'bold' }}>{currentUser?.tenantId || currentUser?.institutionId?.tenantId || 'INST-SCOPED'}</span>
-                  </div>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>MAVI Identity ID:</span>
-                    <span style={{ fontFamily: 'monospace', color: 'var(--accent-emerald)' }}>{currentUser?.maviId}</span>
-                  </div>
-                  <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Roles & Privileges:</span>
-                    <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{userRoles.join(', ')}</span>
+                  <div style={{ display: 'grid', gap: '1rem', fontSize: '0.9rem' }}>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Full Name:</span>
+                      <span style={{ fontWeight: 'bold' }}>{currentUser?.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Official Email:</span>
+                      <span style={{ fontWeight: 'bold' }}>{currentUser?.email}</span>
+                    </div>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Designation:</span>
+                      <span>{currentUser?.designation || 'Academic Administrator'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Admin ID:</span>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-cyan)', fontWeight: 'bold' }}>{currentUser?.adminId || currentUser?.adminLoginId || 'MAVI-ADM-001'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Tenant ID:</span>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)', fontWeight: 'bold' }}>{currentUser?.tenantId || currentUser?.institutionId?.tenantId || 'INST-SCOPED'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>MAVI Identity ID:</span>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-emerald)' }}>{currentUser?.maviId}</span>
+                    </div>
+                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Roles & Privileges:</span>
+                      <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{userRoles.join(', ')}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                <div style={{ marginTop: '2rem', maxWidth: '640px' }}>
+                  <VoluntaryChangePasswordForm />
+                </div>
+              </>
             )}
           </>
         )}

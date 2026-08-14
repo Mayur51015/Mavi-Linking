@@ -25,6 +25,12 @@ const ChangePassword = () => {
       return;
     }
 
+    const passwordPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordPolicy.test(newPassword)) {
+      setError('New password must contain an uppercase letter, lowercase letter, and a number.');
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError('New password and confirmation password do not match.');
       return;

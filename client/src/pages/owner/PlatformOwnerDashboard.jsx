@@ -10,6 +10,7 @@ import api from '../../api/axios';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getErrorMessage } from '../../utils/errorMessage';
+import VoluntaryChangePasswordForm from '../../components/VoluntaryChangePasswordForm';
 
 const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
   const { user } = useContext(AuthContext);
@@ -881,6 +882,10 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                   <span className="badge badge-primary">Super-Tenant Unrestricted</span>
                 </div>
               </div>
+            </div>
+
+            <div style={{ marginTop: '2rem' }}>
+              <VoluntaryChangePasswordForm />
             </div>
           </div>
         )}

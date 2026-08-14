@@ -51,13 +51,55 @@ const createDepartmentAdmin = async (req, res, next) => {
       }
     }
 
-    // 3. Check Duplicate Email
+    // 3. Handle Existing User Appointment or Duplicate Check
     const existingUser = await User.findOne({ email: lowerEmail });
     if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        code: 'EMAIL_EXISTS',
-        message: 'An account with this email address already exists in MAVI.',
+      if (existingUser.role === 'department_admin') {
+        return res.status(409).json({
+          success: false,
+          code: 'EMAIL_EXISTS',
+          message: `An active Department Admin account with email '${lowerEmail}' already exists. Use 'Reassign' or 'Resend Invite' to manage their assignment.`,
+        });
+      }
+
+      // Appoint existing user as Department Admin
+      const oldRole = existingUser.role;
+      existingUser.role = 'department_admin';
+      if (!Array.isArray(existingUser.roles)) existingUser.roles = [existingUser.role];
+      if (!existingUser.roles.includes('department_admin')) existingUser.roles.push('department_admin');
+      
+      existingUser.departmentId = department._id;
+      existingUser.institutionId = targetInstId || existingUser.institutionId;
+      existingUser.designation = designation ? designation.trim() : existingUser.designation || 'Department Administrator';
+      if (adminIdValue) {
+        existingUser.institutionalIdentifier = {
+          identifierType: 'EMPLOYEE_ID',
+          identifierValue: adminIdValue,
+        };
+      }
+      await existingUser.save();
+
+      await AuditLog.create({
+        actorId: req.user._id,
+        actorRole: req.user.role,
+        targetUserId: existingUser._id,
+        previousRole: oldRole,
+        newRole: 'department_admin',
+        institutionId: targetInstId,
+        departmentId: department._id,
+        tenantId: existingUser.tenantId || '',
+        action: 'DEPARTMENT_ADMIN_APPOINTED',
+        details: {
+          departmentName: department.name,
+          institutionName: institution?.name || '',
+        },
+        result: 'SUCCESS',
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: `Successfully appointed ${existingUser.name} (${lowerEmail}) as Department Admin for ${department.name}.`,
+        data: existingUser,
       });
     }
 

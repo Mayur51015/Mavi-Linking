@@ -28,6 +28,8 @@ export function getErrorMessage(error, fallback = 'Something went wrong. Please 
       return 'Your account is not authorized for this action.';
     case 404:
       return 'Authentication service endpoint was not found.';
+    case 409:
+      return data?.message || 'An account with this email address or institutional identifier already exists.';
     case 500:
       return 'Something went wrong on the server. Please try again later.';
     case 503:

@@ -355,7 +355,6 @@ const updateProfile = async (req, res, next) => {
     if (isPublic !== undefined) updateFields.isPublic = isPublic;
 
     if (university) {
-      if (university.name !== undefined) updateFields['university.name'] = university.name;
       if (university.department !== undefined) updateFields['university.department'] = university.department;
       if (university.batch !== undefined) updateFields['university.batch'] = university.batch;
     }

@@ -106,25 +106,39 @@ exports.logActivity = async (req, res, next) => {
 exports.generateReport = async (req, res, next) => {
   try {
     const PDFDocument = require('pdfkit');
-    const path = require('path');
-    const fs = require('fs');
 
     const user = await User.findById(req.user.id);
     const insight = await Insight.findOne({ userId: req.user.id });
     const dna = await DNA.findOne({ userId: req.user.id });
     const ranking = await Ranking.findOne({ userId: req.user.id });
 
-    // Ensure directory exists
-    const reportsDir = path.join(__dirname, '..', '..', 'public', 'reports');
-    if (!fs.existsSync(reportsDir)){
-        fs.mkdirSync(reportsDir, { recursive: true });
-    }
+    // The PDF is written straight to the response rather than to
+    // server/public/reports. That directory was served by express.static, so
+    // every report — which carries the user's name and email — was readable by
+    // anyone who could guess the filename, and the filename was
+    // `report_<userId>_<timestamp>.pdf` with a user id that /api/public/u
+    // already hands out. Streaming also removes the race in the old code: it
+    // returned a URL right after doc.end(), before the write stream had
+    // flushed, so a quick client could fetch a truncated PDF. And nothing ever
+    // cleaned the directory up.
+    const fileName = `mavi-report-${req.user.id}.pdf`;
 
-    const fileName = `report_${req.user.id}_${Date.now()}.pdf`;
-    const filePath = path.join(reportsDir, fileName);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
 
     const doc = new PDFDocument({ margin: 50 });
-    doc.pipe(fs.createWriteStream(filePath));
+
+    // If PDFKit fails mid-stream the response is already partly written, so
+    // the only honest thing left is to end it — next() would try to send JSON
+    // over a body that has started.
+    doc.on('error', (error) => {
+      console.error('Report generation failed:', error.message);
+      res.end();
+    });
+
+    doc.pipe(res);
 
     // Title
     doc.fontSize(24).fillColor('#333').text(`AI Developer Report`, { align: 'center' });
@@ -167,11 +181,14 @@ exports.generateReport = async (req, res, next) => {
     }
 
     doc.end();
-
-    const reportUrl = `${process.env.SERVER_URL || 'http://localhost:5000'}/public/reports/${fileName}`;
-    
-    res.status(200).json({ success: true, data: { reportUrl } });
   } catch (error) {
-    next(error);
+    // Only safe while nothing has been written yet; once piping starts the
+    // handler above owns the failure.
+    if (res.headersSent) {
+      return res.end();
+    }
+    return next(error);
   }
+
+  return undefined;
 };

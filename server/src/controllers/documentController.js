@@ -2,9 +2,14 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const SharedDocument = require('../models/SharedDocument');
+const {
+  UPLOADS_DIR: uploadDir,
+  resolveExistingUpload,
+  sendPrivateFile,
+  deleteUpload,
+} = require('../utils/privateFiles');
 
 // Ensure upload directory exists
-const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -214,15 +219,7 @@ const deleteDocument = async (req, res, next) => {
     }
 
     // Delete file from filesystem
-    const filename = path.basename(doc.fileUrl);
-    const filepath = path.join(uploadDir, filename);
-    if (fs.existsSync(filepath)) {
-      try {
-        fs.unlinkSync(filepath);
-      } catch (err) {
-        console.error('Failed to delete physical file:', err.message);
-      }
-    }
+    deleteUpload(doc.fileUrl);
 
     await SharedDocument.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, message: 'Document deleted successfully' });
@@ -232,32 +229,76 @@ const deleteDocument = async (req, res, next) => {
 };
 
 /**
+ * Shared authorization for both file-serving routes below.
+ *
+ * This scope check is the only thing standing between a document and someone
+ * from another college. It used to be trivially bypassable — the same bytes
+ * were also served by `express.static` at `/public/uploads/<filename>`, with
+ * no auth at all — so this now really is the only way in.
+ *
+ * Returns the resolved absolute path, or sends the response and returns null.
+ */
+const authorizeDocumentAccess = async (req, res) => {
+  const doc = await SharedDocument.findById(req.params.id);
+  if (!doc) {
+    res.status(404).json({ success: false, message: 'Document not found' });
+    return null;
+  }
+
+  // Scope check: must share same college
+  if (req.user.role !== 'admin' && doc.college && req.user.university?.name !== doc.college) {
+    res.status(403).json({ success: false, message: 'Access denied. This document belongs to another college.' });
+    return null;
+  }
+
+  const filepath = resolveExistingUpload(doc.fileUrl);
+  if (!filepath) {
+    res.status(404).json({ success: false, message: 'Physical file is missing from disk storage.' });
+    return null;
+  }
+
+  return { doc, filepath };
+};
+
+/**
  * @desc    Securely download a document (checking if user belongs to same college)
  * @route   GET /api/documents/:id/download
  * @access  Private
  */
 const downloadDocument = async (req, res, next) => {
   try {
-    const doc = await SharedDocument.findById(req.params.id);
-    if (!doc) {
-      return res.status(404).json({ success: false, message: 'Document not found' });
-    }
+    const authorized = await authorizeDocumentAccess(req, res);
+    if (!authorized) return undefined;
 
-    // Scope check: must share same college
-    if (req.user.role !== 'admin' && doc.college && req.user.university?.name !== doc.college) {
-      return res.status(403).json({ success: false, message: 'Access denied. This document belongs to another college.' });
-    }
-
-    const filename = path.basename(doc.fileUrl);
-    const filepath = path.join(uploadDir, filename);
-
-    if (!fs.existsSync(filepath)) {
-      return res.status(404).json({ success: false, message: 'Physical file is missing from disk storage.' });
-    }
-
-    res.download(filepath, doc.fileName);
+    return sendPrivateFile(res, authorized.filepath, {
+      filename: authorized.doc.fileName,
+      download: true,
+    });
   } catch (error) {
-    next(error);
+    return next(error);
+  }
+};
+
+/**
+ * @desc    Preview a document inline (same scope check as download)
+ * @route   GET /api/documents/:id/preview
+ * @access  Private
+ *
+ * Added because the client previously previewed documents by linking straight
+ * at `fileUrl`. With the static mount gone that link 404s, so there needs to be
+ * an authenticated way to render one in place rather than force a download.
+ */
+const previewDocument = async (req, res, next) => {
+  try {
+    const authorized = await authorizeDocumentAccess(req, res);
+    if (!authorized) return undefined;
+
+    return sendPrivateFile(res, authorized.filepath, {
+      filename: authorized.doc.fileName,
+      download: false,
+    });
+  } catch (error) {
+    return next(error);
   }
 };
 
@@ -268,4 +309,5 @@ module.exports = {
   updateDocument,
   deleteDocument,
   downloadDocument,
+  previewDocument,
 };

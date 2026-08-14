@@ -5,6 +5,7 @@ const Ranking = require('../models/Ranking');
 const Activity = require('../models/Activity');
 const aiAnalyzer = require('../services/aiAnalyzer');
 const User = require('../models/User');
+const { syncGitHubActivities } = require('../services/githubActivityService');
 
 exports.getInsights = async (req, res, next) => {
   try {
@@ -70,6 +71,19 @@ exports.getActivities = async (req, res, next) => {
   try {
     const activities = await Activity.find({ userId: req.user.id }).sort({ date: -1 }).limit(50);
     res.status(200).json({ success: true, data: activities });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.syncGitHubActivities = async (req, res, next) => {
+  try {
+    const activities = await syncGitHubActivities(req.user.id);
+
+    res.status(200).json({
+      success: true,
+      data: activities,
+    });
   } catch (error) {
     next(error);
   }

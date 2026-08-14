@@ -124,6 +124,17 @@ const linkPlatform = async (req, res, next) => {
       { platform }
     );
 
+    // Sync GitHub activity after successfully linking a GitHub account.
+    // Activity sync failure should not prevent the account from being linked.
+    if (platform === 'github') {
+      try {
+        const { syncGitHubActivities } = require('../services/githubActivityService');
+        await syncGitHubActivities(user._id);
+      } catch (syncError) {
+        console.error('GitHub activity sync failed:', syncError.message);
+      }
+    }
+
     const updatedUser = await evaluateUserIntelligence(user._id);
 
     res.status(200).json({

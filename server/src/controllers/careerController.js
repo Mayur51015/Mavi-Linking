@@ -1,5 +1,6 @@
 const CareerScore = require('../models/CareerScore');
 const CareerTimeline = require('../models/CareerTimeline');
+const Activity = require('../models/Activity');
 const CareerBadge = require('../models/CareerBadge');
 const CareerInsight = require('../models/CareerInsight');
 const User = require('../models/User');
@@ -111,11 +112,50 @@ exports.getScore = async (req, res, next) => {
 exports.getTimeline = async (req, res, next) => {
   try {
     const targetUserId = getTargetUserId(req);
-    const events = await CareerTimeline.find({ user: targetUserId }).sort({ timestamp: -1 });
-    
+
+    const [careerEvents, activities] = await Promise.all([
+      CareerTimeline.find({ user: targetUserId })
+        .sort({ timestamp: -1 })
+        .limit(100)
+        .lean(),
+      Activity.find({ userId: targetUserId })
+        .sort({ date: -1 })
+        .limit(100)
+        .lean()
+    ]);
+
+    const timeline = [
+      ...careerEvents.map((event) => ({
+        _id: event._id,
+        type: event.type,
+        title: event.title,
+        description: event.description,
+        timestamp: event.timestamp,
+        url: event.url || null,
+        source: 'career'
+      })),
+      ...activities.map((activity) => ({
+        _id: activity._id,
+        type:
+          activity.type?.toUpperCase() ||
+          (activity.platform === 'github'
+            ? 'GITHUB'
+            : activity.platform === 'leetcode'
+              ? 'LEETCODE'
+              : 'ACTIVITY'),
+        title: activity.title,
+        description: activity.description,
+        timestamp: activity.date,
+        url: activity.url || null,
+        source: activity.platform || 'system'
+      }))
+    ]
+      .filter((event) => event.timestamp)
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
     res.status(200).json({
       success: true,
-      data: events
+      data: timeline
     });
   } catch (error) {
     next(error);

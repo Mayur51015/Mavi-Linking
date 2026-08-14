@@ -277,6 +277,9 @@ const TimelineWidget = ({ userId }) => {
                       >
                         <h4
                           style={{
+                            flex: 1,
+                            minWidth: 0,
+                            overflowWrap: 'anywhere',
                             fontWeight: '600',
                             fontSize: '1rem',
                             margin: 0,

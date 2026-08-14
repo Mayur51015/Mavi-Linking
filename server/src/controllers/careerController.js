@@ -114,11 +114,12 @@ exports.getTimeline = async (req, res, next) => {
       ...activities.map((activity) => ({
         _id: activity._id,
         type:
-          activity.platform === 'github'
+          activity.type?.toUpperCase() ||
+          (activity.platform === 'github'
             ? 'GITHUB'
             : activity.platform === 'leetcode'
               ? 'LEETCODE'
-              : activity.type?.toUpperCase() || 'ACTIVITY',
+              : 'ACTIVITY'),
         title: activity.title,
         description: activity.description,
         timestamp: activity.date,

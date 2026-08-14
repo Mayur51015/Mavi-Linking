@@ -567,6 +567,26 @@ const forgotPassword = async (req, res, next) => {
     // Log securely to server console for simulation/testing
     console.log(`[RECOVERY DISPATCH] Email: ${user.email} | OTP: ${rawOtp} | Token: ${rawResetToken}`);
 
+    // Send Real Email via Nodemailer Service
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetLink = `${clientUrl}/reset-password?token=${rawResetToken}`;
+
+    const { sendEmail, generatePasswordResetEmailHtml } = require('../utils/sendEmail');
+    const emailHtml = generatePasswordResetEmailHtml({
+      name: user.name,
+      otp: rawOtp,
+      resetLink,
+    });
+
+    // Asynchronously dispatch email so HTTP response remains snappy
+    sendEmail({
+      to: user.email,
+      subject: 'MAVI Linking — Password Reset Request & Security OTP',
+      html: emailHtml,
+    }).catch(emailErr => {
+      console.error('[EMAIL ERROR] Failed to dispatch password reset email:', emailErr);
+    });
+
     res.status(200).json({
       success: true,
       message: genericSuccessMsg,

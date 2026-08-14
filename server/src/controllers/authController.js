@@ -498,27 +498,78 @@ const verifyEmail = async (req, res, next) => {
 };
 
 /**
- * @desc    Request password reset link
+ * @desc    Request password reset via verified email / recovery channel (OTP or Link)
  * @route   POST /api/auth/forgot-password
  * @access  Public
  */
 const forgotPassword = async (req, res, next) => {
   try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found with this email' });
+    const { email, phone, maviId, prn } = req.body;
+
+    // Block recovery requests using only semi-public identifiers (MAVI ID or PRN)
+    if ((maviId || prn) && !email && !phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account recovery requires a verified email address or registered phone number. Account recovery using MAVI ID or PRN alone is not permitted.',
+      });
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    if (!email && !phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a verified recovery email address or phone number.',
+      });
+    }
+
+    // Lookup user by verified recovery channel
+    const query = {};
+    if (email) query.email = email.toLowerCase().trim();
+    else if (phone) query.phone = phone.trim();
+
+    const user = await User.findOne(query);
+
+    // Generic response to prevent account enumeration
+    const genericSuccessMsg = 'If an account matching that verified recovery channel exists, a password reset link and OTP have been dispatched to your recovery channel.';
+
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: genericSuccessMsg,
+      });
+    }
+
+    // Generate cryptographic reset token (for link) & 6-digit OTP (for OTP input)
+    const rawResetToken = crypto.randomBytes(32).toString('hex');
+    const rawOtp = String(crypto.randomInt(100000, 999999));
+
+    // Hash tokens before storing in database
+    const hashedToken = crypto.createHash('sha256').update(rawResetToken).digest('hex');
+    const hashedOtp = crypto.createHash('sha256').update(rawOtp).digest('hex');
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordOtp = hashedOtp;
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
     await user.save();
+
+    // Log recovery request event
+    try {
+      await ActivityLog.create({
+        userId: user._id,
+        action: 'PASSWORD_RECOVERY_REQUESTED',
+        details: `Password recovery token/OTP generated for recovery channel ${user.email}`,
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+      });
+    } catch (err) {
+      console.error('Failed to log recovery activity:', err.message);
+    }
+
+    // Log securely to server console for simulation/testing
+    console.log(`[RECOVERY DISPATCH] Email: ${user.email} | OTP: ${rawOtp} | Token: ${rawResetToken}`);
 
     res.status(200).json({
       success: true,
-      message: 'Password reset link sent (simulated).',
-      data: { resetToken },
+      message: genericSuccessMsg,
     });
   } catch (error) {
     next(error);
@@ -526,38 +577,87 @@ const forgotPassword = async (req, res, next) => {
 };
 
 /**
- * @desc    Reset password using token
+ * @desc    Reset password using verified recovery token OR 6-digit OTP
  * @route   POST /api/auth/reset-password
  * @access  Public
  */
 const resetPassword = async (req, res, next) => {
   try {
-    const { token, password } = req.body;
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() },
-    }).select('+resetPasswordToken +resetPasswordExpires');
+    const { token, otp, email, phone, password } = req.body;
 
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
+    if (!password) {
+      return res.status(400).json({ success: false, message: 'New password is required' });
     }
 
+    // Password strength validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (password.length < 6 || !passwordRegex.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters and contain at least one uppercase letter, one lowercase letter, and one number',
+      });
+    }
+
+    let user = null;
+
+    if (token) {
+      // Recovery via Link Token
+      const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+      user = await User.findOne({
+        resetPasswordToken: hashedToken,
+        resetPasswordExpires: { $gt: Date.now() },
+      }).select('+resetPasswordToken +resetPasswordOtp +resetPasswordExpires +refreshToken');
+    } else if (otp && (email || phone)) {
+      // Recovery via Verified OTP
+      const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+      const query = {
+        resetPasswordOtp: hashedOtp,
+        resetPasswordExpires: { $gt: Date.now() },
+      };
+      if (email) query.email = email.toLowerCase().trim();
+      else if (phone) query.phone = phone.trim();
+
+      user = await User.findOne(query).select('+resetPasswordToken +resetPasswordOtp +resetPasswordExpires +refreshToken');
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide either a valid recovery token from your email link or a 6-digit OTP with your verified recovery channel.',
+      });
+    }
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired recovery proof token/OTP. Please request a new recovery link.',
+      });
+    }
+
+    // Execute password reset
     user.password = password;
     user.resetPasswordToken = null;
+    user.resetPasswordOtp = null;
     user.resetPasswordExpires = null;
+    user.mustChangePassword = false;
+    user.passwordChangedAt = Date.now();
+    user.refreshToken = null; // Revoke active session refresh tokens
+
     await user.save();
 
-    await ActivityLog.create({
-      userId: user._id,
-      action: 'Reset Password',
-      details: 'Password was updated successfully via reset token',
-      ipAddress: req.ip || '',
-      userAgent: req.headers['user-agent'] || '',
-    });
+    try {
+      await ActivityLog.create({
+        userId: user._id,
+        action: 'PASSWORD_RESET_COMPLETED',
+        details: 'Password was updated successfully via verified recovery channel proof',
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+      });
+    } catch (err) {
+      console.error('Failed to log reset activity:', err.message);
+    }
 
     res.status(200).json({
       success: true,
-      message: 'Password reset successful. You can now log in.',
+      message: 'Password reset successful. You may now log in with your new credentials.',
     });
   } catch (error) {
     next(error);

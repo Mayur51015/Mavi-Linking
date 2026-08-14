@@ -14,6 +14,7 @@ const SENSITIVE_FIELDS = [
   'password',
   'refreshToken',
   'resetPasswordToken',
+  'resetPasswordOtp',
   'resetPasswordExpires',
   'verificationToken',
   'verificationCode',
@@ -222,6 +223,7 @@ const userSchema = new mongoose.Schema(
     passwordChangedAt: { type: Date, default: null },
     verificationToken: { type: String, default: null, select: false },
     resetPasswordToken: { type: String, default: null, select: false },
+    resetPasswordOtp: { type: String, default: null, select: false },
     resetPasswordExpires: { type: Date, default: null, select: false },
     refreshToken: { type: String, default: null, select: false },
 

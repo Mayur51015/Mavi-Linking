@@ -98,6 +98,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+const careerRoutes = require('./routes/careerRoutes');
 const ownerRoutes = require('./routes/ownerRoutes');
 
 // ─── API Routes ─────────────────────────────────────────────────────────────

@@ -670,26 +670,51 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                         </tr>
                       </thead>
                       <tbody>
-                        {teachers.map((t) => (
-                          <tr key={t._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                            <td style={{ padding: '1rem' }}>
-                              <div style={{ fontWeight: '600' }}>{t.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.email}</div>
-                            </td>
-                            <td style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                              <div>{t.department || 'Computer Engineering'}</div>
-                              <div>{t.designation || 'Assistant Professor'}</div>
-                            </td>
-                            <td style={{ padding: '1rem' }}>
-                              <span className="badge badge-primary">{t.status || 'Active'}</span>
-                            </td>
-                            <td style={{ padding: '1rem' }}>
-                              <button onClick={() => setEditUser(t)} className="btn btn-outline" style={{ padding: '0.35rem 0.55rem', fontSize: '0.75rem' }}>
-                                Edit Profile
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {teachers.map((t) => {
+                          const isInvited = t.accountStatus === 'INVITED' || t.status === 'invited';
+                          const isSuspended = t.status === 'suspended' || t.accountStatus === 'SUSPENDED';
+
+                          return (
+                            <tr key={t._id} style={{ borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'middle' }}>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ fontWeight: '600' }}>{t.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.email}</div>
+                              </td>
+                              <td style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                <div>{t.department || t.university?.department || 'Computer Engineering'}</div>
+                                <div>{t.designation || 'Assistant Professor'}</div>
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <span
+                                  className={`badge ${isInvited ? 'badge-amber' : isSuspended ? 'badge-outline' : 'badge-primary'}`}
+                                  style={{
+                                    color: isInvited ? '#f59e0b' : isSuspended ? '#ef4444' : '#10b981',
+                                    borderColor: isInvited ? '#f59e0b' : isSuspended ? '#ef4444' : '#10b981',
+                                  }}
+                                >
+                                  {isInvited ? 'INVITED' : isSuspended ? 'SUSPENDED' : 'ACTIVE'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                  {isInvited && (
+                                    <button
+                                      onClick={() => handleResendInvitation(t._id, t.email)}
+                                      disabled={resendingInviteId === t._id}
+                                      className="btn btn-outline"
+                                      style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', borderColor: '#f59e0b', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                                    >
+                                      <RefreshCw size={12} className={resendingInviteId === t._id ? 'animate-spin' : ''} /> Resend Invite
+                                    </button>
+                                  )}
+                                  <button onClick={() => setEditUser(t)} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}>
+                                    Edit Profile
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}
@@ -730,19 +755,52 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                           <th style={{ padding: '1rem' }}>Recruiter</th>
                           <th style={{ padding: '1rem' }}>Company / Organization</th>
                           <th style={{ padding: '1rem' }}>Status</th>
+                          <th style={{ padding: '1rem' }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {recruiters.map((r) => (
-                          <tr key={r._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                            <td style={{ padding: '1rem' }}>
-                              <div style={{ fontWeight: '600' }}>{r.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{r.email}</div>
-                            </td>
-                            <td style={{ padding: '1rem', fontWeight: '500' }}>{r.companyName || r.organization || 'Hiring Partner'}</td>
-                            <td style={{ padding: '1rem' }}><span className="badge badge-primary">{r.status || 'Active'}</span></td>
-                          </tr>
-                        ))}
+                        {recruiters.map((r) => {
+                          const isInvited = r.accountStatus === 'INVITED' || r.status === 'invited';
+                          const isSuspended = r.status === 'suspended' || r.accountStatus === 'SUSPENDED';
+
+                          return (
+                            <tr key={r._id} style={{ borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'middle' }}>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ fontWeight: '600' }}>{r.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{r.email}</div>
+                              </td>
+                              <td style={{ padding: '1rem', fontWeight: '500' }}>{r.companyName || r.organization || 'Hiring Partner'}</td>
+                              <td style={{ padding: '1rem' }}>
+                                <span
+                                  className={`badge ${isInvited ? 'badge-amber' : isSuspended ? 'badge-outline' : 'badge-primary'}`}
+                                  style={{
+                                    color: isInvited ? '#f59e0b' : isSuspended ? '#ef4444' : '#10b981',
+                                    borderColor: isInvited ? '#f59e0b' : isSuspended ? '#ef4444' : '#10b981',
+                                  }}
+                                >
+                                  {isInvited ? 'INVITED' : isSuspended ? 'SUSPENDED' : 'ACTIVE'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                  {isInvited && (
+                                    <button
+                                      onClick={() => handleResendInvitation(r._id, r.email)}
+                                      disabled={resendingInviteId === r._id}
+                                      className="btn btn-outline"
+                                      style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', borderColor: '#f59e0b', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                                    >
+                                      <RefreshCw size={12} className={resendingInviteId === r._id ? 'animate-spin' : ''} /> Resend Invite
+                                    </button>
+                                  )}
+                                  <button onClick={() => setEditUser(r)} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}>
+                                    Edit Profile
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}

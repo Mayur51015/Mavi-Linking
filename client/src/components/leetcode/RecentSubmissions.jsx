@@ -1,8 +1,19 @@
 import React from 'react';
-import { ExternalLink, CheckCircle } from 'lucide-react';
+import { ExternalLink, CheckCircle, Code2 } from 'lucide-react';
+import EmptyState from '../ui/EmptyState';
 
 const RecentSubmissions = ({ submissions }) => {
-  if (!submissions || submissions.length === 0) return null;
+  if (!submissions || submissions.length === 0) {
+    return (
+      <EmptyState
+        icon={<Code2 size={28} color="var(--accent-amber)" />}
+        iconColor="var(--accent-amber)"
+        title="No recent submissions"
+        description="Solve problems on LeetCode and sync your profile to see your recent submissions here."
+        size="sm"
+      />
+    );
+  }
 
   return (
     <div className="glass-card">

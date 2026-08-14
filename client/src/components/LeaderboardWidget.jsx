@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
 import { Trophy } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import api from '../api/axios';
+import EmptyState from './ui/EmptyState';
 
 const LeaderboardWidget = () => {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -29,19 +30,26 @@ const LeaderboardWidget = () => {
       </h3>
       <div style={{ flex: 1, overflowY: 'auto', paddingRight: '1rem' }}>
         {leaderboard.length === 0 ? (
-          <div style={{ color: 'var(--text-secondary)' }}>No ranked developers yet.</div>
+          <EmptyState
+            icon={<Trophy size={26} color="var(--accent-amber)" />}
+            iconColor="var(--accent-amber)"
+            title="Leaderboard is empty"
+            description="Rankings appear once developers sync their profiles and generate their AI DNA score."
+            size="sm"
+            style={{ height: '100%', minHeight: '200px' }}
+          />
         ) : (
           leaderboard.map((user, index) => (
-            <div 
-              key={user._id} 
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between', 
-                padding: '1rem', 
-                background: 'rgba(255,255,255,0.02)', 
-                marginBottom: '0.5rem', 
-                borderRadius: '8px' 
+            <div
+              key={user._id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '1rem',
+                background: 'rgba(255,255,255,0.02)',
+                marginBottom: '0.5rem',
+                borderRadius: '8px'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

@@ -15,6 +15,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 const formatRoleName = (role) => {
   if (!role) return 'Account';

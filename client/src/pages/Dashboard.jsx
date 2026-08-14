@@ -599,7 +599,34 @@ const Dashboard = () => {
     <UserLayout>
 <header className="dashboard-header-row" style={{ marginBottom: '2rem' }}>
         <div>
-          <h1 className="dashboard-title" style={{ marginBottom: '0.5rem' }}>Welcome, {user?.name}</h1>          <p style={{ color: 'var(--text-secondary)' }}>Manage your developer portfolio, campus placements, and recruiter feedback.</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+            <h1 className="dashboard-title" style={{ margin: 0 }}>Welcome, {user?.name}</h1>
+            {(user?.maviId || user?._id) && (
+              <button
+                onClick={() => {
+                  const displayId = user?.maviId || `MAVI-${user._id.slice(-8).toUpperCase()}`;
+                  navigator.clipboard.writeText(displayId);
+                  showToast('success', `MAVI ID (${displayId}) copied to clipboard!`);
+                }}
+                className="badge badge-purple"
+                style={{
+                  cursor: 'pointer',
+                  fontFamily: 'monospace',
+                  fontWeight: 'bold',
+                  border: '1px solid var(--accent-purple)',
+                  padding: '0.25rem 0.65rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontSize: '0.8rem',
+                }}
+                title="Click to copy your permanent MAVI ID"
+              >
+                <span>{user?.maviId || `MAVI-${user._id.slice(-8).toUpperCase()}`}</span>
+              </button>
+            )}
+          </div>
+          <p style={{ color: 'var(--text-secondary)' }}>Manage your developer portfolio, campus placements, and recruiter feedback.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

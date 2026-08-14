@@ -33,6 +33,14 @@ const userSchema = new mongoose.Schema(
       minlength: [2, 'Name must be at least 2 characters'],
       maxlength: [50, 'Name cannot exceed 50 characters'],
     },
+    // Permanent MAVI ID (e.g., MAVI-8F3K7Q2P)
+    maviId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      uppercase: true,
+      trim: true,
+    },
     // Public identity handle (unique slug for /u/:username)
     username: {
       type: String,
@@ -50,9 +58,25 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       // 'developer' and 'professor' are legacy values kept for backward compatibility
-      // They are auto-migrated to 'user' and 'teacher' on next auth request
-      enum: ['user', 'recruiter', 'teacher', 'admin', 'developer', 'professor'],
+      // 'super_admin' and 'institution_admin' represent elevated administrative tiers
+      enum: ['user', 'recruiter', 'teacher', 'admin', 'institution_admin', 'super_admin', 'developer', 'professor'],
       default: 'user',
+    },
+    roles: [
+      {
+        type: String,
+        enum: ['user', 'student', 'teacher', 'recruiter', 'institution_admin', 'super_admin', 'admin', 'developer', 'professor'],
+      },
+    ],
+    status: {
+      type: String,
+      enum: ['active', 'suspended'],
+      default: 'active',
+    },
+    institutionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Institution',
+      default: null,
     },
     googleId: {
       type: String,
@@ -307,14 +331,30 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// ─── Indexes ────────────────────────────────────────────────────────────────
-userSchema.index({ 'scores.overall': -1 });
-userSchema.index({ role: 1 });
-userSchema.index({ 'university.name': 1, 'university.department': 1 });
-userSchema.index({ placementStatus: 1 });
+userSchema.index({ status: 1 });
+userSchema.index({ institutionId: 1 });
+userSchema.index({ roles: 1 });
+userSchema.index({ maviId: 1 }, { unique: true });
 
-// ─── Pre-save: Hash password before persisting ──────────────────────────────
+// Helper to generate 8-char uppercase hex/alphanumeric code
+const generateMaviIdCode = () => {
+  return 'MAVI-' + require('crypto').randomBytes(4).toString('hex').toUpperCase();
+};
+
+// ─── Pre-save: Auto-generate maviId, sync roles & hash password ───────────
 userSchema.pre('save', async function (next) {
+  // Generate permanent MAVI ID if missing
+  if (!this.maviId) {
+    this.maviId = generateMaviIdCode();
+  }
+
+  // Ensure roles array is populated and consistent with primary role
+  if (!this.roles || this.roles.length === 0) {
+    this.roles = [this.role || 'user'];
+  } else if (this.role && !this.roles.includes(this.role)) {
+    this.roles.push(this.role);
+  }
+
   // Only hash if password field was modified
   if (!this.isModified('password')) return next();
 

@@ -38,11 +38,24 @@ const protect = async (req, res, next) => {
       });
     }
 
-    // ─── Backward Compatibility: migrate old role names ─────────────
+    // ─── Account Suspension Check ────────────────────────────────────
+    if (user.status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been suspended by an administrator. Please contact support.',
+      });
+    }
+
+    // ─── Backward Compatibility: migrate old role names & sync roles array ─────
     const roleMigration = { developer: 'user', professor: 'teacher' };
     if (roleMigration[user.role]) {
       user.role = roleMigration[user.role];
       await User.updateOne({ _id: user._id }, { $set: { role: user.role } });
+    }
+
+    if (!user.roles || user.roles.length === 0) {
+      user.roles = [user.role || 'user'];
+      await User.updateOne({ _id: user._id }, { $set: { roles: user.roles } });
     }
 
     req.user = user;

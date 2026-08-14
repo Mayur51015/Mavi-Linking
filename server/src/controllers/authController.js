@@ -200,6 +200,10 @@ const getMe = async (req, res, next) => {
   try {
     // req.user is attached by the auth middleware
     const user = await User.findById(req.user.id);
+    if (user && !user.maviId) {
+      user.maviId = 'MAVI-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+      await user.save();
+    }
 
     res.status(200).json({
       success: true,

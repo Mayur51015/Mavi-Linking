@@ -63,8 +63,15 @@ const TeacherDocuments = React.lazy(() => import('./pages/teacher/TeacherDocumen
 const StudentAnnouncements = React.lazy(() => import('./pages/StudentAnnouncements'));
 const StudentDocuments = React.lazy(() => import('./pages/StudentDocuments'));
 
-// Admin Pages (Lazy)
+import AdminRoute from './routes/AdminRoute';
+import SuperAdminRoute from './routes/SuperAdminRoute';
+
+// ...
+// Admin & Super Admin Pages (Lazy)
+const AdminLogin = React.lazy(() => import('./pages/admin/AdminLogin'));
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
+const SuperAdminLogin = React.lazy(() => import('./pages/superadmin/SuperAdminLogin'));
+const SuperAdminDashboard = React.lazy(() => import('./pages/superadmin/SuperAdminDashboard'));
 
 // Messages (Lazy)
 const Messages = React.lazy(() => import('./pages/Messages'));
@@ -218,11 +225,25 @@ const App = () => {
               </ProtectedRoute>
             } />
 
-            {/* ─── Super Admin Dashboard ─────────────────────────── */}
-            <Route path="/dashboard/admin" element={
-              <ProtectedRoute roles={['admin']}>
+            {/* ─── Operational Admin Portal ───────────────────────────────── */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={
+              <AdminRoute>
                 <AdminDashboard />
-              </ProtectedRoute>
+              </AdminRoute>
+            } />
+            <Route path="/dashboard/admin" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            } />
+
+            {/* ─── Super Admin Portal ───────────────────────────────────── */}
+            <Route path="/super-admin/login" element={<SuperAdminLogin />} />
+            <Route path="/super-admin" element={
+              <SuperAdminRoute>
+                <SuperAdminDashboard />
+              </SuperAdminRoute>
             } />
 
             {/* ─── Communication Inbox ────────────────────────────── */}

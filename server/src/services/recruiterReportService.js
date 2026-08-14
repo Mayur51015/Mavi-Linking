@@ -184,6 +184,7 @@ const writeRecruiterReportPdf = async (report, res) => {
 
   writeSection(doc, 'Candidate Information', [
     `Name: ${toText(candidate.name)}`,
+    `MAVI ID: ${toText(candidate.maviId || `MAVI-${candidate._id.toString().slice(-8).toUpperCase()}`)}`,
     `Email: ${toText(candidate.email)}`,
     `Username: ${toText(candidate.username)}`,
     `University: ${toText(candidate.university?.name)}`,

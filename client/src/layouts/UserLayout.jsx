@@ -73,6 +73,11 @@ return (
                 )}
                 <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '0.125rem 0.5rem' }}>Student</span>
               </div>
+              {(user?.maviId || user?._id) && (
+                <div style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: 'var(--accent-purple)', fontWeight: 'bold', marginTop: '0.2rem' }}>
+                  {user?.maviId || `MAVI-${user._id.slice(-8).toUpperCase()}`}
+                </div>
+              )}
             </div>
           </div>
         </div>

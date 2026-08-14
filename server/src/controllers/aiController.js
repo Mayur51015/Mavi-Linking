@@ -51,21 +51,54 @@ exports.getRanking = async (req, res, next) => {
 
 exports.getLeaderboard = async (req, res, next) => {
   try {
-    const PRIVILEGED_ROLES = ['super_admin', 'superadmin', 'admin', 'institution_admin', 'platform_owner', 'owner'];
-    const leaderboard = await Ranking.find()
-      .populate({
-        path: 'userId',
-        select: 'name avatar maviId role status',
-        match: {
-          role: { $nin: PRIVILEGED_ROLES },
-          status: { $ne: 'suspended' }
-        }
-      })
-      .sort({ score: -1 })
-      .limit(50);
+    const { PRIVILEGED_ROLES, calculateScoreTier, calculateMedal } = require('../utils/leaderboardHelper');
 
-    const filtered = leaderboard.filter(item => item.userId != null);
-    res.status(200).json({ success: true, data: filtered });
+    const eligibleUsers = await User.find({
+      role: { $nin: PRIVILEGED_ROLES },
+      status: { $ne: 'suspended' },
+      'scores.overall': { $gt: 0 }
+    })
+    .select('name avatar maviId scores role status platforms')
+    .sort({
+      'scores.overall': -1,
+      'scores.problemSolving': -1,
+      'scores.development': -1,
+      'maviId': 1,
+      '_id': 1
+    })
+    .limit(50);
+
+    const leaderboard = eligibleUsers.map((u, idx) => {
+      const rank = idx + 1;
+      const score = u.scores?.overall || 0;
+      const medal = calculateMedal(rank);
+      const scoreTier = calculateScoreTier(score);
+
+      return {
+        _id: u._id,
+        rank,
+        score,
+        medal,
+        scoreTier,
+        tier: scoreTier,
+        user: {
+          _id: u._id,
+          name: u.name,
+          avatar: u.avatar,
+          maviId: u.maviId,
+          role: u.role
+        },
+        userId: {
+          _id: u._id,
+          name: u.name,
+          avatar: u.avatar,
+          maviId: u.maviId,
+          role: u.role
+        }
+      };
+    });
+
+    res.status(200).json({ success: true, data: leaderboard });
   } catch (error) {
     next(error);
   }

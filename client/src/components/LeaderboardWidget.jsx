@@ -1,9 +1,46 @@
-import { Trophy } from 'lucide-react';
+import { Trophy, Medal } from 'lucide-react';
 import { useEffect, useState, useContext } from 'react';
 import api from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
 import EmptyState from './ui/EmptyState';
 import { SkeletonCard } from './ui/Skeleton';
+
+const renderMedalBadge = (medal) => {
+  if (medal === 'GOLD') {
+    return (
+      <span className="badge" style={{ background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', border: '1px solid #fbbf24', fontSize: '0.75rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold' }}>
+        🥇 Gold
+      </span>
+    );
+  }
+  if (medal === 'SILVER') {
+    return (
+      <span className="badge" style={{ background: 'rgba(156, 163, 175, 0.15)', color: '#9ca3af', border: '1px solid #9ca3af', fontSize: '0.75rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold' }}>
+        🥈 Silver
+      </span>
+    );
+  }
+  if (medal === 'BRONZE') {
+    return (
+      <span className="badge" style={{ background: 'rgba(180, 83, 9, 0.15)', color: '#f59e0b', border: '1px solid #b45309', fontSize: '0.75rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold' }}>
+        🥉 Bronze
+      </span>
+    );
+  }
+  return null;
+};
+
+const getScoreTierColor = (scoreTier) => {
+  switch (scoreTier) {
+    case 'Exceptional': return '#ec4899';
+    case 'Expert': return '#a855f7';
+    case 'Advanced': return '#38bdf8';
+    case 'Intermediate': return '#34d399';
+    case 'Developing': return '#fbbf24';
+    case 'Beginner': return '#9ca3af';
+    default: return '#9ca3af';
+  }
+};
 
 const LeaderboardWidget = () => {
   const { user: currentUser } = useContext(AuthContext);
@@ -23,18 +60,6 @@ const LeaderboardWidget = () => {
       })
       .finally(() => setLoading(false));
   }, []);
-
-  const getTierColor = (tier) => {
-    switch (tier) {
-      case 'Elite Developer': return 'var(--accent-purple)';
-      case 'Diamond': return '#38bdf8';
-      case 'Platinum': return '#a855f7';
-      case 'Gold': return '#fbbf24';
-      case 'Silver': return '#9ca3af';
-      case 'Bronze': return '#b45309';
-      default: return '#fff';
-    }
-  };
 
   return (
     <div className="glass-card" style={{ padding: '2rem', height: '400px', display: 'flex', flexDirection: 'column' }}>
@@ -69,7 +94,10 @@ const LeaderboardWidget = () => {
           />
         ) : (
           leaderboard.map((item, index) => {
-            const userObj = item.userId || {};
+            const userObj = item.user || item.userId || {};
+            const rank = item.rank || (index + 1);
+            const medal = item.medal || (rank === 1 ? 'GOLD' : rank === 2 ? 'SILVER' : rank === 3 ? 'BRONZE' : null);
+            const scoreTier = item.scoreTier || item.tier || 'Beginner';
             const isSelf = currentUser && (userObj._id === currentUser._id || userObj.maviId === currentUser.maviId);
 
             return (
@@ -86,15 +114,15 @@ const LeaderboardWidget = () => {
                   borderRadius: '8px'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: index < 3 ? '#fbbf24' : 'var(--text-secondary)', width: '22px', textAlign: 'center' }}>
-                    {index + 1}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: rank <= 3 ? '#fbbf24' : 'var(--text-secondary)', width: '24px', textAlign: 'center' }}>
+                    #{rank}
                   </span>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: isSelf ? 'var(--gradient-primary)' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: isSelf ? 'var(--gradient-primary)' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'white' }}>
                     {userObj.name?.charAt(0) || '?'}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 'bold', color: isSelf ? 'var(--accent-purple)' : 'white', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <div style={{ fontWeight: 'bold', color: isSelf ? 'var(--accent-purple)' : 'white', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                       <span>{userObj.name || 'Developer'}</span>
                       {userObj.maviId && (
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
@@ -102,11 +130,17 @@ const LeaderboardWidget = () => {
                         </span>
                       )}
                       {isSelf && <span className="badge badge-purple" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>You</span>}
+                      {renderMedalBadge(medal)}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: getTierColor(item.tier), fontWeight: '600' }}>{item.tier || 'Developer'}</div>
+                    <div style={{ fontSize: '0.75rem', color: getScoreTierColor(scoreTier), fontWeight: '600', marginTop: '0.1rem' }}>
+                      Tier: {scoreTier}
+                    </div>
                   </div>
                 </div>
-                <div style={{ fontWeight: 'bold', color: 'var(--accent-cyan)', fontSize: '0.95rem' }}>{item.score || 0}</div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 'bold', color: 'var(--accent-cyan)', fontSize: '1rem' }}>{item.score || 0}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Score</div>
+                </div>
               </div>
             );
           })

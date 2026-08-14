@@ -30,10 +30,10 @@ const calculateMyScores = async (req, res, next) => {
   }
 };
 
-const PRIVILEGED_ROLES = ['super_admin', 'superadmin', 'admin', 'institution_admin', 'platform_owner', 'owner'];
+const { PRIVILEGED_ROLES, calculateScoreTier, calculateMedal } = require('../utils/leaderboardHelper');
 
 /**
- * @desc    Get the global leaderboard (sorted by overall score)
+ * @desc    Get the global leaderboard (sorted by overall score with tie-breakers)
  * @route   GET /api/scores/leaderboard
  * @access  Public
  */
@@ -49,19 +49,49 @@ const getLeaderboard = async (req, res, next) => {
       'scores.overall': { $gt: 0 }
     };
 
-    // Fetch eligible developers sorted descending by overall score
-    const users = await User.find(query)
-      .select('name avatar maviId scores platforms.github.username platforms.codeforces.username platforms.leetcode.username platforms.stackoverflow.username')
-      .sort({ 'scores.overall': -1 })
-      .skip(skip)
-      .limit(limit);
+    // Fetch all eligible non-privileged developers sorted with tie-breaker rules
+    const allEligibleUsers = await User.find(query)
+      .select('name avatar maviId scores role status platforms.github.username platforms.codeforces.username platforms.leetcode.username platforms.stackoverflow.username')
+      .sort({
+        'scores.overall': -1,
+        'scores.problemSolving': -1,
+        'scores.development': -1,
+        'maviId': 1,
+        '_id': 1
+      });
 
-    const total = await User.countDocuments(query);
+    // Map all eligible users to assign authoritative server-side rank, rank-based medal, and score tier
+    const rankedList = allEligibleUsers.map((userObj, index) => {
+      const rank = index + 1;
+      const score = userObj.scores?.overall || 0;
+      const medal = calculateMedal(rank);
+      const scoreTier = calculateScoreTier(score);
+
+      return {
+        _id: userObj._id,
+        rank,
+        score,
+        medal,
+        scoreTier,
+        scores: userObj.scores,
+        user: {
+          _id: userObj._id,
+          name: userObj.name,
+          avatar: userObj.avatar,
+          maviId: userObj.maviId,
+          role: userObj.role,
+          platforms: userObj.platforms
+        }
+      };
+    });
+
+    const paginatedLeaderboard = rankedList.slice(skip, skip + limit);
+    const total = rankedList.length;
 
     res.status(200).json({
       success: true,
       data: {
-        leaderboard: users,
+        leaderboard: paginatedLeaderboard,
         pagination: {
           total,
           page,
@@ -75,30 +105,48 @@ const getLeaderboard = async (req, res, next) => {
 };
 
 /**
- * @desc    Get the current user's scores and rank
+ * @desc    Get the current user's scores, rank, medal, and score tier
  * @route   GET /api/scores/me
  * @access  Private
  */
 const getMyScores = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
+    const overallScore = user.scores?.overall || 0;
     
-    // Calculate user's global rank among eligible non-privileged accounts
     let rank = null;
-    if (user.scores && user.scores.overall > 0) {
-      const higherScoresCount = await User.countDocuments({
+    let medal = null;
+    const scoreTier = calculateScoreTier(overallScore);
+
+    if (overallScore > 0 && !PRIVILEGED_ROLES.includes(user.role) && user.status !== 'suspended') {
+      const allEligibleUsers = await User.find({
         role: { $nin: PRIVILEGED_ROLES },
         status: { $ne: 'suspended' },
-        'scores.overall': { $gt: user.scores.overall }
+        'scores.overall': { $gt: 0 }
+      })
+      .select('maviId scores')
+      .sort({
+        'scores.overall': -1,
+        'scores.problemSolving': -1,
+        'scores.development': -1,
+        'maviId': 1,
+        '_id': 1
       });
-      rank = higherScoresCount + 1;
+
+      const userIndex = allEligibleUsers.findIndex(u => u._id.toString() === user._id.toString());
+      if (userIndex !== -1) {
+        rank = userIndex + 1;
+        medal = calculateMedal(rank);
+      }
     }
 
     res.status(200).json({
       success: true,
       data: {
         scores: user.scores,
-        rank
+        rank,
+        medal,
+        scoreTier
       }
     });
   } catch (error) {

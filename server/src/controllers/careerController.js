@@ -83,23 +83,38 @@ exports.getScore = async (req, res, next) => {
     let rank = null;
     let totalUsers = 0;
 
-    const PRIVILEGED_ROLES = ['super_admin', 'superadmin', 'admin', 'institution_admin', 'platform_owner', 'owner'];
+    const { PRIVILEGED_ROLES, calculateScoreTier, calculateMedal } = require('../utils/leaderboardHelper');
+    
+    let medal = null;
+    const scoreTier = calculateScoreTier(overallScore);
+
     if (overallScore > 0) {
-      const higherScoresCount = await User.countDocuments({
-        role: { $nin: PRIVILEGED_ROLES },
-        status: { $ne: 'suspended' },
-        'scores.overall': { $gt: overallScore }
-      });
-      rank = higherScoresCount + 1;
-      totalUsers = await User.countDocuments({
+      const allEligibleUsers = await User.find({
         role: { $nin: PRIVILEGED_ROLES },
         status: { $ne: 'suspended' },
         'scores.overall': { $gt: 0 }
+      })
+      .select('maviId scores')
+      .sort({
+        'scores.overall': -1,
+        'scores.problemSolving': -1,
+        'scores.development': -1,
+        'maviId': 1,
+        '_id': 1
       });
+
+      totalUsers = allEligibleUsers.length;
+      const userIndex = allEligibleUsers.findIndex(u => u._id.toString() === targetUserId.toString());
+      if (userIndex !== -1) {
+        rank = userIndex + 1;
+        medal = calculateMedal(rank);
+      }
     }
 
     const scoreData = score ? (score.toObject ? score.toObject() : { ...score }) : { overall: 0, development: 0, problemSolving: 0, community: 0 };
     scoreData.rank = rank;
+    scoreData.medal = medal;
+    scoreData.scoreTier = scoreTier;
     scoreData.totalUsers = totalUsers;
 
     res.status(200).json({

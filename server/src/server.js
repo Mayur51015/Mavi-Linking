@@ -37,6 +37,7 @@ const announcementRoutes = require('./routes/announcementRoutes');
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const { init } = require('./config/socket'); // socket.io
+const { runStartupTasks } = require('./startup/bootstrap');
 const http = require('http');
 
 
@@ -144,148 +145,14 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    // ─── One-time role migration & admin bootstrap ───────────────────────────
-    try {
-      const User = require('./models/User');
-      const devMigrated = await User.updateMany(
-        { role: 'developer' },
-        { $set: { role: 'user' } }
-      );
-      const profMigrated = await User.updateMany(
-        { role: 'professor' },
-        { $set: { role: 'teacher' } }
-      );
-
-      // Auto-promote administrator accounts & sync roles array
-      const adminEmails = [
-        'mayur2006khandare@gmail.com',
-        'khandaremayur420@gmail.com',
-        'mayur@gmail.com',
-        'mavi118@gmail.com',
-        'armansunasara70@gmail.com',
-        process.env.SUPER_ADMIN_EMAIL,
-      ].filter(Boolean);
-
-      const adminResult = await User.updateMany(
-        { email: { $in: adminEmails.map((e) => e.toLowerCase()) } },
-        {
-          $set: { role: 'super_admin' },
-          $addToSet: { roles: { $each: ['super_admin', 'admin', 'user'] } },
-        }
-      );
-      if (adminResult.modifiedCount > 0) {
-        console.log(`   ✅ Promoted ${adminResult.modifiedCount} account(s) to Super Admin role.`);
-      }
-
-      // Seed Dedicated Platform Owner / Master Super Admin Account if missing
-      const ownerEmail = (process.env.OWNER_EMAIL || 'owner@mavilinking.com').toLowerCase();
-      const ownerPassword = process.env.OWNER_PASSWORD || 'MaviOwner@2026!';
-      const ownerAdminId = 'MAVI-OWNER-001';
-
-      let ownerUser = await User.findOne({ email: ownerEmail });
-      if (!ownerUser) {
-        ownerUser = await User.create({
-          name: 'Platform Owner',
-          email: ownerEmail,
-          password: ownerPassword,
-          role: 'super_admin',
-          roles: ['super_admin', 'admin', 'user'],
-          adminId: ownerAdminId,
-          adminLoginId: ownerAdminId,
-          designation: 'Platform Owner & Founder',
-          maviId: 'MAVI-OWNER01',
-          status: 'active',
-          emailVerified: true,
-        });
-        console.log(`   👑 Dedicated Platform Owner Account Created: ${ownerEmail} (Admin ID: ${ownerAdminId})`);
-      } else {
-        ownerUser.role = 'super_admin';
-        if (!ownerUser.roles.includes('super_admin')) ownerUser.roles.push('super_admin');
-        if (!ownerUser.roles.includes('admin')) ownerUser.roles.push('admin');
-        ownerUser.adminId = ownerAdminId;
-        ownerUser.adminLoginId = ownerAdminId;
-        ownerUser.designation = 'Platform Owner & Founder';
-        await ownerUser.save();
-      }
-
-      // MAVI ID backfill migration for existing accounts
-      const usersNeedingMaviId = await User.find({
-        $or: [{ maviId: { $exists: false } }, { maviId: null }, { maviId: '' }],
-      });
-      if (usersNeedingMaviId.length > 0) {
-        let backfillCount = 0;
-        for (const userDoc of usersNeedingMaviId) {
-          // Pre-save hook will auto-generate unique MAVI ID if missing
-          await userDoc.save();
-          backfillCount++;
-        }
-        console.log(`   ✅ MAVI ID Migration: Backfilled MAVI IDs for ${backfillCount} existing user account(s).`);
-      }
-
-      // Google ID migration: Unset googleId: null fields that break sparse indexing
-      const googleIdCleanup = await User.updateMany(
-        { googleId: null },
-        { $unset: { googleId: 1 } }
-      );
-      if (googleIdCleanup.modifiedCount > 0) {
-        console.log(`   ✅ Google ID Migration: Unset googleId: null for ${googleIdCleanup.modifiedCount} account(s).`);
-      }
-      try {
-        await User.collection.dropIndex('googleId_1');
-        console.log('   ✅ Dropped legacy googleId_1 index to rebuild as sparse index.');
-      } catch (_) {}
-
-      // Auto-seed default customer institutions if database is empty
-      const Institution = require('./models/Institution');
-      const instCount = await Institution.countDocuments();
-      if (instCount === 0) {
-        await Institution.create([
-          {
-            name: 'Zeal College of Engineering and Research',
-            tenantId: 'INST-ZEAL-001',
-            code: 'ZEAL',
-            domain: 'zeal.edu.in',
-            city: 'Pune',
-            state: 'Maharashtra',
-            country: 'India',
-            status: 'ACTIVE',
-            plan: 'ENTERPRISE',
-            contactEmail: 'admin@zeal.edu.in',
-          },
-          {
-            name: 'College of Engineering Pune (COEP Tech)',
-            tenantId: 'INST-COEP-001',
-            code: 'COEP',
-            domain: 'coep.org.in',
-            city: 'Pune',
-            state: 'Maharashtra',
-            country: 'India',
-            status: 'ACTIVE',
-            plan: 'ENTERPRISE',
-            contactEmail: 'admin@coep.org.in',
-          },
-          {
-            name: 'MIT World Peace University',
-            tenantId: 'INST-MIT-001',
-            code: 'MITWPU',
-            domain: 'mitwpu.edu.in',
-            city: 'Pune',
-            state: 'Maharashtra',
-            country: 'India',
-            status: 'ACTIVE',
-            plan: 'PRO',
-            contactEmail: 'admin@mitwpu.edu.in',
-          },
-        ]);
-        console.log('   🏫 Default customer institutions auto-seeded (Zeal, COEP, MIT-WPU).');
-      }
-
-      if (devMigrated.modifiedCount > 0 || profMigrated.modifiedCount > 0) {
-        console.log(`   ✅ Role migration: ${devMigrated.modifiedCount} developer→user, ${profMigrated.modifiedCount} professor→teacher`);
-      }
-    } catch (migrationErr) {
-      console.warn('   ⚠️  Role/MAVI ID/Google ID migration skipped:', migrationErr.message);
-    }
+    // ─── Role migrations, owner bootstrap & optional seed data ───────────────
+    // Everything this used to do inline now lives in ./startup/bootstrap.js,
+    // where it is testable and where a failure in the owner bootstrap aborts
+    // the boot instead of being logged as a warning.
+    await runStartupTasks({
+      User: require('./models/User'),
+      Institution: require('./models/Institution'),
+    });
 
     const server = http.createServer(app);
     init(server); // Initialize socket.io

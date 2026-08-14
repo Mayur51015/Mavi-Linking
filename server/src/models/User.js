@@ -16,6 +16,8 @@ const SENSITIVE_FIELDS = [
   'resetPasswordToken',
   'resetPasswordOtp',
   'resetPasswordExpires',
+  'invitationToken',
+  'invitationExpires',
   'verificationToken',
   'verificationCode',
 ];
@@ -69,8 +71,25 @@ const userSchema = new mongoose.Schema(
     ],
     status: {
       type: String,
-      enum: ['active', 'suspended'],
+      enum: ['active', 'suspended', 'invited'],
       default: 'active',
+    },
+    accountStatus: {
+      type: String,
+      enum: ['INVITED', 'EMAIL_VERIFICATION_PENDING', 'PASSWORD_SETUP_REQUIRED', 'ACTIVE', 'SUSPENDED', 'DISABLED', 'INVITATION_EXPIRED'],
+      default: 'ACTIVE',
+    },
+    institutionalIdentifier: {
+      identifierType: {
+        type: String,
+        enum: ['PRN', 'FACULTY_ID', 'EMPLOYEE_ID', 'RECRUITER_ID'],
+        default: 'PRN',
+      },
+      identifierValue: {
+        type: String,
+        trim: true,
+        default: '',
+      },
     },
     institutionId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -105,10 +124,15 @@ const userSchema = new mongoose.Schema(
     invitationToken: {
       type: String,
       default: null,
+      select: false,
     },
     invitationExpires: {
       type: Date,
       default: null,
+    },
+    passwordSetupRequired: {
+      type: Boolean,
+      default: false,
     },
     isInvitedAdmin: {
       type: Boolean,

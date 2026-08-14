@@ -6,27 +6,21 @@ import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
 
 const ROLES = [
-  { key: 'user', label: 'Student / Developer', icon: <User size={32} />, desc: 'Create your developer profile and showcase your skills.', color: 'var(--accent-purple)' },
-  { key: 'recruiter', label: 'Recruiter', icon: <Search size={32} />, desc: 'Discover and recruit top developer talent.', color: 'var(--accent-cyan)' },
-  { key: 'teacher', label: 'Teacher / Professor', icon: <GraduationCap size={32} />, desc: 'Monitor and track your students\' progress.', color: 'var(--accent-emerald)' },
+  { key: 'user', label: 'Student / Developer', icon: <User size={32} />, desc: 'Self-registration for students & developers to create profiles.', color: 'var(--accent-purple)' },
 ];
 
 const DOMAINS = ['Web Development', 'AI/ML', 'Competitive Programming', 'Cybersecurity', 'App Development'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 
 const Register = () => {
-  const [step, setStep] = useState(1); // 1: role, 2: basic, 3: role-specific
-  const [role, setRole] = useState('user');
+  const [step, setStep] = useState(2); // Directly open Student Registration Form
+  const [role] = useState('user');
   const [formData, setFormData] = useState({
     name: '', email: '', password: '',
     // Student
     prn: '', collegeName: '', department: '', batch: '',
     degree: '', graduationYear: '', portfolioWebsite: '',
     githubUsername: '', preferredDomain: '', experienceLevel: '', bio: '',
-    // Recruiter
-    companyName: '', allowedColleges: '', allowedDepartments: '',
-    // Teacher
-    facultyId: '', teacherCollege: '', teacherDepartment: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -140,12 +134,24 @@ const Register = () => {
       }}>
         <ChevronLeft size={16} /> Back to role selection
       </button>
-      <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', fontSize: '1.75rem' }}>Create Your Account</h2>
-      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-        Signing up as <span style={{ color: ROLES.find(r => r.key === role)?.color, fontWeight: '600' }}>
-          {ROLES.find(r => r.key === role)?.label}
-        </span>
+      <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', fontSize: '1.75rem' }}>Student Registration</h2>
+      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+        Create your developer profile and connect with campus opportunities
       </p>
+
+      {/* Staff Provisioning Notice Banner */}
+      <div style={{
+        padding: '0.875rem 1rem',
+        marginBottom: '1.5rem',
+        background: 'rgba(168, 85, 247, 0.08)',
+        border: '1px solid rgba(168, 85, 247, 0.2)',
+        borderRadius: '10px',
+        fontSize: '0.8rem',
+        color: '#d8b4fe',
+        lineHeight: '1.5',
+      }}>
+        <strong>🏫 Are you a Teacher or Recruiter?</strong> Teacher and Recruiter accounts are provisioned by Institution Administrators. Please request an account invitation link from your administrator.
+      </div>
 
       <div className="input-group">
         <label className="input-label">Full Name *</label>

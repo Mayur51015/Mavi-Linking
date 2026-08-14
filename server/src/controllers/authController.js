@@ -70,17 +70,33 @@ const register = async (req, res, next) => {
       }
     }
 
-    // Build user data with zero-trust role security (always default role to 'user')
+    // Zero-Trust Public Registration Policy:
+    // Teachers, Recruiters, and Admins CANNOT self-register through public signup.
+    const forbiddenPublicRoles = ['teacher', 'recruiter', 'admin', 'institution_admin', 'super_admin', 'platform_owner', 'owner'];
+    if (role && forbiddenPublicRoles.includes(role.toLowerCase())) {
+      return res.status(403).json({
+        success: false,
+        code: 'PUBLIC_REGISTRATION_FORBIDDEN',
+        message: 'Self-registration for Teacher and Recruiter roles is not permitted. Teacher and Recruiter accounts must be provisioned by an authorized administrator.',
+      });
+    }
+
+    // Build user data with zero-trust role security (always default role to 'user' / Student)
     const userData = { name, email: lowerEmail, password };
     userData.role = 'user';
-
-    const isPrivilegedRequest = ['recruiter', 'teacher'].includes(role);
-    userData.requestedRole = isPrivilegedRequest ? role : 'none';
-    userData.roleStatus = isPrivilegedRequest ? 'pending' : 'active';
+    userData.roles = ['user'];
+    userData.requestedRole = 'none';
+    userData.roleStatus = 'active';
+    userData.accountStatus = 'ACTIVE';
 
     // Institutional identifiers & verification status
-    if (prn) userData.prn = prn.trim();
-    if (facultyId) userData.facultyId = facultyId.trim();
+    if (prn) {
+      userData.prn = prn.trim();
+      userData.institutionalIdentifier = {
+        identifierType: 'PRN',
+        identifierValue: prn.trim(),
+      };
+    }
     if (institutionId) {
       userData.institutionId = institutionId;
       if (targetInst?.tenantId) userData.tenantId = targetInst.tenantId;
@@ -1283,6 +1299,123 @@ const changePassword = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Verify Account Activation Token
+ * @route   GET /api/auth/verify-invitation/:token
+ * @access  Public
+ */
+const verifyInvitationToken = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Invitation token is required.' });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      invitationToken: hashedToken,
+      invitationExpires: { $gt: Date.now() },
+    }).populate('institutionId', 'name shortName domain');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_INVALID_OR_EXPIRED',
+        message: 'Invitation link is invalid or has expired. Please contact your administrator to resend your invitation.',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        maviId: user.maviId,
+        institutionName: user.institutionId?.name || user.university?.name || 'Assigned Institution',
+        identifierType: user.institutionalIdentifier?.identifierType || 'FACULTY_ID',
+        identifierValue: user.institutionalIdentifier?.identifierValue || '',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Activate Invited Teacher/Recruiter Account & Create Password
+ * @route   POST /api/auth/activate-account
+ * @access  Public
+ */
+const activateAccount = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation token and new password are required.',
+      });
+    }
+
+    // Password policy validation: min 6 characters
+    if (typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.',
+      });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      invitationToken: hashedToken,
+      invitationExpires: { $gt: Date.now() },
+    }).select('+password +invitationToken');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_INVALID_OR_EXPIRED',
+        message: 'Invitation link is invalid or has expired. Please contact your administrator to resend your invitation.',
+      });
+    }
+
+    // Set new password (hashed via pre-save hook)
+    user.password = password;
+
+    // Activate Account State
+    user.emailVerified = true;
+    user.accountStatus = 'ACTIVE';
+    user.status = 'active';
+    user.roleStatus = 'approved';
+    user.passwordSetupRequired = false;
+    user.mustChangePassword = false;
+    user.passwordChangedAt = Date.now();
+
+    // Single-Use Security: Invalidate invitation token
+    user.invitationToken = null;
+    user.invitationExpires = null;
+
+    await user.save();
+
+    // Log Security Audit Event
+    await ActivityLog.create({
+      userId: user._id,
+      action: 'ACCOUNT_ACTIVATED',
+      details: `Account activated for ${user.email} (${user.role.toUpperCase()}) via invitation link.`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Your MAVI account has been activated successfully! You can now log in.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -1301,4 +1434,6 @@ module.exports = {
   logout,
   requestRoleUpgrade,
   changePassword,
+  verifyInvitationToken,
+  activateAccount,
 };

@@ -22,6 +22,8 @@ const {
   getDepartments,
   updateMyInstitutionSettings,
   updateUserInstitution,
+  createStaffUser,
+  resendUserInvitation,
 } = require('../controllers/adminController');
 
 const {
@@ -41,6 +43,8 @@ router.use(protect, requireAdmin);
 // Admin stats & user moderation (scoped by institution if institution_admin)
 router.get('/stats', enforceInstitutionScope, getAdminStats);
 router.get('/users', enforceInstitutionScope, getAllUsers);
+router.post('/users', enforceInstitutionScope, createStaffUser);
+router.post('/users/:userId/resend-invitation', enforceInstitutionScope, resendUserInvitation);
 router.put('/users/:id', enforceInstitutionScope, updateUser);
 router.put('/users/:id/status', enforceInstitutionScope, updateUserStatus);
 router.patch('/users/:userId/institution', updateUserInstitution);

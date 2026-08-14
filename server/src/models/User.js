@@ -176,10 +176,25 @@ const userSchema = new mongoose.Schema(
     university: {
       name: { type: String, default: '' },
       department: { type: String, default: '' },
+      branch: { type: String, default: '' },
+      year: { type: String, default: '' },
+      division: { type: String, default: '' },
+      semester: { type: String, default: '' },
+      admissionYear: { type: String, default: '' },
       batch: { type: String, default: '' },
+      graduationYear: { type: String, default: '' },
     },
     // Student-specific fields
     prn: { type: String, trim: true, default: '' },
+    prnHistory: [
+      {
+        oldPRN: { type: String, default: '' },
+        newPRN: { type: String, default: '' },
+        changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        changedByName: { type: String, default: '' },
+        changedAt: { type: Date, default: Date.now }
+      }
+    ],
     facultyId: { type: String, trim: true, default: '' },
     prnVerificationStatus: {
       type: String,

@@ -153,10 +153,20 @@ const requirePermission = (...requiredPermissions) => {
     }
 
     const userPermissions = req.user.permissions || [];
-    const hasPermission = requiredPermissions.some((p) => userPermissions.includes(p));
 
-    // If no permissions array is explicitly populated on user, allow active institution admins by default
-    if (userPermissions.length === 0 && req.isInstitutionAdmin) {
+    // Permission alias mapping for backward compatibility with legacy roles
+    const permissionAliasMap = {
+      'STUDENT_PROFILE_MANAGE': ['students:read', 'students:update', 'students:write', 'STUDENT_MANAGE', 'student_manage'],
+    };
+
+    const hasPermission = requiredPermissions.some((p) => {
+      if (userPermissions.includes(p)) return true;
+      const aliases = permissionAliasMap[p] || [];
+      return aliases.some((alias) => userPermissions.includes(alias));
+    });
+
+    // Institution Admins intrinsically possess Student Profile Management authority for their institution scope
+    if (req.isInstitutionAdmin && (requiredPermissions.includes('STUDENT_PROFILE_MANAGE') || userPermissions.length === 0)) {
       return next();
     }
 

@@ -40,9 +40,11 @@ import InstitutionAdminLayout from '../../layouts/InstitutionAdminLayout';
 import api from '../../api/axios';
 import VoluntaryChangePasswordForm from '../../components/VoluntaryChangePasswordForm';
 import { AuthContext } from '../../context/AuthContext';
+import StudentProfileEditorModal from '../../components/admin/StudentProfileEditorModal';
 
 const AdminDashboard = ({ activeTab: propActiveTab }) => {
   const { user: currentUser } = useContext(AuthContext);
+  const [selectedStudentForProfileEdit, setSelectedStudentForProfileEdit] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -601,8 +603,8 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                             </td>
                             <td style={{ padding: '1rem' }}>
                               <div style={{ display: 'flex', gap: '0.4rem' }}>
-                                <button onClick={() => setEditUser(s)} className="btn btn-outline" style={{ padding: '0.35rem 0.55rem', fontSize: '0.75rem' }}>
-                                  <Edit size={12} /> Edit
+                                <button onClick={() => setSelectedStudentForProfileEdit(s._id)} className="btn btn-primary" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                  <Edit size={12} /> Edit Profile
                                 </button>
                                 <button onClick={() => setSuspendingUser(s)} className="btn btn-outline" style={{ borderColor: s.status === 'suspended' ? 'var(--accent-emerald)' : '#eab308', color: s.status === 'suspended' ? 'var(--accent-emerald)' : '#eab308', padding: '0.35rem 0.55rem', fontSize: '0.75rem' }}>
                                   {s.status === 'suspended' ? 'Activate' : 'Suspend'}
@@ -1439,6 +1441,15 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
               </div>
             </form>
           </div>
+        )}
+
+        {/* ─── MODAL: Student Profile Management Authority ───────────────── */}
+        {selectedStudentForProfileEdit && (
+          <StudentProfileEditorModal
+            studentId={selectedStudentForProfileEdit}
+            onClose={() => setSelectedStudentForProfileEdit(null)}
+            onSaveSuccess={loadTabData}
+          />
         )}
       </div>
     </InstitutionAdminLayout>

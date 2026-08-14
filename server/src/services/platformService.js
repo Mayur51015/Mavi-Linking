@@ -37,8 +37,16 @@ const fetchGitHubProfile = async (username) => {
     headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
   }
 
-  const response = await fetch(url, { headers });
-  const payload = await response.json();
+  let response = await fetch(url, { headers });
+  let payload = await response.json();
+
+  // If token was invalid, expired, or rejected (401 Bad credentials), fallback to unauthenticated request
+  if (!response.ok && (response.status === 401 || (payload.message && payload.message.toLowerCase().includes('bad credentials')))) {
+    console.warn(`GitHub Token authentication failed for "${username}". Falling back to unauthenticated public GitHub API...`);
+    delete headers.Authorization;
+    response = await fetch(url, { headers });
+    payload = await response.json();
+  }
 
   if (!response.ok) {
     const message = response.status === 404
@@ -51,7 +59,12 @@ const fetchGitHubProfile = async (username) => {
   let reposList = [];
   try {
     const reposUrl = `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=10&sort=updated`;
-    const reposResponse = await fetch(reposUrl, { headers });
+    let reposResponse = await fetch(reposUrl, { headers });
+    if (!reposResponse.ok && headers.Authorization) {
+      const reposHeaders = { ...headers };
+      delete reposHeaders.Authorization;
+      reposResponse = await fetch(reposUrl, { headers: reposHeaders });
+    }
     if (reposResponse.ok) {
       const reposPayload = await reposResponse.json();
       if (Array.isArray(reposPayload)) {

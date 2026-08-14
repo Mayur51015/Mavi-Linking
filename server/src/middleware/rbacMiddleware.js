@@ -48,6 +48,34 @@ const requireRole = (...roles) => {
 };
 
 /**
+ * Restrict access strictly to Platform Owner.
+ */
+const requireOwner = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'Authentication required.' });
+  }
+
+  const userRoles = req.user.roles && req.user.roles.length > 0 ? req.user.roles : [req.user.role];
+  const isOwner =
+    userRoles.includes('platform_owner') ||
+    userRoles.includes('owner') ||
+    req.user.role === 'platform_owner' ||
+    req.user.role === 'owner' ||
+    req.user.adminId === 'MAVI-OWNER-001' ||
+    req.user.email === (process.env.OWNER_EMAIL || 'owner@mavilinking.com').toLowerCase();
+
+  if (!isOwner && !userRoles.includes('super_admin')) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden. Platform Owner authority required.',
+    });
+  }
+
+  req.isOwner = true;
+  next();
+};
+
+/**
  * Restrict access strictly to Super Admin (platform-wide authority).
  */
 const requireSuperAdmin = (req, res, next) => {
@@ -56,7 +84,13 @@ const requireSuperAdmin = (req, res, next) => {
   }
 
   const userRoles = req.user.roles && req.user.roles.length > 0 ? req.user.roles : [req.user.role];
-  const isSuperAdmin = userRoles.includes('super_admin') || req.user.role === 'super_admin' || req.user.role === 'admin';
+  const isSuperAdmin =
+    userRoles.includes('super_admin') ||
+    userRoles.includes('platform_owner') ||
+    userRoles.includes('owner') ||
+    req.user.role === 'super_admin' ||
+    req.user.role === 'platform_owner' ||
+    req.user.role === 'owner';
 
   if (!isSuperAdmin) {
     return res.status(403).json({
@@ -78,29 +112,68 @@ const requireAdmin = (req, res, next) => {
   }
 
   const userRoles = req.user.roles && req.user.roles.length > 0 ? req.user.roles : [req.user.role];
-  const isAdminUser =
+  const isSuperAdmin =
     userRoles.includes('super_admin') ||
-    userRoles.includes('admin') ||
-    userRoles.includes('institution_admin') ||
-    req.user.role === 'admin' ||
-    req.user.role === 'institution_admin';
+    userRoles.includes('platform_owner') ||
+    userRoles.includes('owner') ||
+    req.user.role === 'super_admin' ||
+    req.user.role === 'platform_owner' ||
+    req.user.role === 'owner';
 
-  if (!isAdminUser) {
+  const isInstAdmin =
+    userRoles.includes('institution_admin') ||
+    userRoles.includes('admin') ||
+    req.user.role === 'institution_admin' ||
+    req.user.role === 'admin';
+
+  if (!isSuperAdmin && !isInstAdmin) {
     return res.status(403).json({
       success: false,
       message: 'Forbidden. Administrative authorization required.',
     });
   }
 
-  req.isSuperAdmin = userRoles.includes('super_admin') || req.user.role === 'admin' || req.user.role === 'super_admin';
-  req.isInstitutionAdmin = userRoles.includes('institution_admin') || req.user.role === 'institution_admin';
+  req.isSuperAdmin = isSuperAdmin;
+  req.isInstitutionAdmin = isInstAdmin && !isSuperAdmin;
 
   next();
 };
 
 /**
+ * Require specific granular ABAC permission(s).
+ */
+const requirePermission = (...requiredPermissions) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
+
+    if (req.isSuperAdmin) {
+      return next();
+    }
+
+    const userPermissions = req.user.permissions || [];
+    const hasPermission = requiredPermissions.some((p) => userPermissions.includes(p));
+
+    // If no permissions array is explicitly populated on user, allow active institution admins by default
+    if (userPermissions.length === 0 && req.isInstitutionAdmin) {
+      return next();
+    }
+
+    if (!hasPermission) {
+      return res.status(403).json({
+        success: false,
+        message: `Forbidden. Required permission missing: ${requiredPermissions.join(', ')}`,
+      });
+    }
+
+    next();
+  };
+};
+
+/**
  * Enforce multi-tenant institution scoping (ABAC).
- * Injects `req.institutionQuery` to restrict queries for Institution Admins.
+ * Injects `req.institutionScope` to restrict queries for Institution Admins.
  */
 const enforceInstitutionScope = async (req, res, next) => {
   try {
@@ -109,27 +182,35 @@ const enforceInstitutionScope = async (req, res, next) => {
     }
 
     const userRoles = req.user.roles && req.user.roles.length > 0 ? req.user.roles : [req.user.role];
-    const isSuperAdmin = userRoles.includes('super_admin') || req.user.role === 'admin' || req.user.role === 'super_admin';
+    const isSuperAdmin =
+      userRoles.includes('super_admin') ||
+      userRoles.includes('platform_owner') ||
+      userRoles.includes('owner') ||
+      req.user.role === 'super_admin' ||
+      req.user.role === 'platform_owner' ||
+      req.user.role === 'owner';
 
     if (isSuperAdmin) {
-      // Super Admin has global scope (no query restriction)
+      // Super Admin / Owner has global scope (no query restriction)
       req.institutionScope = {};
       return next();
     }
 
     // Institution Admin scope check
     let institutionId = req.user.institutionId;
+    let tenantId = req.user.tenantId;
 
-    if (!institutionId) {
+    if (!institutionId || !tenantId) {
       // Fallback: check InstitutionMembership
       const membership = await InstitutionMembership.findOne({
         userId: req.user._id,
         role: 'institution_admin',
         status: 'active',
-      });
+      }).populate('institutionId', 'tenantId');
 
       if (membership) {
-        institutionId = membership.institutionId;
+        institutionId = membership.institutionId._id || membership.institutionId;
+        tenantId = membership.tenantId || membership.institutionId?.tenantId || '';
       }
     }
 
@@ -140,7 +221,7 @@ const enforceInstitutionScope = async (req, res, next) => {
       });
     }
 
-    req.institutionScope = { institutionId };
+    req.institutionScope = { institutionId, tenantId };
     next();
   } catch (error) {
     next(error);
@@ -149,7 +230,9 @@ const enforceInstitutionScope = async (req, res, next) => {
 
 module.exports = {
   requireRole,
+  requireOwner,
   requireSuperAdmin,
   requireAdmin,
+  requirePermission,
   enforceInstitutionScope,
 };

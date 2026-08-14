@@ -25,8 +25,18 @@ const SuperAdminRoute = ({ children }) => {
     return <Navigate to="/super-admin/login" replace />;
   }
 
+  if (user.mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
+  }
+
   const userRoles = Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [user.role];
-  const isSuperAdminAuthorized = userRoles.includes('super_admin') || user.role === 'super_admin' || user.role === 'admin';
+  const isSuperAdminAuthorized =
+    userRoles.includes('super_admin') ||
+    userRoles.includes('platform_owner') ||
+    userRoles.includes('owner') ||
+    user.role === 'super_admin' ||
+    user.role === 'platform_owner' ||
+    user.role === 'owner';
 
   if (!isSuperAdminAuthorized) {
     return <Navigate to="/super-admin/login?error=unauthorized" replace />;

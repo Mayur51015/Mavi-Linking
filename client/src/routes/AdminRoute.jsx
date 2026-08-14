@@ -25,6 +25,10 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/admin/login" replace />;
   }
 
+  if (user.mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
+  }
+
   const userRoles = Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [user.role];
   const isAdminAuthorized = userRoles.some((r) => ['admin', 'institution_admin', 'super_admin'].includes(r)) || ['admin', 'institution_admin', 'super_admin'].includes(user.role);
 

@@ -57,15 +57,13 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      // 'developer' and 'professor' are legacy values kept for backward compatibility
-      // 'super_admin' and 'institution_admin' represent elevated administrative tiers
-      enum: ['user', 'recruiter', 'teacher', 'admin', 'institution_admin', 'super_admin', 'developer', 'professor'],
+      enum: ['user', 'recruiter', 'teacher', 'admin', 'institution_admin', 'super_admin', 'platform_owner', 'owner', 'developer', 'professor'],
       default: 'user',
     },
     roles: [
       {
         type: String,
-        enum: ['user', 'student', 'teacher', 'recruiter', 'institution_admin', 'super_admin', 'admin', 'developer', 'professor'],
+        enum: ['user', 'student', 'teacher', 'recruiter', 'institution_admin', 'super_admin', 'platform_owner', 'owner', 'admin', 'developer', 'professor'],
       },
     ],
     status: {
@@ -78,11 +76,47 @@ const userSchema = new mongoose.Schema(
       ref: 'Institution',
       default: null,
     },
+    tenantId: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    adminId: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    adminLoginId: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    designation: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    permissions: [
+      {
+        type: String,
+      },
+    ],
+    invitationToken: {
+      type: String,
+      default: null,
+    },
+    invitationExpires: {
+      type: Date,
+      default: null,
+    },
+    isInvitedAdmin: {
+      type: Boolean,
+      default: false,
+    },
     googleId: {
       type: String,
       unique: true,
       sparse: true,
-      default: null,
     },
     authProvider: {
       type: String,
@@ -180,9 +214,12 @@ const userSchema = new mongoose.Schema(
     placementDate: { type: Date, default: null },
 
     // Security & Auth Upgrades
-    // The four token fields below are credentials, not profile data — they are
+    // The token fields below are credentials, not profile data — they are
     // `select: false` so they only load when a handler explicitly asks for them.
     emailVerified: { type: Boolean, default: false },
+    mustChangePassword: { type: Boolean, default: false },
+    temporaryPasswordExpiresAt: { type: Date, default: null },
+    passwordChangedAt: { type: Date, default: null },
     verificationToken: { type: String, default: null, select: false },
     resetPasswordToken: { type: String, default: null, select: false },
     resetPasswordExpires: { type: Date, default: null, select: false },
@@ -343,6 +380,9 @@ const userSchema = new mongoose.Schema(
 
 userSchema.index({ status: 1 });
 userSchema.index({ institutionId: 1 });
+userSchema.index({ tenantId: 1 });
+userSchema.index({ adminId: 1 });
+userSchema.index({ adminLoginId: 1 });
 userSchema.index({ roles: 1 });
 userSchema.index({ maviId: 1 }, { unique: true });
 userSchema.index({ prn: 1 });
@@ -357,9 +397,24 @@ const generateMaviIdCode = () => {
 
 // ─── Pre-save: Auto-generate maviId, sync roles & hash password ───────────
 userSchema.pre('save', async function (next) {
-  // Generate permanent MAVI ID if missing
+  // Ensure googleId is unset if null or empty string to preserve sparse index
+  if (this.googleId === null || this.googleId === '') {
+    this.googleId = undefined;
+  }
+
+  // Generate permanent MAVI ID if missing (with collision check)
   if (!this.maviId) {
-    this.maviId = generateMaviIdCode();
+    let isUnique = false;
+    let attempts = 0;
+    while (!isUnique && attempts < 10) {
+      attempts++;
+      const candidate = generateMaviIdCode();
+      const existing = await mongoose.model('User').findOne({ maviId: candidate });
+      if (!existing) {
+        this.maviId = candidate;
+        isUnique = true;
+      }
+    }
   }
 
   // Ensure roles array is populated and consistent with primary role

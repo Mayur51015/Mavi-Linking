@@ -98,10 +98,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-const careerRoutes = require('./routes/careerRoutes');
+const ownerRoutes = require('./routes/ownerRoutes');
 
 // ─── API Routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
+app.use('/api/owner', ownerRoutes);
 app.use('/api/platforms', platformRoutes);
 app.use('/api/scores', scoreRoutes);
 app.use('/api/projects', projectRoutes);
@@ -175,6 +176,37 @@ const startServer = async () => {
         console.log(`   ✅ Promoted ${adminResult.modifiedCount} account(s) to Super Admin role.`);
       }
 
+      // Seed Dedicated Platform Owner / Master Super Admin Account if missing
+      const ownerEmail = (process.env.OWNER_EMAIL || 'owner@mavilinking.com').toLowerCase();
+      const ownerPassword = process.env.OWNER_PASSWORD || 'MaviOwner@2026!';
+      const ownerAdminId = 'MAVI-OWNER-001';
+
+      let ownerUser = await User.findOne({ email: ownerEmail });
+      if (!ownerUser) {
+        ownerUser = await User.create({
+          name: 'Platform Owner',
+          email: ownerEmail,
+          password: ownerPassword,
+          role: 'super_admin',
+          roles: ['super_admin', 'admin', 'user'],
+          adminId: ownerAdminId,
+          adminLoginId: ownerAdminId,
+          designation: 'Platform Owner & Founder',
+          maviId: 'MAVI-OWNER01',
+          status: 'active',
+          emailVerified: true,
+        });
+        console.log(`   👑 Dedicated Platform Owner Account Created: ${ownerEmail} (Admin ID: ${ownerAdminId})`);
+      } else {
+        ownerUser.role = 'super_admin';
+        if (!ownerUser.roles.includes('super_admin')) ownerUser.roles.push('super_admin');
+        if (!ownerUser.roles.includes('admin')) ownerUser.roles.push('admin');
+        ownerUser.adminId = ownerAdminId;
+        ownerUser.adminLoginId = ownerAdminId;
+        ownerUser.designation = 'Platform Owner & Founder';
+        await ownerUser.save();
+      }
+
       // MAVI ID backfill migration for existing accounts
       const usersNeedingMaviId = await User.find({
         $or: [{ maviId: { $exists: false } }, { maviId: null }, { maviId: '' }],
@@ -189,11 +221,69 @@ const startServer = async () => {
         console.log(`   ✅ MAVI ID Migration: Backfilled MAVI IDs for ${backfillCount} existing user account(s).`);
       }
 
+      // Google ID migration: Unset googleId: null fields that break sparse indexing
+      const googleIdCleanup = await User.updateMany(
+        { googleId: null },
+        { $unset: { googleId: 1 } }
+      );
+      if (googleIdCleanup.modifiedCount > 0) {
+        console.log(`   ✅ Google ID Migration: Unset googleId: null for ${googleIdCleanup.modifiedCount} account(s).`);
+      }
+      try {
+        await User.collection.dropIndex('googleId_1');
+        console.log('   ✅ Dropped legacy googleId_1 index to rebuild as sparse index.');
+      } catch (_) {}
+
+      // Auto-seed default customer institutions if database is empty
+      const Institution = require('./models/Institution');
+      const instCount = await Institution.countDocuments();
+      if (instCount === 0) {
+        await Institution.create([
+          {
+            name: 'Zeal College of Engineering and Research',
+            tenantId: 'INST-ZEAL-001',
+            code: 'ZEAL',
+            domain: 'zeal.edu.in',
+            city: 'Pune',
+            state: 'Maharashtra',
+            country: 'India',
+            status: 'ACTIVE',
+            plan: 'ENTERPRISE',
+            contactEmail: 'admin@zeal.edu.in',
+          },
+          {
+            name: 'College of Engineering Pune (COEP Tech)',
+            tenantId: 'INST-COEP-001',
+            code: 'COEP',
+            domain: 'coep.org.in',
+            city: 'Pune',
+            state: 'Maharashtra',
+            country: 'India',
+            status: 'ACTIVE',
+            plan: 'ENTERPRISE',
+            contactEmail: 'admin@coep.org.in',
+          },
+          {
+            name: 'MIT World Peace University',
+            tenantId: 'INST-MIT-001',
+            code: 'MITWPU',
+            domain: 'mitwpu.edu.in',
+            city: 'Pune',
+            state: 'Maharashtra',
+            country: 'India',
+            status: 'ACTIVE',
+            plan: 'PRO',
+            contactEmail: 'admin@mitwpu.edu.in',
+          },
+        ]);
+        console.log('   🏫 Default customer institutions auto-seeded (Zeal, COEP, MIT-WPU).');
+      }
+
       if (devMigrated.modifiedCount > 0 || profMigrated.modifiedCount > 0) {
         console.log(`   ✅ Role migration: ${devMigrated.modifiedCount} developer→user, ${profMigrated.modifiedCount} professor→teacher`);
       }
     } catch (migrationErr) {
-      console.warn('   ⚠️  Role/MAVI ID migration skipped:', migrationErr.message);
+      console.warn('   ⚠️  Role/MAVI ID/Google ID migration skipped:', migrationErr.message);
     }
 
     const server = http.createServer(app);

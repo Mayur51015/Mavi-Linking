@@ -4,7 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { ShieldAlert, Lock, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { getErrorMessage } from '../../utils/errorMessage';
-import GoogleSignInButton from '../../components/GoogleSignInButton';
+import api from '../../api/axios';
 
 const SuperAdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -12,7 +12,7 @@ const SuperAdminLogin = () => {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const { user, login, loginWithGoogle } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const toast = useToast();
   const [searchParams] = useSearchParams();
@@ -35,7 +35,7 @@ const SuperAdminLogin = () => {
 
   const verifyAndRedirect = (userData) => {
     const userRoles = Array.isArray(userData.roles) && userData.roles.length > 0 ? userData.roles : [userData.role];
-    const isSuperAdmin = userRoles.includes('super_admin') || userData.role === 'super_admin' || userData.role === 'admin';
+    const isSuperAdmin = userRoles.includes('super_admin') || userData.role === 'super_admin';
 
     if (isSuperAdmin) {
       toast.success('Super Admin authorization verified.');
@@ -51,23 +51,16 @@ const SuperAdminLogin = () => {
     setError('');
     setSubmitting(true);
     try {
-      const res = await login(email, password);
-      verifyAndRedirect(res.user);
+      const res = await api.post('/auth/super-admin-login', {
+        identifier: email,
+        password,
+      });
+      const { user: userData, token, refreshToken } = res.data.data;
+      localStorage.setItem('token', token);
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+      verifyAndRedirect(userData);
     } catch (err) {
       setError(getErrorMessage(err, 'Super Admin authentication failed. Check credentials.'));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleGoogleSuccess = async (credential) => {
-    setError('');
-    setSubmitting(true);
-    try {
-      const res = await loginWithGoogle(credential);
-      verifyAndRedirect(res.user);
-    } catch (err) {
-      setError(getErrorMessage(err, 'Google verification failed.'));
     } finally {
       setSubmitting(false);
     }
@@ -126,11 +119,11 @@ const SuperAdminLogin = () => {
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
           <div className="input-group">
-            <label className="input-label" style={{ color: '#a1a1aa' }}>Super Admin Email</label>
+            <label className="input-label" style={{ color: '#a1a1aa' }}>Super Admin ID / Email</label>
             <input
-              type="email"
+              type="text"
               className="input-field"
-              placeholder="superadmin@mavilinking.com"
+              placeholder="e.g. MAVI-SA-001 or email@mavilinking.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -169,17 +162,6 @@ const SuperAdminLogin = () => {
             {submitting ? 'Verifying Super Admin Authorization...' : 'Enter Super Admin Console'}
           </button>
         </form>
-
-        <div style={{ margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-          <span style={{ fontSize: '0.75rem', color: '#71717a' }}>OR</span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-        </div>
-
-        <GoogleSignInButton
-          onSuccess={handleGoogleSuccess}
-          onError={() => setError('Google Identity Verification failed.')}
-        />
 
         <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
           <button

@@ -7,6 +7,10 @@ const {
   createAdmin,
   removeAdmin,
   getSecurityEvents,
+  getLicenses,
+  getPlatformAnalytics,
+  getPlatformSettings,
+  updatePlatformSettings,
 } = require('../controllers/superAdminController');
 
 const {
@@ -29,6 +33,10 @@ router.get('/admins', getAllAdmins);
 router.post('/admins', createAdmin);
 router.delete('/admins/:id', removeAdmin);
 router.get('/security-events', getSecurityEvents);
+router.get('/licenses', getLicenses);
+router.get('/analytics', getPlatformAnalytics);
+router.get('/settings', getPlatformSettings);
+router.put('/settings', updatePlatformSettings);
 
 // Multi-College & Institution Governance
 router.get('/institutions', getInstitutions);
@@ -36,6 +44,7 @@ router.get('/institutions/:id', getInstitutionById);
 router.post('/institutions', createInstitution);
 router.put('/institutions/:id', updateInstitution);
 router.post('/institutions/:id/assign-admin', assignInstitutionAdmin);
+router.post('/institutions/:id/invite-admin', createAdmin);
 router.post('/institutions/:id/remove-admin', removeInstitutionAdmin);
 
 module.exports = router;

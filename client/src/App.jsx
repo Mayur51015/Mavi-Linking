@@ -30,6 +30,9 @@ const PageLoader = () => (
 const Home = React.lazy(() => import('./pages/Home'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
+const ChangePassword = React.lazy(() => import('./pages/ChangePassword'));
+
+import RequirePasswordChange from './routes/RequirePasswordChange';
 
 // User/Student Pages (Lazy)
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -65,13 +68,17 @@ const StudentDocuments = React.lazy(() => import('./pages/StudentDocuments'));
 
 import AdminRoute from './routes/AdminRoute';
 import SuperAdminRoute from './routes/SuperAdminRoute';
+import OwnerRoute from './routes/OwnerRoute';
 
 // ...
 // Admin & Super Admin Pages (Lazy)
 const AdminLogin = React.lazy(() => import('./pages/admin/AdminLogin'));
+const AdminAcceptInvite = React.lazy(() => import('./pages/admin/AdminAcceptInvite'));
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
 const SuperAdminLogin = React.lazy(() => import('./pages/superadmin/SuperAdminLogin'));
 const SuperAdminDashboard = React.lazy(() => import('./pages/superadmin/SuperAdminDashboard'));
+const OwnerLogin = React.lazy(() => import('./pages/owner/OwnerLogin'));
+const PlatformOwnerDashboard = React.lazy(() => import('./pages/owner/PlatformOwnerDashboard'));
 
 // Messages (Lazy)
 const Messages = React.lazy(() => import('./pages/Messages'));
@@ -98,6 +105,7 @@ const App = () => {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/change-password" element={<RequirePasswordChange><ChangePassword /></RequirePasswordChange>} />
 
             {/* ─── User/Student Dashboard ────────────────────────── */}
             <Route path="/dashboard" element={
@@ -227,24 +235,61 @@ const App = () => {
 
             {/* ─── Operational Admin Portal ───────────────────────────────── */}
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            } />
-            <Route path="/dashboard/admin" element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            } />
+            <Route path="/admin/accept-invite" element={<AdminAcceptInvite />} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard activeTab="overview" /></AdminRoute>} />
+            <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard activeTab="overview" /></AdminRoute>} />
+            <Route path="/admin/students" element={<AdminRoute><AdminDashboard activeTab="students" /></AdminRoute>} />
+            <Route path="/admin/teachers" element={<AdminRoute><AdminDashboard activeTab="teachers" /></AdminRoute>} />
+            <Route path="/admin/recruiters" element={<AdminRoute><AdminDashboard activeTab="recruiters" /></AdminRoute>} />
+            <Route path="/admin/verifications" element={<AdminRoute><AdminDashboard activeTab="verifications" /></AdminRoute>} />
+            <Route path="/admin/departments" element={<AdminRoute><AdminDashboard activeTab="departments" /></AdminRoute>} />
+            <Route path="/admin/announcements" element={<AdminRoute><AdminDashboard activeTab="announcements" /></AdminRoute>} />
+            <Route path="/admin/reports" element={<AdminRoute><AdminDashboard activeTab="reports" /></AdminRoute>} />
+            <Route path="/admin/analytics" element={<AdminRoute><AdminDashboard activeTab="analytics" /></AdminRoute>} />
+            <Route path="/admin/documents" element={<AdminRoute><AdminDashboard activeTab="documents" /></AdminRoute>} />
+            <Route path="/admin/audit-logs" element={<AdminRoute><AdminDashboard activeTab="audit-logs" /></AdminRoute>} />
+            <Route path="/admin/audit" element={<AdminRoute><AdminDashboard activeTab="audit-logs" /></AdminRoute>} />
+            <Route path="/admin/settings" element={<AdminRoute><AdminDashboard activeTab="settings" /></AdminRoute>} />
+            <Route path="/admin/profile" element={<AdminRoute><AdminDashboard activeTab="profile" /></AdminRoute>} />
+            <Route path="/dashboard/admin" element={<AdminRoute><AdminDashboard activeTab="overview" /></AdminRoute>} />
 
             {/* ─── Super Admin Portal ───────────────────────────────────── */}
             <Route path="/super-admin/login" element={<SuperAdminLogin />} />
-            <Route path="/super-admin" element={
-              <SuperAdminRoute>
-                <SuperAdminDashboard />
-              </SuperAdminRoute>
-            } />
+            <Route path="/super-admin" element={<SuperAdminRoute><SuperAdminDashboard activeTab="overview" /></SuperAdminRoute>} />
+            <Route path="/super-admin/overview" element={<SuperAdminRoute><SuperAdminDashboard activeTab="overview" /></SuperAdminRoute>} />
+            <Route path="/super-admin/institutions" element={<SuperAdminRoute><SuperAdminDashboard activeTab="institutions" /></SuperAdminRoute>} />
+            <Route path="/super-admin/institution-admins" element={<SuperAdminRoute><SuperAdminDashboard activeTab="institution-admins" /></SuperAdminRoute>} />
+            <Route path="/super-admin/admins" element={<SuperAdminRoute><SuperAdminDashboard activeTab="institution-admins" /></SuperAdminRoute>} />
+            <Route path="/super-admin/users" element={<SuperAdminRoute><SuperAdminDashboard activeTab="users" /></SuperAdminRoute>} />
+            <Route path="/super-admin/verification" element={<SuperAdminRoute><SuperAdminDashboard activeTab="verification" /></SuperAdminRoute>} />
+            <Route path="/super-admin/verifications" element={<SuperAdminRoute><SuperAdminDashboard activeTab="verification" /></SuperAdminRoute>} />
+            <Route path="/super-admin/licenses" element={<SuperAdminRoute><SuperAdminDashboard activeTab="licenses" /></SuperAdminRoute>} />
+            <Route path="/super-admin/analytics" element={<SuperAdminRoute><SuperAdminDashboard activeTab="analytics" /></SuperAdminRoute>} />
+            <Route path="/super-admin/security" element={<SuperAdminRoute><SuperAdminDashboard activeTab="security" /></SuperAdminRoute>} />
+            <Route path="/super-admin/audit-logs" element={<SuperAdminRoute><SuperAdminDashboard activeTab="audit-logs" /></SuperAdminRoute>} />
+            <Route path="/super-admin/audit" element={<SuperAdminRoute><SuperAdminDashboard activeTab="audit-logs" /></SuperAdminRoute>} />
+            <Route path="/super-admin/settings" element={<SuperAdminRoute><SuperAdminDashboard activeTab="settings" /></SuperAdminRoute>} />
+            <Route path="/super-admin/profile" element={<SuperAdminRoute><SuperAdminDashboard activeTab="profile" /></SuperAdminRoute>} />
+
+            {/* ─── Platform Owner Portal ─────────────────────────────────── */}
+            <Route path="/owner/login" element={<OwnerLogin />} />
+            <Route path="/owner" element={<OwnerRoute><PlatformOwnerDashboard activeTab="overview" /></OwnerRoute>} />
+            <Route path="/owner/overview" element={<OwnerRoute><PlatformOwnerDashboard activeTab="overview" /></OwnerRoute>} />
+            <Route path="/owner/tenants" element={<OwnerRoute><PlatformOwnerDashboard activeTab="tenants" /></OwnerRoute>} />
+            <Route path="/owner/institutions" element={<OwnerRoute><PlatformOwnerDashboard activeTab="tenants" /></OwnerRoute>} />
+            <Route path="/owner/admins" element={<OwnerRoute><PlatformOwnerDashboard activeTab="admins" /></OwnerRoute>} />
+            <Route path="/owner/users" element={<OwnerRoute><PlatformOwnerDashboard activeTab="users" /></OwnerRoute>} />
+            <Route path="/owner/licensing" element={<OwnerRoute><PlatformOwnerDashboard activeTab="licensing" /></OwnerRoute>} />
+            <Route path="/owner/licenses" element={<OwnerRoute><PlatformOwnerDashboard activeTab="licensing" /></OwnerRoute>} />
+            <Route path="/owner/subscriptions" element={<OwnerRoute><PlatformOwnerDashboard activeTab="subscriptions" /></OwnerRoute>} />
+            <Route path="/owner/analytics" element={<OwnerRoute><PlatformOwnerDashboard activeTab="analytics" /></OwnerRoute>} />
+            <Route path="/owner/security" element={<OwnerRoute><PlatformOwnerDashboard activeTab="security" /></OwnerRoute>} />
+            <Route path="/owner/configuration" element={<OwnerRoute><PlatformOwnerDashboard activeTab="system" /></OwnerRoute>} />
+            <Route path="/owner/system" element={<OwnerRoute><PlatformOwnerDashboard activeTab="system" /></OwnerRoute>} />
+            <Route path="/owner/audit-logs" element={<OwnerRoute><PlatformOwnerDashboard activeTab="audit" /></OwnerRoute>} />
+            <Route path="/owner/audit" element={<OwnerRoute><PlatformOwnerDashboard activeTab="audit" /></OwnerRoute>} />
+            <Route path="/owner/settings" element={<OwnerRoute><PlatformOwnerDashboard activeTab="settings" /></OwnerRoute>} />
+            <Route path="/owner/profile" element={<OwnerRoute><PlatformOwnerDashboard activeTab="settings" /></OwnerRoute>} />
 
             {/* ─── Communication Inbox ────────────────────────────── */}
             <Route path="/dashboard/messages" element={

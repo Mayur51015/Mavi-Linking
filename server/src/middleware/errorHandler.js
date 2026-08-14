@@ -16,8 +16,8 @@ const errorHandler = (err, req, res, next) => {
   // Mongoose duplicate key (e.g., duplicate email)
   if (err.code === 11000) {
     statusCode = 409;
-    const field = Object.keys(err.keyValue)[0];
-    message = `An account with this ${field} already exists`;
+    const field = err.keyValue ? Object.keys(err.keyValue)[0] : 'credential';
+    message = `An account with this ${field} already exists.`;
   }
 
   // Mongoose validation errors

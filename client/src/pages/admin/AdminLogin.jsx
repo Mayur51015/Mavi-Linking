@@ -4,7 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { Shield, Lock, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { getErrorMessage } from '../../utils/errorMessage';
-import GoogleSignInButton from '../../components/GoogleSignInButton';
+import api from '../../api/axios';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -12,7 +12,7 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const { user, login, loginWithGoogle } = useContext(AuthContext);
+  const { user, login } = useContext(AuthContext);
   const navigate = useNavigate();
   const toast = useToast();
   const [searchParams] = useSearchParams();
@@ -51,10 +51,16 @@ const AdminLogin = () => {
     setError('');
     setSubmitting(true);
     try {
-      const res = await login(email, password);
-      verifyAndRedirect(res.user);
+      const res = await api.post('/auth/admin-login', {
+        identifier: email,
+        password,
+      });
+      const { user: userData, token, refreshToken } = res.data.data;
+      localStorage.setItem('token', token);
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+      verifyAndRedirect(userData);
     } catch (err) {
-      setError(getErrorMessage(err, 'Admin login failed. Check credentials.'));
+      setError(getErrorMessage(err, 'Admin login failed. Check Admin ID or credentials.'));
     } finally {
       setSubmitting(false);
     }
@@ -99,10 +105,10 @@ const AdminLogin = () => {
             <Shield size={32} style={{ color: 'var(--accent-purple, #8b5cf6)' }} />
           </div>
           <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 0.5rem', color: 'white' }}>
-            Administrative Portal
+            Institution Admin Portal
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-            Secure sign-in for MAVI Linking Administrators & Verification Managers
+            Multi-Tenant Institution Administration & Verification Portal
           </p>
         </div>
 
@@ -126,11 +132,11 @@ const AdminLogin = () => {
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
           <div className="input-group">
-            <label className="input-label" style={{ color: 'var(--text-secondary)' }}>Admin Email</label>
+            <label className="input-label" style={{ color: 'var(--text-secondary)' }}>Admin ID / Official Email</label>
             <input
-              type="email"
+              type="text"
               className="input-field"
-              placeholder="admin@institution.edu"
+              placeholder="e.g. ZEAL-ADMIN-001 or admin@college.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -167,17 +173,6 @@ const AdminLogin = () => {
             {submitting ? 'Verifying Authorization...' : 'Sign In to Admin Console'}
           </button>
         </form>
-
-        <div style={{ margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>OR</span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-        </div>
-
-        <GoogleSignInButton
-          onSuccess={handleGoogleSuccess}
-          onError={() => setError('Google Authentication failed.')}
-        />
 
         <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
           <button

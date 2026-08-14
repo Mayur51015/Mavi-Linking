@@ -19,6 +19,8 @@ const {
   getPrnVerifications,
   approvePrnVerification,
   rejectPrnVerification,
+  getDepartments,
+  updateMyInstitutionSettings,
 } = require('../controllers/adminController');
 
 const {
@@ -42,6 +44,8 @@ router.put('/users/:id', enforceInstitutionScope, updateUser);
 router.put('/users/:id/status', enforceInstitutionScope, updateUserStatus);
 router.delete('/users/:id', enforceInstitutionScope, deleteUser);
 router.get('/logs', enforceInstitutionScope, getAuditLogs);
+router.get('/departments', enforceInstitutionScope, getDepartments);
+router.put('/my-institution', enforceInstitutionScope, updateMyInstitutionSettings);
 
 // Role Requests & Verifications
 router.get('/role-requests', enforceInstitutionScope, getRoleRequests);

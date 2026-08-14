@@ -40,6 +40,10 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
     return <Navigate to={redirectTo} />;
   }
 
+  if (user.mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
+  }
+
   if (user.status === 'suspended') {
     return (
       <div style={{

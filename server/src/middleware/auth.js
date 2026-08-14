@@ -59,6 +59,24 @@ const protect = async (req, res, next) => {
     }
 
     req.user = user;
+
+    // ─── Mandatory Password Change Lock Check ──────────────────────────────
+    if (user.mustChangePassword) {
+      const currentUrl = req.originalUrl || req.url || '';
+      const isAllowedEndpoint =
+        currentUrl.includes('/api/auth/change-password') ||
+        currentUrl.includes('/api/auth/logout') ||
+        currentUrl.includes('/api/auth/me');
+
+      if (!isAllowedEndpoint) {
+        return res.status(403).json({
+          success: false,
+          code: 'PASSWORD_CHANGE_REQUIRED',
+          message: 'You must change your temporary password before accessing application features.',
+        });
+      }
+    }
+
     next();
   } catch (error) {
     // Differentiate between expired and malformed tokens

@@ -5,6 +5,10 @@ const { protect } = require('../middleware/auth');
 const { authLimiter, loginLimiter } = require('../middleware/authLimiter');const {
   register,
   login,
+  adminLogin,
+  superAdminLogin,
+  verifyAdminInvite,
+  acceptAdminInvite,
   getMe,
   updateProfile,
   refreshToken,
@@ -15,6 +19,7 @@ const { authLimiter, loginLimiter } = require('../middleware/authLimiter');const
   githubLogin,
   logout,
   requestRoleUpgrade,
+  changePassword,
 } = require('../controllers/authController');
 const {
   upload,
@@ -86,17 +91,29 @@ const updateProfileValidation = [
 
 router.post('/register', authLimiter, registerValidation, validate, register);
 router.post('/login', loginLimiter, loginValidation, validate, login);
+router.post('/admin-login', loginLimiter, adminLogin);
+router.post('/super-admin-login', loginLimiter, superAdminLogin);
+router.get('/verify-admin-invite/:token', authLimiter, verifyAdminInvite);
+router.post('/accept-admin-invite', authLimiter, acceptAdminInvite);
 router.post('/refresh', authLimiter, refreshToken);
 router.post('/verify-email', authLimiter, verifyEmail);
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);
-router.post('/google', authLimiter, googleLogin);
 router.post('/github', authLimiter, githubLogin);
+// Deprecated Google endpoint handler
+router.post('/google', (req, res) => {
+  res.status(410).json({
+    success: false,
+    message: 'Google authentication has been removed. Please sign in with your MAVI ID or email and password.',
+  });
+});
+
 // ─── Protected Routes ───────────────────────────────────────────────────────
 
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateProfileValidation, validate, updateProfile);
 router.post('/logout', protect, logout);
+router.post('/change-password', protect, changePassword);
 router.post('/request-role-upgrade', protect, authLimiter, requestRoleUpgrade);
 
 // Profile Document upload/download/preview routes

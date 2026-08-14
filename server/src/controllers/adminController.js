@@ -580,6 +580,98 @@ const rejectPrnVerification = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get departments and student/teacher distribution for current institution
+ * @route   GET /api/admin/departments
+ * @access  Private (admin)
+ */
+const getDepartments = async (req, res, next) => {
+  try {
+    const scopeQuery = req.institutionScope?.institutionId
+      ? { institutionId: req.institutionScope.institutionId }
+      : {};
+
+    const users = await User.find(scopeQuery).select('department role university');
+
+    const deptMap = {};
+
+    users.forEach((u) => {
+      const deptName = u.department || u.university?.department || 'General / Unassigned';
+      if (!deptMap[deptName]) {
+        deptMap[deptName] = { name: deptName, students: 0, teachers: 0, total: 0 };
+      }
+      if (u.role === 'user') deptMap[deptName].students += 1;
+      if (u.role === 'teacher') deptMap[deptName].teachers += 1;
+      deptMap[deptName].total += 1;
+    });
+
+    const departments = Object.values(deptMap).sort((a, b) => b.total - a.total);
+
+    res.status(200).json({
+      success: true,
+      data: departments,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Update current institution settings for Institution Admin
+ * @route   PUT /api/admin/my-institution
+ * @access  Private (admin)
+ */
+const updateMyInstitutionSettings = async (req, res, next) => {
+  try {
+    let instId = req.institutionScope?.institutionId || req.user.institutionId;
+
+    if (!instId && !req.isSuperAdmin) {
+      return res.status(403).json({ success: false, message: 'No institution assigned to your admin account.' });
+    }
+
+    if (req.isSuperAdmin && req.body.institutionId) {
+      instId = req.body.institutionId;
+    }
+
+    const { name, code, domain, city, state, country, primaryContact } = req.body;
+    const updateFields = {};
+
+    if (name) updateFields.name = name;
+    if (code) updateFields.code = code.toUpperCase();
+    if (domain !== undefined) updateFields.domain = domain.toLowerCase().trim();
+    if (city !== undefined) updateFields.city = city;
+    if (state !== undefined) updateFields.state = state;
+    if (country !== undefined) updateFields.country = country;
+    if (primaryContact) updateFields.primaryContact = primaryContact;
+
+    const institution = await Institution.findByIdAndUpdate(
+      instId,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    );
+
+    if (!institution) {
+      return res.status(404).json({ success: false, message: 'Institution record not found.' });
+    }
+
+    await ActivityLog.create({
+      userId: req.user._id,
+      action: 'ADMIN_UPDATED_MY_INSTITUTION',
+      details: `Admin ${req.user.email} updated settings for institution ${institution.name}`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Institution settings updated successfully',
+      data: institution,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAdminStats,
   getAllUsers,
@@ -593,4 +685,6 @@ module.exports = {
   getPrnVerifications,
   approvePrnVerification,
   rejectPrnVerification,
+  getDepartments,
+  updateMyInstitutionSettings,
 };

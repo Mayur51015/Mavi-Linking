@@ -10,11 +10,15 @@ const ActivityLog = require('../models/ActivityLog');
  */
 const createInstitution = async (req, res, next) => {
   try {
-    const { name, code, domain, type, address, city, state, country } = req.body;
+    const { name, shortName, code, officialDomain, domain, type, address, city, state, country, plan, primaryContact, features } = req.body;
 
     if (!name) {
       return res.status(400).json({ success: false, message: 'Institution name is required' });
     }
+
+    const crypto = require('crypto');
+    const codePrefix = (code || shortName || name.substring(0, 4)).replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const generatedTenantId = `INST-${codePrefix.substring(0, 6)}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
 
     if (code) {
       const existingCode = await Institution.findOne({ code: code.toUpperCase() });
@@ -25,20 +29,26 @@ const createInstitution = async (req, res, next) => {
 
     const institution = await Institution.create({
       name,
+      shortName: shortName || '',
       code: code ? code.toUpperCase() : undefined,
+      tenantId: generatedTenantId,
+      officialDomain: officialDomain ? officialDomain.toLowerCase().trim() : '',
       domain: domain ? domain.toLowerCase().trim() : '',
       type: type || 'College',
       address: address || '',
       city: city || '',
       state: state || '',
       country: country || 'India',
+      plan: plan || 'ENTERPRISE',
+      primaryContact: primaryContact || {},
+      features: features || { developerDNA: true, recruiterAIReport: true, advancedAnalytics: true, aiCareerGuidance: true },
       createdBy: req.user._id,
     });
 
     await ActivityLog.create({
       userId: req.user._id,
       action: 'ADMIN_CREATED_INSTITUTION',
-      details: `Created new institution: ${institution.name} (${institution.code || 'No Code'})`,
+      details: `Created institution: ${institution.name} (Tenant ID: ${institution.tenantId})`,
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
@@ -83,7 +93,7 @@ const getInstitutions = async (req, res, next) => {
       }
     }
 
-    if (status) query.status = status;
+    if (status) query.status = new RegExp(`^${status}$`, 'i');
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },

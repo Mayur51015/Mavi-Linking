@@ -86,16 +86,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, [userId]);
 
-  const login = useCallback(async (email, password) => {
-    const res = await api.post('/auth/login', { email, password });
+  const login = useCallback(async (identifier, password) => {
+    const res = await api.post('/auth/login', { identifier, password });
     localStorage.setItem('token', res.data.data.token);
     setUser(res.data.data.user);
     return res.data.data;
   }, []);
 
-  const loginWithGoogle = useCallback(async (googleCredential, requestedRole = 'user') => {
-    const res = await api.post('/auth/google', { credential: googleCredential, requestedRole });
-    localStorage.setItem('token', res.data.data.token);
+  const changePassword = useCallback(async (currentPassword, newPassword, confirmPassword) => {
+    const res = await api.post('/auth/change-password', { currentPassword, newPassword, confirmPassword });
     setUser(res.data.data.user);
     return res.data.data;
   }, []);
@@ -144,7 +143,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     login,
-    loginWithGoogle,
+    changePassword,
     register,
     requestRoleUpgrade,
     logout,
@@ -152,7 +151,7 @@ export const AuthProvider = ({ children }) => {
     getDashboardPath,
     setUser,
     socket,
-  }), [user, loading, socket, login, loginWithGoogle, register, requestRoleUpgrade, logout, refreshUser, getDashboardPath]);
+  }), [user, loading, socket, login, changePassword, register, requestRoleUpgrade, logout, refreshUser, getDashboardPath]);
 
   return (
     <AuthContext.Provider value={contextValue}>

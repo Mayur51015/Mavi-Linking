@@ -26,17 +26,52 @@ const register = async (req, res, next) => {
       companyName, allowedColleges, allowedDepartments,
     } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({
+    if (!email || !password || !name) {
+      return res.status(400).json({
         success: false,
-        message: 'An account with this email already exists',
+        message: 'Name, email, and password are required.',
       });
     }
 
+    const lowerEmail = email.toLowerCase().trim();
+
+    // Check if user already exists with this email
+    const existingUser = await User.findOne({ email: lowerEmail });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        code: 'ACCOUNT_EXISTS',
+        message: 'An account with this email address already exists. Please sign in instead.',
+      });
+    }
+
+    const Institution = require('../models/Institution');
+    let targetInst = null;
+    if (institutionId) {
+      targetInst = await Institution.findById(institutionId);
+      if (!targetInst) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or non-existent institution selected.',
+        });
+      }
+    }
+
+    // Institution-scoped PRN duplicate check
+    if (prn && (institutionId || targetInst?._id)) {
+      const targetInstId = institutionId || targetInst._id;
+      const existingPrn = await User.findOne({ institutionId: targetInstId, prn: prn.trim() });
+      if (existingPrn) {
+        return res.status(409).json({
+          success: false,
+          code: 'PRN_EXISTS',
+          message: 'A student with this PRN/ZPRN is already registered for this institution.',
+        });
+      }
+    }
+
     // Build user data with zero-trust role security (always default role to 'user')
-    const userData = { name, email, password };
+    const userData = { name, email: lowerEmail, password };
     userData.role = 'user';
 
     const isPrivilegedRequest = ['recruiter', 'teacher'].includes(role);
@@ -46,7 +81,10 @@ const register = async (req, res, next) => {
     // Institutional identifiers & verification status
     if (prn) userData.prn = prn.trim();
     if (facultyId) userData.facultyId = facultyId.trim();
-    if (institutionId) userData.institutionId = institutionId;
+    if (institutionId) {
+      userData.institutionId = institutionId;
+      if (targetInst?.tenantId) userData.tenantId = targetInst.tenantId;
+    }
     userData.prnVerificationStatus = 'pending';
 
     // Common optional fields
@@ -156,29 +194,64 @@ const login = async (req, res, next) => {
     }
 
     let user = null;
+    let isPrnAttempt = false;
 
     // 1. MAVI ID format (e.g. MAVI-8F3K7Q2P)
     if (rawIdentifier.toUpperCase().startsWith('MAVI-')) {
       user = await User.findOne({ maviId: rawIdentifier.toUpperCase() }).select('+password');
     }
-    // 2. Email address format
+    // 2. Admin ID format (e.g. ZEAL-ADMIN-001, INSTADM-XXXXXX)
+    else if (rawIdentifier.toUpperCase().startsWith('ZEAL-') || rawIdentifier.toUpperCase().startsWith('INSTADM-') || rawIdentifier.toUpperCase().includes('-ADMIN-')) {
+      user = await User.findOne({
+        $or: [
+          { adminId: rawIdentifier.toUpperCase() },
+          { adminLoginId: rawIdentifier.toUpperCase() },
+        ],
+      }).select('+password');
+    }
+    // 3. Email address format
     else if (rawIdentifier.includes('@')) {
       user = await User.findOne({ email: rawIdentifier.toLowerCase() }).select('+password');
     }
-    // 3. Otherwise treat as PRN / ZPRN / Faculty ID (MUST be approved by Admin to authenticate)
+    // 4. PRN / ZPRN / Faculty ID format
     else {
-      user = await User.findOne({
+      isPrnAttempt = true;
+      const escapedIdentifier = rawIdentifier.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      // Search for user by PRN or Faculty ID (case-insensitive)
+      const candidateUser = await User.findOne({
         $or: [
-          { prn: rawIdentifier, prnVerificationStatus: 'approved' },
-          { facultyId: rawIdentifier, prnVerificationStatus: 'approved' },
+          { prn: { $regex: `^${escapedIdentifier}$`, $options: 'i' } },
+          { facultyId: { $regex: `^${escapedIdentifier}$`, $options: 'i' } },
         ],
       }).select('+password');
+
+      if (candidateUser) {
+        // Disallow PRN login for administrative accounts
+        const adminRoles = ['institution_admin', 'super_admin', 'platform_owner', 'owner', 'admin'];
+        if (adminRoles.includes(candidateUser.role)) {
+          return res.status(403).json({
+            success: false,
+            message: 'Administrative accounts must log in using their Admin ID or official email.',
+          });
+        }
+
+        // Verify PRN approval status
+        if (candidateUser.prnVerificationStatus !== 'approved') {
+          return res.status(403).json({
+            success: false,
+            code: 'PRN_PENDING_APPROVAL',
+            message: 'Your PRN/ZPRN identity is pending institution verification. Please sign in using your MAVI ID or email.',
+          });
+        }
+
+        user = candidateUser;
+      }
     }
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid identifier or password',
+        message: 'Invalid MAVI ID/PRN or password.',
       });
     }
 
@@ -741,9 +814,319 @@ const logout = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Dedicated Institution Admin Login (Accepts Admin ID or Official Email)
+ * @route   POST /api/auth/admin-login
+ * @access  Public
+ */
+const adminLogin = async (req, res, next) => {
+  try {
+    const rawIdentifier = (req.body.identifier || req.body.adminId || req.body.email || '').toString().trim();
+    const { password } = req.body;
+
+    if (!rawIdentifier || !password) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Admin ID or password.',
+      });
+    }
+
+    const user = await User.findOne({
+      $or: [
+        { adminId: rawIdentifier.toUpperCase() },
+        { adminLoginId: rawIdentifier.toUpperCase() },
+        { email: rawIdentifier.toLowerCase() },
+      ],
+      role: { $in: ['institution_admin', 'admin', 'super_admin'] },
+    }).select('+password');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Admin ID or password.',
+      });
+    }
+
+    if (user.status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: 'Administrative access suspended. Contact platform administrator.',
+      });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Admin ID or password.',
+      });
+    }
+
+    const token = user.generateAuthToken();
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    await ActivityLog.create({
+      userId: user._id,
+      action: 'ADMIN_LOGIN',
+      details: `Institution Admin ${user.email} logged in via ${rawIdentifier}`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Institution Admin login successful',
+      data: { user, token, refreshToken },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Dedicated Platform Super Admin Login
+ * @route   POST /api/auth/super-admin-login
+ * @access  Public
+ */
+const superAdminLogin = async (req, res, next) => {
+  try {
+    const rawIdentifier = (req.body.identifier || req.body.email || '').toString().trim();
+    const { password } = req.body;
+
+    if (!rawIdentifier || !password) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Super Admin credentials.',
+      });
+    }
+
+    const user = await User.findOne({
+      $or: [
+        { email: rawIdentifier.toLowerCase() },
+        { maviId: rawIdentifier.toUpperCase() },
+        { adminId: rawIdentifier.toUpperCase() },
+      ],
+      role: { $in: ['super_admin', 'platform_owner', 'owner'] },
+    }).select('+password');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Super Admin credentials.',
+      });
+    }
+
+    if (user.status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: 'Super Admin account suspended.',
+      });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Super Admin credentials.',
+      });
+    }
+
+    const token = user.generateAuthToken();
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    await ActivityLog.create({
+      userId: user._id,
+      action: 'SUPER_ADMIN_LOGIN',
+      details: `Platform Super Admin ${user.email} logged in`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Super Admin login successful',
+      data: { user, token, refreshToken },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Verify Admin Invitation Token
+ * @route   GET /api/auth/verify-admin-invite/:token
+ * @access  Public
+ */
+const verifyAdminInvite = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const user = await User.findOne({
+      invitationToken: token,
+      invitationExpires: { $gt: Date.now() },
+    }).populate('institutionId', 'name shortName tenantId logo');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation link is invalid or has expired.',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        name: user.name,
+        email: user.email,
+        adminId: user.adminId,
+        designation: user.designation,
+        institution: user.institutionId,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Accept Admin Invitation and Set Password
+ * @route   POST /api/auth/accept-admin-invite
+ * @access  Public
+ */
+const acceptAdminInvite = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid token and password (at least 6 characters) required.',
+      });
+    }
+
+    const user = await User.findOne({
+      invitationToken: token,
+      invitationExpires: { $gt: Date.now() },
+    }).select('+password');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation link is invalid or has expired.',
+      });
+    }
+
+    user.password = password;
+    user.status = 'active';
+    user.isInvitedAdmin = false;
+    user.invitationToken = null;
+    user.invitationExpires = null;
+    user.emailVerified = true;
+
+    const jwtToken = user.generateAuthToken();
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+    user.refreshToken = refreshToken;
+
+    await user.save();
+
+    await ActivityLog.create({
+      userId: user._id,
+      action: 'ADMIN_INVITE_ACCEPTED',
+      details: `Admin ${user.email} accepted invitation and activated account`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Admin account activated successfully.',
+      data: { user, token: jwtToken, refreshToken },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Change User Password (supports mandatory password change requirement)
+ * @route   POST /api/auth/change-password
+ * @access  Private
+ */
+const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password and password confirmation are required.',
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password and confirmation password do not match.',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters.',
+      });
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User account not found' });
+    }
+
+    // Verify current password if user is not using mandatory temporary password or if currentPassword provided
+    if (currentPassword) {
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          message: 'Current password is incorrect.',
+        });
+      }
+    }
+
+    user.password = newPassword;
+    user.mustChangePassword = false;
+    user.temporaryPasswordExpiresAt = null;
+    user.passwordChangedAt = new Date();
+    await user.save();
+
+    await ActivityLog.create({
+      userId: user._id,
+      action: 'Change Password',
+      details: 'Password was updated successfully. Mandatory change requirement resolved.',
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully. You now have full platform access.',
+      data: { user },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
+  adminLogin,
+  superAdminLogin,
+  verifyAdminInvite,
+  acceptAdminInvite,
   getMe,
   updateProfile,
   refreshToken,
@@ -754,4 +1137,5 @@ module.exports = {
   githubLogin,
   logout,
   requestRoleUpgrade,
+  changePassword,
 };

@@ -18,6 +18,17 @@ const institutionMembershipSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    tenantId: {
+      type: String,
+      trim: true,
+      index: true,
+      default: '',
+    },
+    adminLoginId: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     role: {
       type: String,
       enum: ['institution_admin', 'teacher', 'student'],

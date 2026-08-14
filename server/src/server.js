@@ -156,13 +156,9 @@ const startServer = async () => {
         { $set: { role: 'teacher' } }
       );
 
-      // Auto-promote administrator accounts & sync roles array
+      // Dedicated Super Admin accounts
       const adminEmails = [
-        'mayur2006khandare@gmail.com',
-        'khandaremayur420@gmail.com',
-        'mayur@gmail.com',
-        'mavi118@gmail.com',
-        'armansunasara70@gmail.com',
+        'mayurek51015@gmail.com',
         process.env.SUPER_ADMIN_EMAIL,
       ].filter(Boolean);
 

@@ -143,13 +143,13 @@ const generatePasswordResetEmailHtml = ({ name, otp, resetLink }) => {
  * Generate Dark Theme HTML Email for Account Activation (Teacher / Recruiter Invitations)
  */
 const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activationLink, expiresHours = 48 }) => {
-  const roleTitle = role === 'teacher' ? 'Teacher / Faculty' : role === 'recruiter' ? 'Recruiter' : 'Staff Member';
+  const roleTitle = role === 'teacher' ? 'Teacher / Faculty' : role === 'recruiter' ? 'Corporate Recruiter' : role === 'department_admin' ? 'Department Administrator' : 'Staff Member';
   return `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
-      <title>MAVI Linking — Account Invitation</title>
+      <title>MAVI Linking — Account Invitation & Activation</title>
       <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
         .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -167,25 +167,25 @@ const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activ
       <div class="container">
         <div class="header">
           <div class="brand">MAVI Linking</div>
-          <div class="title">Account Activation Invitation</div>
+          <div class="title">Account Activation & Setup</div>
         </div>
         <div class="content">
           <p>Hello ${name || 'User'},</p>
-          <p>You have been officially invited to join <strong>MAVI Linking</strong> as a <strong>${roleTitle}</strong>.</p>
+          <p>You have been officially provisioned an account on <strong>MAVI Linking</strong> as a <strong>${roleTitle}</strong>.</p>
           
           <div class="info-card">
-            <div style="font-size: 13px; color: #a1a1aa; margin-bottom: 4px;">Assigned Institution / Entity</div>
+            <div style="font-size: 13px; color: #a1a1aa; margin-bottom: 4px;">Institution / Organization</div>
             <div style="font-size: 16px; font-weight: 700; color: #ffffff;">${institutionName || 'Zeal College of Engineering and Research'}</div>
-            <div style="font-size: 13px; color: #c084fc; margin-top: 8px;">Role: <strong>${roleTitle}</strong></div>
+            <div style="font-size: 13px; color: #c084fc; margin-top: 8px;">Assigned Role: <strong>${roleTitle}</strong></div>
           </div>
 
           <div style="text-align: center; margin: 24px 0;">
-            <p style="font-size: 14px; color: #e4e4e7;">Click the button below to set up your password and activate your account:</p>
-            <a href="${activationLink}" class="btn-link" target="_blank">Activate MAVI Account</a>
+            <p style="font-size: 14px; color: #e4e4e7;">Click the secure link below to set up your password and activate your account:</p>
+            <a href="${activationLink}" class="btn-link" target="_blank">Activate ${roleTitle} Account</a>
           </div>
 
           <div class="warning">
-            <strong>Security Notice:</strong> No password is included in this email. You will set up your own private password on the activation screen. This invitation link expires in <strong>${expiresHours} hours</strong>.
+            <strong>Security Notice:</strong> No default password is sent in plain text. You will create your confidential password directly on the activation portal. This single-use link expires in <strong>${expiresHours} hours</strong>.
           </div>
         </div>
         <div class="footer">

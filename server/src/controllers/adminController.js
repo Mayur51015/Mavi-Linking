@@ -983,7 +983,7 @@ const createStaffUser = async (req, res, next) => {
 
     await sendEmail({
       to: lowerEmail,
-      subject: `You've been invited to join MAVI Linking as a ${lowerRole === 'teacher' ? 'Teacher' : 'Recruiter'}`,
+      subject: `Account Activation: Set Password & Access your MAVI ${lowerRole === 'teacher' ? 'Teacher' : lowerRole === 'recruiter' ? 'Recruiter' : 'Department Admin'} Account`,
       html: emailHtml,
     });
 

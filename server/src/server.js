@@ -12,6 +12,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const apiLimiter = require('./middleware/apiLimiter');
 const connectDB = require('./config/db');
+const { runStartupTasks } = require('./startup/bootstrap');
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
 const platformRoutes = require('./routes/platformRoutes');
@@ -37,7 +38,6 @@ const announcementRoutes = require('./routes/announcementRoutes');
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const { init } = require('./config/socket'); // socket.io
-const { runStartupTasks } = require('./startup/bootstrap');
 const http = require('http');
 
 

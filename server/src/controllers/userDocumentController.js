@@ -2,8 +2,14 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const User = require('../models/User');
+const {
+  UPLOADS_DIR: uploadDirShared,
+  resolveExistingUpload,
+  sendPrivateFile,
+  deleteUpload,
+} = require('../utils/privateFiles');
 
-const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads');
+const uploadDir = uploadDirShared;
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -85,15 +91,7 @@ const uploadProfileDocument = async (req, res, next) => {
     // Replace existing item of same type if present
     const existingIndex = user.documents.list.findIndex(item => item.type === type);
     if (existingIndex !== -1) {
-      const oldItemUrl = user.documents.list[existingIndex].fileUrl;
-      if (oldItemUrl) {
-        const oldFilepath = path.join(__dirname, '..', '..', oldItemUrl);
-        if (fs.existsSync(oldFilepath)) {
-          try {
-            fs.unlinkSync(oldFilepath);
-          } catch (err) {}
-        }
-      }
+      deleteUpload(user.documents.list[existingIndex].fileUrl);
       user.documents.list.splice(existingIndex, 1);
     }
 
@@ -177,15 +175,7 @@ const deleteProfileDocument = async (req, res, next) => {
     if (user.documents?.list) {
       const idx = user.documents.list.findIndex(item => item.type === type);
       if (idx !== -1) {
-        const fileUrl = user.documents.list[idx].fileUrl;
-        if (fileUrl) {
-          const filepath = path.join(__dirname, '..', '..', fileUrl);
-          if (fs.existsSync(filepath)) {
-            try {
-              fs.unlinkSync(filepath);
-            } catch (err) {}
-          }
-        }
+        deleteUpload(user.documents.list[idx].fileUrl);
         user.documents.list.splice(idx, 1);
       }
     }
@@ -260,16 +250,15 @@ const getProfileDocument = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Document not found.' });
     }
 
-    const filepath = path.join(__dirname, '..', '..', fileUrl);
-    if (!fs.existsSync(filepath)) {
+    const filepath = resolveExistingUpload(fileUrl);
+    if (!filepath) {
       return res.status(404).json({ success: false, message: 'Physical file is missing.' });
     }
 
-    if (download === 'true') {
-      res.download(filepath, `${type}-${user.name.replace(/\s+/g, '_')}${path.extname(filepath)}`);
-    } else {
-      res.sendFile(filepath);
-    }
+    return sendPrivateFile(res, filepath, {
+      filename: `${type}-${user.name.replace(/\s+/g, '_')}${path.extname(filepath)}`,
+      download: download === 'true',
+    });
   } catch (error) {
     next(error);
   }
@@ -388,14 +377,7 @@ const updateCertificate = async (req, res, next) => {
 
     // If new file is uploaded, replace the old one
     if (req.file) {
-      if (cert.fileUrl) {
-        const oldFilepath = path.join(__dirname, '..', '..', cert.fileUrl);
-        if (fs.existsSync(oldFilepath)) {
-          try {
-            fs.unlinkSync(oldFilepath);
-          } catch (err) {}
-        }
-      }
+      deleteUpload(cert.fileUrl);
       cert.fileUrl = `/public/uploads/${req.file.filename}`;
     }
 
@@ -449,14 +431,7 @@ const deleteCertificate = async (req, res, next) => {
     }
 
     const cert = user.certificates[certIndex];
-    if (cert.fileUrl) {
-      const filepath = path.join(__dirname, '..', '..', cert.fileUrl);
-      if (fs.existsSync(filepath)) {
-        try {
-          fs.unlinkSync(filepath);
-        } catch (err) {}
-      }
-    }
+    deleteUpload(cert.fileUrl);
 
     const deletedTitle = cert.title;
     user.certificates.splice(certIndex, 1);
@@ -520,16 +495,15 @@ const getCertificateFile = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Certificate file not found.' });
     }
 
-    const filepath = path.join(__dirname, '..', '..', cert.fileUrl);
-    if (!fs.existsSync(filepath)) {
+    const filepath = resolveExistingUpload(cert.fileUrl);
+    if (!filepath) {
       return res.status(404).json({ success: false, message: 'Physical file is missing.' });
     }
 
-    if (download === 'true') {
-      res.download(filepath, `${cert.title.replace(/\s+/g, '_')}${path.extname(filepath)}`);
-    } else {
-      res.sendFile(filepath);
-    }
+    return sendPrivateFile(res, filepath, {
+      filename: `${cert.title.replace(/\s+/g, '_')}${path.extname(filepath)}`,
+      download: download === 'true',
+    });
   } catch (error) {
     next(error);
   }
@@ -625,10 +599,7 @@ const updatePortfolioDoc = async (req, res, next) => {
 
     if (req.file) {
       // Delete old file
-      if (doc.fileUrl) {
-        const oldPath = path.join(__dirname, '..', '..', doc.fileUrl);
-        if (fs.existsSync(oldPath)) { try { fs.unlinkSync(oldPath); } catch (_) {} }
-      }
+      deleteUpload(doc.fileUrl);
       doc.fileUrl = `/public/uploads/${req.file.filename}`;
       doc.originalName = req.file.originalname;
     }
@@ -673,10 +644,7 @@ const deletePortfolioDoc = async (req, res, next) => {
     if (idx === -1) return res.status(404).json({ success: false, message: 'Document not found.' });
 
     const doc = user.portfolioDocs[idx];
-    if (doc.fileUrl) {
-      const filepath = path.join(__dirname, '..', '..', doc.fileUrl);
-      if (fs.existsSync(filepath)) { try { fs.unlinkSync(filepath); } catch (_) {} }
-    }
+    deleteUpload(doc.fileUrl);
 
     const deletedTitle = doc.title;
     const deletedCat = doc.category;
@@ -735,16 +703,15 @@ const getPortfolioDocFile = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'File not found.' });
     }
 
-    const filepath = path.join(__dirname, '..', '..', doc.fileUrl);
-    if (!fs.existsSync(filepath)) {
+    const filepath = resolveExistingUpload(doc.fileUrl);
+    if (!filepath) {
       return res.status(404).json({ success: false, message: 'Physical file is missing.' });
     }
 
-    if (download === 'true') {
-      res.download(filepath, `${doc.title.replace(/\s+/g, '_')}${path.extname(filepath)}`);
-    } else {
-      res.sendFile(filepath);
-    }
+    return sendPrivateFile(res, filepath, {
+      filename: `${doc.title.replace(/\s+/g, '_')}${path.extname(filepath)}`,
+      download: download === 'true',
+    });
   } catch (error) {
     next(error);
   }

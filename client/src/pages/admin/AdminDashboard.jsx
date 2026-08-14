@@ -81,6 +81,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
   const [departments, setDepartments] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [openingDocId, setOpeningDocId] = useState(null);
   const [logs, setLogs] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [institutionData, setInstitutionData] = useState(null);
@@ -364,6 +365,28 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
       loadTabData();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to delete announcement.');
+    }
+  };
+
+  // Shared documents used to be opened by linking straight at `doc.fileUrl`,
+  // which pointed into the static /public mount and so bypassed the college
+  // scope check on the server. Fetch it through the API instead, the same way
+  // StudentDocuments and TeacherDocuments already do, and hand the browser a
+  // blob URL — the file never has an address anyone else can request.
+  const handleViewDocument = async (doc) => {
+    setOpeningDocId(doc._id);
+    let objectUrl;
+    try {
+      const res = await api.get(`/documents/${doc._id}/preview`, { responseType: 'blob' });
+      objectUrl = window.URL.createObjectURL(res.data);
+      window.open(objectUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to open document. It may be missing from storage.');
+    } finally {
+      setOpeningDocId(null);
+      // The new tab has already read the blob by the time this runs; revoking
+      // on a timer keeps the object from leaking for the life of the page.
+      if (objectUrl) setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60_000);
     }
   };
 
@@ -845,9 +868,15 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{doc.category || 'General'}</div>
                         </div>
                       </div>
-                      <a href={doc.fileUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-outline" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', display: 'flex', gap: '0.2rem', alignItems: 'center' }}>
-                        <ExternalLink size={12} /> View
-                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleViewDocument(doc)}
+                        disabled={openingDocId === doc._id}
+                        className="btn btn-outline"
+                        style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', display: 'flex', gap: '0.2rem', alignItems: 'center' }}
+                      >
+                        <ExternalLink size={12} /> {openingDocId === doc._id ? 'Opening…' : 'View'}
+                      </button>
                     </div>
                   ))}
                   {documents.length === 0 && (

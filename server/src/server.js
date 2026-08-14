@@ -86,7 +86,18 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // ─── Static Files ───────────────────────────────────────────────────────────
-app.use('/public', express.static(path.join(__dirname, '..', 'public')));
+const { QR_DIR } = require('./utils/privateFiles');
+
+// Only the QR directory is public. `server/public` as a whole also contains
+// `uploads/` (student ID proofs, marksheets, resumes, certificates) and
+// `reports/`, and serving those here handed them to anonymous requests,
+// bypassing the per-file authorization in documentController and
+// userDocumentController entirely. Those files now go out only through the
+// controllers, via utils/privateFiles.js.
+//
+// QR codes are genuinely public — qrController.downloadQr redirects here by
+// design, and the payload is a link to an already-public profile.
+app.use('/public/qr', express.static(QR_DIR));
 
 // ─── Health Check ───────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

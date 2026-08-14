@@ -8,6 +8,7 @@ const {
   updateDocument,
   deleteDocument,
   downloadDocument,
+  previewDocument,
 } = require('../controllers/documentController');
 
 const router = express.Router();
@@ -24,5 +25,6 @@ router.route('/:id')
   .delete(requireRole('teacher', 'admin'), deleteDocument);
 
 router.get('/:id/download', downloadDocument);
+router.get('/:id/preview', previewDocument);
 
 module.exports = router;

@@ -895,11 +895,11 @@ const createStaffUser = async (req, res, next) => {
         expiresHours: 48,
       });
 
-      await sendEmail({
+      sendEmail({
         to: lowerEmail,
         subject: `Account Role Update: You've been assigned as ${lowerRole === 'teacher' ? 'Teacher' : lowerRole === 'department_admin' ? 'Department Admin' : 'Recruiter'}`,
         html: emailHtml,
-      });
+      }).catch(err => console.error('[ASYNC EMAIL ERROR]', err));
 
       const actionType = lowerRole === 'teacher' ? 'TEACHER_ACCOUNT_UPDATED' : lowerRole === 'department_admin' ? 'DEPARTMENT_ADMIN_APPOINTED' : 'RECRUITER_ACCOUNT_UPDATED';
       await ActivityLog.create({
@@ -981,11 +981,11 @@ const createStaffUser = async (req, res, next) => {
       expiresHours: 48,
     });
 
-    await sendEmail({
+    sendEmail({
       to: lowerEmail,
       subject: `Account Activation: Set Password & Access your MAVI ${lowerRole === 'teacher' ? 'Teacher' : lowerRole === 'recruiter' ? 'Recruiter' : 'Department Admin'} Account`,
       html: emailHtml,
-    });
+    }).catch(err => console.error('[ASYNC EMAIL ERROR]', err));
 
     // 10. Record Security Audit Log Event
     const actionType = lowerRole === 'teacher' ? 'TEACHER_ACCOUNT_CREATED' : 'RECRUITER_ACCOUNT_CREATED';

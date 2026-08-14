@@ -199,15 +199,11 @@ const createDepartmentAdmin = async (req, res, next) => {
       expiresHours: 48,
     });
 
-    try {
-      await sendEmail({
-        to: lowerEmail,
-        subject: `Invitation to join as Department Administrator - ${department.name}`,
-        html: emailHtml,
-      });
-    } catch (emailErr) {
-      console.error('Department Admin invitation email failed to send:', emailErr.message);
-    }
+    sendEmail({
+      to: lowerEmail,
+      subject: `Invitation to join as Department Administrator - ${department.name}`,
+      html: emailHtml,
+    }).catch(err => console.error('[ASYNC EMAIL ERROR]', err));
 
     res.status(201).json({
       success: true,

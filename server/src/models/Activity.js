@@ -9,7 +9,7 @@ const activitySchema = new mongoose.Schema(
     },
     type: { 
       type: String, 
-      enum: ['Commit', 'Repository', 'Pull Request', 'Contest', 'Milestone', 'Other'],
+      enum: ['Commit', 'Repository', 'Pull Request', 'Contest', 'Milestone', 'Project', 'LeetCode', 'Certificate', 'Document', 'Profile', 'Other'],
       required: true 
     },
     title: { type: String, required: true },

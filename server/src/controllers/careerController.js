@@ -83,12 +83,19 @@ exports.getScore = async (req, res, next) => {
     let rank = null;
     let totalUsers = 0;
 
+    const PRIVILEGED_ROLES = ['super_admin', 'superadmin', 'admin', 'institution_admin', 'platform_owner', 'owner'];
     if (overallScore > 0) {
       const higherScoresCount = await User.countDocuments({
+        role: { $nin: PRIVILEGED_ROLES },
+        status: { $ne: 'suspended' },
         'scores.overall': { $gt: overallScore }
       });
       rank = higherScoresCount + 1;
-      totalUsers = await User.countDocuments({ 'scores.overall': { $gt: 0 } });
+      totalUsers = await User.countDocuments({
+        role: { $nin: PRIVILEGED_ROLES },
+        status: { $ne: 'suspended' },
+        'scores.overall': { $gt: 0 }
+      });
     }
 
     const scoreData = score ? (score.toObject ? score.toObject() : { ...score }) : { overall: 0, development: 0, problemSolving: 0, community: 0 };

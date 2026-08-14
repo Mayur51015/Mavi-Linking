@@ -30,6 +30,8 @@ const calculateMyScores = async (req, res, next) => {
   }
 };
 
+const PRIVILEGED_ROLES = ['super_admin', 'superadmin', 'admin', 'institution_admin', 'platform_owner', 'owner'];
+
 /**
  * @desc    Get the global leaderboard (sorted by overall score)
  * @route   GET /api/scores/leaderboard
@@ -37,18 +39,24 @@ const calculateMyScores = async (req, res, next) => {
  */
 const getLeaderboard = async (req, res, next) => {
   try {
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
     const page = parseInt(req.query.page, 10) || 1;
     const skip = (page - 1) * limit;
 
-    // Fetch users with overall score > 0, sorted descending
-    const users = await User.find({ 'scores.overall': { $gt: 0 } })
-      .select('name avatar scores platforms.github.username platforms.codeforces.username platforms.leetcode.username platforms.stackoverflow.username')
+    const query = {
+      role: { $nin: PRIVILEGED_ROLES },
+      status: { $ne: 'suspended' },
+      'scores.overall': { $gt: 0 }
+    };
+
+    // Fetch eligible developers sorted descending by overall score
+    const users = await User.find(query)
+      .select('name avatar maviId scores platforms.github.username platforms.codeforces.username platforms.leetcode.username platforms.stackoverflow.username')
       .sort({ 'scores.overall': -1 })
       .skip(skip)
       .limit(limit);
 
-    const total = await User.countDocuments({ 'scores.overall': { $gt: 0 } });
+    const total = await User.countDocuments(query);
 
     res.status(200).json({
       success: true,
@@ -75,11 +83,12 @@ const getMyScores = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     
-    // Calculate user's global rank based on overall score
+    // Calculate user's global rank among eligible non-privileged accounts
     let rank = null;
     if (user.scores && user.scores.overall > 0) {
-      // Rank is the number of people with a strictly greater score + 1
       const higherScoresCount = await User.countDocuments({
+        role: { $nin: PRIVILEGED_ROLES },
+        status: { $ne: 'suspended' },
         'scores.overall': { $gt: user.scores.overall }
       });
       rank = higherScoresCount + 1;

@@ -51,6 +51,23 @@ const syncLeetCode = async (req, res, next) => {
       { new: true, upsert: true }
     );
 
+    // Log activity feed & emit real-time Socket.IO event
+    try {
+      const Activity = require('../models/Activity');
+      const { getIO } = require('../config/socket');
+      const activity = await Activity.create({
+        userId,
+        type: 'LeetCode',
+        title: 'LeetCode Profile Synced',
+        description: `Synced ${data.totalSolved || 0} solved problems (${data.easySolved || 0} Easy, ${data.mediumSolved || 0} Medium, ${data.hardSolved || 0} Hard)`,
+        platform: 'leetcode',
+      });
+      const io = getIO();
+      if (io) io.to(userId.toString()).emit('new_activity', activity);
+    } catch (actErr) {
+      console.warn('Activity log for LeetCode sync skipped:', actErr.message);
+    }
+
     res.status(200).json({ success: true, data: analytics });
   } catch (error) {
     console.error(`LeetCode sync failed for user ${req.user?.id}:`, error.message);

@@ -54,12 +54,27 @@ const fetchOfficialLeetCodeGraphQL = async (username) => {
             ranking
             reputation
           }
+          badges {
+            id
+            name
+            displayName
+            icon
+            category
+            creationDate
+          }
           submitStatsGlobal {
             acSubmissionNum {
               difficulty
               count
             }
           }
+        }
+        recentSubmissionList(username: $username, limit: 15) {
+          title
+          titleSlug
+          timestamp
+          statusDisplay
+          lang
         }
         userContestRanking(username: $username) {
           rating
@@ -85,6 +100,27 @@ const fetchOfficialLeetCodeGraphQL = async (username) => {
       const ac = user.submitStatsGlobal?.acSubmissionNum || [];
       const getCount = (diff) => ac.find(a => a.difficulty.toLowerCase() === diff.toLowerCase())?.count || 0;
 
+      const rawBadges = user.badges || [];
+      const rawSubmissions = res.data.data.recentSubmissionList || [];
+
+      const badges = rawBadges.map(b => ({
+        id: b.id || b.name,
+        name: b.name || b.displayName,
+        displayName: b.displayName || b.name,
+        icon: b.icon ? (b.icon.startsWith('http') ? b.icon : `https://leetcode.com${b.icon}`) : '',
+        category: b.category || 'Achievement',
+        creationDate: b.creationDate || null
+      }));
+
+      const recentSubmissions = rawSubmissions.map(s => ({
+        title: s.title,
+        titleSlug: s.titleSlug,
+        timestamp: s.timestamp ? parseInt(s.timestamp, 10) : Math.floor(Date.now() / 1000),
+        statusDisplay: s.statusDisplay || 'Accepted',
+        lang: s.lang || 'Code',
+        url: s.titleSlug ? `https://leetcode.com/problems/${s.titleSlug}/` : null
+      }));
+
       return {
         username: user.username || username,
         totalSolved: getCount('All'),
@@ -95,8 +131,8 @@ const fetchOfficialLeetCodeGraphQL = async (username) => {
         contributionPoints: 0,
         reputation: user.profile?.reputation || 0,
         contestRating: res.data.data.userContestRanking?.rating ? Math.round(res.data.data.userContestRanking.rating) : null,
-        badges: [],
-        recentSubmissions: []
+        badges,
+        recentSubmissions
       };
     }
   } catch (err) {

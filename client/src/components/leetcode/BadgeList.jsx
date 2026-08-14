@@ -22,16 +22,25 @@ const BadgeList = ({ badges }) => {
         Earned Badges
       </h3>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-        {badges.map((badge, idx) => (
-          <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', minWidth: '100px' }}>
-            {badge.icon.startsWith('/') ? (
-              <img src={`https://leetcode.com${badge.icon}`} alt={badge.displayName} style={{ width: '48px', height: '48px' }} />
-            ) : (
-              <img src={badge.icon} alt={badge.displayName} style={{ width: '48px', height: '48px' }} />
-            )}
-            <span style={{ fontSize: '0.8rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{badge.displayName || badge.name}</span>
-          </div>
-        ))}
+        {badges.map((badge, idx) => {
+          const iconUrl = badge.icon
+            ? (badge.icon.startsWith('http') ? badge.icon : `https://leetcode.com${badge.icon}`)
+            : null;
+
+          return (
+            <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', minWidth: '110px', flex: '1 0 calc(25% - 1rem)', maxWidth: '140px' }}>
+              {iconUrl ? (
+                <img src={iconUrl} alt={badge.displayName || badge.name} style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+              ) : (
+                <Award size={48} color="#fbbf24" />
+              )}
+              <span style={{ fontSize: '0.8rem', textAlign: 'center', color: 'white', fontWeight: '600' }}>{badge.displayName || badge.name || 'LeetCode Badge'}</span>
+              {badge.category && (
+                <span className="badge badge-purple" style={{ fontSize: '0.65rem' }}>{badge.category}</span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -419,14 +419,24 @@ const updateProfile = async (req, res, next) => {
         'Updated profile information'
       );
 
-      const activity = await Activity.create({
+      // Deduplicate repetitive profile update activities within 15 minutes
+      const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+      const recentActivity = await Activity.findOne({
         userId: user._id,
-        type: 'Other',
         title: 'Profile Updated',
-        description: 'Updated profile information',
+        date: { $gte: fifteenMinsAgo },
       });
-      const io = getIO();
-      if (io) io.to(user._id.toString()).emit('new_activity', activity);
+
+      if (!recentActivity) {
+        const activity = await Activity.create({
+          userId: user._id,
+          type: 'Profile',
+          title: 'Profile Updated',
+          description: 'Updated profile information',
+        });
+        const io = getIO();
+        if (io) io.to(user._id.toString()).emit('new_activity', activity);
+      }
     } catch (err) {
       console.error('Activity/Timeline Error:', err.message);
     }

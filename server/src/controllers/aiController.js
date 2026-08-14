@@ -51,8 +51,21 @@ exports.getRanking = async (req, res, next) => {
 
 exports.getLeaderboard = async (req, res, next) => {
   try {
-    const leaderboard = await Ranking.find().populate('userId', 'name avatar').sort({ score: -1 }).limit(50);
-    res.status(200).json({ success: true, data: leaderboard });
+    const PRIVILEGED_ROLES = ['super_admin', 'superadmin', 'admin', 'institution_admin', 'platform_owner', 'owner'];
+    const leaderboard = await Ranking.find()
+      .populate({
+        path: 'userId',
+        select: 'name avatar maviId role status',
+        match: {
+          role: { $nin: PRIVILEGED_ROLES },
+          status: { $ne: 'suspended' }
+        }
+      })
+      .sort({ score: -1 })
+      .limit(50);
+
+    const filtered = leaderboard.filter(item => item.userId != null);
+    res.status(200).json({ success: true, data: filtered });
   } catch (error) {
     next(error);
   }
@@ -60,8 +73,15 @@ exports.getLeaderboard = async (req, res, next) => {
 
 exports.getAnalytics = async (req, res, next) => {
   try {
-    const analytics = await Analytics.find({ userId: req.user.id }).sort({ month: 1 });
-    res.status(200).json({ success: true, data: analytics });
+    let analytics = await Analytics.find({ userId: req.user.id }).sort({ month: 1 });
+    if (!analytics || analytics.length === 0) {
+      const user = await User.findById(req.user.id);
+      if (user) {
+        const result = await aiAnalyzer.analyzeUser(user);
+        analytics = result.analytics;
+      }
+    }
+    res.status(200).json({ success: true, data: analytics || [] });
   } catch (error) {
     next(error);
   }

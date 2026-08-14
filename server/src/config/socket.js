@@ -80,5 +80,24 @@ module.exports = {
       throw new Error('Socket.io not initialized!');
     }
     return io;
-  }
+  },
+  /**
+   * Close every connected socket and stop accepting new ones.
+   *
+   * Called from the shutdown path so clients get a clean disconnect on deploy
+   * instead of an abrupt transport close — which, with the client configured
+   * to reconnect, is the difference between a staggered reconnect and every
+   * browser retrying at once against the replacement instance.
+   *
+   * Resolves when there is no server, so the caller doesn't have to check.
+   */
+  close: () =>
+    new Promise((resolve) => {
+      if (!io) return resolve();
+
+      return io.close(() => {
+        io = undefined;
+        resolve();
+      });
+    }),
 };

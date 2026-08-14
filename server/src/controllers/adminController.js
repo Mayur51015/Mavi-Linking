@@ -847,31 +847,77 @@ const createStaffUser = async (req, res, next) => {
       }
     }
 
-    // 3. Prevent duplicate email
+    // 3. Handle Existing User Appointment / Role Assignment
+    const cleanIdValue = (identifierValue || '').trim();
     const existingUser = await User.findOne({ email: lowerEmail });
     if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        code: 'EMAIL_EXISTS',
-        message: 'An account with this email address already exists in MAVI.',
-      });
-    }
+      const oldRole = existingUser.role;
+      existingUser.role = lowerRole;
+      if (!Array.isArray(existingUser.roles)) existingUser.roles = [existingUser.role];
+      if (!existingUser.roles.includes(lowerRole)) existingUser.roles.push(lowerRole);
 
-    // 4. Prevent duplicate institutional identifier within the same institution
-    const cleanIdValue = identifierValue.trim();
-    if (targetInstId && cleanIdValue) {
-      const existingId = await User.findOne({
-        institutionId: targetInstId,
-        'institutionalIdentifier.identifierValue': cleanIdValue,
-      });
+      if (targetInst?._id) existingUser.institutionId = targetInst._id;
+      if (targetInst?.tenantId) existingUser.tenantId = targetInst.tenantId;
+      if (selectedDepartment?._id) existingUser.departmentId = selectedDepartment._id;
+      if (designation) existingUser.designation = designation.trim();
+      if (phone) existingUser.phone = phone.trim();
+      if (companyName && lowerRole === 'recruiter') existingUser.companyName = companyName.trim();
 
-      if (existingId) {
-        return res.status(409).json({
-          success: false,
-          code: 'IDENTIFIER_EXISTS',
-          message: `An account with ${identifierType || 'institutional identifier'} '${cleanIdValue}' already exists for this institution.`,
-        });
+      if (cleanIdValue) {
+        const validIdType = identifierType || (lowerRole === 'teacher' ? 'FACULTY_ID' : lowerRole === 'department_admin' ? 'EMPLOYEE_ID' : 'RECRUITER_ID');
+        existingUser.institutionalIdentifier = {
+          identifierType: validIdType,
+          identifierValue: cleanIdValue,
+        };
+        if (lowerRole === 'teacher') existingUser.facultyId = cleanIdValue;
       }
+
+      await existingUser.save();
+
+      // Dispatch Invitation / Activation Email
+      const rawInviteToken = crypto.randomBytes(32).toString('hex');
+      const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
+      existingUser.invitationToken = hashedInviteToken;
+      existingUser.invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      if (existingUser.accountStatus !== 'ACTIVE') {
+        existingUser.accountStatus = 'INVITED';
+        existingUser.status = 'invited';
+      }
+      await existingUser.save();
+
+      const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
+      const activationLink = `${clientUrl}/activate-account?token=${rawInviteToken}`;
+      const emailHtml = generateAccountInvitationEmailHtml({
+        name: existingUser.name,
+        role: lowerRole,
+        institutionName: targetInst?.name || 'Zeal College of Engineering and Research',
+        activationLink,
+        expiresHours: 48,
+      });
+
+      await sendEmail({
+        to: lowerEmail,
+        subject: `Account Role Update: You've been assigned as ${lowerRole === 'teacher' ? 'Teacher' : lowerRole === 'department_admin' ? 'Department Admin' : 'Recruiter'}`,
+        html: emailHtml,
+      });
+
+      const actionType = lowerRole === 'teacher' ? 'TEACHER_ACCOUNT_UPDATED' : lowerRole === 'department_admin' ? 'DEPARTMENT_ADMIN_APPOINTED' : 'RECRUITER_ACCOUNT_UPDATED';
+      await ActivityLog.create({
+        userId: req.user._id,
+        action: actionType,
+        details: `Admin ${req.user.email} updated/appointed ${lowerEmail} (${existingUser.maviId}) as ${lowerRole.toUpperCase()}.`,
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+      });
+
+      const userPayload = existingUser.toObject();
+      delete userPayload.invitationToken;
+
+      return res.status(200).json({
+        success: true,
+        message: `Successfully appointed ${existingUser.name} (${lowerEmail}) as ${lowerRole.replace('_', ' ')}. Invitation email sent.`,
+        data: { user: userPayload },
+      });
     }
 
     // 5. Generate Immutable MAVI ID

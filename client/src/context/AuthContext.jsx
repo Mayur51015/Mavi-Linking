@@ -140,6 +140,12 @@ export const AuthProvider = ({ children }) => {
   const getDashboardPath = useCallback(() => {
     if (!user) return '/login';
     switch (user.role) {
+      case 'department_admin': return '/department-admin';
+      case 'institution_admin':
+      case 'admin': return '/admin';
+      case 'super_admin': return '/super-admin';
+      case 'owner':
+      case 'platform_owner': return '/owner';
       case 'recruiter': return '/dashboard/recruiter';
       case 'teacher':
       case 'professor': return '/dashboard/teacher';

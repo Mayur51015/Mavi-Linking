@@ -39,6 +39,7 @@ const ActivateAccount = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const navigate = useNavigate();
+  const { setUser } = React.useContext(AuthContext) || {};
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -104,6 +105,15 @@ const ActivateAccount = () => {
       });
 
       if (res.data?.success) {
+        if (res.data.data?.token) {
+          localStorage.setItem('token', res.data.data.token);
+          if (res.data.data?.refreshToken) {
+            localStorage.setItem('refreshToken', res.data.data.refreshToken);
+          }
+          if (setUser && res.data.data?.user) {
+            setUser(res.data.data.user);
+          }
+        }
         setSuccess(true);
       } else {
         setError(res.data?.message || 'Failed to activate account.');
@@ -267,7 +277,15 @@ const ActivateAccount = () => {
               Your private password has been set. You can now sign in with your email or assigned MAVI ID.
             </p>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => {
+                const targetRole = inviteInfo?.role;
+                if (targetRole === 'department_admin') navigate('/department-admin');
+                else if (targetRole === 'institution_admin' || targetRole === 'admin') navigate('/admin');
+                else if (targetRole === 'super_admin') navigate('/super-admin');
+                else if (targetRole === 'teacher') navigate('/dashboard/teacher');
+                else if (targetRole === 'recruiter') navigate('/dashboard/recruiter');
+                else navigate('/dashboard');
+              }}
               className="btn btn-primary"
               style={{
                 width: '100%',
@@ -280,7 +298,7 @@ const ActivateAccount = () => {
                 gap: '0.5rem',
               }}
             >
-              Sign In to MAVI
+              Enter {formatRoleName(inviteInfo?.role)} Portal
               <ArrowRight size={18} />
             </button>
           </div>

@@ -69,6 +69,9 @@ const Login = () => {
     }
     const userRole = userObj?.role;
     switch (userRole) {
+      case 'department_admin':
+        navigate('/department-admin');
+        break;
       case 'recruiter':
         navigate('/dashboard/recruiter');
         break;

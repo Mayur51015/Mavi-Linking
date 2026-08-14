@@ -1402,10 +1402,10 @@ const activateAccount = async (req, res, next) => {
     user.mustChangePassword = false;
     user.passwordChangedAt = Date.now();
 
-    // Single-Use Security: Invalidate invitation token
-    user.invitationToken = null;
-    user.invitationExpires = null;
-
+    // Generate JWT and Refresh Token for seamless session setup upon activation
+    const authToken = user.generateAuthToken();
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+    user.refreshToken = refreshToken;
     await user.save();
 
     // Log Security Audit Event
@@ -1419,7 +1419,12 @@ const activateAccount = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'Your MAVI account has been activated successfully! You can now log in.',
+      message: 'Your MAVI account has been activated successfully!',
+      data: {
+        user,
+        token: authToken,
+        refreshToken,
+      },
     });
   } catch (error) {
     next(error);

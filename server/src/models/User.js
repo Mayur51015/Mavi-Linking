@@ -344,8 +344,7 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters'],
+      required: false,
       select: false, // Never return password in queries by default
     },
     avatar: {
@@ -450,8 +449,8 @@ userSchema.pre('save', async function (next) {
     this.roles.push(this.role);
   }
 
-  // Only hash if password field was modified
-  if (!this.isModified('password')) return next();
+  // Only hash if password field was modified and present
+  if (!this.isModified('password') || !this.password) return next();
 
   try {
     const salt = await bcrypt.genSalt(12);

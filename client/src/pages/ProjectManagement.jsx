@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import UserLayout from '../layouts/UserLayout';
+import { Briefcase, ExternalLink, FolderOpen, GitBranch, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { Briefcase, Plus, Trash2, ExternalLink, GitBranch } from 'lucide-react';
-import { SkeletonGrid } from '../components/ui/Skeleton';import { useToast } from '../context/ToastContext';
+import EmptyState from '../components/ui/EmptyState';
+import { SkeletonGrid } from '../components/ui/Skeleton';
 import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
+import UserLayout from '../layouts/UserLayout';
 import { getErrorMessage } from '../utils/errorMessage';
 const ProjectManagement = () => {
-const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);  const toast = useToast();
-  const confirm = useConfirm();  
+  const [saving, setSaving] = useState(false); const toast = useToast();
+  const confirm = useConfirm();
   // Form State
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -23,7 +25,7 @@ const [projects, setProjects] = useState([]);
     try {
       const res = await api.get('/projects');
       setProjects(res.data.data);
-} catch (error) {
+    } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to load your projects.'));
     } finally {
       setLoading(false);
@@ -33,7 +35,7 @@ const [projects, setProjects] = useState([]);
   useEffect(() => {
     fetchProjects();
   }, []);
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
@@ -59,7 +61,7 @@ const handleSubmit = async (e) => {
     } finally {
       setSaving(false);
     }
-  };const handleDelete = async (id) => {
+  }; const handleDelete = async (id) => {
     const confirmed = await confirm({
       title: 'Delete project?',
       message: 'This will permanently remove the project from your portfolio. This action cannot be undone.',
@@ -98,7 +100,7 @@ const handleSubmit = async (e) => {
               <label className="input-label">Project Title *</label>
               <input type="text" className="input-field" value={title} onChange={(e) => setTitle(e.target.value)} required />
             </div>
-            
+
             <div className="input-group" style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
               <label className="input-label">Description *</label>
               <textarea className="input-field" rows="3" value={description} onChange={(e) => setDescription(e.target.value)} required></textarea>
@@ -120,17 +122,26 @@ const handleSubmit = async (e) => {
             </div>
 
             <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-<button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Project'}</button>            </div>
+              <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Project'}</button>            </div>
           </form>
         </div>
       )}
 
-{loading ? (
+      {loading ? (
         <SkeletonGrid count={3} cardProps={{ lines: 3, height: '220px' }} />
-      ) : projects.length === 0 ? (        <div className="glass-card" style={{ textAlign: 'center', padding: '3rem' }}>
-          <Briefcase size={48} color="var(--text-muted)" style={{ margin: '0 auto 1rem auto', opacity: 0.5 }} />
-          <p style={{ color: 'var(--text-secondary)' }}>No projects added yet. Click "New Project" to showcase your work.</p>
-        </div>
+      ) : projects.length === 0 ? (
+        <EmptyState
+          icon={<FolderOpen size={32} color="var(--accent-cyan)" />}
+          iconColor="var(--accent-cyan)"
+          title="No projects added yet"
+          description="Showcase your work to recruiters and colleges by adding your personal and academic projects."
+          action={{
+            label: 'Add Your First Project',
+            icon: <Plus size={15} />,
+            onClick: () => setShowForm(true),
+          }}
+          size="lg"
+        />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '1.5rem' }}>
           {projects.map(proj => (
@@ -142,7 +153,7 @@ const handleSubmit = async (e) => {
                 </button>
               </div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flex: 1 }}>{proj.description}</p>
-              
+
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 {proj.technologies.map((tech, idx) => (
                   <span key={idx} style={{ background: 'rgba(255,255,255,0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--text-primary)' }}>

@@ -1,24 +1,39 @@
-import React, { useContext, useEffect, useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AuthContext } from '../context/AuthContext';
-import api from '../api/axios';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Globe, GitBranch, Code2, CheckCircle, FileText,
-  Briefcase, Calendar, BarChart3, AlertCircle, Upload, QrCode,
-  Eye, Download, Plus, Edit2, Trash2, Search, X
+  AlertCircle,
+  Bell,
+  Briefcase,
+  CheckCircle,
+  Code2,
+  Download,
+  Edit2,
+  Eye,
+  FileText,
+  GitBranch,
+  Globe,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
+  Upload,
+  X
 } from 'lucide-react';
-import UserLayout from '../layouts/UserLayout';
-import DNACard from '../components/DNACard';
-import SkillRadar from '../components/SkillRadar';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import api from '../api/axios';
 import ActivityFeed from '../components/ActivityFeed';
+import BadgeShowcase from '../components/BadgeShowcase';
+import DNACard from '../components/DNACard';
 import GrowthChart from '../components/GrowthChart';
 import LeaderboardWidget from '../components/LeaderboardWidget';
 import ReportGenerator from '../components/ReportGenerator';
-import LeetCodeSection from '../components/leetcode/LeetCodeSection';
-import Messages from '../pages/Messages';
+import SkillRadar from '../components/SkillRadar';
 import TimelineWidget from '../components/TimelineWidget';
-import BadgeShowcase from '../components/BadgeShowcase';
+import LeetCodeSection from '../components/leetcode/LeetCodeSection';
+import EmptyState from '../components/ui/EmptyState';
 import { SkeletonCard } from '../components/ui/Skeleton';
+import { AuthContext } from '../context/AuthContext';
+import UserLayout from '../layouts/UserLayout';
+import Messages from '../pages/Messages';
 const Dashboard = () => {
   const { user, setUser, socket, refreshUser } = useContext(AuthContext);
   const [scores, setScores] = useState(null);
@@ -741,20 +756,30 @@ const Dashboard = () => {
                 
                 <div className="glass-card">
                   <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>AI Insights</h3>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <h4 style={{ fontSize: '0.875rem', color: 'var(--accent-emerald)', marginBottom: '0.5rem' }}>Strengths</h4>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                      {(user?.aiAnalysis?.strengths || []).map((s, i) => <li key={i} style={{ marginBottom: '0.25rem' }}>• {s}</li>)}
-                      {!(user?.aiAnalysis?.strengths?.length > 0) && <li style={{ color: 'var(--text-muted)' }}>No strengths generated yet.</li>}
-                    </ul>
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: '0.875rem', color: 'var(--accent-red)', marginBottom: '0.5rem' }}>Areas for Growth</h4>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                      {(user?.aiAnalysis?.weaknesses || []).map((w, i) => <li key={i} style={{ marginBottom: '0.25rem' }}>• {w}</li>)}
-                      {!(user?.aiAnalysis?.weaknesses?.length > 0) && <li style={{ color: 'var(--text-muted)' }}>No weaknesses generated yet.</li>}
-                    </ul>
-                  </div>
+                  {!(user?.aiAnalysis?.strengths?.length > 0) && !(user?.aiAnalysis?.weaknesses?.length > 0) ? (
+                    <EmptyState
+                      icon={<Sparkles size={26} color="var(--accent-purple)" />}
+                      iconColor="var(--accent-purple)"
+                      title="AI insights not generated yet"
+                      description="Click 'Sync AI DNA' in the dashboard header to generate your personalized strengths, weaknesses, and career recommendations."
+                      size="sm"
+                    />
+                  ) : (
+                    <>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <h4 style={{ fontSize: '0.875rem', color: 'var(--accent-emerald)', marginBottom: '0.5rem' }}>Strengths</h4>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                          {(user?.aiAnalysis?.strengths || []).map((s, i) => <li key={i} style={{ marginBottom: '0.25rem' }}>• {s}</li>)}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 style={{ fontSize: '0.875rem', color: 'var(--accent-red)', marginBottom: '0.5rem' }}>Areas for Growth</h4>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                          {(user?.aiAnalysis?.weaknesses || []).map((w, i) => <li key={i} style={{ marginBottom: '0.25rem' }}>• {w}</li>)}
+                        </ul>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -829,33 +854,49 @@ const Dashboard = () => {
                     </div>
                   </div>
                 ) : (
-                  <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>
-                    No active job applications. Browse jobs page to get started.
-                  </div>
+                  <EmptyState
+                    icon={<Briefcase size={28} color="var(--accent-purple)" />}
+                    iconColor="var(--accent-purple)"
+                    title="No active application"
+                    description="You don't have any active placement pipeline yet. Browse available positions to get started."
+                    action={{ label: 'Browse Jobs', href: '/jobs' }}
+                    size="sm"
+                  />
                 )}
               </div>
 
               {/* Job Applications List */}
               <div className="glass-card-static" style={{ padding: '2rem' }}>
                 <h3 style={{ marginBottom: '1rem' }}>Job Applications ({pipelines.length})</h3>
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                  {pipelines.map(p => (
-                    <div key={p._id} className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem' }}>
-                      <div>
-                        <div style={{ fontWeight: '600' }}>{p.role}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.companyName}</div>
+                {pipelines.length === 0 ? (
+                  <EmptyState
+                    icon={<Briefcase size={28} color="var(--accent-cyan)" />}
+                    iconColor="var(--accent-cyan)"
+                    title="No job applications yet"
+                    description="Once you apply to positions shared by your college, your hiring journey will be tracked here."
+                    action={{ label: 'Browse Jobs', href: '/jobs' }}
+                    size="md"
+                  />
+                ) : (
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    {pipelines.map(p => (
+                      <div key={p._id} className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem' }}>
+                        <div>
+                          <div style={{ fontWeight: '600' }}>{p.role}</div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.companyName}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <span className="badge badge-emerald">{p.status}</span>
+                          {p.offerDetails?.offerLetterUrl && (
+                            <a href={p.offerDetails.offerLetterUrl} download className="btn btn-outline" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
+                              Download Offer
+                            </a>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <span className="badge badge-emerald">{p.status}</span>
-                        {p.offerDetails?.offerLetterUrl && (
-                          <a href={p.offerDetails.offerLetterUrl} download className="btn btn-outline" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
-                            Download Offer
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1012,22 +1053,27 @@ const Dashboard = () => {
               {/* College Announcements */}
               <div className="glass-card-static" style={{ padding: '2rem' }}>
                 <h3 style={{ marginBottom: '1.5rem' }}>Campus Placement Notices</h3>
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                  {announcements.map(ann => (
-                    <div key={ann._id} className="glass-card" style={{ padding: '1.25rem' }}>
-                      <div style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.25rem' }}>{ann.title}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                        Posted by {ann.teacherId?.name || 'College Office'} — {new Date(ann.createdAt).toLocaleDateString()}
+                {announcements.length === 0 ? (
+                  <EmptyState
+                    icon={<Bell size={28} color="var(--accent-blue)" />}
+                    iconColor="var(--accent-blue)"
+                    title="No announcements yet"
+                    description="Campus placement notices, drive schedules, and important updates from your college will appear here."
+                    size="md"
+                  />
+                ) : (
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    {announcements.map(ann => (
+                      <div key={ann._id} className="glass-card" style={{ padding: '1.25rem' }}>
+                        <div style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.25rem' }}>{ann.title}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                          Posted by {ann.teacherId?.name || 'College Office'} — {new Date(ann.createdAt).toLocaleDateString()}
+                        </div>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>{ann.content}</p>
                       </div>
-                      <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>{ann.content}</p>
-                    </div>
-                  ))}
-                  {announcements.length === 0 && (
-                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
-                      No notifications or drive announcements posted yet.
-                    </div>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

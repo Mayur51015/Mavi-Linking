@@ -1,8 +1,19 @@
 import React from 'react';
 import { Award } from 'lucide-react';
+import EmptyState from '../ui/EmptyState';
 
 const BadgeList = ({ badges }) => {
-  if (!badges || badges.length === 0) return null;
+  if (!badges || badges.length === 0) {
+    return (
+      <EmptyState
+        icon={<Award size={28} color="var(--accent-amber)" />}
+        iconColor="var(--accent-amber)"
+        title="No LeetCode badges yet"
+        description="Keep solving problems and participating in LeetCode contests to earn badges that will appear here."
+        size="sm"
+      />
+    );
+  }
 
   return (
     <div className="glass-card">

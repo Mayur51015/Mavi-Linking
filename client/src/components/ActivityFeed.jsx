@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Activity } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useContext, useEffect, useState } from 'react';
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
+import EmptyState from './ui/EmptyState';
 
 const ActivityFeed = () => {
   const { user, socket } = useContext(AuthContext);
@@ -38,18 +39,25 @@ const ActivityFeed = () => {
       <div style={{ flex: 1, overflowY: 'auto', paddingRight: '1rem' }}>
         <AnimatePresence>
           {activities.length === 0 ? (
-             <div style={{ color: 'var(--text-secondary)' }}>No activities yet. Start coding!</div>
+            <EmptyState
+              icon={<Activity size={26} color="var(--accent-emerald)" />}
+              iconColor="var(--accent-emerald)"
+              title="No activity yet"
+              description="Your feed will populate in real-time as you commit code, solve problems, and update your profile."
+              size="sm"
+              style={{ height: '100%', minHeight: '200px' }}
+            />
           ) : (
             activities.map((act) => (
-              <motion.div 
-                key={act._id} 
+              <motion.div
+                key={act._id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0 }}
-                style={{ 
-                  padding: '1rem', 
-                  background: 'rgba(255,255,255,0.02)', 
-                  marginBottom: '0.75rem', 
+                style={{
+                  padding: '1rem',
+                  background: 'rgba(255,255,255,0.02)',
+                  marginBottom: '0.75rem',
                   borderRadius: '8px',
                   borderLeft: '3px solid var(--accent-blue)'
                 }}

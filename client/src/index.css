@@ -1291,3 +1291,32 @@ html {
   cursor: pointer !important;
 }
 
+/* ─── Empty State Utilities ─────────────────────────────────────────────── */
+
+@keyframes empty-state-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes empty-state-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.3); }
+  70%  { box-shadow: 0 0 0 12px rgba(139, 92, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+}
+
+.empty-state-wrapper {
+  min-height: 180px;
+}
+
+.empty-state-icon-wrap {
+  animation: empty-state-float 3.5s ease-in-out infinite,
+             empty-state-pulse-ring 3.5s ease-in-out infinite;
+}
+
+/* Responsive: reduce padding on small screens */
+@media (max-width: 640px) {
+  .empty-state-wrapper {
+    padding: 2rem 1.25rem !important;
+  }
+}
+

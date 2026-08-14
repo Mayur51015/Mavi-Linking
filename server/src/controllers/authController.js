@@ -18,6 +18,7 @@ const register = async (req, res, next) => {
   try {
     const {
       name, email, password, role,
+      prn, facultyId, institutionId,
       // Student-specific
       university, degree, graduationYear, portfolioWebsite, githubUsername,
       preferredDomain, experienceLevel, bio,
@@ -41,6 +42,12 @@ const register = async (req, res, next) => {
     const isPrivilegedRequest = ['recruiter', 'teacher'].includes(role);
     userData.requestedRole = isPrivilegedRequest ? role : 'none';
     userData.roleStatus = isPrivilegedRequest ? 'pending' : 'active';
+
+    // Institutional identifiers & verification status
+    if (prn) userData.prn = prn.trim();
+    if (facultyId) userData.facultyId = facultyId.trim();
+    if (institutionId) userData.institutionId = institutionId;
+    userData.prnVerificationStatus = 'pending';
 
     // Common optional fields
     if (bio) userData.bio = bio;
@@ -108,7 +115,7 @@ const register = async (req, res, next) => {
       await ActivityLog.create({
         userId: user._id,
         action: 'Register',
-        details: `Registered new account as ${user.role}. Verification token generated.`,
+        details: `Registered new account as ${user.role}. PRN Verification status: pending.`,
         ipAddress: req.ip || '',
         userAgent: req.headers['user-agent'] || '',
       });
@@ -118,12 +125,12 @@ const register = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'Account created successfully. Please verify your email.',
+      message: 'Account created successfully. Institutional identity pending verification.',
       data: {
         user,
         token,
         refreshToken,
-        verificationToken, // return for easy dev/test flow
+        verificationToken,
       },
     });
   } catch (error) {
@@ -132,20 +139,54 @@ const register = async (req, res, next) => {
 };
 
 /**
- * @desc    Login user & return JWT
+ * @desc    Login user & return JWT (Supports MAVI ID, Verified PRN/Faculty ID, or Email)
  * @route   POST /api/auth/login
  * @access  Public
  */
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const rawIdentifier = (req.body.email || req.body.identifier || req.body.maviId || req.body.prn || '').toString().trim();
+    const { password } = req.body;
 
-    // Find user and explicitly include the password field
-    const user = await User.findOne({ email }).select('+password');
+    if (!rawIdentifier || !password) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid identifier or password',
+      });
+    }
+
+    let user = null;
+
+    // 1. MAVI ID format (e.g. MAVI-8F3K7Q2P)
+    if (rawIdentifier.toUpperCase().startsWith('MAVI-')) {
+      user = await User.findOne({ maviId: rawIdentifier.toUpperCase() }).select('+password');
+    }
+    // 2. Email address format
+    else if (rawIdentifier.includes('@')) {
+      user = await User.findOne({ email: rawIdentifier.toLowerCase() }).select('+password');
+    }
+    // 3. Otherwise treat as PRN / ZPRN / Faculty ID (MUST be approved by Admin to authenticate)
+    else {
+      user = await User.findOne({
+        $or: [
+          { prn: rawIdentifier, prnVerificationStatus: 'approved' },
+          { facultyId: rawIdentifier, prnVerificationStatus: 'approved' },
+        ],
+      }).select('+password');
+    }
+
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password',
+        message: 'Invalid identifier or password',
+      });
+    }
+
+    // Check account status
+    if (user.status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: 'Account suspended. Please contact platform administration.',
       });
     }
 
@@ -154,7 +195,7 @@ const login = async (req, res, next) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password',
+        message: 'Invalid identifier or password',
       });
     }
 
@@ -169,7 +210,7 @@ const login = async (req, res, next) => {
       await ActivityLog.create({
         userId: user._id,
         action: 'Login',
-        details: 'Logged in successfully',
+        details: `Logged in successfully via ${rawIdentifier.toUpperCase().startsWith('MAVI-') ? 'MAVI ID' : rawIdentifier.includes('@') ? 'Email' : 'PRN/Faculty ID'}`,
         ipAddress: req.ip || '',
         userAgent: req.headers['user-agent'] || '',
       });

@@ -21,13 +21,13 @@ const Register = () => {
   const [formData, setFormData] = useState({
     name: '', email: '', password: '',
     // Student
-    collegeName: '', department: '', batch: '',
+    prn: '', collegeName: '', department: '', batch: '',
     degree: '', graduationYear: '', portfolioWebsite: '',
     githubUsername: '', preferredDomain: '', experienceLevel: '', bio: '',
     // Recruiter
     companyName: '', allowedColleges: '', allowedDepartments: '',
     // Teacher
-    teacherCollege: '', teacherDepartment: '',
+    facultyId: '', teacherCollege: '', teacherDepartment: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -73,6 +73,7 @@ const Register = () => {
       };
 
       if (role === 'user') {
+        payload.prn = formData.prn;
         payload.university = {
           name: formData.collegeName,
           department: formData.department,
@@ -93,6 +94,7 @@ const Register = () => {
       }
 
       if (role === 'teacher') {
+        payload.facultyId = formData.facultyId;
         payload.university = {
           name: formData.teacherCollege,
           department: formData.teacherDepartment,
@@ -215,6 +217,12 @@ const Register = () => {
 
       {role === 'user' && (
         <>
+          <div className="input-group">
+            <label className="input-label">PRN / Permanent Registration No. (For College Verification)</label>
+            <input type="text" className="input-field" placeholder="e.g., 124BT10461"
+              value={formData.prn} onChange={e => updateField('prn', e.target.value)} />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Required for login via PRN after Admin approval</span>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 1rem' }}>
             <div className="input-group">
               <label className="input-label">College Name</label>
@@ -301,6 +309,12 @@ const Register = () => {
 
       {role === 'teacher' && (
         <>
+          <div className="input-group">
+            <label className="input-label">Faculty / Employee ID (For Verification)</label>
+            <input type="text" className="input-field" placeholder="e.g., FAC-8890"
+              value={formData.facultyId} onChange={e => updateField('facultyId', e.target.value)} />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Required for login via Faculty ID after Admin approval</span>
+          </div>
           <div className="input-group">
             <label className="input-label">College / University Name *</label>
             <input type="text" className="input-field" placeholder="e.g., MIT Pune"

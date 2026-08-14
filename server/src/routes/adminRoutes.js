@@ -16,6 +16,9 @@ const {
   getRoleRequests,
   approveRoleRequest,
   rejectRoleRequest,
+  getPrnVerifications,
+  approvePrnVerification,
+  rejectPrnVerification,
 } = require('../controllers/adminController');
 
 const {
@@ -44,6 +47,11 @@ router.get('/logs', enforceInstitutionScope, getAuditLogs);
 router.get('/role-requests', enforceInstitutionScope, getRoleRequests);
 router.post('/role-requests/:id/approve', enforceInstitutionScope, approveRoleRequest);
 router.post('/role-requests/:id/reject', enforceInstitutionScope, rejectRoleRequest);
+
+// PRN & Institutional Identity Verifications
+router.get('/prn-verifications', enforceInstitutionScope, getPrnVerifications);
+router.post('/prn-verifications/:id/approve', enforceInstitutionScope, approvePrnVerification);
+router.post('/prn-verifications/:id/reject', enforceInstitutionScope, rejectPrnVerification);
 
 // Institutions Management
 router.get('/institutions', enforceInstitutionScope, getInstitutions);

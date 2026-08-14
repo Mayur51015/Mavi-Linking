@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 const GoogleSignInButton = ({ onSuccess, onError, text = 'signin_with', requestedRole = 'user', disabled = false }) => {
   const buttonRef = useRef(null);
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '891234567890-example.apps.googleusercontent.com';
+  const rawClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const clientId = rawClientId.trim();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -16,22 +17,27 @@ const GoogleSignInButton = ({ onSuccess, onError, text = 'signin_with', requeste
     };
 
     const initializeGoogleSignIn = () => {
+      if (!clientId) return;
       if (window.google && window.google.accounts && window.google.accounts.id) {
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: handleCredentialResponse,
-          auto_select: false,
-        });
-
-        if (buttonRef.current) {
-          buttonRef.current.innerHTML = '';
-          window.google.accounts.id.renderButton(buttonRef.current, {
-            theme: 'filled_black',
-            size: 'large',
-            text: text,
-            width: '100%',
-            shape: 'rectangular',
+        try {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleCredentialResponse,
+            auto_select: false,
           });
+
+          if (buttonRef.current) {
+            buttonRef.current.innerHTML = '';
+            window.google.accounts.id.renderButton(buttonRef.current, {
+              theme: 'filled_black',
+              size: 'large',
+              text: text,
+              width: '100%',
+              shape: 'rectangular',
+            });
+          }
+        } catch (err) {
+          console.warn('Google GSI button error:', err);
         }
       }
     };

@@ -441,6 +441,145 @@ const rejectRoleRequest = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get pending PRN / Institutional identity verifications
+ * @route   GET /api/admin/prn-verifications
+ * @access  Private (admin)
+ */
+const getPrnVerifications = async (req, res, next) => {
+  try {
+    const { status = 'pending' } = req.query;
+    const query = { prnVerificationStatus: status };
+
+    if (req.institutionScope?.institutionId) {
+      query.institutionId = req.institutionScope.institutionId;
+    }
+
+    const verifications = await User.find(query)
+      .select('name email maviId prn facultyId role requestedRole prnVerificationStatus prnRejectionReason createdAt institutionId university degree')
+      .populate('institutionId', 'name code domain')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: verifications,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Approve PRN / Institutional identity for a user
+ * @route   POST /api/admin/prn-verifications/:id/approve
+ * @access  Private (admin)
+ */
+const approvePrnVerification = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (req.institutionScope?.institutionId && user.institutionId?.toString() !== req.institutionScope.institutionId.toString()) {
+      return res.status(403).json({ success: false, message: 'Forbidden. User belongs to another institution.' });
+    }
+
+    user.prnVerificationStatus = 'approved';
+    user.prnVerifiedBy = req.user._id;
+    user.prnVerifiedAt = new Date();
+
+    // If there is also a pending requested role, approve it as well
+    if (user.requestedRole && user.requestedRole !== 'none') {
+      user.role = user.requestedRole;
+      if (!user.roles.includes(user.requestedRole)) {
+        user.roles.push(user.requestedRole);
+      }
+      user.roleStatus = 'approved';
+    }
+
+    await user.save();
+
+    await ActivityLog.create({
+      userId: req.user._id,
+      action: 'ADMIN_APPROVED_PRN',
+      details: `Approved institutional PRN identity verification for ${user.email} (PRN: ${user.prn || user.facultyId || 'N/A'}, MAVI ID: ${user.maviId})`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    try {
+      await RecruitmentNotification.create({
+        recipientId: user._id,
+        senderId: req.user._id,
+        type: 'general',
+        title: 'Institutional PRN Verified! 🎉',
+        message: `Your institutional identity (PRN/Faculty ID: ${user.prn || user.facultyId || 'Verified'}) has been approved by your institution administrator. You can now log in using your PRN, MAVI ID, or Email!`,
+      });
+    } catch (_) {}
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully approved PRN verification for ${user.email}`,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Reject PRN / Institutional identity for a user
+ * @route   POST /api/admin/prn-verifications/:id/reject
+ * @access  Private (admin)
+ */
+const rejectPrnVerification = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (req.institutionScope?.institutionId && user.institutionId?.toString() !== req.institutionScope.institutionId.toString()) {
+      return res.status(403).json({ success: false, message: 'Forbidden. User belongs to another institution.' });
+    }
+
+    user.prnVerificationStatus = 'rejected';
+    user.prnRejectionReason = reason || 'PRN / Institutional ID verification failed.';
+    user.prnVerifiedBy = req.user._id;
+    user.prnVerifiedAt = new Date();
+
+    await user.save();
+
+    await ActivityLog.create({
+      userId: req.user._id,
+      action: 'ADMIN_REJECTED_PRN',
+      details: `Rejected PRN identity for ${user.email} (Reason: ${reason || 'None provided'})`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    try {
+      await RecruitmentNotification.create({
+        recipientId: user._id,
+        senderId: req.user._id,
+        type: 'general',
+        title: 'PRN Verification Update',
+        message: `Your institutional identity verification was rejected. Reason: ${reason || 'PRN verification requirements not met.'}`,
+      });
+    } catch (_) {}
+
+    res.status(200).json({
+      success: true,
+      message: `PRN verification rejected for ${user.email}`,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAdminStats,
   getAllUsers,
@@ -451,4 +590,7 @@ module.exports = {
   getRoleRequests,
   approveRoleRequest,
   rejectRoleRequest,
+  getPrnVerifications,
+  approvePrnVerification,
+  rejectPrnVerification,
 };

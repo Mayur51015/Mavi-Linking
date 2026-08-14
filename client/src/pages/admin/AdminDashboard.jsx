@@ -81,12 +81,23 @@ const AdminDashboard = () => {
     }
   };
 
+  const [prnRequests, setPrnRequests] = useState([]);
+
   const fetchRoleRequests = async () => {
     try {
       const res = await api.get('/admin/role-requests?status=pending');
       setRoleRequests(res.data.data || []);
     } catch (err) {
       console.error('Role requests error:', err);
+    }
+  };
+
+  const fetchPrnRequests = async () => {
+    try {
+      const res = await api.get('/admin/prn-verifications?status=pending');
+      setPrnRequests(res.data.data || []);
+    } catch (err) {
+      console.error('PRN requests error:', err);
     }
   };
 
@@ -110,8 +121,18 @@ const AdminDashboard = () => {
 
   const loadData = async () => {
     setLoading(true);
-    await Promise.all([fetchStats(), fetchUsers(), fetchRoleRequests(), fetchInstitutions(), fetchLogs()]);
+    await Promise.all([fetchStats(), fetchUsers(), fetchRoleRequests(), fetchPrnRequests(), fetchInstitutions(), fetchLogs()]);
     setLoading(false);
+  };
+
+  const handleApprovePrn = async (id) => {
+    try {
+      await api.post(`/admin/prn-verifications/${id}/approve`);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to approve PRN verification.');
+    }
   };
 
   useEffect(() => {
@@ -663,6 +684,73 @@ const AdminDashboard = () => {
                                   style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                                 >
                                   <CheckCircle size={14} /> Approve
+                                </button>
+                                <button
+                                  onClick={() => setRejectingUser(req)}
+                                  className="btn btn-outline"
+                                  style={{ borderColor: '#ef4444', color: '#ef4444', padding: '0.4rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                >
+                                  <XCircle size={14} /> Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {/* PRN & Institutional Identity Verification Queue */}
+                <div className="glass-card-static" style={{ marginTop: '2rem', padding: '1.5rem' }}>
+                  <h3 style={{ marginBottom: '1rem', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Shield size={20} /> Institutional Identity & PRN Verifications
+                  </h3>
+                  {prnRequests.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      <CheckCircle size={32} style={{ color: 'var(--accent-emerald)', marginBottom: '0.5rem' }} />
+                      <p>No pending PRN or Faculty ID identity verifications.</p>
+                    </div>
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                          <th style={{ padding: '1rem' }}>Applicant / MAVI ID</th>
+                          <th style={{ padding: '1rem' }}>PRN / Faculty ID</th>
+                          <th style={{ padding: '1rem' }}>Institution / College</th>
+                          <th style={{ padding: '1rem' }}>Status</th>
+                          <th style={{ padding: '1rem' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {prnRequests.map((req) => (
+                          <tr key={req._id} style={{ borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'middle' }}>
+                            <td style={{ padding: '1rem' }}>
+                              <div style={{ fontWeight: '600' }}>{req.name}</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{req.email}</div>
+                              <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--accent-purple)' }}>{req.maviId}</div>
+                            </td>
+                            <td style={{ padding: '1rem' }}>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--accent-cyan)' }}>
+                                {req.prn || req.facultyId || 'Not Provided'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                              {req.institutionId?.name || req.university?.name || 'Global Scope'}
+                            </td>
+                            <td style={{ padding: '1rem' }}>
+                              <span className="badge badge-outline" style={{ borderColor: '#eab308', color: '#eab308' }}>
+                                Pending Review
+                              </span>
+                            </td>
+                            <td style={{ padding: '1rem' }}>
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => handleApprovePrn(req._id)}
+                                  className="btn btn-primary"
+                                  style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                >
+                                  <CheckCircle size={14} /> Verify PRN
                                 </button>
                                 <button
                                   onClick={() => setRejectingUser(req)}

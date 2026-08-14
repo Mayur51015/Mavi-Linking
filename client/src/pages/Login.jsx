@@ -83,11 +83,11 @@ const Login = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="input-group">
-            <label className="input-label">Email Address</label>
+            <label className="input-label">MAVI ID / PRN / Email</label>
             <input 
-              type="email" 
+              type="text" 
               className="input-field" 
-              placeholder="you@example.com"
+              placeholder="MAVI-8F3K7Q2P, 124BT10461, or email@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required 

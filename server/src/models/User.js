@@ -120,6 +120,16 @@ const userSchema = new mongoose.Schema(
       batch: { type: String, default: '' },
     },
     // Student-specific fields
+    prn: { type: String, trim: true, default: '' },
+    facultyId: { type: String, trim: true, default: '' },
+    prnVerificationStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
+    prnRejectionReason: { type: String, default: '' },
+    prnVerifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    prnVerifiedAt: { type: Date, default: null },
     degree: { type: String, default: '' },
     cgpa: { type: Number, default: 0.0 },
     graduationYear: { type: String, default: '' },
@@ -335,6 +345,10 @@ userSchema.index({ status: 1 });
 userSchema.index({ institutionId: 1 });
 userSchema.index({ roles: 1 });
 userSchema.index({ maviId: 1 }, { unique: true });
+userSchema.index({ prn: 1 });
+userSchema.index({ facultyId: 1 });
+userSchema.index({ prnVerificationStatus: 1 });
+userSchema.index({ institutionId: 1, prn: 1 });
 
 // Helper to generate 8-char uppercase hex/alphanumeric code
 const generateMaviIdCode = () => {

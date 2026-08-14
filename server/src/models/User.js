@@ -14,7 +14,10 @@ const SENSITIVE_FIELDS = [
   'password',
   'refreshToken',
   'resetPasswordToken',
+  'resetPasswordOtp',
   'resetPasswordExpires',
+  'invitationToken',
+  'invitationExpires',
   'verificationToken',
   'verificationCode',
 ];
@@ -68,8 +71,25 @@ const userSchema = new mongoose.Schema(
     ],
     status: {
       type: String,
-      enum: ['active', 'suspended'],
+      enum: ['active', 'suspended', 'invited'],
       default: 'active',
+    },
+    accountStatus: {
+      type: String,
+      enum: ['INVITED', 'EMAIL_VERIFICATION_PENDING', 'PASSWORD_SETUP_REQUIRED', 'ACTIVE', 'SUSPENDED', 'DISABLED', 'INVITATION_EXPIRED'],
+      default: 'ACTIVE',
+    },
+    institutionalIdentifier: {
+      identifierType: {
+        type: String,
+        enum: ['PRN', 'FACULTY_ID', 'EMPLOYEE_ID', 'RECRUITER_ID'],
+        default: 'PRN',
+      },
+      identifierValue: {
+        type: String,
+        trim: true,
+        default: '',
+      },
     },
     institutionId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -104,10 +124,15 @@ const userSchema = new mongoose.Schema(
     invitationToken: {
       type: String,
       default: null,
+      select: false,
     },
     invitationExpires: {
       type: Date,
       default: null,
+    },
+    passwordSetupRequired: {
+      type: Boolean,
+      default: false,
     },
     isInvitedAdmin: {
       type: Boolean,
@@ -222,6 +247,7 @@ const userSchema = new mongoose.Schema(
     passwordChangedAt: { type: Date, default: null },
     verificationToken: { type: String, default: null, select: false },
     resetPasswordToken: { type: String, default: null, select: false },
+    resetPasswordOtp: { type: String, default: null, select: false },
     resetPasswordExpires: { type: Date, default: null, select: false },
     refreshToken: { type: String, default: null, select: false },
 
@@ -318,8 +344,7 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters'],
+      required: false,
       select: false, // Never return password in queries by default
     },
     avatar: {
@@ -424,8 +449,8 @@ userSchema.pre('save', async function (next) {
     this.roles.push(this.role);
   }
 
-  // Only hash if password field was modified
-  if (!this.isModified('password')) return next();
+  // Only hash if password field was modified and present
+  if (!this.isModified('password') || !this.password) return next();
 
   try {
     const salt = await bcrypt.genSalt(12);

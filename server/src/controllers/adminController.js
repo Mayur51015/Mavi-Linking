@@ -5,6 +5,8 @@ const PlacementDrive = require('../models/PlacementDrive');
 const ActivityLog = require('../models/ActivityLog');
 const RecruitmentNotification = require('../models/RecruitmentNotification');
 const Institution = require('../models/Institution');
+const crypto = require('crypto');
+const { sendEmail, generateAccountInvitationEmailHtml } = require('../utils/sendEmail');
 
 /**
  * @desc    Get Admin Dashboard metrics (Platform-wide or Institution-scoped)
@@ -776,6 +778,233 @@ const updateUserInstitution = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Admin Provision Staff User (Teacher or Recruiter)
+ * @route   POST /api/admin/users
+ * @access  Private (Admin / Super Admin / Platform Owner)
+ */
+const createStaffUser = async (req, res, next) => {
+  try {
+    const {
+      name,
+      email,
+      role,
+      institutionId,
+      identifierType,
+      identifierValue,
+      department,
+      designation,
+      phone,
+      companyName,
+    } = req.body;
+
+    // 1. Core input validation
+    if (!name || !email || !role || !identifierValue) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, email, role (teacher/recruiter), and employee/faculty/recruiter ID are required.',
+      });
+    }
+
+    const lowerRole = role.toLowerCase().trim();
+    if (!['teacher', 'recruiter'].includes(lowerRole)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Admin staff provisioning only supports teacher or recruiter roles.',
+      });
+    }
+
+    const lowerEmail = email.toLowerCase().trim();
+
+    // 2. Institution Scope Enforcement
+    let targetInstId = institutionId;
+    if (req.isInstitutionAdmin && req.institutionScope?.institutionId) {
+      targetInstId = req.institutionScope.institutionId;
+    }
+
+    let targetInst = null;
+    if (targetInstId) {
+      targetInst = await Institution.findById(targetInstId);
+      if (!targetInst) {
+        return res.status(404).json({ success: false, message: 'Specified institution not found.' });
+      }
+    }
+
+    // 3. Prevent duplicate email
+    const existingUser = await User.findOne({ email: lowerEmail });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        code: 'EMAIL_EXISTS',
+        message: 'An account with this email address already exists in MAVI.',
+      });
+    }
+
+    // 4. Prevent duplicate institutional identifier within the same institution
+    const cleanIdValue = identifierValue.trim();
+    if (targetInstId && cleanIdValue) {
+      const existingId = await User.findOne({
+        institutionId: targetInstId,
+        'institutionalIdentifier.identifierValue': cleanIdValue,
+      });
+
+      if (existingId) {
+        return res.status(409).json({
+          success: false,
+          code: 'IDENTIFIER_EXISTS',
+          message: `An account with ${identifierType || 'institutional identifier'} '${cleanIdValue}' already exists for this institution.`,
+        });
+      }
+    }
+
+    // 5. Generate Immutable MAVI ID
+    const generatedMaviId = `MAVI-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
+    // 6. Generate 32-byte cryptographic single-use invitation token & 48h expiration
+    const rawInviteToken = crypto.randomBytes(32).toString('hex');
+    const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
+    const invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+    // 7. Determine institutional identifier type
+    const validIdType = identifierType || (lowerRole === 'teacher' ? 'FACULTY_ID' : 'RECRUITER_ID');
+
+    // 8. Create User Document in INVITED state (No password set!)
+    const newUser = await User.create({
+      name: name.trim(),
+      email: lowerEmail,
+      role: lowerRole,
+      roles: [lowerRole, 'user'],
+      maviId: generatedMaviId,
+      institutionId: targetInst?._id || null,
+      tenantId: targetInst?.tenantId || '',
+      designation: designation || '',
+      phone: phone || '',
+      companyName: lowerRole === 'recruiter' ? (companyName || '') : '',
+      university: {
+        name: targetInst?.name || '',
+        department: department || '',
+      },
+      institutionalIdentifier: {
+        identifierType: validIdType,
+        identifierValue: cleanIdValue,
+      },
+      facultyId: lowerRole === 'teacher' ? cleanIdValue : '',
+      accountStatus: 'INVITED',
+      status: 'invited',
+      emailVerified: false,
+      passwordSetupRequired: true,
+      mustChangePassword: false,
+      roleStatus: 'approved',
+      invitationToken: hashedInviteToken,
+      invitationExpires,
+    });
+
+    // 9. Dispatch Invitation Email with Activation Link (Zero Password)
+    const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
+    const activationLink = `${clientUrl}/activate-account?token=${rawInviteToken}`;
+    const emailHtml = generateAccountInvitationEmailHtml({
+      name: newUser.name,
+      role: lowerRole,
+      institutionName: targetInst?.name || 'Zeal College of Engineering and Research',
+      activationLink,
+      expiresHours: 48,
+    });
+
+    await sendEmail({
+      to: lowerEmail,
+      subject: `You've been invited to join MAVI Linking as a ${lowerRole === 'teacher' ? 'Teacher' : 'Recruiter'}`,
+      html: emailHtml,
+    });
+
+    // 10. Record Security Audit Log Event
+    const actionType = lowerRole === 'teacher' ? 'TEACHER_ACCOUNT_CREATED' : 'RECRUITER_ACCOUNT_CREATED';
+    await ActivityLog.create({
+      userId: req.user._id,
+      action: actionType,
+      details: `Admin ${req.user.email} created ${lowerRole.toUpperCase()} account for ${lowerEmail} (${generatedMaviId}) with invitation link dispatched.`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    // Omit sensitive tokens before returning
+    const userPayload = newUser.toObject();
+    delete userPayload.invitationToken;
+
+    res.status(201).json({
+      success: true,
+      message: `Account created successfully for ${lowerEmail}. An invitation email has been sent.`,
+      data: { user: userPayload },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Resend Account Activation Invitation Email
+ * @route   POST /api/admin/users/:userId/resend-invitation
+ * @access  Private (Admin / Super Admin / Platform Owner)
+ */
+const resendUserInvitation = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).populate('institutionId', 'name tenantId');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Target user not found.' });
+    }
+
+    if (user.accountStatus === 'ACTIVE' && user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'This account is already activated and active. Resending invitation is not applicable.',
+      });
+    }
+
+    // Generate fresh cryptographic token & 48h expiration
+    const rawInviteToken = crypto.randomBytes(32).toString('hex');
+    const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
+    const invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    user.invitationToken = hashedInviteToken;
+    user.invitationExpires = invitationExpires;
+    user.accountStatus = 'INVITED';
+    user.status = 'invited';
+    await user.save();
+
+    const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
+    const activationLink = `${clientUrl}/activate-account?token=${rawInviteToken}`;
+    const emailHtml = generateAccountInvitationEmailHtml({
+      name: user.name,
+      role: user.role,
+      institutionName: user.institutionId?.name || 'Zeal College of Engineering and Research',
+      activationLink,
+      expiresHours: 48,
+    });
+
+    await sendEmail({
+      to: user.email,
+      subject: `New Invitation: Activate your MAVI Linking ${user.role === 'teacher' ? 'Teacher' : 'Recruiter'} Account`,
+      html: emailHtml,
+    });
+
+    await ActivityLog.create({
+      userId: req.user._id,
+      action: 'INVITATION_RESENT',
+      details: `Admin ${req.user.email} resent invitation email to ${user.email} (${user.maviId || user._id}).`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Invitation email successfully resent to ${user.email}.`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAdminStats,
   getAllUsers,
@@ -792,5 +1021,7 @@ module.exports = {
   getDepartments,
   updateMyInstitutionSettings,
   updateUserInstitution,
+  createStaffUser,
+  resendUserInvitation,
 };
 

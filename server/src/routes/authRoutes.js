@@ -20,6 +20,8 @@ const { authLimiter, loginLimiter } = require('../middleware/authLimiter');const
   logout,
   requestRoleUpgrade,
   changePassword,
+  verifyInvitationToken,
+  activateAccount,
 } = require('../controllers/authController');
 const {
   upload,
@@ -95,6 +97,8 @@ router.post('/admin-login', loginLimiter, adminLogin);
 router.post('/super-admin-login', loginLimiter, superAdminLogin);
 router.get('/verify-admin-invite/:token', authLimiter, verifyAdminInvite);
 router.post('/accept-admin-invite', authLimiter, acceptAdminInvite);
+router.get('/verify-invitation/:token', authLimiter, verifyInvitationToken);
+router.post('/activate-account', authLimiter, activateAccount);
 router.post('/refresh', authLimiter, refreshToken);
 router.post('/verify-email', authLimiter, verifyEmail);
 router.post('/forgot-password', authLimiter, forgotPassword);

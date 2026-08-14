@@ -115,6 +115,24 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false);
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '', department: '' });
 
+  // Staff Provisioning Modal state
+  const [showCreateStaffModal, setShowCreateStaffModal] = useState(false);
+  const [staffForm, setStaffForm] = useState({
+    name: '',
+    email: '',
+    role: 'teacher',
+    identifierType: 'FACULTY_ID',
+    identifierValue: '',
+    department: '',
+    designation: '',
+    phone: '',
+    companyName: '',
+  });
+  const [creatingStaff, setCreatingStaff] = useState(false);
+  const [staffSuccessMsg, setStaffSuccessMsg] = useState('');
+  const [staffErrorMsg, setStaffErrorMsg] = useState('');
+  const [resendingInviteId, setResendingInviteId] = useState(null);
+
   // Institution Settings Form State
   const [settingsForm, setSettingsForm] = useState({
     name: '',
@@ -367,6 +385,55 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
     }
   };
 
+  const handleCreateStaffUser = async (e) => {
+    e.preventDefault();
+    setStaffErrorMsg('');
+    setStaffSuccessMsg('');
+    setCreatingStaff(true);
+
+    try {
+      const res = await api.post('/admin/users', staffForm);
+      if (res.data?.success) {
+        setStaffSuccessMsg(res.data.message || 'Staff account created successfully! Invitation email sent.');
+        setTimeout(() => {
+          setShowCreateStaffModal(false);
+          setStaffSuccessMsg('');
+          setStaffForm({
+            name: '',
+            email: '',
+            role: 'teacher',
+            identifierType: 'FACULTY_ID',
+            identifierValue: '',
+            department: '',
+            designation: '',
+            phone: '',
+            companyName: '',
+          });
+          loadTabData();
+        }, 1500);
+      }
+    } catch (err) {
+      setStaffErrorMsg(err.response?.data?.message || 'Failed to create staff account.');
+    } finally {
+      setCreatingStaff(false);
+    }
+  };
+
+  const handleResendInvitation = async (userId, userEmail) => {
+    try {
+      setResendingInviteId(userId);
+      const res = await api.post(`/admin/users/${userId}/resend-invitation`);
+      if (res.data?.success) {
+        alert(res.data.message || `Invitation email resent to ${userEmail}`);
+        loadTabData();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to resend invitation email.');
+    } finally {
+      setResendingInviteId(null);
+    }
+  };
+
   return (
     <InstitutionAdminLayout activeTab={activeTab}>
       <div style={{ padding: '1rem', maxWidth: '1280px', margin: '0 auto', color: 'white' }}>
@@ -564,6 +631,23 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
             {/* ─── 3. TEACHERS VIEW ────────────────────────────────────────────── */}
             {activeTab === 'teachers' && (
               <div className="animate-fade-in">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>Faculty & Teacher Provisioning</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0 }}>Teacher accounts are admin-provisioned via secure email invitations</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setStaffForm((prev) => ({ ...prev, role: 'teacher', identifierType: 'FACULTY_ID' }));
+                      setShowCreateStaffModal(true);
+                    }}
+                    className="btn btn-primary"
+                    style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.85rem' }}
+                  >
+                    <UserPlus size={16} /> Provision Teacher Account
+                  </button>
+                </div>
+
                 <div className="glass-card-static" style={{ overflowX: 'auto' }}>
                   {teachers.length === 0 ? (
                     <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -611,6 +695,23 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
             {/* ─── 4. RECRUITERS VIEW ─────────────────────────────────────────── */}
             {activeTab === 'recruiters' && (
               <div className="animate-fade-in">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>Corporate Recruiter Provisioning</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0 }}>Recruiter accounts are admin-provisioned via secure email invitations</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setStaffForm((prev) => ({ ...prev, role: 'recruiter', identifierType: 'RECRUITER_ID' }));
+                      setShowCreateStaffModal(true);
+                    }}
+                    className="btn btn-primary"
+                    style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.85rem' }}
+                  >
+                    <UserPlus size={16} /> Provision Recruiter Account
+                  </button>
+                </div>
+
                 <div className="glass-card-static" style={{ overflowX: 'auto' }}>
                   {recruiters.length === 0 ? (
                     <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -1169,6 +1270,172 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button type="button" onClick={() => setShowCreateAnnouncement(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Publish</button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* ─── MODAL: Create Staff Account (Teacher / Recruiter) ─────────────── */}
+        {showCreateStaffModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '1rem' }}>
+            <form onSubmit={handleCreateStaffUser} className="glass-card-static" style={{ width: '100%', maxWidth: '520px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <UserPlus className="text-purple-400" size={20} />
+                  Provision Staff Account
+                </h3>
+                <button type="button" onClick={() => setShowCreateStaffModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.25rem' }}>✕</button>
+              </div>
+
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '1.25rem' }}>
+                Provision a staff account. An invitation email with an activation link will be sent to the user. No password is created by the admin.
+              </p>
+
+              {staffErrorMsg && (
+                <div style={{ padding: '0.75rem', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', borderRadius: '8px', color: '#fca5a5', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                  {staffErrorMsg}
+                </div>
+              )}
+
+              {staffSuccessMsg && (
+                <div style={{ padding: '0.75rem', background: 'rgba(16,185,129,0.15)', border: '1px solid #10b981', borderRadius: '8px', color: '#6ee7b7', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                  {staffSuccessMsg}
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div className="input-group">
+                  <label className="input-label">Staff Role *</label>
+                  <select
+                    className="input-field"
+                    value={staffForm.role}
+                    onChange={(e) => setStaffForm({
+                      ...staffForm,
+                      role: e.target.value,
+                      identifierType: e.target.value === 'teacher' ? 'FACULTY_ID' : 'RECRUITER_ID',
+                    })}
+                  >
+                    <option value="teacher">Teacher / Faculty Member</option>
+                    <option value="recruiter">Corporate Recruiter</option>
+                  </select>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter full name"
+                    className="input-field"
+                    value={staffForm.name}
+                    onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Email Address (Invitation Target) *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="staff@institution.edu"
+                    className="input-field"
+                    value={staffForm.email}
+                    onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="input-group">
+                    <label className="input-label">ID Type</label>
+                    <select
+                      className="input-field"
+                      value={staffForm.identifierType}
+                      onChange={(e) => setStaffForm({ ...staffForm, identifierType: e.target.value })}
+                    >
+                      {staffForm.role === 'teacher' ? (
+                        <>
+                          <option value="FACULTY_ID">FACULTY_ID</option>
+                          <option value="EMPLOYEE_ID">EMPLOYEE_ID</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="RECRUITER_ID">RECRUITER_ID</option>
+                          <option value="EMPLOYEE_ID">EMPLOYEE_ID</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+
+                  <div className="input-group">
+                    <label className="input-label">ID Number / Code *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. EMP-99201"
+                      className="input-field"
+                      value={staffForm.identifierValue}
+                      onChange={(e) => setStaffForm({ ...staffForm, identifierValue: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {staffForm.role === 'teacher' && (
+                  <div className="input-group">
+                    <label className="input-label">Department</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Computer Engineering"
+                      className="input-field"
+                      value={staffForm.department}
+                      onChange={(e) => setStaffForm({ ...staffForm, department: e.target.value })}
+                    />
+                  </div>
+                )}
+
+                {staffForm.role === 'recruiter' && (
+                  <div className="input-group">
+                    <label className="input-label">Company / Organization *</label>
+                    <input
+                      type="text"
+                      required={staffForm.role === 'recruiter'}
+                      placeholder="e.g. Google / Microsoft / TCS"
+                      className="input-field"
+                      value={staffForm.companyName}
+                      onChange={(e) => setStaffForm({ ...staffForm, companyName: e.target.value })}
+                    />
+                  </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="input-group">
+                    <label className="input-label">Designation / Title</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Assistant Professor / Talent Lead"
+                      className="input-field"
+                      value={staffForm.designation}
+                      onChange={(e) => setStaffForm({ ...staffForm, designation: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="input-group">
+                    <label className="input-label">Phone Number</label>
+                    <input
+                      type="text"
+                      placeholder="+91 9876543210"
+                      className="input-field"
+                      value={staffForm.phone}
+                      onChange={(e) => setStaffForm({ ...staffForm, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button type="button" onClick={() => setShowCreateStaffModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
+                <button type="submit" disabled={creatingStaff} className="btn btn-primary" style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem' }}>
+                  {creatingStaff ? 'Provisioning...' : 'Provision & Send Email'}
+                </button>
               </div>
             </form>
           </div>

@@ -36,7 +36,13 @@ const superAdminRoutes = require('./routes/superAdminRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
-const { init } = require('./config/socket'); // socket.io
+const { init, close: closeSocketServer } = require('./config/socket'); // socket.io
+const { disconnectDB } = require('./config/db');
+const {
+  createShutdownHandler,
+  registerProcessHandlers,
+  applyKeepAliveTimeouts,
+} = require('./utils/gracefulShutdown');
 const http = require('http');
 
 
@@ -290,6 +296,19 @@ const startServer = async () => {
     const server = http.createServer(app);
     init(server); // Initialize socket.io
 
+    // Outlive the proxy's idle timeout, so it can't send a request down a
+    // connection this server is closing at the same moment — which surfaces as
+    // an intermittent 502 that is very hard to attribute.
+    applyKeepAliveTimeouts(server);
+
+    const shutdown = createShutdownHandler({
+      server,
+      closeSocket: closeSocketServer,
+      disconnectDB,
+    });
+
+    registerProcessHandlers({ shutdown });
+
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`\n🚀 MaVi Linking API Server`);
       console.log(`   Environment: ${process.env.NODE_ENV}`);
@@ -302,4 +321,10 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// The internal try/catch doesn't cover a rejection thrown from the listen
+// callback or from anything scheduled after it, and startServer() was called
+// bare — so that case was an unhandled rejection with no log line.
+startServer().catch((error) => {
+  console.error('❌ Failed to start server:', error.stack || error.message);
+  process.exit(1);
+});

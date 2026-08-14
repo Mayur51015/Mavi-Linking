@@ -1,10 +1,16 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
-const { requireRole } = require('../middleware/roleMiddleware');
+const {
+  requireAdmin,
+  requireSuperAdmin,
+  enforceInstitutionScope,
+} = require('../middleware/rbacMiddleware');
+
 const {
   getAdminStats,
   getAllUsers,
   updateUser,
+  updateUserStatus,
   deleteUser,
   getAuditLogs,
   getRoleRequests,
@@ -12,20 +18,41 @@ const {
   rejectRoleRequest,
 } = require('../controllers/adminController');
 
+const {
+  createInstitution,
+  getInstitutions,
+  getInstitutionById,
+  updateInstitution,
+  assignInstitutionAdmin,
+  removeInstitutionAdmin,
+} = require('../controllers/institutionController');
+
 const router = express.Router();
 
-// All admin routes require authentication + admin role
-router.use(protect, requireRole('admin'));
+// All routes require JWT authentication + Admin role (Super Admin or Institution Admin)
+router.use(protect, requireAdmin);
 
-router.get('/stats', getAdminStats);
-router.get('/users', getAllUsers);
-router.put('/users/:id', updateUser);
-router.delete('/users/:id', deleteUser);
-router.get('/logs', getAuditLogs);
+// Admin stats & user moderation (scoped by institution if institution_admin)
+router.get('/stats', enforceInstitutionScope, getAdminStats);
+router.get('/users', enforceInstitutionScope, getAllUsers);
+router.put('/users/:id', enforceInstitutionScope, updateUser);
+router.put('/users/:id/status', enforceInstitutionScope, updateUserStatus);
+router.delete('/users/:id', enforceInstitutionScope, deleteUser);
+router.get('/logs', enforceInstitutionScope, getAuditLogs);
 
-// Role Approval & Management Routes
-router.get('/role-requests', getRoleRequests);
-router.post('/role-requests/:id/approve', approveRoleRequest);
-router.post('/role-requests/:id/reject', rejectRoleRequest);
+// Role Requests & Verifications
+router.get('/role-requests', enforceInstitutionScope, getRoleRequests);
+router.post('/role-requests/:id/approve', enforceInstitutionScope, approveRoleRequest);
+router.post('/role-requests/:id/reject', enforceInstitutionScope, rejectRoleRequest);
+
+// Institutions Management
+router.get('/institutions', enforceInstitutionScope, getInstitutions);
+router.get('/institutions/:id', enforceInstitutionScope, getInstitutionById);
+
+// Super Admin Only Institution Control Routes
+router.post('/institutions', requireSuperAdmin, createInstitution);
+router.put('/institutions/:id', requireSuperAdmin, updateInstitution);
+router.post('/institutions/:id/assign-admin', requireSuperAdmin, assignInstitutionAdmin);
+router.post('/institutions/:id/remove-admin', requireSuperAdmin, removeInstitutionAdmin);
 
 module.exports = router;

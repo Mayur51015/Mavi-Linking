@@ -110,8 +110,10 @@ const RecruiterSearch = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                 <div className="avatar-gradient" style={{ width: '44px', height: '44px', fontSize: '1.1rem', flexShrink: 0 }}>{dev.name?.charAt(0)}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    {dev.name} {dev.isVerified && <BadgeCheck size={14} style={{ color: 'var(--accent-cyan)' }} />}
+                  <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span>{dev.name}</span>
+                    {dev.isVerified && <BadgeCheck size={14} style={{ color: 'var(--accent-cyan)' }} />}
+                    {dev.maviId && <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--accent-purple)', fontWeight: 'bold' }}>{dev.maviId}</span>}
                   </div>
                   <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{dev.university?.name || 'N/A'} • {dev.university?.department || 'N/A'}</div>
                 </div>

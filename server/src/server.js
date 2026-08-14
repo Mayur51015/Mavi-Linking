@@ -32,6 +32,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const superAdminRoutes = require('./routes/superAdminRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
@@ -117,6 +118,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/documents', documentRoutes);
@@ -152,27 +154,46 @@ const startServer = async () => {
         { $set: { role: 'teacher' } }
       );
 
-      // Auto-promote administrator accounts
+      // Auto-promote administrator accounts & sync roles array
       const adminEmails = [
         'mayur2006khandare@gmail.com',
         'khandaremayur420@gmail.com',
         'mayur@gmail.com',
         'mavi118@gmail.com',
         'armansunasara70@gmail.com',
-      ];
+        process.env.SUPER_ADMIN_EMAIL,
+      ].filter(Boolean);
+
       const adminResult = await User.updateMany(
-        { email: { $in: adminEmails } },
-        { $set: { role: 'admin' } }
+        { email: { $in: adminEmails.map((e) => e.toLowerCase()) } },
+        {
+          $set: { role: 'super_admin' },
+          $addToSet: { roles: { $each: ['super_admin', 'admin', 'user'] } },
+        }
       );
       if (adminResult.modifiedCount > 0) {
-        console.log(`   ✅ Promoted ${adminResult.modifiedCount} account(s) to admin role.`);
+        console.log(`   ✅ Promoted ${adminResult.modifiedCount} account(s) to Super Admin role.`);
+      }
+
+      // MAVI ID backfill migration for existing accounts
+      const usersNeedingMaviId = await User.find({
+        $or: [{ maviId: { $exists: false } }, { maviId: null }, { maviId: '' }],
+      });
+      if (usersNeedingMaviId.length > 0) {
+        let backfillCount = 0;
+        for (const userDoc of usersNeedingMaviId) {
+          // Pre-save hook will auto-generate unique MAVI ID if missing
+          await userDoc.save();
+          backfillCount++;
+        }
+        console.log(`   ✅ MAVI ID Migration: Backfilled MAVI IDs for ${backfillCount} existing user account(s).`);
       }
 
       if (devMigrated.modifiedCount > 0 || profMigrated.modifiedCount > 0) {
         console.log(`   ✅ Role migration: ${devMigrated.modifiedCount} developer→user, ${profMigrated.modifiedCount} professor→teacher`);
       }
     } catch (migrationErr) {
-      console.warn('   ⚠️  Role migration skipped:', migrationErr.message);
+      console.warn('   ⚠️  Role/MAVI ID migration skipped:', migrationErr.message);
     }
 
     const server = http.createServer(app);

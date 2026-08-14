@@ -40,19 +40,44 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
     return <Navigate to={redirectTo} />;
   }
 
-  // Role-based access check (normalize legacy roles)
-  const roleMigration = { developer: 'user', professor: 'teacher' };
-  const normalizedRole = roleMigration[user.role] || user.role;
+  if (user.status === 'suspended') {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg-primary, #09090b)',
+        color: '#ef4444',
+        padding: '2rem',
+        textAlign: 'center',
+      }}>
+        <div className="glass-card-static" style={{ maxWidth: '450px', padding: '2.5rem' }}>
+          <h2 style={{ marginBottom: '1rem' }}>Account Suspended</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+            Your account has been suspended by an administrator. Access to MAVI Linking features is restricted.
+          </p>
+          <a href="mailto:support@mavilinking.com" className="btn btn-primary">Contact Support</a>
+        </div>
+      </div>
+    );
+  }
 
-  if (roles && roles.length > 0 && !roles.includes(normalizedRole)) {
-    // Redirect to their appropriate dashboard instead of blocking
-    switch (normalizedRole) {
-      case 'recruiter':
-        return <Navigate to="/dashboard/recruiter" />;
-      case 'teacher':
-        return <Navigate to="/dashboard/teacher" />;
-      default:
-        return <Navigate to="/dashboard" />;
+  // Role-based access check (check user.roles or fallback user.role)
+  const userRoles = Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [user.role];
+  const roleMigration = { developer: 'user', professor: 'teacher' };
+  const normalizedUserRoles = userRoles.map((r) => roleMigration[r] || r);
+
+  const isSuperAdmin = normalizedUserRoles.includes('super_admin') || normalizedUserRoles.includes('admin');
+  const isInstAdmin = normalizedUserRoles.includes('institution_admin');
+
+  if (roles && roles.length > 0) {
+    const hasRole = roles.some((r) => normalizedUserRoles.includes(r));
+    if (!hasRole && !isSuperAdmin) {
+      if (isInstAdmin) return <Navigate to="/dashboard/admin" />;
+      if (normalizedUserRoles.includes('recruiter')) return <Navigate to="/dashboard/recruiter" />;
+      if (normalizedUserRoles.includes('teacher')) return <Navigate to="/dashboard/teacher" />;
+      return <Navigate to="/dashboard" />;
     }
   }
 

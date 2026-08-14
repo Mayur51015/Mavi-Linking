@@ -1,8 +1,8 @@
 const { generateQrForUsername } = require('../services/qrService');
 
 const getProfileBaseUrl = () => {
-  // QR should redirect to frontend identity route /u/:username
-  return process.env.PUBLIC_APP_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+  // QR should redirect to frontend identity route /u/:username or /u/:maviId
+  return process.env.PUBLIC_APP_URL || process.env.CLIENT_URL || 'https://mavi-linking-mq7d.vercel.app';
 };
 
 const getQrForUsername = async (req, res, next) => {

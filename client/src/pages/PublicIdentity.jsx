@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Terminal, GitBranch, Code2, Globe, Database, ExternalLink,
   BadgeCheck, QrCode, Download, Share2, Award, TrendingUp,
-  Cpu, Users, Star, Briefcase, FileText, X,
+  Cpu, Users, Star, Briefcase, FileText, X, Copy, Check,
 } from 'lucide-react';
 import api from '../api/axios';
 import QRModal from '../components/QRModal';
@@ -32,6 +32,7 @@ const PublicIdentity = () => {
   const [showQR, setShowQR] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [copiedMaviId, setCopiedMaviId] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -121,8 +122,33 @@ if (loading) return (
                 <span className="verified-badge"><BadgeCheck size={20} /> Verified</span>
               )}
             </div>
-            <div style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem', fontSize: '1rem' }}>
-              @{profile.username}
+            <div style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <span>@{profile.username}</span>
+              {profile.maviId && (
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(profile.maviId);
+                    setCopiedMaviId(true);
+                    setTimeout(() => setCopiedMaviId(false), 2000);
+                  }}
+                  className="badge badge-purple"
+                  style={{
+                    cursor: 'pointer',
+                    fontFamily: 'monospace',
+                    fontWeight: 'bold',
+                    border: '1px solid var(--accent-purple)',
+                    padding: '0.25rem 0.6rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                  }}
+                  title="Click to copy MAVI ID"
+                >
+                  {copiedMaviId ? <Check size={12} style={{ color: 'var(--accent-emerald)' }} /> : <Copy size={12} />}
+                  <span>{profile.maviId}</span>
+                  {copiedMaviId && <span style={{ fontSize: '0.7rem', textTransform: 'none', marginLeft: '2px' }}>Copied!</span>}
+                </button>
+              )}
             </div>
             {profile.bio && <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>{profile.bio}</p>}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>

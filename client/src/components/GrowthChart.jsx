@@ -1,9 +1,11 @@
-import { BarChart3 } from 'lucide-react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { BarChart3, TrendingUp } from 'lucide-react';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import EmptyState from './ui/EmptyState';
 
 const GrowthChart = ({ analytics }) => {
-  if (!analytics || analytics.length === 0) {
+  const hasData = analytics && analytics.length > 0 && analytics.some(a => (a.repoGrowth || 0) > 0 || (a.contributionGrowth || 0) > 0);
+
+  if (!hasData) {
     return (
       <EmptyState
         icon={<BarChart3 size={32} color="var(--accent-blue)" />}
@@ -15,26 +17,63 @@ const GrowthChart = ({ analytics }) => {
     );
   }
 
+  // Format month label e.g. '2026-05' -> 'May 26'
+  const formattedData = analytics.map(item => {
+    let formattedMonth = item.month;
+    if (item.month && item.month.includes('-')) {
+      const [year, m] = item.month.split('-');
+      const dateObj = new Date(parseInt(year, 10), parseInt(m, 10) - 1, 1);
+      formattedMonth = dateObj.toLocaleString('en-US', { month: 'short' }) + " '" + year.slice(2);
+    }
+    return {
+      ...item,
+      displayMonth: formattedMonth,
+      'Repositories & Projects': item.repoGrowth || 0,
+      'Contributions & Solved': item.contributionGrowth || 0,
+    };
+  });
+
+  const latestInsight = analytics[analytics.length - 1]?.aiSummary;
+
   return (
-    <div className="glass-card" style={{ padding: '2rem' }}>
-      <h3 style={{ marginBottom: '1.5rem', color: 'white' }}>Developer Growth Analytics</h3>
-      <div style={{ height: '250px', width: '100%' }}>
+    <div className="glass-card" style={{ padding: '1.75rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <h3 style={{ margin: 0, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
+          <TrendingUp size={22} color="var(--accent-cyan)" />
+          Developer Growth Analytics
+        </h3>
+        <span className="badge badge-purple" style={{ fontSize: '0.75rem' }}>6-Month Trend</span>
+      </div>
+
+      <div style={{ width: '100%', height: '240px', minHeight: '240px' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={analytics}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-            <XAxis dataKey="month" stroke="var(--text-secondary)" />
-            <YAxis stroke="var(--text-secondary)" />
+          <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorRepos" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.05}/>
+              </linearGradient>
+              <linearGradient id="colorContributions" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#a855f7" stopOpacity={0.05}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+            <XAxis dataKey="displayMonth" stroke="var(--text-secondary)" tick={{ fontSize: 12 }} />
+            <YAxis stroke="var(--text-secondary)" tick={{ fontSize: 12 }} />
             <Tooltip
-              contentStyle={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+              contentStyle={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', color: '#fff', fontSize: '0.85rem' }}
             />
-            <Area type="monotone" dataKey="repoGrowth" stackId="1" stroke="var(--accent-blue)" fill="var(--accent-blue)" fillOpacity={0.6} />
-            <Area type="monotone" dataKey="contributionGrowth" stackId="1" stroke="var(--accent-purple)" fill="var(--accent-purple)" fillOpacity={0.6} />
+            <Legend wrapperStyle={{ fontSize: '0.8rem', paddingTop: '10px' }} />
+            <Area type="monotone" dataKey="Repositories & Projects" stroke="#38bdf8" fillOpacity={1} fill="url(#colorRepos)" />
+            <Area type="monotone" dataKey="Contributions & Solved" stroke="#a855f7" fillOpacity={1} fill="url(#colorContributions)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
-      {analytics[analytics.length - 1]?.aiSummary && (
-        <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-          <strong>AI Growth Insight:</strong> {analytics[analytics.length - 1].aiSummary}
+
+      {latestInsight && (
+        <div style={{ marginTop: '1rem', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', borderLeft: '3px solid var(--accent-purple)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          <strong style={{ color: 'white' }}>AI Growth Insight:</strong> {latestInsight}
         </div>
       )}
     </div>

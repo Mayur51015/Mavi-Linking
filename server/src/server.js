@@ -37,7 +37,6 @@ const announcementRoutes = require('./routes/announcementRoutes');
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const { init } = require('./config/socket'); // socket.io
-const { QR_DIR } = require('./utils/privateFiles');
 const http = require('http');
 
 
@@ -87,6 +86,8 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // ─── Static Files ───────────────────────────────────────────────────────────
+const { QR_DIR } = require('./utils/privateFiles');
+
 // Only the QR directory is public. `server/public` as a whole also contains
 // `uploads/` (student ID proofs, marksheets, resumes, certificates) and
 // `reports/`, and serving those here handed them to anonymous requests,

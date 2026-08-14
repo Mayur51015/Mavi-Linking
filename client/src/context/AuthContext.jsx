@@ -1,8 +1,12 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { io } from 'socket.io-client';
-import api from '../api/axios';
+import api, { socketOriginFromApiBaseUrl } from '../api/axios';
 
 export const AuthContext = createContext();
+
+// Enough retries to ride out a server restart or a brief network drop, few
+// enough that a genuine misconfiguration stops instead of running forever.
+const MAX_SOCKET_RECONNECT_ATTEMPTS = 10;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -36,11 +40,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (userId && token) {
-      const isProd = import.meta.env.PROD || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
-      const defaultSocket = isProd ? 'https://mavi-server-4yvl.onrender.com' : 'http://localhost:5000';
-      const socketUrl = import.meta.env.VITE_SOCKET_URL || defaultSocket;
-      console.log('Initializing socket connection to:', socketUrl);
-      
+      // Derived from the API base URL rather than hardcoded a second time. The
+      // socket and the API are the same server, so having two independent
+      // copies of the production host only creates a way for them to disagree.
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || socketOriginFromApiBaseUrl();
+
       const newSocket = io(socketUrl, {
         auth: (cb) => {
           cb({ token: localStorage.getItem('token') });
@@ -48,42 +52,59 @@ export const AuthProvider = ({ children }) => {
         withCredentials: true,
         transports: ['polling', 'websocket'],
         reconnection: true,
-        reconnectionAttempts: Infinity,
+        // Was Infinity. A CORS rejection or a wrong socket URL is not something
+        // retrying fixes, so that turned a misconfiguration into one handshake
+        // per second, per open tab, forever — against an endpoint outside the
+        // /api prefix that the rate limiter doesn't cover.
+        reconnectionAttempts: MAX_SOCKET_RECONNECT_ATTEMPTS,
         reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
+        reconnectionDelayMax: 15000,
+        randomizationFactor: 0.5,
         timeout: 20000,
       });
 
       newSocket.on('connect', () => {
-        console.log('User connected to real-time feed:', newSocket.id);
         newSocket.emit('joinRoom', userId);
       });
 
       newSocket.on('disconnect', (reason) => {
-        console.log(`Socket disconnected: ${newSocket.id}, reason: ${reason}`);
+        // 'io server disconnect' means the server dropped us deliberately, so
+        // socket.io won't retry on its own. Every other reason it handles.
         if (reason === 'io server disconnect') {
           newSocket.connect();
         }
       });
 
       newSocket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error.message);
-        const freshToken = localStorage.getItem('token');
-        if (freshToken) {
-          newSocket.auth = { token: freshToken };
-          newSocket.connect();
+        // Only an auth failure is worth re-attempting with a fresh token.
+        // Treating every failure that way — as the old handler did — meant a
+        // CORS rejection was retried as if the token were stale, immediately
+        // and without a backoff, which is what produced the loop.
+        if (/auth/iu.test(error.message || '')) {
+          const freshToken = localStorage.getItem('token');
+          if (freshToken) {
+            newSocket.auth = { token: freshToken };
+          }
+          return;
         }
+
+        console.error(
+          `Real-time connection to ${socketUrl} failed: ${error.message}. ` +
+            'If this persists, check that the origin is in the server CORS allowlist ' +
+            '(CLIENT_URL) and that VITE_SOCKET_URL points at the API host.'
+        );
       });
 
       setSocket(newSocket);
 
       return () => {
-        console.log('Cleaning up socket connection:', newSocket.id);
         newSocket.disconnect();
       };
     } else {
       setSocket(null);
     }
+
+    return undefined;
   }, [userId]);
 
   const login = useCallback(async (identifier, password) => {

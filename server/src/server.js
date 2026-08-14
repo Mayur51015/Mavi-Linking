@@ -8,6 +8,7 @@ dotenv.config({
 
 const express = require('express');
 const cors = require('cors');
+const { createOriginChecker } = require('./config/allowedOrigins');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const apiLimiter = require('./middleware/apiLimiter');
@@ -37,7 +38,6 @@ const announcementRoutes = require('./routes/announcementRoutes');
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const { init } = require('./config/socket'); // socket.io
-const { createOriginChecker } = require('./config/allowedOrigins');
 const http = require('http');
 
 

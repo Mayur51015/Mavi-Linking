@@ -3,6 +3,7 @@ const { protect } = require('../middleware/auth');
 const {
   requireAdmin,
   requireSuperAdmin,
+  requirePermission,
   enforceInstitutionScope,
 } = require('../middleware/rbacMiddleware');
 
@@ -24,6 +25,9 @@ const {
   updateUserInstitution,
   createStaffUser,
   resendUserInvitation,
+  getStudentsForAdmin,
+  getStudentProfileForAdmin,
+  updateStudentProfileForAdmin,
 } = require('../controllers/adminController');
 
 const {
@@ -39,6 +43,12 @@ const router = express.Router();
 
 // All routes require JWT authentication + Admin role (Super Admin or Institution Admin)
 router.use(protect, requireAdmin);
+
+// Student Profile Management Authority (STUDENT_PROFILE_MANAGE permission + Tenant Scope)
+router.get('/students', enforceInstitutionScope, requirePermission('STUDENT_PROFILE_MANAGE'), getStudentsForAdmin);
+router.get('/students/:studentId/profile', enforceInstitutionScope, requirePermission('STUDENT_PROFILE_MANAGE'), getStudentProfileForAdmin);
+router.patch('/students/:studentId/profile', enforceInstitutionScope, requirePermission('STUDENT_PROFILE_MANAGE'), updateStudentProfileForAdmin);
+router.put('/students/:studentId/profile', enforceInstitutionScope, requirePermission('STUDENT_PROFILE_MANAGE'), updateStudentProfileForAdmin);
 
 // Admin stats & user moderation (scoped by institution if institution_admin)
 router.get('/stats', enforceInstitutionScope, getAdminStats);

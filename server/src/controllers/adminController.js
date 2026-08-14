@@ -1005,6 +1005,433 @@ const resendUserInvitation = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get paginated student list for Institution Admin with search (Name, MAVI ID, PRN, Email) and filters
+ * @route   GET /api/admin/students
+ * @access  Private (admin with STUDENT_PROFILE_MANAGE)
+ */
+const getStudentsForAdmin = async (req, res, next) => {
+  try {
+    const { search, department, year, page = 1, limit = 20 } = req.query;
+    const query = { role: 'user' };
+
+    // Apply institution scope if present
+    if (req.institutionScope?.institutionId) {
+      query.institutionId = req.institutionScope.institutionId;
+    }
+
+    if (department) {
+      query['university.department'] = { $regex: new RegExp(`^${department}$`, 'i') };
+    }
+    if (year) {
+      query['university.year'] = String(year);
+    }
+
+    if (search) {
+      const escapeRegex = (str) => String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const cleanSearch = escapeRegex(search.trim());
+      query.$or = [
+        { name: { $regex: cleanSearch, $options: 'i' } },
+        { email: { $regex: cleanSearch, $options: 'i' } },
+        { maviId: { $regex: cleanSearch, $options: 'i' } },
+        { prn: { $regex: cleanSearch, $options: 'i' } },
+        { 'institutionalIdentifier.identifierValue': { $regex: cleanSearch, $options: 'i' } },
+      ];
+    }
+
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+
+    const [students, total] = await Promise.all([
+      User.find(query)
+        .select('name email maviId prn avatar university role status accountStatus prnVerificationStatus createdAt')
+        .populate('institutionId', 'name code tenantId')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit, 10)),
+      User.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        students,
+        pagination: {
+          total,
+          page: parseInt(page, 10),
+          pages: Math.ceil(total / parseInt(limit, 10)),
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get detailed student profile & audit history for Institution Admin
+ * @route   GET /api/admin/students/:studentId/profile
+ * @access  Private (admin with STUDENT_PROFILE_MANAGE)
+ */
+const getStudentProfileForAdmin = async (req, res, next) => {
+  try {
+    const { studentId } = req.params;
+    const AuditLog = require('../models/AuditLog');
+
+    const student = await User.findById(studentId)
+      .select('-password -passwordHash -refreshToken -verificationToken -resetPasswordToken -resetPasswordOtp')
+      .populate('institutionId', 'name code tenantId');
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found.',
+      });
+    }
+
+    // Tenant Isolation Security Check:
+    if (req.institutionScope?.institutionId) {
+      const adminInstId = req.institutionScope.institutionId.toString();
+      const studentInstId = student.institutionId ? (student.institutionId._id || student.institutionId).toString() : null;
+
+      const adminUnivName = (req.user?.university?.name || '').trim().toLowerCase();
+      const studentUnivName = (student.university?.name || '').trim().toLowerCase();
+      const isUnivMatch = adminUnivName && studentUnivName && (studentUnivName.includes(adminUnivName) || adminUnivName.includes(studentUnivName));
+
+      if (studentInstId && studentInstId !== adminInstId && !isUnivMatch) {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden. Access denied for student belonging to another institution.',
+        });
+      }
+
+      // Auto-assign institutionId if missing on student
+      if (!student.institutionId) {
+        student.institutionId = req.institutionScope.institutionId;
+        student.tenantId = req.institutionScope.tenantId || req.user?.tenantId || '';
+        await student.save();
+      }
+    }
+
+    // Fetch student's profile audit logs / change history
+    const auditHistory = await AuditLog.find({ targetUserId: student._id })
+      .populate('actorId', 'name role email')
+      .sort({ createdAt: -1 })
+      .limit(30);
+
+    const sanitizedData = {
+      id: student._id,
+      _id: student._id,
+      maviId: student.maviId,
+      name: student.name,
+      email: student.email,
+      phone: student.phone || '',
+      prn: student.prn || '',
+      avatar: student.avatar || '',
+      bio: student.bio || '',
+      role: student.role,
+      status: student.status,
+      accountStatus: student.accountStatus,
+      verificationStatus: student.isVerified ? 'Verified' : 'Unverified',
+      prnVerificationStatus: student.prnVerificationStatus,
+      university: {
+        name: student.university?.name || '',
+        department: student.university?.department || '',
+        branch: student.university?.branch || '',
+        year: student.university?.year || '',
+        division: student.university?.division || '',
+        semester: student.university?.semester || '',
+        admissionYear: student.university?.admissionYear || '',
+        batch: student.university?.batch || '',
+        graduationYear: student.university?.graduationYear || student.graduationYear || '',
+      },
+      skills: student.skillsList || [],
+      preferredDomain: student.preferredDomain || '',
+      experienceLevel: student.experienceLevel || '',
+      github: student.platforms?.github?.username || student.githubUsername || '',
+      linkedin: student.linkedinUrl || '',
+      portfolio: student.portfolioWebsite || '',
+      institution: student.institutionId ? {
+        id: student.institutionId._id,
+        name: student.institutionId.name,
+        code: student.institutionId.code,
+        tenantId: student.institutionId.tenantId,
+      } : null,
+      prnHistory: student.prnHistory || [],
+      auditHistory,
+    };
+
+    res.status(200).json({
+      success: true,
+      data: sanitizedData,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Update permitted student profile fields & PRN for Institution Admin (with audit logging & tenant security)
+ * @route   PATCH /api/admin/students/:studentId/profile
+ * @access  Private (admin with STUDENT_PROFILE_MANAGE)
+ */
+const updateStudentProfileForAdmin = async (req, res, next) => {
+  try {
+    const { studentId } = req.params;
+    const AuditLog = require('../models/AuditLog');
+
+    // 1. Load target student
+    const student = await User.findById(studentId);
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found.',
+      });
+    }
+
+    // 2. Tenant Isolation Security Check:
+    if (req.institutionScope?.institutionId) {
+      const adminInstId = req.institutionScope.institutionId.toString();
+      const studentInstId = student.institutionId ? student.institutionId.toString() : null;
+
+      const adminUnivName = (req.user?.university?.name || '').trim().toLowerCase();
+      const studentUnivName = (student.university?.name || '').trim().toLowerCase();
+      const isUnivMatch = adminUnivName && studentUnivName && (studentUnivName.includes(adminUnivName) || adminUnivName.includes(studentUnivName));
+
+      if (studentInstId && studentInstId !== adminInstId && !isUnivMatch) {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden. Access denied for student belonging to another institution.',
+        });
+      }
+
+      if (!student.institutionId) {
+        student.institutionId = req.institutionScope.institutionId;
+        student.tenantId = req.institutionScope.tenantId || req.user?.tenantId || '';
+      }
+    }
+
+    // 3. Reject Attempted Updates to Protected Fields
+    const protectedFieldsAttempted = [];
+    const forbiddenKeys = [
+      'maviId', 'userId', 'tenantId', 'institutionId', 'password', 'passwordHash',
+      'role', 'roles', 'permissions', 'isSuperAdmin', 'jwt', 'refreshToken',
+      'resetPasswordToken', 'resetPasswordOtp', 'invitationToken'
+    ];
+
+    for (const key of forbiddenKeys) {
+      if (req.body[key] !== undefined && String(req.body[key]) !== String(student[key])) {
+        protectedFieldsAttempted.push(key);
+      }
+    }
+
+    if (protectedFieldsAttempted.length > 0) {
+      return res.status(403).json({
+        success: false,
+        message: `Forbidden. You are not authorized to modify protected system fields: ${protectedFieldsAttempted.join(', ')}.`,
+      });
+    }
+
+    // 4. Explicit Field Allowlist & Delta Tracking
+    const changedFields = [];
+    const auditLogsToCreate = [];
+
+    // --- Name & Avatar & Phone & Bio ---
+    if (req.body.name !== undefined && req.body.name.trim() !== student.name) {
+      changedFields.push('name');
+      student.name = req.body.name.trim();
+    }
+    if (req.body.avatar !== undefined && req.body.avatar !== student.avatar) {
+      changedFields.push('avatar');
+      student.avatar = req.body.avatar;
+      auditLogsToCreate.push('STUDENT_PROFILE_PHOTO_UPDATED');
+    }
+    if (req.body.phone !== undefined && req.body.phone !== student.phone) {
+      changedFields.push('phone');
+      student.phone = req.body.phone.trim();
+      auditLogsToCreate.push('STUDENT_CONTACT_UPDATED');
+    }
+    if (req.body.bio !== undefined && req.body.bio !== student.bio) {
+      changedFields.push('bio');
+      student.bio = req.body.bio.trim();
+    }
+
+    // --- Academic Info (University Subdocument) ---
+    let academicChanged = false;
+    if (req.body.department !== undefined && req.body.department !== student.university.department) {
+      student.university.department = req.body.department.trim();
+      changedFields.push('university.department');
+      academicChanged = true;
+    }
+    if (req.body.branch !== undefined && req.body.branch !== student.university.branch) {
+      student.university.branch = req.body.branch.trim();
+      changedFields.push('university.branch');
+      academicChanged = true;
+    }
+    if (req.body.year !== undefined && String(req.body.year) !== String(student.university.year)) {
+      student.university.year = String(req.body.year).trim();
+      changedFields.push('university.year');
+      academicChanged = true;
+    }
+    if (req.body.division !== undefined && req.body.division !== student.university.division) {
+      student.university.division = req.body.division.trim();
+      changedFields.push('university.division');
+      academicChanged = true;
+    }
+    if (req.body.semester !== undefined && String(req.body.semester) !== String(student.university.semester)) {
+      student.university.semester = String(req.body.semester).trim();
+      changedFields.push('university.semester');
+      academicChanged = true;
+    }
+    if (req.body.admissionYear !== undefined && String(req.body.admissionYear) !== String(student.university.admissionYear)) {
+      student.university.admissionYear = String(req.body.admissionYear).trim();
+      changedFields.push('university.admissionYear');
+      academicChanged = true;
+    }
+    if (req.body.graduationYear !== undefined && String(req.body.graduationYear) !== String(student.graduationYear)) {
+      student.graduationYear = String(req.body.graduationYear).trim();
+      student.university.graduationYear = String(req.body.graduationYear).trim();
+      changedFields.push('graduationYear');
+      academicChanged = true;
+    }
+
+    if (academicChanged) {
+      auditLogsToCreate.push('STUDENT_ACADEMIC_INFO_UPDATED');
+    }
+
+    // --- PRN Management & Validation ---
+    const rawNewPrn = req.body.prn !== undefined ? req.body.prn.trim() : null;
+    let oldPrnValue = student.prn || '';
+    if (rawNewPrn !== null && rawNewPrn !== oldPrnValue) {
+      if (rawNewPrn.length > 0) {
+        // Uniqueness Check: Ensure no other user has this PRN
+        const prnConflict = await User.findOne({
+          _id: { $ne: student._id },
+          $or: [
+            { prn: { $regex: new RegExp(`^${rawNewPrn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+            { 'institutionalIdentifier.identifierValue': { $regex: new RegExp(`^${rawNewPrn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } }
+          ]
+        });
+
+        if (prnConflict) {
+          return res.status(409).json({
+            success: false,
+            message: `PRN '${rawNewPrn}' is already assigned to student ${prnConflict.name} (${prnConflict.maviId}).`,
+          });
+        }
+      }
+
+      student.prn = rawNewPrn;
+      student.institutionalIdentifier = {
+        identifierType: 'PRN',
+        identifierValue: rawNewPrn,
+      };
+      student.prnVerificationStatus = 'approved';
+
+      // Log PRN history entry
+      student.prnHistory.push({
+        oldPRN: oldPrnValue,
+        newPRN: rawNewPrn,
+        changedBy: req.user._id,
+        changedByName: req.user.name,
+        changedAt: new Date()
+      });
+
+      changedFields.push('prn');
+
+      // Create dedicated PRN Audit Log
+      await AuditLog.create({
+        actorId: req.user._id,
+        actorRole: req.user.role,
+        targetUserId: student._id,
+        institutionId: student.institutionId,
+        tenantId: student.tenantId || '',
+        action: 'STUDENT_PRN_UPDATED',
+        oldPRN: oldPrnValue,
+        newPRN: rawNewPrn,
+        changedFields: ['prn'],
+        result: 'SUCCESS',
+      });
+    }
+
+    // --- Skills, Socials, Preferences ---
+    if (Array.isArray(req.body.skills)) {
+      student.skillsList = req.body.skills.map(s => typeof s === 'string' ? { name: s, isVerified: true, verifiedBy: req.user._id } : s);
+      changedFields.push('skills');
+    }
+    if (req.body.github !== undefined) {
+      student.githubUsername = req.body.github.trim();
+      if (!student.platforms) student.platforms = {};
+      if (!student.platforms.github) student.platforms.github = {};
+      student.platforms.github.username = req.body.github.trim();
+      changedFields.push('github');
+    }
+    if (req.body.linkedin !== undefined) {
+      student.linkedinUrl = req.body.linkedin.trim();
+      changedFields.push('linkedin');
+    }
+    if (req.body.portfolio !== undefined) {
+      student.portfolioWebsite = req.body.portfolio.trim();
+      changedFields.push('portfolio');
+    }
+    if (req.body.preferredDomain !== undefined) {
+      student.preferredDomain = req.body.preferredDomain;
+      changedFields.push('preferredDomain');
+    }
+
+    if (changedFields.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid profile changes were provided.',
+      });
+    }
+
+    await student.save();
+
+    // Create Audit Log records for categories
+    if (!auditLogsToCreate.includes('STUDENT_PROFILE_UPDATED')) {
+      auditLogsToCreate.push('STUDENT_PROFILE_UPDATED');
+    }
+
+    for (const actionType of auditLogsToCreate) {
+      await AuditLog.create({
+        actorId: req.user._id,
+        actorRole: req.user.role,
+        targetUserId: student._id,
+        institutionId: student.institutionId,
+        tenantId: student.tenantId || '',
+        action: actionType,
+        changedFields,
+        result: 'SUCCESS',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Student profile updated successfully',
+      data: {
+        id: student._id,
+        _id: student._id,
+        maviId: student.maviId,
+        name: student.name,
+        email: student.email,
+        phone: student.phone,
+        prn: student.prn,
+        avatar: student.avatar,
+        bio: student.bio,
+        university: student.university,
+        skills: student.skillsList,
+        github: student.githubUsername,
+        linkedin: student.linkedinUrl,
+        portfolio: student.portfolioWebsite,
+        preferredDomain: student.preferredDomain,
+        prnHistory: student.prnHistory,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAdminStats,
   getAllUsers,
@@ -1023,5 +1450,8 @@ module.exports = {
   updateUserInstitution,
   createStaffUser,
   resendUserInvitation,
+  getStudentsForAdmin,
+  getStudentProfileForAdmin,
+  updateStudentProfileForAdmin,
 };
 

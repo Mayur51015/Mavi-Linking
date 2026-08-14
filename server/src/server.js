@@ -36,13 +36,7 @@ const superAdminRoutes = require('./routes/superAdminRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
-const { init, close: closeSocketServer } = require('./config/socket'); // socket.io
-const { disconnectDB } = require('./config/db');
-const {
-  createShutdownHandler,
-  registerProcessHandlers,
-  applyKeepAliveTimeouts,
-} = require('./utils/gracefulShutdown');
+const { init } = require('./config/socket'); // socket.io
 const http = require('http');
 
 
@@ -146,6 +140,14 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 
 // ─── Start Server ───────────────────────────────────────────────────────────
+const { close: closeSocketServer } = require('./config/socket');
+const { disconnectDB } = require('./config/db');
+const {
+  createShutdownHandler,
+  registerProcessHandlers,
+  applyKeepAliveTimeouts,
+} = require('./utils/gracefulShutdown');
+
 const startServer = async () => {
   try {
     await connectDB();

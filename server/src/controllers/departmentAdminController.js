@@ -364,6 +364,12 @@ const updateDepartmentAdminStatus = async (req, res, next) => {
     }
 
     deptAdmin.status = status;
+    if (status === 'active') {
+      deptAdmin.accountStatus = 'ACTIVE';
+      deptAdmin.roleStatus = 'approved';
+    } else if (status === 'suspended') {
+      deptAdmin.accountStatus = 'SUSPENDED';
+    }
     await deptAdmin.save();
 
     const actionType = status === 'suspended' ? 'DEPARTMENT_ADMIN_SUSPENDED' : 'DEPARTMENT_ADMIN_REACTIVATED';

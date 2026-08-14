@@ -25,6 +25,19 @@ const auditLogSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    departmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Department',
+      default: null,
+    },
+    previousRole: {
+      type: String,
+      default: '',
+    },
+    newRole: {
+      type: String,
+      default: '',
+    },
     action: {
       type: String,
       required: true,
@@ -35,6 +48,13 @@ const auditLogSchema = new mongoose.Schema(
         'STUDENT_CONTACT_UPDATED',
         'STUDENT_PROFILE_PHOTO_UPDATED',
         'STUDENT_STATUS_UPDATED',
+        'DEPARTMENT_ADMIN_CREATED',
+        'DEPARTMENT_ADMIN_APPOINTED',
+        'DEPARTMENT_ADMIN_REASSIGNED',
+        'DEPARTMENT_ADMIN_SUSPENDED',
+        'DEPARTMENT_ADMIN_REACTIVATED',
+        'DEPARTMENT_ADMIN_INVITED',
+        'DEPARTMENT_ADMIN_ACTIVATED',
       ],
     },
     oldPRN: {

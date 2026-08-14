@@ -76,6 +76,7 @@ import OwnerRoute from './routes/OwnerRoute';
 const AdminLogin = React.lazy(() => import('./pages/admin/AdminLogin'));
 const AdminAcceptInvite = React.lazy(() => import('./pages/admin/AdminAcceptInvite'));
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
+const DepartmentAdminDashboard = React.lazy(() => import('./pages/department/DepartmentAdminDashboard'));
 const SuperAdminLogin = React.lazy(() => import('./pages/superadmin/SuperAdminLogin'));
 const SuperAdminDashboard = React.lazy(() => import('./pages/superadmin/SuperAdminDashboard'));
 const OwnerLogin = React.lazy(() => import('./pages/owner/OwnerLogin'));
@@ -232,6 +233,17 @@ const App = () => {
             <Route path="/dashboard/teacher/documents" element={
               <ProtectedRoute roles={['teacher', 'admin']}>
                 <TeacherDocuments />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/department-admin" element={
+              <ProtectedRoute roles={['department_admin', 'institution_admin', 'super_admin', 'platform_owner', 'admin']}>
+                <DepartmentAdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/department-admin" element={
+              <ProtectedRoute roles={['department_admin', 'institution_admin', 'super_admin', 'platform_owner', 'admin']}>
+                <DepartmentAdminDashboard />
               </ProtectedRoute>
             } />
 

@@ -802,15 +802,15 @@ const createStaffUser = async (req, res, next) => {
     if (!name || !email || !role || !identifierValue) {
       return res.status(400).json({
         success: false,
-        message: 'Name, email, role (teacher/recruiter), and employee/faculty/recruiter ID are required.',
+        message: 'Name, email, role (teacher/recruiter/department_admin), and employee/faculty/admin ID are required.',
       });
     }
 
     const lowerRole = role.toLowerCase().trim();
-    if (!['teacher', 'recruiter'].includes(lowerRole)) {
+    if (!['teacher', 'recruiter', 'department_admin'].includes(lowerRole)) {
       return res.status(400).json({
         success: false,
-        message: 'Admin staff provisioning only supports teacher or recruiter roles.',
+        message: 'Admin staff provisioning only supports teacher, recruiter, or department_admin roles.',
       });
     }
 
@@ -827,6 +827,23 @@ const createStaffUser = async (req, res, next) => {
       targetInst = await Institution.findById(targetInstId);
       if (!targetInst) {
         return res.status(404).json({ success: false, message: 'Specified institution not found.' });
+      }
+    }
+
+    // Handle Department validation for Department Admin role
+    let selectedDepartment = null;
+    if (lowerRole === 'department_admin') {
+      const targetDeptId = req.body.departmentId;
+      if (!targetDeptId) {
+        return res.status(400).json({ success: false, message: 'Department selection is required for Department Admin account.' });
+      }
+      const Department = require('../models/Department');
+      selectedDepartment = await Department.findById(targetDeptId);
+      if (!selectedDepartment) {
+        return res.status(404).json({ success: false, message: 'Selected department not found.' });
+      }
+      if (targetInstId && selectedDepartment.institutionId.toString() !== targetInstId.toString()) {
+        return res.status(403).json({ success: false, message: 'Forbidden. Department does not belong to your authorized institution.' });
       }
     }
 
@@ -866,7 +883,7 @@ const createStaffUser = async (req, res, next) => {
     const invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
 
     // 7. Determine institutional identifier type
-    const validIdType = identifierType || (lowerRole === 'teacher' ? 'FACULTY_ID' : 'RECRUITER_ID');
+    const validIdType = identifierType || (lowerRole === 'teacher' ? 'FACULTY_ID' : lowerRole === 'department_admin' ? 'EMPLOYEE_ID' : 'RECRUITER_ID');
 
     // 8. Create User Document in INVITED state (No password set!)
     const newUser = await User.create({
@@ -876,19 +893,27 @@ const createStaffUser = async (req, res, next) => {
       roles: [lowerRole, 'user'],
       maviId: generatedMaviId,
       institutionId: targetInst?._id || null,
+      departmentId: selectedDepartment?._id || null,
       tenantId: targetInst?.tenantId || '',
       designation: designation || '',
       phone: phone || '',
       companyName: lowerRole === 'recruiter' ? (companyName || '') : '',
       university: {
         name: targetInst?.name || '',
-        department: department || '',
+        department: selectedDepartment?.name || department || '',
       },
       institutionalIdentifier: {
         identifierType: validIdType,
         identifierValue: cleanIdValue,
       },
       facultyId: lowerRole === 'teacher' ? cleanIdValue : '',
+      permissions: lowerRole === 'department_admin' ? [
+        'DEPARTMENT_STUDENTS_VIEW',
+        'DEPARTMENT_STUDENTS_EDIT',
+        'DEPARTMENT_TEACHERS_VIEW',
+        'DEPARTMENT_ANALYTICS_VIEW',
+        'DEPARTMENT_REPORTS_GENERATE',
+      ] : [],
       accountStatus: 'INVITED',
       status: 'invited',
       emailVerified: false,

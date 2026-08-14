@@ -148,7 +148,42 @@ const requirePermission = (...requiredPermissions) => {
       return res.status(401).json({ success: false, message: 'Authentication required.' });
     }
 
-    if (req.isSuperAdmin) {
+    const userRoles = req.user.roles && req.user.roles.length > 0 ? req.user.roles : [req.user.role];
+    const isSuperAdmin =
+      userRoles.includes('super_admin') ||
+      userRoles.includes('platform_owner') ||
+      userRoles.includes('owner') ||
+      req.user.role === 'super_admin' ||
+      req.user.role === 'platform_owner' ||
+      req.user.role === 'owner';
+
+    const isInstAdmin =
+      userRoles.includes('institution_admin') ||
+      userRoles.includes('admin') ||
+      req.user.role === 'institution_admin' ||
+      req.user.role === 'admin';
+
+    const isDeptAdmin =
+      userRoles.includes('department_admin') ||
+      req.user.role === 'department_admin';
+
+    if (isSuperAdmin) {
+      return next();
+    }
+
+    // CRITICAL SECURITY RULE: DEPARTMENT_ADMIN_APPOINT MUST NOT be executed by Department Admins, Teachers, Students, or Recruiters
+    if (requiredPermissions.includes('DEPARTMENT_ADMIN_APPOINT')) {
+      if (!isInstAdmin && !isSuperAdmin) {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden. Only Institution Admin, Super Admin, or Platform Owner can appoint Department Admins.',
+        });
+      }
+      return next();
+    }
+
+    // Institution Admins intrinsically possess full Student & Department Admin authority within their institution scope
+    if (isInstAdmin) {
       return next();
     }
 
@@ -157,6 +192,12 @@ const requirePermission = (...requiredPermissions) => {
     // Permission alias mapping for backward compatibility with legacy roles
     const permissionAliasMap = {
       'STUDENT_PROFILE_MANAGE': ['students:read', 'students:update', 'students:write', 'STUDENT_MANAGE', 'student_manage'],
+      'DEPARTMENT_ADMIN_VIEW': ['departments:read', 'department_admins:read'],
+      'DEPARTMENT_ADMIN_APPOINT': ['department_admins:create'],
+      'DEPARTMENT_ADMIN_CREATE': ['department_admins:create'],
+      'DEPARTMENT_ADMIN_UPDATE': ['departments:update', 'department_admins:update'],
+      'DEPARTMENT_ADMIN_SUSPEND': ['departments:suspend', 'department_admins:suspend'],
+      'DEPARTMENT_ADMIN_REASSIGN': ['departments:reassign', 'department_admins:reassign'],
     };
 
     const hasPermission = requiredPermissions.some((p) => {
@@ -164,11 +205,6 @@ const requirePermission = (...requiredPermissions) => {
       const aliases = permissionAliasMap[p] || [];
       return aliases.some((alias) => userPermissions.includes(alias));
     });
-
-    // Institution Admins intrinsically possess Student Profile Management authority for their institution scope
-    if (req.isInstitutionAdmin && (requiredPermissions.includes('STUDENT_PROFILE_MANAGE') || userPermissions.length === 0)) {
-      return next();
-    }
 
     if (!hasPermission) {
       return res.status(403).json({
@@ -179,6 +215,47 @@ const requirePermission = (...requiredPermissions) => {
 
     next();
   };
+};
+
+/**
+ * Restrict access to Department Admin, Institution Admin, or Super Admin.
+ */
+const requireDepartmentAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'Authentication required.' });
+  }
+
+  const userRoles = req.user.roles && req.user.roles.length > 0 ? req.user.roles : [req.user.role];
+  const isSuperAdmin =
+    userRoles.includes('super_admin') ||
+    userRoles.includes('platform_owner') ||
+    userRoles.includes('owner') ||
+    req.user.role === 'super_admin' ||
+    req.user.role === 'platform_owner' ||
+    req.user.role === 'owner';
+
+  const isInstAdmin =
+    userRoles.includes('institution_admin') ||
+    userRoles.includes('admin') ||
+    req.user.role === 'institution_admin' ||
+    req.user.role === 'admin';
+
+  const isDeptAdmin =
+    userRoles.includes('department_admin') ||
+    req.user.role === 'department_admin';
+
+  if (!isSuperAdmin && !isInstAdmin && !isDeptAdmin) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden. Department Administrator authorization required.',
+    });
+  }
+
+  req.isSuperAdmin = isSuperAdmin;
+  req.isInstitutionAdmin = isInstAdmin && !isSuperAdmin;
+  req.isDepartmentAdmin = isDeptAdmin && !isInstAdmin && !isSuperAdmin;
+
+  next();
 };
 
 /**
@@ -214,7 +291,7 @@ const enforceInstitutionScope = async (req, res, next) => {
       // Fallback: check InstitutionMembership
       const membership = await InstitutionMembership.findOne({
         userId: req.user._id,
-        role: 'institution_admin',
+        role: { $in: ['institution_admin', 'department_admin'] },
         status: 'active',
       }).populate('institutionId', 'tenantId');
 
@@ -238,11 +315,66 @@ const enforceInstitutionScope = async (req, res, next) => {
   }
 };
 
+/**
+ * Enforce department-level scoping for Department Admins (ABAC).
+ * Injects `req.departmentScope` = { institutionId, departmentId }.
+ */
+const enforceDepartmentScope = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
+
+    const userRoles = req.user.roles && req.user.roles.length > 0 ? req.user.roles : [req.user.role];
+    const isSuperAdmin =
+      userRoles.includes('super_admin') ||
+      userRoles.includes('platform_owner') ||
+      userRoles.includes('owner') ||
+      req.user.role === 'super_admin' ||
+      req.user.role === 'platform_owner' ||
+      req.user.role === 'owner';
+
+    const isInstAdmin =
+      userRoles.includes('institution_admin') ||
+      userRoles.includes('admin') ||
+      req.user.role === 'institution_admin' ||
+      req.user.role === 'admin';
+
+    if (isSuperAdmin) {
+      req.departmentScope = {};
+      return next();
+    }
+
+    if (isInstAdmin) {
+      req.departmentScope = { institutionId: req.user.institutionId };
+      return next();
+    }
+
+    // Department Admin scoping check
+    const institutionId = req.user.institutionId;
+    const departmentId = req.user.departmentId;
+
+    if (!institutionId || !departmentId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden. You are not assigned to an active department scope.',
+      });
+    }
+
+    req.departmentScope = { institutionId, departmentId };
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   requireRole,
   requireOwner,
   requireSuperAdmin,
   requireAdmin,
+  requireDepartmentAdmin,
   requirePermission,
   enforceInstitutionScope,
+  enforceDepartmentScope,
 };

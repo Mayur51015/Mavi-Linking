@@ -41,10 +41,13 @@ import api from '../../api/axios';
 import VoluntaryChangePasswordForm from '../../components/VoluntaryChangePasswordForm';
 import { AuthContext } from '../../context/AuthContext';
 import StudentProfileEditorModal from '../../components/admin/StudentProfileEditorModal';
+import DepartmentAdminManager from '../../components/admin/DepartmentAdminManager';
+import CreateDepartmentModal from '../../components/admin/CreateDepartmentModal';
 
 const AdminDashboard = ({ activeTab: propActiveTab }) => {
   const { user: currentUser } = useContext(AuthContext);
   const [selectedStudentForProfileEdit, setSelectedStudentForProfileEdit] = useState(null);
+  const [showCreateDeptModal, setShowCreateDeptModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -826,25 +829,64 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
             {/* ─── 6. DEPARTMENTS VIEW ────────────────────────────────────────── */}
             {activeTab === 'departments' && (
-              <div className="animate-fade-in">
+              <div className="animate-fade-in" style={{ display: 'grid', gap: '2rem' }}>
+                
+                {/* Department Section Header with Add Department Button */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Building className="text-gradient" size={22} />
+                      Academic Departments & Technical Branches
+                    </h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.2rem 0 0 0' }}>
+                      Configure custom technical and non-technical branches for your institution
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setShowCreateDeptModal(true)}
+                    className="btn btn-primary"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+                  >
+                    <Plus size={16} /> Add Department / Branch
+                  </button>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
                   {departments.map((d) => (
                     <div key={d.name} className="glass-card" style={{ padding: '1.5rem' }}>
-                      <div style={{ fontWeight: '700', fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-purple)' }}>{d.name}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                        <div style={{ fontWeight: '700', fontSize: '1.1rem', color: 'var(--accent-purple)' }}>{d.name}</div>
+                        {d.code && <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{d.code}</span>}
+                      </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
                         <span>Students:</span> <span style={{ fontWeight: 'bold', color: 'white' }}>{d.students}</span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
                         <span>Faculty Teachers:</span> <span style={{ fontWeight: 'bold', color: 'white' }}>{d.teachers}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        <span>Dept Admins:</span> <span style={{ fontWeight: 'bold', color: 'var(--accent-emerald)' }}>{d.admins || 0}</span>
                       </div>
                     </div>
                   ))}
                   {departments.length === 0 && (
                     <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
-                      No departments configured.
+                      No departments configured. Click "+ Add Department / Branch" to add your institution branches.
                     </div>
                   )}
                 </div>
+
+                {/* Department Admin Governance Manager */}
+                <DepartmentAdminManager />
+
+                {/* Modal for creating a new Department / Branch */}
+                {showCreateDeptModal && (
+                  <CreateDepartmentModal
+                    onClose={() => setShowCreateDeptModal(false)}
+                    onSuccess={loadTabData}
+                  />
+                )}
               </div>
             )}
 

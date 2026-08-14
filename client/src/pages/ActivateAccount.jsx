@@ -11,8 +11,29 @@ import {
   UserCheck,
   ShieldCheck,
   ArrowRight,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import api from '../api/axios';
+
+const formatRoleName = (role) => {
+  if (!role) return 'Account';
+  switch (role.toLowerCase()) {
+    case 'department_admin':
+      return 'Department Administrator';
+    case 'institution_admin':
+      return 'Institution Administrator';
+    case 'teacher':
+      return 'Faculty Teacher';
+    case 'recruiter':
+      return 'Corporate Recruiter';
+    case 'user':
+    case 'student':
+      return 'Student';
+    default:
+      return role.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+};
 
 const ActivateAccount = () => {
   const [searchParams] = useSearchParams();
@@ -27,6 +48,7 @@ const ActivateAccount = () => {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
@@ -97,154 +119,346 @@ const ActivateAccount = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
-      {/* Dynamic Background Gradients */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[300px] h-[300px] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#09090b',
+        color: '#ffffff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1.5rem',
+        position: 'relative',
+        fontFamily: 'Inter, system-ui, sans-serif',
+      }}
+    >
+      {/* Background Glow */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '20%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '500px',
+          height: '500px',
+          background: 'radial-gradient(circle, rgba(147, 51, 234, 0.15) 0%, rgba(0, 0, 0, 0) 70%)',
+          borderRadius: '50%',
+          pointerEvents: 'none',
+        }}
+      />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md bg-[#18181b] border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl relative z-10 backdrop-blur-xl"
+        style={{
+          width: '100%',
+          maxWidth: '460px',
+          background: '#121318',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: '20px',
+          padding: '2rem',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          position: 'relative',
+          zIndex: 10,
+          backdropFilter: 'blur(16px)',
+        }}
       >
         {/* Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 mb-4 shadow-lg shadow-purple-500/5">
-            <KeyRound className="w-7 h-7" />
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '56px',
+              height: '56px',
+              borderRadius: '16px',
+              background: 'rgba(147, 51, 234, 0.12)',
+              border: '1px solid rgba(147, 51, 234, 0.25)',
+              color: '#c084fc',
+              marginBottom: '1rem',
+            }}
+          >
+            <KeyRound size={28} />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">MAVI Account Activation</h1>
-          <p className="text-sm text-zinc-400 mt-1">Set your private password to activate your account</p>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: '#ffffff', letterSpacing: '-0.02em' }}>
+            MAVI Account Activation
+          </h1>
+          <p style={{ fontSize: '0.875rem', color: '#a1a1aa', marginTop: '0.4rem' }}>
+            Set your private password to activate your account
+          </p>
         </div>
 
         {/* Loading State */}
         {loading && (
-          <div className="py-12 text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-purple-500 mx-auto mb-3" />
-            <p className="text-sm text-zinc-400">Verifying invitation token...</p>
+          <div style={{ padding: '3rem 0', textAlign: 'center' }}>
+            <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#c084fc', margin: '0 auto 0.75rem auto' }} />
+            <p style={{ fontSize: '0.875rem', color: '#a1a1aa' }}>Verifying invitation token...</p>
           </div>
         )}
 
         {/* Error State */}
         {!loading && error && !success && (
-          <div className="space-y-4">
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-400 text-sm">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div style={{ display: 'grid', gap: '1.25rem' }}>
+            <div
+              style={{
+                padding: '1rem',
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem',
+                color: '#f87171',
+                fontSize: '0.875rem',
+              }}
+            >
+              <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
               <div>
-                <p className="font-semibold text-red-300">Activation Error</p>
-                <p className="mt-1 text-red-400/90 leading-relaxed">{error}</p>
+                <p style={{ fontWeight: '700', margin: 0, color: '#fca5a5' }}>Activation Link Invalid or Expired</p>
+                <p style={{ margin: '0.3rem 0 0 0', lineHeight: '1.4', color: 'rgba(248, 113, 113, 0.9)' }}>{error}</p>
               </div>
             </div>
             <Link
               to="/login"
-              className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-medium rounded-xl transition flex items-center justify-center gap-2 text-sm"
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                background: '#27272a',
+                color: '#ffffff',
+                fontWeight: '600',
+                borderRadius: '12px',
+                textAlign: 'center',
+                textDecoration: 'none',
+                fontSize: '0.875rem',
+                display: 'block',
+                boxSizing: 'border-box',
+              }}
             >
-              Return to Login
+              Return to Login Page
             </Link>
           </div>
         )}
 
         {/* Success State */}
         {success && (
-          <div className="text-center py-4 space-y-4">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mx-auto">
-              <CheckCircle2 className="w-8 h-8" />
+          <div style={{ textAlign: 'center', padding: '1rem 0', display: 'grid', gap: '1.25rem' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                color: '#34d399',
+                margin: '0 auto',
+              }}
+            >
+              <CheckCircle2 size={32} />
             </div>
-            <h2 className="text-xl font-bold text-white">Account Activated!</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Your password has been created successfully. You can now sign in with your email or MAVI ID.
+            <h2 style={{ fontSize: '1.35rem', fontWeight: '800', color: '#ffffff', margin: 0 }}>
+              Account Successfully Activated!
+            </h2>
+            <p style={{ fontSize: '0.875rem', color: '#a1a1aa', lineHeight: '1.5', margin: 0 }}>
+              Your private password has been set. You can now sign in with your email or assigned MAVI ID.
             </p>
             <button
               onClick={() => navigate('/login')}
-              className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl transition shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 text-sm"
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                padding: '0.85rem',
+                fontSize: '0.9rem',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+              }}
             >
               Sign In to MAVI
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight size={18} />
             </button>
           </div>
         )}
 
         {/* Activation Form */}
         {!loading && inviteInfo && !success && (
-          <div className="space-y-5">
-            {/* Account Info Box */}
-            <div className="p-4 bg-zinc-900/80 border border-zinc-800 rounded-xl space-y-2">
-              <div className="flex items-center justify-between text-xs text-zinc-400">
-                <span>Invited Account</span>
-                <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-semibold uppercase tracking-wider">
-                  {inviteInfo.role}
+          <div style={{ display: 'grid', gap: '1.25rem' }}>
+            
+            {/* User Details Badge Card */}
+            <div
+              style={{
+                padding: '1.1rem',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '14px',
+                display: 'grid',
+                gap: '0.5rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#a1a1aa' }}>
+                <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>Invited Account</span>
+                <span
+                  style={{
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '6px',
+                    background: 'rgba(147, 51, 234, 0.15)',
+                    color: '#c084fc',
+                    border: '1px solid rgba(147, 51, 234, 0.3)',
+                    fontWeight: '700',
+                    fontSize: '0.75rem',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  {formatRoleName(inviteInfo.role)}
                 </span>
               </div>
-              <div className="font-semibold text-white text-base">{inviteInfo.name}</div>
-              <div className="text-xs text-zinc-400 flex items-center gap-1.5">
-                <UserCheck className="w-3.5 h-3.5 text-zinc-500" />
+
+              <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '1.1rem', marginTop: '0.2rem' }}>
+                {inviteInfo.name}
+              </div>
+
+              <div style={{ fontSize: '0.8rem', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <UserCheck size={14} style={{ color: '#71717a' }} />
                 {inviteInfo.email}
               </div>
+
               {inviteInfo.institutionName && (
-                <div className="text-xs text-zinc-400 flex items-center gap-1.5 pt-1 border-t border-zinc-800/80">
-                  <Building2 className="w-3.5 h-3.5 text-purple-400" />
+                <div style={{ fontSize: '0.8rem', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                  <Building2 size={14} />
                   {inviteInfo.institutionName}
                 </div>
               )}
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.1rem' }}>
               {passwordError && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
+                <div
+                  style={{
+                    padding: '0.75rem',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    borderRadius: '10px',
+                    fontSize: '0.8rem',
+                    color: '#f87171',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
                   {passwordError}
                 </div>
               )}
 
+              {/* Password */}
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                  Create New Password
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#d4d4d8', marginBottom: '0.4rem' }}>
+                  Create New Password *
                 </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <div style={{ position: 'relative' }}>
+                  <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#71717a' }} />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="At least 6 characters"
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
+                    style={{
+                      width: '100%',
+                      background: '#18181b',
+                      border: '1px solid #27272a',
+                      borderRadius: '12px',
+                      padding: '0.7rem 2.5rem 0.7rem 2.4rem',
+                      fontSize: '0.875rem',
+                      color: '#ffffff',
+                      boxSizing: 'border-box',
+                      outline: 'none',
+                    }}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#71717a', cursor: 'pointer' }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
 
+              {/* Confirm Password */}
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                  Confirm Password
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#d4d4d8', marginBottom: '0.4rem' }}>
+                  Confirm Password *
                 </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <div style={{ position: 'relative' }}>
+                  <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#71717a' }} />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
+                    style={{
+                      width: '100%',
+                      background: '#18181b',
+                      border: '1px solid #27272a',
+                      borderRadius: '12px',
+                      padding: '0.7rem 2.5rem 0.7rem 2.4rem',
+                      fontSize: '0.875rem',
+                      color: '#ffffff',
+                      boxSizing: 'border-box',
+                      outline: 'none',
+                    }}
                   />
                 </div>
               </div>
 
-              <div className="p-3 bg-purple-500/5 border border-purple-500/10 rounded-xl text-xs text-purple-300/80 flex items-start gap-2">
-                <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+              {/* Encryption Notice */}
+              <div
+                style={{
+                  padding: '0.75rem',
+                  background: 'rgba(147, 51, 234, 0.05)',
+                  border: '1px solid rgba(147, 51, 234, 0.15)',
+                  borderRadius: '12px',
+                  fontSize: '0.78rem',
+                  color: '#d8b4fe',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.5rem',
+                }}
+              >
+                <ShieldCheck size={16} style={{ color: '#c084fc', flexShrink: 0, marginTop: '2px' }} />
                 <span>
-                  No password was set by your administrator. Your password is private and encrypted.
+                  No password was set by your administrator. Your password is private and end-to-end encrypted.
                 </span>
               </div>
 
+              {/* Submit */}
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl transition shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  padding: '0.85rem',
+                  fontSize: '0.9rem',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  marginTop: '0.5rem',
+                }}
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
                     Activating Account...
                   </>
                 ) : (

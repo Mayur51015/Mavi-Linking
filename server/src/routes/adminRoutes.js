@@ -39,6 +39,22 @@ const {
   removeInstitutionAdmin,
 } = require('../controllers/institutionController');
 
+const {
+  appointDepartmentAdmin,
+  getDepartmentAdmins,
+  getEligibleCandidates,
+  reassignDepartmentAdmin,
+  updateDepartmentAdminStatus,
+  getAppointmentHistory,
+} = require('../controllers/departmentAdminController');
+
+const {
+  createDepartment,
+  getDepartments: getDepartmentsList,
+  updateDepartment,
+  deleteDepartment,
+} = require('../controllers/departmentController');
+
 const router = express.Router();
 
 // All routes require JWT authentication + Admin role (Super Admin or Institution Admin)
@@ -49,6 +65,23 @@ router.get('/students', enforceInstitutionScope, requirePermission('STUDENT_PROF
 router.get('/students/:studentId/profile', enforceInstitutionScope, requirePermission('STUDENT_PROFILE_MANAGE'), getStudentProfileForAdmin);
 router.patch('/students/:studentId/profile', enforceInstitutionScope, requirePermission('STUDENT_PROFILE_MANAGE'), updateStudentProfileForAdmin);
 router.put('/students/:studentId/profile', enforceInstitutionScope, requirePermission('STUDENT_PROFILE_MANAGE'), updateStudentProfileForAdmin);
+
+// Department Management CRUD & Governance
+router.post('/departments', enforceInstitutionScope, createDepartment);
+router.get('/departments', enforceInstitutionScope, getDepartmentsList);
+router.put('/departments/:id', enforceInstitutionScope, updateDepartment);
+router.delete('/departments/:id', enforceInstitutionScope, deleteDepartment);
+
+// Department Admin Appointment & Governance
+router.post('/departments/:departmentId/admins', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_APPOINT'), appointDepartmentAdmin);
+router.get('/departments/:departmentId/admins', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_VIEW'), getDepartmentAdmins);
+router.get('/departments/:departmentId/eligible-candidates', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_VIEW'), getEligibleCandidates);
+router.get('/departments/:departmentId/appointment-history', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_VIEW'), getAppointmentHistory);
+
+router.post('/department-admins', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_APPOINT'), appointDepartmentAdmin);
+router.get('/department-admins', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_VIEW'), getDepartmentAdmins);
+router.patch('/department-admins/:adminId/reassign', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_REASSIGN'), reassignDepartmentAdmin);
+router.put('/department-admins/:adminId/status', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_SUSPEND'), updateDepartmentAdminStatus);
 
 // Admin stats & user moderation (scoped by institution if institution_admin)
 router.get('/stats', enforceInstitutionScope, getAdminStats);

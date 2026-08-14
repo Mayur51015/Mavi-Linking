@@ -100,6 +100,7 @@ app.get('/api/health', (req, res) => {
 
 const careerRoutes = require('./routes/careerRoutes');
 const ownerRoutes = require('./routes/ownerRoutes');
+const departmentAdminRoutes = require('./routes/departmentAdminRoutes');
 
 // ─── API Routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
@@ -120,6 +121,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/department-admin', departmentAdminRoutes);
 app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/users', userRoutes);

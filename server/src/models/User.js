@@ -60,13 +60,13 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'recruiter', 'teacher', 'admin', 'institution_admin', 'super_admin', 'platform_owner', 'owner', 'developer', 'professor'],
+      enum: ['user', 'recruiter', 'teacher', 'admin', 'institution_admin', 'department_admin', 'super_admin', 'platform_owner', 'owner', 'developer', 'professor'],
       default: 'user',
     },
     roles: [
       {
         type: String,
-        enum: ['user', 'student', 'teacher', 'recruiter', 'institution_admin', 'super_admin', 'platform_owner', 'owner', 'admin', 'developer', 'professor'],
+        enum: ['user', 'student', 'teacher', 'recruiter', 'institution_admin', 'department_admin', 'super_admin', 'platform_owner', 'owner', 'admin', 'developer', 'professor'],
       },
     ],
     status: {
@@ -94,6 +94,11 @@ const userSchema = new mongoose.Schema(
     institutionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Institution',
+      default: null,
+    },
+    departmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Department',
       default: null,
     },
     tenantId: {
@@ -420,6 +425,8 @@ const userSchema = new mongoose.Schema(
 
 userSchema.index({ status: 1 });
 userSchema.index({ institutionId: 1 });
+userSchema.index({ departmentId: 1 });
+userSchema.index({ institutionId: 1, departmentId: 1 });
 userSchema.index({ tenantId: 1 });
 userSchema.index({ adminId: 1 });
 userSchema.index({ adminLoginId: 1 });

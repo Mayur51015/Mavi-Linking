@@ -31,7 +31,7 @@ const institutionMembershipSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['institution_admin', 'teacher', 'student'],
+      enum: ['institution_admin', 'department_admin', 'teacher', 'student'],
       required: true,
     },
     permissions: [

@@ -11,6 +11,7 @@ import {
   FileText,
   GitBranch,
   Globe,
+  Lock,
   Plus,
   Search,
   Sparkles,
@@ -713,6 +714,34 @@ const Dashboard = () => {
       ) : (        <>
           {activeTab === 'overview' && (
             <div className="animate-fade-in">
+              {/* Institution Identity (Read-Only) Card */}
+              <div className="glass-card-static" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>
+                      Assigned Institution
+                    </div>
+                    <div style={{ fontSize: '1.05rem', fontWeight: '700', color: 'white', marginTop: '0.2rem' }}>
+                      {user?.institutionId?.name || user?.collegeName || 'Zeal College of Engineering and Research'}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#fde047', display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.25rem', fontWeight: '600' }}>
+                      <Lock size={13} style={{ color: '#eab308' }} />
+                      <span>Managed by Institution Admin</span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span className="badge badge-purple" style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                      Tenant ID: {user?.tenantId || user?.institutionId?.tenantId || 'INST-SCOPED'}
+                    </span>
+                    {user?.prn && (
+                      <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--accent-cyan)', marginTop: '0.25rem' }}>
+                        PRN: {user.prn} ({user?.prnVerificationStatus || 'approved'})
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                 <div className="glass-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>

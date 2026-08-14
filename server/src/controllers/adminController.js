@@ -672,6 +672,110 @@ const updateMyInstitutionSettings = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Dedicated Administrative Endpoint to Change User Institution Assignment
+ * @route   PATCH /api/admin/users/:userId/institution
+ * @route   PUT /api/admin/users/:userId/institution
+ * @access  Private (Institution Admin, Super Admin, Platform Owner)
+ */
+const updateUserInstitution = async (req, res, next) => {
+  try {
+    const userId = req.params.userId || req.params.id;
+    const { institutionId: targetInstitutionId } = req.body;
+
+    if (!targetInstitutionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Target institutionId is required in request body.',
+      });
+    }
+
+    // 1. Verify administrator authorization from authenticated req.user (Never trust req.body.adminId/role)
+    const actorRole = req.user.role;
+    const actorRoles = req.user.roles || [actorRole];
+    const isOwner = actorRoles.includes('platform_owner') || actorRoles.includes('owner') || req.user.email === 'mayur1718khandare@gmail.com' || req.user.adminId === 'MAVI-OWNER-001';
+    const isSuperAdmin = isOwner || actorRoles.includes('super_admin') || req.user.email === 'mayur2006khandare@gmail.com' || req.user.adminId === 'MAVI-SA-001';
+    const isInstAdmin = isSuperAdmin || actorRoles.includes('institution_admin') || actorRoles.includes('admin');
+
+    if (!isInstAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden. Only authorized administrators can modify a user\'s institution assignment.',
+      });
+    }
+
+    // 2. Fetch target user
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'Target user not found.' });
+    }
+
+    // 3. Fetch target institution
+    const newInstitution = await Institution.findById(targetInstitutionId);
+    if (!newInstitution) {
+      return res.status(404).json({ success: false, message: 'Target institution record not found.' });
+    }
+
+    // 4. Verify Institution Admin scope (if not Super Admin/Owner)
+    if (!isSuperAdmin) {
+      const adminInstId = req.user.institutionId ? req.user.institutionId.toString() : '';
+      const currentInstId = targetUser.institutionId ? targetUser.institutionId.toString() : '';
+      const targetInstIdStr = newInstitution._id.toString();
+
+      // Institution Admin can only manage users within their assigned institution scope
+      if (adminInstId !== currentInstId && adminInstId !== targetInstIdStr) {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden. Institution administrators can only manage membership within their assigned institution scope.',
+        });
+      }
+    }
+
+    // 5. Store old metadata for audit log
+    const oldInstitutionId = targetUser.institutionId ? targetUser.institutionId.toString() : 'None';
+    const oldTenantId = targetUser.tenantId || 'None';
+
+    // 6. Update user institution membership & tenant association
+    targetUser.institutionId = newInstitution._id;
+    targetUser.tenantId = newInstitution.tenantId;
+    targetUser.collegeName = newInstitution.name;
+
+    // 7. Handle PRN Verification State (If institution changes, reset verification state)
+    if (oldInstitutionId !== newInstitution._id.toString()) {
+      targetUser.prnVerificationStatus = 'pending';
+      targetUser.isVerifiedStudent = false;
+    }
+
+    // 8. Save updated user while preserving MAVI ID, User ID, Profile details & role
+    await targetUser.save();
+
+    // 9. Create Immutable Audit Log Event
+    await ActivityLog.create({
+      userId: req.user._id,
+      action: 'INSTITUTION_MEMBERSHIP_UPDATED',
+      details: `Admin ${req.user.email} updated user ${targetUser.email} (${targetUser.maviId || targetUser._id}) institution assignment from ${oldTenantId} to ${newInstitution.name} (${newInstitution.tenantId}). PRN status set to pending verification.`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `User institution assignment updated successfully to ${newInstitution.name}.`,
+      data: {
+        user: targetUser,
+        institution: {
+          _id: newInstitution._id,
+          name: newInstitution.name,
+          tenantId: newInstitution.tenantId,
+          officialDomain: newInstitution.officialDomain,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAdminStats,
   getAllUsers,
@@ -687,4 +791,6 @@ module.exports = {
   rejectPrnVerification,
   getDepartments,
   updateMyInstitutionSettings,
+  updateUserInstitution,
 };
+

@@ -21,6 +21,7 @@ const {
   rejectPrnVerification,
   getDepartments,
   updateMyInstitutionSettings,
+  updateUserInstitution,
 } = require('../controllers/adminController');
 
 const {
@@ -42,6 +43,10 @@ router.get('/stats', enforceInstitutionScope, getAdminStats);
 router.get('/users', enforceInstitutionScope, getAllUsers);
 router.put('/users/:id', enforceInstitutionScope, updateUser);
 router.put('/users/:id/status', enforceInstitutionScope, updateUserStatus);
+router.patch('/users/:userId/institution', updateUserInstitution);
+router.put('/users/:userId/institution', updateUserInstitution);
+router.patch('/users/:id/institution', updateUserInstitution);
+router.put('/users/:id/institution', updateUserInstitution);
 router.delete('/users/:id', enforceInstitutionScope, deleteUser);
 router.get('/logs', enforceInstitutionScope, getAuditLogs);
 router.get('/departments', enforceInstitutionScope, getDepartments);

@@ -84,6 +84,17 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
   const [logs, setLogs] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [institutionData, setInstitutionData] = useState(null);
+  const [allInstitutions, setAllInstitutions] = useState([]);
+
+  // Fetch all institutions for administrative dropdowns
+  useEffect(() => {
+    api.get('/admin/institutions')
+      .then(res => {
+        const list = Array.isArray(res.data?.data?.institutions) ? res.data.data.institutions : Array.isArray(res.data?.data) ? res.data.data : [];
+        setAllInstitutions(list);
+      })
+      .catch(() => {});
+  }, []);
 
   // General Loading & Error State
   const [loading, setLoading] = useState(true);
@@ -268,6 +279,11 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     try {
+      if (editUser.selectedInstitutionId) {
+        await api.patch(`/admin/users/${editUser._id}/institution`, {
+          institutionId: editUser.selectedInstitutionId,
+        });
+      }
       await api.put(`/admin/users/${editUser._id}`, {
         role: editUser.role,
         isVerified: editUser.isVerified,
@@ -1040,6 +1056,21 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                     <option value="teacher">Teacher</option>
                     <option value="recruiter">Recruiter</option>
                     <option value="institution_admin">Institution Admin</option>
+                  </select>
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Institution Assignment (Admin Controlled)</label>
+                  <select
+                    className="input-field"
+                    value={editUser.selectedInstitutionId || (typeof editUser.institutionId === 'object' ? editUser.institutionId?._id : editUser.institutionId) || ''}
+                    onChange={(e) => setEditUser({ ...editUser, selectedInstitutionId: e.target.value })}
+                  >
+                    <option value="">Select Institution...</option>
+                    {allInstitutions.map((inst) => (
+                      <option key={inst._id} value={inst._id}>
+                        {inst.name} ({inst.tenantId})
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

@@ -20,6 +20,14 @@ const institutionSchema = new mongoose.Schema(
       uppercase: true,
       trim: true,
     },
+    institutionCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+      uppercase: true,
+      trim: true,
+      index: true,
+    },
     shortName: {
       type: String,
       trim: true,
@@ -120,12 +128,18 @@ const institutionSchema = new mongoose.Schema(
   }
 );
 
-// Pre-save hook to ensure permanent, unique tenantId
+// Pre-save hook to ensure permanent, unique tenantId and institutionCode
 institutionSchema.pre('validate', function (next) {
+  const crypto = require('crypto');
+  const codePrefix = (this.code || this.shortName || this.name.substring(0, 4)).replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  
   if (!this.tenantId) {
-    const crypto = require('crypto');
-    const codePrefix = (this.code || this.shortName || this.name.substring(0, 4)).replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     this.tenantId = `INST-${codePrefix.substring(0, 6)}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+  }
+  
+  if (!this.institutionCode) {
+    const cityPrefix = (this.city || 'HQ').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    this.institutionCode = `${codePrefix.substring(0, 6)}-${cityPrefix.substring(0, 4)}-01`;
   }
   next();
 });

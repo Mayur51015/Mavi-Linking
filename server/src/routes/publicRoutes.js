@@ -3,7 +3,16 @@ const { getPublicProfileByUsername } = require('../controllers/publicProfileCont
 const { getQrForUsername, downloadQr } = require('../controllers/qrController');
 const { getMetaByUsername } = require('../controllers/publicMetaController');
 
+const {
+  validateInstitutionCode,
+  getPublicDepartmentsByInstitution,
+} = require('../controllers/publicInstitutionController');
+
 const router = express.Router();
+
+// Institution Code & Public Department Lookup (Student Onboarding)
+router.get('/public/institutions/by-code/:institutionCode', validateInstitutionCode);
+router.get('/public/institutions/:institutionId/departments', getPublicDepartmentsByInstitution);
 
 router.get('/public/u/:username', getPublicProfileByUsername);
 

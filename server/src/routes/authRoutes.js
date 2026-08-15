@@ -27,6 +27,7 @@ const { authLimiter, loginLimiter } = require('../middleware/authLimiter');const
   resendEmailChangeOtp,
   resendVerification,
   changeEmailPending,
+  validatePRN,
 } = require('../controllers/authController');
 const {
   upload,
@@ -71,9 +72,7 @@ const registerValidation = [
       'Password must contain at least one uppercase letter, one lowercase letter, and one number'
     ),
   body('role')
-    .optional()
-    .isIn(['user', 'recruiter', 'teacher'])
-    .withMessage('Role must be user, recruiter, or teacher'),
+    .optional(),
 ];
 
 const loginValidation = [
@@ -97,6 +96,7 @@ const updateProfileValidation = [
 // ─── Public Routes ──────────────────────────────────────────────────────────
 
 router.post('/register', authLimiter, registerValidation, validate, register);
+router.post('/validate-prn', authLimiter, validatePRN);
 router.post('/login', loginLimiter, loginValidation, validate, login);
 router.post('/admin-login', loginLimiter, adminLogin);
 router.post('/super-admin-login', loginLimiter, superAdminLogin);

@@ -1,13 +1,17 @@
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'default_mavi_secret_key_2026';
+
 const request = require('supertest');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 const User = require('../src/models/User');
 const AuditLog = require('../src/models/AuditLog');
+const Institution = require('../src/models/Institution');
+const Department = require('../src/models/Department');
 
 describe('2-Stage Student Account Verification & Admin Approval Security Test Suite', () => {
   jest.setTimeout(30000);
   let app;
-  const timestamp = Date.now();
+  const timestamp = Date.now() + '_' + Math.random().toString(36).substring(2, 7);
 
   // Test Entities
   const studentEmail = `student_2stage_${timestamp}@example.com`;
@@ -15,6 +19,10 @@ describe('2-Stage Student Account Verification & Admin Approval Security Test Su
   let studentId = null;
   let rawVerifyToken = '';
   let studentJwt = null;
+
+  // Test Tenant Context
+  let testInst = null;
+  let testDept = null;
 
   // Department Admin A (CSE Dept)
   let deptAdminA = null;
@@ -31,6 +39,7 @@ describe('2-Stage Student Account Verification & Admin Approval Security Test Su
   let recruiterUser = null;
 
   beforeAll(async () => {
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'default_mavi_secret_key_2026';
     const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mavi_linking_test';
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect(mongoUri);
@@ -42,6 +51,22 @@ describe('2-Stage Student Account Verification & Admin Approval Security Test Su
     app.use('/api/auth', require('../src/routes/authRoutes'));
     app.use('/api/admin', require('../src/routes/adminRoutes'));
 
+    testInst = await Institution.create({
+      name: 'Security Test University',
+      code: `SEC-${timestamp}`,
+      institutionCode: `SEC-${timestamp}-01`,
+      tenantId: `INST-SEC-${timestamp}`,
+      status: 'active',
+      licenseStatus: 'active',
+    });
+
+    testDept = await Department.create({
+      institutionId: testInst._id,
+      name: 'Computer Science',
+      code: `CSE-${timestamp}`,
+      status: 'active',
+    });
+
     // Create test Department Admin A (CSE)
     deptAdminA = await User.create({
       name: 'CSE Dept Admin',
@@ -49,7 +74,8 @@ describe('2-Stage Student Account Verification & Admin Approval Security Test Su
       password: 'Password123!',
       role: 'department_admin',
       roles: ['department_admin'],
-      departmentId: new mongoose.Types.ObjectId(),
+      institutionId: testInst._id,
+      departmentId: testDept._id,
       university: { department: 'Computer Science' },
       emailVerified: true,
       accountStatus: 'ACTIVE',
@@ -63,6 +89,7 @@ describe('2-Stage Student Account Verification & Admin Approval Security Test Su
       password: 'Password123!',
       role: 'department_admin',
       roles: ['department_admin'],
+      institutionId: testInst._id,
       departmentId: new mongoose.Types.ObjectId(),
       university: { department: 'Electronics' },
       emailVerified: true,
@@ -76,7 +103,7 @@ describe('2-Stage Student Account Verification & Admin Approval Security Test Su
       password: 'Password123!',
       role: 'institution_admin',
       roles: ['institution_admin', 'admin'],
-      institutionId: new mongoose.Types.ObjectId(),
+      institutionId: testInst._id,
       emailVerified: true,
       accountStatus: 'ACTIVE',
     });
@@ -106,6 +133,8 @@ describe('2-Stage Student Account Verification & Admin Approval Security Test Su
 
   afterAll(async () => {
     await User.deleteMany({ email: /@example\.com$/ });
+    await Institution.deleteMany({ _id: testInst._id });
+    await Department.deleteMany({ _id: testDept._id });
     await mongoose.connection.close();
   });
 
@@ -116,10 +145,13 @@ describe('2-Stage Student Account Verification & Admin Approval Security Test Su
         name: 'TwoStage Student',
         email: studentEmail,
         password: 'Password123!',
+        institutionCode: testInst.institutionCode,
+        departmentId: testDept._id.toString(),
         prn: studentPrn,
         university: { department: 'Computer Science' },
       });
 
+    console.log('TEST 1 RESULT:', res.statusCode, res.body);
     expect(res.statusCode).toBe(201);
     expect(res.body.code).toBe('EMAIL_VERIFICATION_REQUIRED');
     expect(res.body.data.accountStatus).toBe('PENDING_EMAIL_VERIFICATION');
@@ -181,15 +213,10 @@ describe('2-Stage Student Account Verification & Admin Approval Security Test Su
     studentJwt = studentObj.generateAuthToken();
 
     const res = await request(app)
-      .get('/api/auth/me')
-      .set('Authorization', `Bearer ${studentJwt}`);
-
-    // /api/auth/me is allowed for profile inspection, but protected student feature endpoints return 403
-    const protectedRes = await request(app)
       .get('/api/admin/students')
       .set('Authorization', `Bearer ${studentJwt}`);
 
-    expect(protectedRes.statusCode).toBe(403);
+    expect(res.statusCode).toBe(403);
   });
 
   test('TEST 5: Department Admin A reviews pending student from CSE department (ALLOWED)', async () => {

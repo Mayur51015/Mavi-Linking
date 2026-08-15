@@ -20,13 +20,27 @@ const oauth2Client = new OAuth2Client(googleClientId);
 const register = async (req, res, next) => {
   try {
     const {
-      name, email, password, role,
-      prn, facultyId, institutionId,
+      name,
+      email,
+      password,
+      role,
+      prn,
+      institutionId,
+      institutionCode,
+      departmentId,
       // Student-specific
-      university, degree, graduationYear, portfolioWebsite, githubUsername,
-      preferredDomain, experienceLevel, bio,
+      university,
+      degree,
+      graduationYear,
+      portfolioWebsite,
+      githubUsername,
+      preferredDomain,
+      experienceLevel,
+      bio,
       // Recruiter-specific
-      companyName, allowedColleges, allowedDepartments,
+      companyName,
+      allowedColleges,
+      allowedDepartments,
     } = req.body;
 
     if (!email || !password || !name) {
@@ -49,13 +63,62 @@ const register = async (req, res, next) => {
     }
 
     const Institution = require('../models/Institution');
+    const Department = require('../models/Department');
+
     let targetInst = null;
-    if (institutionId) {
+    if (institutionCode && institutionCode.trim()) {
+      const cleanCode = institutionCode.trim();
+      const upperCode = cleanCode.toUpperCase();
+      targetInst = await Institution.findOne({
+        $or: [
+          { institutionCode: upperCode },
+          { tenantId: upperCode },
+          { shortName: upperCode },
+          { code: upperCode },
+        ],
+      });
+      if (!targetInst) {
+        return res.status(404).json({
+          success: false,
+          code: 'INSTITUTION_CODE_INVALID',
+          message: 'Invalid Institution Code. Please check the code provided by your institution.',
+        });
+      }
+    } else if (institutionId) {
       targetInst = await Institution.findById(institutionId);
       if (!targetInst) {
         return res.status(400).json({
           success: false,
           message: 'Invalid or non-existent institution selected.',
+        });
+      }
+    }
+
+    if (targetInst && (targetInst.status !== 'active' || targetInst.licenseStatus === 'suspended')) {
+      return res.status(400).json({
+        success: false,
+        code: 'INSTITUTION_INACTIVE',
+        message: 'Student registration for this institution is currently unavailable.',
+      });
+    }
+
+    // Validate Department belongingness
+    let targetDept = null;
+    if (departmentId) {
+      targetDept = await Department.findById(departmentId);
+      if (!targetDept || targetDept.status !== 'active') {
+        return res.status(400).json({
+          success: false,
+          code: 'INVALID_DEPARTMENT',
+          message: 'Invalid or inactive department selected.',
+        });
+      }
+
+      if (targetInst && targetDept.institutionId.toString() !== targetInst._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          code: 'DEPARTMENT_INSTITUTION_MISMATCH',
+          message: 'The selected department does not belong to the validated institution.',
         });
       }
     }
@@ -105,9 +168,16 @@ const register = async (req, res, next) => {
         identifierValue: prn.trim(),
       };
     }
-    if (institutionId) {
-      userData.institutionId = institutionId;
-      if (targetInst?.tenantId) userData.tenantId = targetInst.tenantId;
+    if (targetInst) {
+      userData.institutionId = targetInst._id;
+      if (targetInst.tenantId) userData.tenantId = targetInst.tenantId;
+      if (!userData.university) userData.university = {};
+      userData.university.name = targetInst.name;
+    }
+    if (targetDept) {
+      userData.departmentId = targetDept._id;
+      if (!userData.university) userData.university = {};
+      userData.university.department = targetDept.name;
     }
     userData.prnVerificationStatus = 'pending';
 
@@ -2183,6 +2253,62 @@ const resendEmailChangeOtp = async (req, res, next) => {
     next(error);
   }
 };
+/**
+ * @desc    Validate student PRN against institution + department
+ * @route   POST /api/auth/validate-prn
+ * @access  Public
+ */
+const validatePRN = async (req, res, next) => {
+  try {
+    const { institutionId, departmentId, prn } = req.body;
+
+    if (!institutionId || !prn || !prn.trim()) {
+      return res.status(400).json({
+        success: false,
+        code: 'INVALID_INPUT',
+        message: 'Institution ID and PRN are required.',
+      });
+    }
+
+    const trimmedPrn = prn.trim();
+
+    const Department = require('../models/Department');
+    if (departmentId) {
+      const dept = await Department.findById(departmentId);
+      if (!dept || dept.institutionId.toString() !== institutionId.toString()) {
+        return res.status(403).json({
+          success: false,
+          code: 'DEPARTMENT_INSTITUTION_MISMATCH',
+          message: 'The selected department does not belong to the validated institution.',
+        });
+      }
+    }
+
+    const existingUser = await User.findOne({
+      institutionId,
+      prn: trimmedPrn,
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        code: 'PRN_ALREADY_REGISTERED',
+        message: 'A student account with this PRN is already registered.',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'PRN verified successfully.',
+      data: {
+        prn: trimmedPrn,
+        verified: true,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   register,
@@ -2209,5 +2335,6 @@ module.exports = {
   resendEmailChangeOtp,
   resendVerification,
   changeEmailPending,
+  validatePRN,
 };
 

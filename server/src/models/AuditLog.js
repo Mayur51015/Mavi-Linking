@@ -103,6 +103,8 @@ const auditLogSchema = new mongoose.Schema(
         'VERIFICATION_REQUIRED_LOGIN_BLOCKED',
         'STUDENT_LOGIN_BLOCKED_EMAIL_UNVERIFIED',
         'STUDENT_LOGIN_BLOCKED_PENDING_APPROVAL',
+        'INSTITUTION_CODE_VALIDATED',
+        'INSTITUTION_CODE_CHANGED',
       ],
     },
     oldPRN: {

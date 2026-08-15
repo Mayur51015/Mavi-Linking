@@ -1,361 +1,520 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Terminal, User, Search, GraduationCap, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Terminal, Building2, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, Lock, ShieldCheck, UserCheck } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
-
-const ROLES = [
-  { key: 'user', label: 'Student / Developer', icon: <User size={32} />, desc: 'Self-registration for students & developers to create profiles.', color: 'var(--accent-purple)' },
-];
-
-const DOMAINS = ['Web Development', 'AI/ML', 'Competitive Programming', 'Cybersecurity', 'App Development'];
-const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
+import api from '../api/axios';
 
 const Register = () => {
-  const [step, setStep] = useState(2); // Directly open Student Registration Form
-  const [role] = useState('user');
+  // Step 1: Institution Code | Step 2: Department & PRN | Step 3: Account Details | Step 4: Verification
+  const [step, setStep] = useState(1);
+
+  // Institution State
+  const [institutionCodeInput, setInstitutionCodeInput] = useState('');
+  const [validatingCode, setValidatingCode] = useState(false);
+  const [validatedInstitution, setValidatedInstitution] = useState(null);
+
+  // Department State
+  const [departments, setDepartments] = useState([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+
+  // PRN State
+  const [prnInput, setPrnInput] = useState('');
+  const [validatingPrn, setValidatingPrn] = useState(false);
+  const [prnVerified, setPrnVerified] = useState(false);
+
+  // Account Form State
   const [formData, setFormData] = useState({
-    name: '', email: '', password: '',
-    // Student
-    prn: '', collegeName: '', department: '', batch: '',
-    degree: '', graduationYear: '', portfolioWebsite: '',
-    githubUsername: '', preferredDomain: '', experienceLevel: '', bio: '',
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    degree: 'B.Tech',
+    graduationYear: '2026',
+    githubUsername: '',
+    preferredDomain: 'Web Development',
   });
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
   const toast = useToast();
-  const updateField = (key, value) => setFormData(prev => ({ ...prev, [key]: value }));
 
-  const handleNavigationByRole = (userRole) => {
-    switch (userRole) {
-      case 'recruiter': navigate('/dashboard/recruiter'); break;
-      case 'teacher': navigate('/dashboard/teacher'); break;
-      default: navigate('/dashboard'); break;
+  const updateField = (key, value) => setFormData((prev) => ({ ...prev, [key]: value }));
+
+  // Step 1: Validate Institution Code
+  const handleValidateInstitutionCode = async (e) => {
+    e.preventDefault();
+    if (!institutionCodeInput.trim()) {
+      setError('Please enter your Institution Code.');
+      return;
+    }
+
+    setError('');
+    setValidatingCode(true);
+
+    try {
+      const res = await api.get(`/public/institutions/by-code/${encodeURIComponent(institutionCodeInput.trim())}`);
+      if (res.data?.success && res.data?.institution) {
+        const inst = res.data.institution;
+        setValidatedInstitution(inst);
+        toast.success(`✓ Institution Found: ${inst.name}`);
+        
+        // Fetch departments
+        fetchDepartmentsForInstitution(inst.id);
+        setStep(2);
+      } else {
+        setError(res.data?.message || 'Invalid Institution Code. Please check the code provided by your college.');
+      }
+    } catch (err) {
+      if (err.response?.data?.code === 'INSTITUTION_INACTIVE') {
+        setError('Student registration for this institution is currently unavailable.');
+      } else {
+        setError(getErrorMessage(err, 'Invalid Institution Code. Please check the code provided by your institution.'));
+      }
+    } finally {
+      setValidatingCode(false);
     }
   };
 
-  const handleSubmit = async (e) => {
+  // Fetch departments for validated institution
+  const fetchDepartmentsForInstitution = async (instId) => {
+    setLoadingDepartments(true);
+    try {
+      const res = await api.get(`/public/institutions/${instId}/departments`);
+      if (res.data?.departments) {
+        setDepartments(res.data.departments);
+        if (res.data.departments.length > 0) {
+          setSelectedDepartmentId(res.data.departments[0].id || res.data.departments[0].departmentId);
+        }
+      }
+    } catch (err) {
+      toast.error('Failed to load institution departments.');
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
+
+  // Step 2: Validate PRN
+  const handleValidatePRN = async (e) => {
+    e.preventDefault();
+    if (!selectedDepartmentId) {
+      setError('Please select your department.');
+      return;
+    }
+    if (!prnInput.trim()) {
+      setError('Please enter your PRN / Student ID.');
+      return;
+    }
+
+    setError('');
+    setValidatingPrn(true);
+
+    try {
+      const res = await api.post('/auth/validate-prn', {
+        institutionId: validatedInstitution.id,
+        departmentId: selectedDepartmentId,
+        prn: prnInput.trim(),
+      });
+
+      if (res.data?.success) {
+        setPrnVerified(true);
+        toast.success('✓ PRN verified successfully!');
+        setStep(3);
+      } else {
+        setError(res.data?.message || 'PRN verification failed.');
+      }
+    } catch (err) {
+      if (err.response?.data?.code === 'PRN_ALREADY_REGISTERED') {
+        setError('A student account with this PRN is already registered.');
+      } else if (err.response?.data?.code === 'DEPARTMENT_INSTITUTION_MISMATCH') {
+        setError('The selected department does not belong to your institution.');
+      } else {
+        setError(getErrorMessage(err, 'PRN verification failed. Please check your credentials.'));
+      }
+    } finally {
+      setValidatingPrn(false);
+    }
+  };
+
+  // Step 3: Complete Registration
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setLoading(true);
+
     try {
+      const selectedDept = departments.find((d) => (d.id || d.departmentId) === selectedDepartmentId);
+
       const payload = {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        role,
-        bio: formData.bio,
+        institutionCode: validatedInstitution.code,
+        institutionId: validatedInstitution.id,
+        departmentId: selectedDepartmentId,
+        prn: prnInput.trim(),
+        degree: formData.degree,
+        graduationYear: formData.graduationYear,
+        githubUsername: formData.githubUsername,
+        preferredDomain: formData.preferredDomain,
+        university: {
+          name: validatedInstitution.name,
+          department: selectedDept ? selectedDept.name : '',
+        },
       };
 
-      if (role === 'user') {
-        payload.prn = formData.prn;
-        payload.university = {
-          name: formData.collegeName,
-          department: formData.department,
-          batch: formData.batch,
-        };
-        payload.degree = formData.degree;
-        payload.graduationYear = formData.graduationYear;
-        payload.portfolioWebsite = formData.portfolioWebsite;
-        payload.githubUsername = formData.githubUsername;
-        payload.preferredDomain = formData.preferredDomain;
-        payload.experienceLevel = formData.experienceLevel;
-      }
-
-      if (role === 'recruiter') {
-        payload.companyName = formData.companyName;
-        payload.allowedColleges = formData.allowedColleges ? formData.allowedColleges.split(',').map(s => s.trim()).filter(Boolean) : [];
-        payload.allowedDepartments = formData.allowedDepartments ? formData.allowedDepartments.split(',').map(s => s.trim()).filter(Boolean) : [];
-      }
-
-      if (role === 'teacher') {
-        payload.facultyId = formData.facultyId;
-        payload.university = {
-          name: formData.teacherCollege,
-          department: formData.teacherDepartment,
-        };
-      }
-
       const res = await register(payload);
-      toast.success('Account created! Please verify your email to activate your account.');
-      navigate('/verify-account');
+
+      if (res?.code === 'EMAIL_VERIFICATION_REQUIRED') {
+        toast.success('🎉 Account created! Please check your email to verify your address.');
+        navigate('/verify-account');
+      } else {
+        toast.success('Account created successfully!');
+        navigate('/verify-account');
+      }
     } catch (err) {
-      setError(getErrorMessage(err, 'Registration failed. Please try again.'));
+      setError(getErrorMessage(err, 'Account registration failed. Please try again.'));
     } finally {
       setLoading(false);
     }
   };
 
-  const renderRoleSelection = () => (
-    <div className="animate-fade-in">
-      <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', fontSize: '1.75rem' }}>Choose Your Role</h2>
-      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-        Select how you'll use MaVi Linking.
-      </p>
-      <div style={{ display: 'grid', gap: '1rem' }}>
-        {ROLES.map(r => (
-          <button
-            key={r.key}
-            type="button"
-            onClick={() => { setRole(r.key); setStep(2); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '1rem',
-              padding: '1.25rem 1.5rem',
-              background: role === r.key ? `${r.color}15` : 'rgba(255,255,255,0.02)',
-              border: `1px solid ${role === r.key ? r.color : 'var(--border-color)'}`,
-              borderRadius: '12px',
-              cursor: 'pointer',
-              color: 'var(--text-primary)',
-              textAlign: 'left',
-              transition: 'all 0.2s',
-            }}
-          >
-            <div style={{ color: r.color, flexShrink: 0 }}>{r.icon}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>{r.label}</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{r.desc}</div>
-            </div>
-            <ChevronRight size={20} style={{ color: 'var(--text-muted)' }} />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderBasicFields = () => (
-    <div className="animate-fade-in">
-      <button type="button" onClick={() => setStep(1)} style={{
-        background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '1.5rem', fontSize: '0.875rem',
-      }}>
-        <ChevronLeft size={16} /> Back to role selection
-      </button>
-      <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', fontSize: '1.75rem' }}>Student Registration</h2>
-      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-        Create your developer profile and connect with campus opportunities
-      </p>
-
-      {/* Staff Provisioning Notice Banner */}
-      <div style={{
-        padding: '0.875rem 1rem',
-        marginBottom: '1.5rem',
-        background: 'rgba(168, 85, 247, 0.08)',
-        border: '1px solid rgba(168, 85, 247, 0.2)',
-        borderRadius: '10px',
-        fontSize: '0.8rem',
-        color: '#d8b4fe',
-        lineHeight: '1.5',
-      }}>
-        <strong>🏫 Are you a Teacher or Recruiter?</strong> Teacher and Recruiter accounts are provisioned by Institution Administrators. Please request an account invitation link from your administrator.
-      </div>
-
-      <div className="input-group">
-        <label className="input-label">Full Name *</label>
-        <input type="text" className="input-field" placeholder="Enter your name"
-          value={formData.name} onChange={(e) => updateField('name', e.target.value)} required />
-      </div>
-      <div className="input-group">
-        <label className="input-label">Email Address *</label>
-        <input type="email" className="input-field" placeholder="you@example.com"
-          value={formData.email} onChange={(e) => updateField('email', e.target.value)} required />
-      </div>
-      <div className="input-group">
-        <label className="input-label">Password *</label>
-        <input type="password" className="input-field" placeholder="••••••••"
-          value={formData.password} onChange={(e) => updateField('password', e.target.value)} required />
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Min 6 chars, include uppercase, lowercase, and number</span>
-      </div>
-
-      <button type="button" onClick={() => setStep(3)}
-        className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem', padding: '0.875rem' }}
-        disabled={!formData.name || !formData.email || !formData.password}
-      >
-        Continue <ChevronRight size={18} />
-      </button>
-    </div>
-  );
-
-  const renderRoleSpecificFields = () => (
-    <div className="animate-fade-in">
-      <button type="button" onClick={() => setStep(2)} style={{
-        background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '1.5rem', fontSize: '0.875rem',
-      }}>
-        <ChevronLeft size={16} /> Back
-      </button>
-      <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
-        {role === 'user' && 'Developer Profile'}
-        {role === 'recruiter' && 'Recruiter Details'}
-        {role === 'teacher' && 'Teacher Details'}
-      </h2>
-      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.875rem' }}>
-        {role === 'user' && 'Tell us about your background. You can update these later.'}
-        {role === 'recruiter' && 'Set up your recruiting access scope.'}
-        {role === 'teacher' && 'Enter your college and department to scope your view.'}
-      </p>
-
-      {role === 'user' && (
-        <>
-          <div className="input-group">
-            <label className="input-label">PRN / Permanent Registration No. (For College Verification)</label>
-            <input type="text" className="input-field" placeholder="e.g., 124BT10461"
-              value={formData.prn} onChange={e => updateField('prn', e.target.value)} />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Required for login via PRN after Admin approval</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 1rem' }}>
-            <div className="input-group">
-              <label className="input-label">College Name</label>
-              <input type="text" className="input-field" placeholder="e.g., MIT Pune"
-                value={formData.collegeName} onChange={e => updateField('collegeName', e.target.value)} />
-            </div>
-            <div className="input-group">
-              <label className="input-label">Department</label>
-              <input type="text" className="input-field" placeholder="e.g., Computer Science"
-                value={formData.department} onChange={e => updateField('department', e.target.value)} />
-            </div>
-            <div className="input-group">
-              <label className="input-label">Degree</label>
-              <input type="text" className="input-field" placeholder="e.g., B.Tech"
-                value={formData.degree} onChange={e => updateField('degree', e.target.value)} />
-            </div>
-            <div className="input-group">
-              <label className="input-label">Graduation Year</label>
-              <input type="text" className="input-field" placeholder="e.g., 2026"
-                value={formData.graduationYear} onChange={e => updateField('graduationYear', e.target.value)} />
-            </div>
-          </div>
-          <div className="input-group">
-            <label className="input-label">GitHub Username</label>
-            <input type="text" className="input-field" placeholder="e.g., torvalds"
-              value={formData.githubUsername} onChange={e => updateField('githubUsername', e.target.value)} />
-          </div>
-          <div className="input-group">
-            <label className="input-label">Portfolio Website</label>
-            <input type="url" className="input-field" placeholder="https://yoursite.com"
-              value={formData.portfolioWebsite} onChange={e => updateField('portfolioWebsite', e.target.value)} />
-          </div>
-          <div className="input-group">
-            <label className="input-label">Preferred Career Domain</label>
-            <select className="input-field" value={formData.preferredDomain} onChange={e => updateField('preferredDomain', e.target.value)}>
-              <option value="">Select Domain</option>
-              {DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
-          <div className="input-group">
-            <label className="input-label">Experience Level</label>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              {LEVELS.map(l => (
-                <button key={l} type="button"
-                  onClick={() => updateField('experienceLevel', l)}
-                  className={`btn btn-sm ${formData.experienceLevel === l ? 'btn-primary' : 'btn-outline'}`}
-                  style={{ flex: 1 }}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="input-group">
-            <label className="input-label">Bio</label>
-            <textarea className="input-field" placeholder="Tell us about yourself..."
-              rows={3} value={formData.bio} onChange={e => updateField('bio', e.target.value)}
-              style={{ resize: 'vertical' }} />
-          </div>
-        </>
-      )}
-
-      {role === 'recruiter' && (
-        <>
-          <div className="input-group">
-            <label className="input-label">Company Name *</label>
-            <input type="text" className="input-field" placeholder="e.g., Google"
-              value={formData.companyName} onChange={e => updateField('companyName', e.target.value)} required />
-          </div>
-          <div className="input-group">
-            <label className="input-label">Allowed Colleges (comma-separated)</label>
-            <input type="text" className="input-field" placeholder="e.g., MIT Pune, IIT Bombay"
-              value={formData.allowedColleges} onChange={e => updateField('allowedColleges', e.target.value)} />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Leave empty to access all colleges</span>
-          </div>
-          <div className="input-group">
-            <label className="input-label">Allowed Departments (comma-separated)</label>
-            <input type="text" className="input-field" placeholder="e.g., Computer Science, IT"
-              value={formData.allowedDepartments} onChange={e => updateField('allowedDepartments', e.target.value)} />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Leave empty to access all departments</span>
-          </div>
-        </>
-      )}
-
-      {role === 'teacher' && (
-        <>
-          <div className="input-group">
-            <label className="input-label">Faculty / Employee ID (For Verification)</label>
-            <input type="text" className="input-field" placeholder="e.g., FAC-8890"
-              value={formData.facultyId} onChange={e => updateField('facultyId', e.target.value)} />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Required for login via Faculty ID after Admin approval</span>
-          </div>
-          <div className="input-group">
-            <label className="input-label">College / University Name *</label>
-            <input type="text" className="input-field" placeholder="e.g., MIT Pune"
-              value={formData.teacherCollege} onChange={e => updateField('teacherCollege', e.target.value)} required />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>You can only monitor students from this college</span>
-          </div>
-          <div className="input-group">
-            <label className="input-label">Department *</label>
-            <input type="text" className="input-field" placeholder="e.g., Computer Science"
-              value={formData.teacherDepartment} onChange={e => updateField('teacherDepartment', e.target.value)} required />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>You can only monitor students from this department</span>
-          </div>
-        </>
-      )}
-
-      <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', padding: '0.875rem' }}
-        disabled={loading}>
-        {loading ? 'Creating Account...' : 'Create Account'}
-      </button>
-    </div>
-  );
+  // Reset institution choice
+  const handleChangeInstitution = () => {
+    setValidatedInstitution(null);
+    setDepartments([]);
+    setSelectedDepartmentId('');
+    setPrnInput('');
+    setPrnVerified(false);
+    setStep(1);
+  };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: step === 3 && role === 'user' ? '560px' : '440px', padding: '2.5rem', transition: 'max-width 0.3s' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
-          <Link to="/" className="nav-brand">
-            <Terminal size={32} className="text-gradient" />
-            <span>MaVi Linking</span>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: '#09090b' }}>
+      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '580px', padding: '2.5rem', borderRadius: '16px', background: '#18181b', border: '1px solid #27272a' }}>
+        
+        {/* Header Branding */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+            <Terminal size={32} style={{ color: '#a855f7' }} />
+            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white' }}>MaVi Linking</span>
           </Link>
+          <p style={{ color: '#a1a1aa', fontSize: '0.9rem', marginTop: '0.5rem' }}>Verified Student Registration & Multi-Tenant Onboarding</p>
         </div>
 
-        {error && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-            {error}
-          </div>
-        )}
-
-        {/* Progress Indicator */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem' }}>
-          {[1, 2, 3].map(s => (
-            <div key={s} style={{
-              flex: 1, height: '3px', borderRadius: '2px',
-              background: s <= step ? 'var(--gradient-primary)' : 'rgba(255,255,255,0.1)',
-              transition: 'background 0.3s',
-            }} />
+        {/* Progress Stepper Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', padding: '0 0.5rem' }}>
+          {[
+            { num: 1, label: 'Institution' },
+            { num: 2, label: 'Department & PRN' },
+            { num: 3, label: 'Account' },
+          ].map((s) => (
+            <div key={s.num} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: step >= s.num ? 1 : 0.4 }}>
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  background: step > s.num ? '#22c55e' : step === s.num ? '#a855f7' : '#27272a',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                }}
+              >
+                {step > s.num ? '✓' : s.num}
+              </div>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: step >= s.num ? '#ffffff' : '#71717a' }}>{s.label}</span>
+            </div>
           ))}
         </div>
 
-        <form onSubmit={handleSubmit}>
-          {step === 1 && renderRoleSelection()}
-          {step === 2 && renderBasicFields()}
-          {step === 3 && renderRoleSpecificFields()}
-        </form>
+        {/* Error Alert Banner */}
+        {error && (
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', padding: '0.85rem 1rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
+        )}
 
-        <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          Already have an account? <Link to="/login" className="text-gradient" style={{ fontWeight: '600' }}>Sign in</Link>
-        </p>
+        {/* STEP 1: Institution Code Entry */}
+        {step === 1 && (
+          <form onSubmit={handleValidateInstitutionCode}>
+            <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                <Building2 size={28} color="#a855f7" />
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white', marginBottom: '0.25rem' }}>Join Your Institution</h3>
+              <p style={{ color: '#a1a1aa', fontSize: '0.85rem' }}>Enter the unique Institution Code provided by your college/university.</p>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#e4e4e7', marginBottom: '0.5rem' }}>Institution Code</label>
+              <input
+                type="text"
+                placeholder="e.g. ZCER-PUNE-01"
+                value={institutionCodeInput}
+                onChange={(e) => setInstitutionCodeInput(e.target.value.toUpperCase())}
+                required
+                style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', background: '#09090b', border: '1px solid #27272a', color: 'white', fontSize: '1rem', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 700 }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={validatingCode}
+              style={{
+                width: '100%',
+                padding: '0.85rem',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                color: 'white',
+                border: 'none',
+                fontWeight: 700,
+                cursor: validatingCode ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              {validatingCode ? <RefreshCw size={18} className="spin" /> : <>Continue <ArrowRight size={18} /></>}
+            </button>
+          </form>
+        )}
+
+        {/* STEP 2: Department Selection & PRN Verification */}
+        {step === 2 && validatedInstitution && (
+          <form onSubmit={handleValidatePRN}>
+            {/* Validated Institution Banner */}
+            <div style={{ background: '#09090b', border: '1px solid #27272a', borderRadius: '10px', padding: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: '#4ade80', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <CheckCircle2 size={14} /> Confirmed Institution
+                </span>
+                <strong style={{ color: 'white', display: 'block', fontSize: '0.95rem', marginTop: '0.2rem' }}>{validatedInstitution.name}</strong>
+                <span style={{ fontSize: '0.75rem', color: '#a1a1aa' }}>Code: {validatedInstitution.code}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleChangeInstitution}
+                style={{ background: 'transparent', border: '1px solid #3f3f46', color: '#a1a1aa', padding: '0.35rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer' }}
+              >
+                Change Code
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#e4e4e7', marginBottom: '0.5rem' }}>Academic Department</label>
+              {loadingDepartments ? (
+                <div style={{ color: '#a1a1aa', fontSize: '0.85rem' }}>Loading institution departments...</div>
+              ) : (
+                <select
+                  value={selectedDepartmentId}
+                  onChange={(e) => setSelectedDepartmentId(e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', background: '#09090b', border: '1px solid #27272a', color: 'white', fontSize: '0.9rem' }}
+                >
+                  {departments.map((dept) => (
+                    <option key={dept.id || dept.departmentId} value={dept.id || dept.departmentId}>
+                      {dept.name} {dept.code ? `(${dept.code})` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#e4e4e7', marginBottom: '0.5rem' }}>Permanent Registration Number (PRN / Roll No.)</label>
+              <input
+                type="text"
+                placeholder="e.g. 124BT10469"
+                value={prnInput}
+                onChange={(e) => setPrnInput(e.target.value)}
+                required
+                style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', background: '#09090b', border: '1px solid #27272a', color: 'white', fontSize: '0.95rem' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                style={{ width: '35%', padding: '0.75rem', borderRadius: '8px', background: 'transparent', border: '1px solid #27272a', color: '#a1a1aa', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={validatingPrn}
+                style={{
+                  width: '65%',
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                  color: 'white',
+                  border: 'none',
+                  fontWeight: 700,
+                  cursor: validatingPrn ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                {validatingPrn ? <RefreshCw size={18} className="spin" /> : <>Verify Identity <ArrowRight size={18} /></>}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* STEP 3: Personal Account Information */}
+        {step === 3 && prnVerified && (
+          <form onSubmit={handleRegisterSubmit}>
+            <div style={{ background: '#09090b', border: '1px solid #27272a', borderRadius: '10px', padding: '0.85rem', marginBottom: '1.25rem', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ color: '#4ade80', fontWeight: 600 }}>✓ Verified: {validatedInstitution.name}</span>
+                <span style={{ color: '#a1a1aa', display: 'block' }}>PRN: {prnInput}</span>
+              </div>
+              <button type="button" onClick={() => setStep(2)} style={{ background: 'transparent', border: 'none', color: '#c084fc', textDecoration: 'underline', fontSize: '0.75rem', cursor: 'pointer' }}>Edit</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#e4e4e7', marginBottom: '0.4rem' }}>Full Name</label>
+                <input
+                  type="text"
+                  placeholder="John Doe"
+                  value={formData.name}
+                  onChange={(e) => updateField('name', e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: '#09090b', border: '1px solid #27272a', color: 'white', fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#e4e4e7', marginBottom: '0.4rem' }}>Email Address</label>
+                <input
+                  type="email"
+                  placeholder="student@example.com"
+                  value={formData.email}
+                  onChange={(e) => updateField('email', e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: '#09090b', border: '1px solid #27272a', color: 'white', fontSize: '0.85rem' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#e4e4e7', marginBottom: '0.4rem' }}>Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => updateField('password', e.target.value)}
+                  required
+                  minLength={8}
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: '#09090b', border: '1px solid #27272a', color: 'white', fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#e4e4e7', marginBottom: '0.4rem' }}>Confirm Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={(e) => updateField('confirmPassword', e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: '#09090b', border: '1px solid #27272a', color: 'white', fontSize: '0.85rem' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#e4e4e7', marginBottom: '0.4rem' }}>Degree Program</label>
+                <select
+                  value={formData.degree}
+                  onChange={(e) => updateField('degree', e.target.value)}
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: '#09090b', border: '1px solid #27272a', color: 'white', fontSize: '0.85rem' }}
+                >
+                  <option value="B.Tech">B.Tech</option>
+                  <option value="M.Tech">M.Tech</option>
+                  <option value="B.E.">B.E.</option>
+                  <option value="BCA">BCA</option>
+                  <option value="MCA">MCA</option>
+                  <option value="B.Sc">B.Sc</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#e4e4e7', marginBottom: '0.4rem' }}>Graduation Year</label>
+                <input
+                  type="text"
+                  placeholder="2026"
+                  value={formData.graduationYear}
+                  onChange={(e) => updateField('graduationYear', e.target.value)}
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: '#09090b', border: '1px solid #27272a', color: 'white', fontSize: '0.85rem' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                style={{ width: '35%', padding: '0.75rem', borderRadius: '8px', background: 'transparent', border: '1px solid #27272a', color: '#a1a1aa', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  width: '65%',
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                  color: 'white',
+                  border: 'none',
+                  fontWeight: 700,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                {loading ? <RefreshCw size={18} className="spin" /> : <>Create Account <ArrowRight size={18} /></>}
+              </button>
+            </div>
+          </form>
+        )}
+
+        <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px solid #27272a', paddingTop: '1.25rem' }}>
+          <p style={{ color: '#71717a', fontSize: '0.85rem' }}>
+            Already have an active account?{' '}
+            <Link to="/login" style={{ color: '#c084fc', textDecoration: 'none', fontWeight: 600 }}>
+              Sign In
+            </Link>
+          </p>
+        </div>
+
       </div>
     </div>
   );

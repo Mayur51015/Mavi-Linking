@@ -1110,6 +1110,59 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Settings size={22} style={{ color: 'var(--accent-purple)' }} /> Institution Profile & Configuration
                 </h3>
+
+                {/* ─── Student Registration Code Banner ─── */}
+                <div style={{
+                  background: 'rgba(168, 85, 247, 0.08)',
+                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                  borderRadius: '10px',
+                  padding: '1.25rem',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '1rem',
+                  flexWrap: 'wrap',
+                }}>
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#c084fc', marginBottom: '0.25rem' }}>
+                      🔑 Student Registration Code
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      Share this code with your students for fast multi-tenant registration & onboarding.
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <code style={{
+                      background: 'rgba(0, 0, 0, 0.4)',
+                      border: '1px solid rgba(168, 85, 247, 0.4)',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      fontFamily: 'monospace',
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      color: '#38bdf8',
+                      letterSpacing: '1px',
+                    }}>
+                      {settingsForm.institutionCode || settingsForm.code || 'NOT_ASSIGNED'}
+                    </code>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={() => {
+                        const code = settingsForm.institutionCode || settingsForm.code;
+                        if (code) {
+                          navigator.clipboard.writeText(code);
+                          alert(`Institution Code "${code}" copied to clipboard!`);
+                        }
+                      }}
+                      style={{ padding: '0.5rem 0.9rem', fontSize: '0.85rem' }}
+                    >
+                      Copy Code
+                    </button>
+                  </div>
+                </div>
+
                 <form onSubmit={handleSaveSettings} style={{ display: 'grid', gap: '1.25rem' }}>
                   <div className="input-group">
                     <label className="input-label">Institution Legal Name</label>

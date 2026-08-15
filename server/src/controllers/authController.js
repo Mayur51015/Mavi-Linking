@@ -1538,6 +1538,8 @@ const requestEmailChange = async (req, res, next) => {
     const otp = crypto.randomInt(100000, 1000000).toString();
     const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
 
+    console.log(`[EMAIL CHANGE OTP DISPATCHED] User: ${user.email} -> New Email: ${canonicalNewEmail} | 6-Digit OTP: ${otp}`);
+
     // 6. Create EmailChangeChallenge document (valid for 15 minutes)
     await EmailChangeChallenge.create({
       userId: user._id,
@@ -1784,6 +1786,8 @@ const resendEmailChangeOtp = async (req, res, next) => {
     // Generate new OTP & hash
     const otp = crypto.randomInt(100000, 1000000).toString();
     const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+
+    console.log(`[RESEND EMAIL CHANGE OTP DISPATCHED] New Email: ${challenge.newEmail} | 6-Digit OTP: ${otp}`);
 
     challenge.hashedOtp = hashedOtp;
     challenge.expiresAt = new Date(Date.now() + 15 * 60 * 1000);

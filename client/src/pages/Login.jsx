@@ -105,6 +105,11 @@ const Login = () => {
       toast.success('Welcome back! You are now signed in.');
       handleNavigationByRole(res?.user);
     } catch (err) {
+      if (err.response?.data?.code === 'EMAIL_VERIFICATION_REQUIRED') {
+        toast.info('Please verify your email address to activate your account.');
+        navigate('/verify-account');
+        return;
+      }
       setError(getErrorMessage(err, 'Sign in failed. Please verify your identity credentials and password.'));
     } finally {
       setSubmitting(false);

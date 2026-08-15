@@ -19,6 +19,7 @@ const SENSITIVE_FIELDS = [
   'invitationToken',
   'invitationExpires',
   'verificationToken',
+  'verificationTokenExpires',
   'verificationCode',
 ];
 
@@ -76,8 +77,8 @@ const userSchema = new mongoose.Schema(
     },
     accountStatus: {
       type: String,
-      enum: ['INVITED', 'EMAIL_VERIFICATION_PENDING', 'PASSWORD_SETUP_REQUIRED', 'ACTIVE', 'SUSPENDED', 'DISABLED', 'INVITATION_EXPIRED'],
-      default: 'ACTIVE',
+      enum: ['INVITED', 'PENDING_VERIFICATION', 'EMAIL_VERIFICATION_PENDING', 'PASSWORD_SETUP_REQUIRED', 'ACTIVE', 'SUSPENDED', 'DISABLED', 'INVITATION_EXPIRED'],
+      default: 'PENDING_VERIFICATION',
     },
     institutionalIdentifier: {
       identifierType: {
@@ -266,6 +267,8 @@ const userSchema = new mongoose.Schema(
     temporaryPasswordExpiresAt: { type: Date, default: null },
     passwordChangedAt: { type: Date, default: null },
     verificationToken: { type: String, default: null, select: false },
+    verificationTokenExpires: { type: Date, default: null, select: false },
+    verificationTokenPurpose: { type: String, default: 'ACCOUNT_EMAIL_VERIFICATION' },
     resetPasswordToken: { type: String, default: null, select: false },
     resetPasswordOtp: { type: String, default: null, select: false },
     resetPasswordExpires: { type: Date, default: null, select: false },
@@ -492,7 +495,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 userSchema.methods.generateAuthToken = function () {
   return jwt.sign(
     { id: this._id, email: this.email, role: this.role },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET || 'default_mavi_secret_key_2026',
     { expiresIn: process.env.JWT_EXPIRE || '7d' }
   );
 };

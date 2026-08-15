@@ -81,8 +81,8 @@ const Register = () => {
       }
 
       const res = await register(payload);
-      toast.success('Account created successfully!');
-      handleNavigationByRole(res?.user?.role);
+      toast.success('Account created! Please verify your email to activate your account.');
+      navigate('/verify-account');
     } catch (err) {
       setError(getErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {

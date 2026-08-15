@@ -302,11 +302,61 @@ const generateEmailChangeNotificationOldEmailHtml = ({ name, oldEmail, newEmail,
   `;
 };
 
+/**
+ * Generate Dark Theme HTML Email for Student Account Verification
+ */
+const generateStudentVerificationEmailHtml = ({ name, verificationLink, expiresMinutes = 30 }) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Verify your MAVI Linking account</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
+        .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .header { text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 24px; }
+        .brand { font-size: 24px; font-weight: 800; color: #a855f7; letter-spacing: 0.05em; text-transform: uppercase; }
+        .title { font-size: 20px; font-weight: 700; color: #ffffff; margin-top: 10px; }
+        .content { font-size: 15px; line-height: 1.6; color: #a1a1aa; }
+        .btn-link { display: inline-block; background: linear-gradient(135deg, #a855f7, #6366f1); color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 700; font-size: 15px; margin: 20px 0; }
+        .footer { font-size: 12px; color: #71717a; text-align: center; border-top: 1px solid #27272a; padding-top: 20px; margin-top: 32px; }
+        .warning { background: rgba(234, 179, 8, 0.1); border-left: 4px solid #eab308; color: #fde047; padding: 12px 16px; border-radius: 4px; font-size: 13px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="brand">MAVI Linking</div>
+          <div class="title">Verify your MAVI Linking account</div>
+        </div>
+        <div class="content">
+          <p>Hello ${name || 'Student'},</p>
+          <p>Welcome to MAVI Linking. Your account has been created successfully. Please verify your email address to activate your account and access your dashboard.</p>
+          
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${verificationLink}" class="btn-link" target="_blank">Verify My MAVI Linking Account</a>
+          </div>
+
+          <div class="warning">
+            <strong>Security Notice:</strong> This verification link is valid for <strong>${expiresMinutes} minutes</strong> and can only be used once. If you did not register for a MAVI Linking account, please disregard this message.
+          </div>
+        </div>
+        <div class="footer">
+          &copy; ${new Date().getFullYear()} MAVI Linking Security Platform. All rights reserved.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
 module.exports = {
   sendEmail,
   generatePasswordResetEmailHtml,
   generateAccountInvitationEmailHtml,
   generateEmailChangeOtpEmailHtml,
   generateEmailChangeNotificationOldEmailHtml,
+  generateStudentVerificationEmailHtml,
 };
 

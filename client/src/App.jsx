@@ -31,6 +31,7 @@ const Home = React.lazy(() => import('./pages/Home'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
 const ActivateAccount = React.lazy(() => import('./pages/ActivateAccount'));
+const VerifyAccount = React.lazy(() => import('./pages/VerifyAccount'));
 const ChangePassword = React.lazy(() => import('./pages/ChangePassword'));
 
 import RequirePasswordChange from './routes/RequirePasswordChange';
@@ -107,6 +108,8 @@ const App = () => {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-account" element={<VerifyAccount />} />
+            <Route path="/verify-email" element={<VerifyAccount />} />
             <Route path="/activate-account" element={<ActivateAccount />} />
             <Route path="/change-password" element={<RequirePasswordChange><ChangePassword /></RequirePasswordChange>} />
 

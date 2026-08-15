@@ -12,6 +12,7 @@ const SECRET_FIELDS = [
   'resetPasswordToken',
   'resetPasswordExpires',
   'verificationToken',
+  'verificationTokenExpires',
   'verificationCode',
 ];
 

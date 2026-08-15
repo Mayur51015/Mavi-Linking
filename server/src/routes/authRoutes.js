@@ -25,6 +25,8 @@ const { authLimiter, loginLimiter } = require('../middleware/authLimiter');const
   requestEmailChange,
   verifyEmailChange,
   resendEmailChangeOtp,
+  resendVerification,
+  changeEmailPending,
 } = require('../controllers/authController');
 const {
   upload,
@@ -104,6 +106,9 @@ router.get('/verify-invitation/:token', authLimiter, verifyInvitationToken);
 router.post('/activate-account', authLimiter, activateAccount);
 router.post('/refresh', authLimiter, refreshToken);
 router.post('/verify-email', authLimiter, verifyEmail);
+router.get('/verify-email', authLimiter, verifyEmail);
+router.post('/resend-verification', authLimiter, resendVerification);
+router.post('/change-email-pending', authLimiter, changeEmailPending);
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);
 router.post('/github', authLimiter, githubLogin);

@@ -77,6 +77,32 @@ const protect = async (req, res, next) => {
       }
     }
 
+    // ─── Mandatory Student Email Verification Lock Check ──────────────────────
+    const isStudent = user.role === 'user' || (Array.isArray(user.roles) && user.roles.includes('user') && !user.roles.includes('admin') && !user.roles.includes('super_admin') && !user.roles.includes('institution_admin'));
+    if (isStudent && (!user.emailVerified || user.accountStatus !== 'ACTIVE')) {
+      const currentUrl = req.originalUrl || req.url || '';
+      const isAllowedVerificationEndpoint =
+        currentUrl.includes('/api/auth/me') ||
+        currentUrl.includes('/api/auth/verify-email') ||
+        currentUrl.includes('/api/auth/resend-verification') ||
+        currentUrl.includes('/api/auth/change-email-pending') ||
+        currentUrl.includes('/api/auth/logout');
+
+      if (!isAllowedVerificationEndpoint) {
+        return res.status(403).json({
+          success: false,
+          code: 'EMAIL_VERIFICATION_REQUIRED',
+          message: 'Please verify your email address before accessing your account.',
+          data: {
+            email: user.email,
+            maviId: user.maviId,
+            accountStatus: user.accountStatus,
+            emailVerified: user.emailVerified,
+          },
+        });
+      }
+    }
+
     next();
   } catch (error) {
     // Differentiate between expired and malformed tokens

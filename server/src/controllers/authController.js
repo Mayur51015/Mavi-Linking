@@ -43,7 +43,7 @@ const register = async (req, res, next) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        code: 'ACCOUNT_EXISTS',
+        code: 'EMAIL_ALREADY_REGISTERED',
         message: 'An account with this email address already exists. Please sign in instead.',
       });
     }
@@ -60,15 +60,19 @@ const register = async (req, res, next) => {
       }
     }
 
-    // Institution-scoped PRN duplicate check
-    if (prn && (institutionId || targetInst?._id)) {
-      const targetInstId = institutionId || targetInst._id;
-      const existingPrn = await User.findOne({ institutionId: targetInstId, prn: prn.trim() });
+    // PRN duplicate check (institution-scoped or global check)
+    if (prn && prn.trim()) {
+      const trimmedPrn = prn.trim();
+      const prnQuery = { prn: trimmedPrn };
+      if (institutionId || targetInst?._id) {
+        prnQuery.institutionId = institutionId || targetInst._id;
+      }
+      const existingPrn = await User.findOne(prnQuery);
       if (existingPrn) {
         return res.status(409).json({
           success: false,
-          code: 'PRN_EXISTS',
-          message: 'A student with this PRN/ZPRN is already registered for this institution.',
+          code: 'PRN_ALREADY_REGISTERED',
+          message: 'A student account with this PRN is already registered.',
         });
       }
     }
@@ -90,10 +94,11 @@ const register = async (req, res, next) => {
     userData.roles = ['user'];
     userData.requestedRole = 'none';
     userData.roleStatus = 'active';
-    userData.accountStatus = 'ACTIVE';
+    userData.accountStatus = 'PENDING_VERIFICATION';
+    userData.emailVerified = false;
 
     // Institutional identifiers & verification status
-    if (prn) {
+    if (prn && prn.trim()) {
       userData.prn = prn.trim();
       userData.institutionalIdentifier = {
         identifierType: 'PRN',
@@ -118,48 +123,44 @@ const register = async (req, res, next) => {
     if (preferredDomain) userData.preferredDomain = preferredDomain;
     if (experienceLevel) userData.experienceLevel = experienceLevel;
 
-    // Recruiter verification details
-    if (role === 'recruiter') {
-      if (companyName) userData.companyName = companyName;
-      if (allowedColleges) userData.allowedColleges = allowedColleges;
-      if (allowedDepartments) userData.allowedDepartments = allowedDepartments;
-      userData.roleVerification = {
-        companyName: companyName || '',
-        submittedAt: new Date(),
-      };
-    }
+    // Generate cryptographic verification token (SHA-256 hashed in DB)
+    const rawVerificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
+    const tokenExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
-    // Teacher verification details
-    if (role === 'teacher') {
-      userData.roleVerification = {
-        institution: university?.name || '',
-        department: university?.department || '',
-        submittedAt: new Date(),
-      };
-    }
+    userData.verificationToken = hashedVerificationToken;
+    userData.verificationTokenExpires = tokenExpires;
+    userData.verificationTokenPurpose = 'ACCOUNT_EMAIL_VERIFICATION';
 
-    // Generate verification token and refresh token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const refreshToken = crypto.randomBytes(40).toString('hex');
-
-    userData.verificationToken = verificationToken;
-    userData.refreshToken = refreshToken;
-    userData.emailVerified = false;
-
-    // Create user (password is hashed via pre-save hook)
+    // Create user (password is hashed via pre-save hook, MAVI ID auto-generated)
     const user = await User.create(userData);
 
-    // Generate JWT
-    const token = user.generateAuthToken();
+    // Dispatch Verification Email
+    const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
+    const verificationLink = `${clientUrl}/verify-account?token=${rawVerificationToken}`;
+
+    const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
+    const emailHtml = generateStudentVerificationEmailHtml({
+      name: user.name,
+      verificationLink,
+      expiresMinutes: 30,
+    });
+
+    sendEmail({
+      to: user.email,
+      subject: 'Verify your MAVI Linking account',
+      html: emailHtml,
+    }).catch((emailErr) => {
+      console.error('[EMAIL ERROR] Failed to dispatch verification email:', emailErr.message);
+    });
 
     // Log Activity Feed
     try {
-      const roleLabels = { user: 'developer', recruiter: 'recruiter', teacher: 'teacher' };
       const activity = await Activity.create({
         userId: user._id,
         type: 'Milestone',
         title: 'Joined MaVi-Linking',
-        description: `Created a new ${roleLabels[user.role] || 'developer'} profile`,
+        description: 'Created a new student developer profile (Pending Email Verification)',
       });
       const io = getIO();
       if (io) io.to(user._id.toString()).emit('new_activity', activity);
@@ -167,14 +168,21 @@ const register = async (req, res, next) => {
       console.error('Activity Error:', err.message);
     }
 
-    // Log Security Audit Activity
+    // Log Security Audit Events
     try {
-      await ActivityLog.create({
-        userId: user._id,
-        action: 'Register',
-        details: `Registered new account as ${user.role}. PRN Verification status: pending.`,
-        ipAddress: req.ip || '',
-        userAgent: req.headers['user-agent'] || '',
+      await AuditLog.create({
+        actorId: user._id,
+        targetUserId: user._id,
+        action: 'STUDENT_REGISTRATION_CREATED',
+        details: { email: user.email, maviId: user.maviId, prn: user.prn },
+        result: 'SUCCESS',
+      });
+      await AuditLog.create({
+        actorId: user._id,
+        targetUserId: user._id,
+        action: 'EMAIL_VERIFICATION_SENT',
+        details: { email: user.email, maviId: user.maviId },
+        result: 'SUCCESS',
       });
     } catch (auditErr) {
       console.error('Audit Log Error:', auditErr.message);
@@ -182,12 +190,12 @@ const register = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'Account created successfully. Institutional identity pending verification.',
+      code: 'EMAIL_VERIFICATION_REQUIRED',
+      message: 'Account created successfully. Please verify your email to activate your account.',
       data: {
         user,
-        token,
-        refreshToken,
-        verificationToken,
+        accountStatus: 'PENDING_VERIFICATION',
+        emailVerified: false,
       },
     });
   } catch (error) {
@@ -288,6 +296,35 @@ const login = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: 'Invalid identifier or password',
+      });
+    }
+
+    // Check Email Verification & Account Activation Status for Student accounts
+    const isStudent = user.role === 'user' || (Array.isArray(user.roles) && user.roles.includes('user') && !user.roles.includes('admin') && !user.roles.includes('super_admin') && !user.roles.includes('institution_admin'));
+
+    if (isStudent && (user.accountStatus === 'PENDING_VERIFICATION' || !user.emailVerified)) {
+      try {
+        await AuditLog.create({
+          actorId: user._id,
+          targetUserId: user._id,
+          action: 'VERIFICATION_REQUIRED_LOGIN_BLOCKED',
+          details: { email: user.email, maviId: user.maviId },
+          result: 'REJECTED',
+        });
+      } catch (auditErr) {
+        console.error('Audit Log Error:', auditErr.message);
+      }
+
+      return res.status(403).json({
+        success: false,
+        code: 'EMAIL_VERIFICATION_REQUIRED',
+        message: 'Please verify your email address before accessing your account.',
+        data: {
+          email: user.email,
+          maviId: user.maviId,
+          accountStatus: user.accountStatus,
+          emailVerified: user.emailVerified,
+        },
       });
     }
 
@@ -496,30 +533,310 @@ const refreshToken = async (req, res, next) => {
  */
 const verifyEmail = async (req, res, next) => {
   try {
-    const { token } = req.body;
-    if (!token) {
-      return res.status(400).json({ success: false, message: 'Verification token is required' });
-    }
-    const user = await User.findOne({ verificationToken: token }).select('+verificationToken');
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired verification token' });
+    const rawToken = req.body.token || req.query.token;
+    if (!rawToken) {
+      return res.status(400).json({
+        success: false,
+        code: 'MISSING_VERIFICATION_TOKEN',
+        message: 'Verification token is required.',
+      });
     }
 
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    // Search for user matching hashed token (or legacy unhashed token)
+    const user = await User.findOne({
+      $or: [
+        { verificationToken: hashedToken },
+        { verificationToken: rawToken },
+      ],
+    }).select('+verificationToken +verificationTokenExpires +refreshToken');
+
+    if (!user) {
+      try {
+        await AuditLog.create({
+          action: 'EMAIL_VERIFICATION_FAILED',
+          details: { reason: 'Token not found or already used', tokenProvided: rawToken.substring(0, 6) + '...' },
+          result: 'REJECTED',
+        });
+      } catch (auditErr) {
+        console.error('Audit Error:', auditErr.message);
+      }
+
+      return res.status(400).json({
+        success: false,
+        code: 'VERIFICATION_TOKEN_ALREADY_USED',
+        message: 'Verification link is invalid or has already been used.',
+      });
+    }
+
+    // Expiration check
+    if (user.verificationTokenExpires && user.verificationTokenExpires < Date.now()) {
+      try {
+        await AuditLog.create({
+          actorId: user._id,
+          targetUserId: user._id,
+          action: 'EMAIL_VERIFICATION_EXPIRED',
+          details: { email: user.email, maviId: user.maviId },
+          result: 'REJECTED',
+        });
+      } catch (auditErr) {
+        console.error('Audit Error:', auditErr.message);
+      }
+
+      return res.status(400).json({
+        success: false,
+        code: 'VERIFICATION_TOKEN_EXPIRED',
+        message: 'Your verification link has expired. Please request a new verification email.',
+      });
+    }
+
+    // Atomic activation
     user.emailVerified = true;
+    user.accountStatus = 'ACTIVE';
     user.verificationToken = null;
+    user.verificationTokenExpires = null;
+
+    // Issue fresh tokens for automatic login upon verification
+    const authToken = user.generateAuthToken();
+    const refreshToken = crypto.randomBytes(40).toString('hex');
+    user.refreshToken = refreshToken;
+
     await user.save();
 
-    await ActivityLog.create({
-      userId: user._id,
-      action: 'Verify Email',
-      details: 'Email successfully verified',
-      ipAddress: req.ip || '',
-      userAgent: req.headers['user-agent'] || '',
-    });
+    try {
+      await AuditLog.create({
+        actorId: user._id,
+        targetUserId: user._id,
+        action: 'EMAIL_VERIFICATION_SUCCESS',
+        details: { email: user.email, maviId: user.maviId },
+        result: 'SUCCESS',
+      });
+      await AuditLog.create({
+        actorId: user._id,
+        targetUserId: user._id,
+        action: 'ACCOUNT_ACTIVATED',
+        details: { email: user.email, maviId: user.maviId },
+        result: 'SUCCESS',
+      });
+    } catch (auditErr) {
+      console.error('Audit Log Error:', auditErr.message);
+    }
 
     res.status(200).json({
       success: true,
-      message: 'Email verified successfully!',
+      message: 'Your account has been verified.',
+      data: {
+        user,
+        token: authToken,
+        refreshToken,
+        accountStatus: 'ACTIVE',
+        emailVerified: true,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Resend verification email to student
+ * @route   POST /api/auth/resend-verification
+ * @access  Public
+ */
+const resendVerification = async (req, res, next) => {
+  try {
+    const rawEmailOrId = (req.body.email || req.body.maviId || req.body.identifier || req.user?.email || '').toString().trim();
+    if (!rawEmailOrId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email address or MAVI ID is required.',
+      });
+    }
+
+    const query = rawEmailOrId.toUpperCase().startsWith('MAVI-')
+      ? { maviId: rawEmailOrId.toUpperCase() }
+      : { email: rawEmailOrId.toLowerCase() };
+
+    const user = await User.findOne(query).select('+verificationToken +verificationTokenExpires');
+
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: 'If a matching pending account exists, a new verification email has been sent.',
+      });
+    }
+
+    if (user.emailVerified && user.accountStatus === 'ACTIVE') {
+      return res.status(400).json({
+        success: false,
+        code: 'ACCOUNT_ALREADY_ACTIVE',
+        message: 'This account has already been verified and activated. Please log in.',
+      });
+    }
+
+    // Rate limit check: 60 seconds minimum between resends
+    if (user.verificationTokenExpires) {
+      const lastSentTime = new Date(user.verificationTokenExpires.getTime() - 30 * 60 * 1000);
+      const secondsSinceLastSent = (Date.now() - lastSentTime.getTime()) / 1000;
+      if (secondsSinceLastSent < 60) {
+        const secondsToWait = Math.ceil(60 - secondsSinceLastSent);
+        return res.status(429).json({
+          success: false,
+          code: 'RESEND_RATE_LIMITED',
+          message: `Please wait ${secondsToWait} seconds before requesting another verification email.`,
+        });
+      }
+    }
+
+    // Generate new token (30-min expiry)
+    const rawVerificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
+    const tokenExpires = new Date(Date.now() + 30 * 60 * 1000);
+
+    user.verificationToken = hashedVerificationToken;
+    user.verificationTokenExpires = tokenExpires;
+    user.accountStatus = 'PENDING_VERIFICATION';
+    await user.save();
+
+    const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
+    const verificationLink = `${clientUrl}/verify-account?token=${rawVerificationToken}`;
+
+    const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
+    const emailHtml = generateStudentVerificationEmailHtml({
+      name: user.name,
+      verificationLink,
+      expiresMinutes: 30,
+    });
+
+    sendEmail({
+      to: user.email,
+      subject: 'Verify your MAVI Linking account',
+      html: emailHtml,
+    }).catch((err) => console.error('[EMAIL ERROR]', err.message));
+
+    try {
+      await AuditLog.create({
+        actorId: user._id,
+        targetUserId: user._id,
+        action: 'EMAIL_VERIFICATION_RESENT',
+        details: { email: user.email, maviId: user.maviId },
+        result: 'SUCCESS',
+      });
+    } catch (auditErr) {
+      console.error('Audit Error:', auditErr.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'A new verification email has been dispatched to your email address.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Change registered email address before verification
+ * @route   POST /api/auth/change-email-pending
+ * @access  Public
+ */
+const changeEmailPending = async (req, res, next) => {
+  try {
+    const { token, currentEmail, maviId, newEmail } = req.body;
+    if (!newEmail || !newEmail.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'New email address is required.',
+      });
+    }
+
+    const normalizedNewEmail = newEmail.toLowerCase().trim();
+
+    // Check uniqueness of new email
+    const existingUser = await User.findOne({ email: normalizedNewEmail });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        code: 'EMAIL_ALREADY_REGISTERED',
+        message: 'This email address is already registered to another account.',
+      });
+    }
+
+    let user = null;
+    if (token) {
+      const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+      user = await User.findOne({
+        $or: [{ verificationToken: hashedToken }, { verificationToken: token }],
+      }).select('+verificationToken +verificationTokenExpires');
+    } else if (currentEmail || maviId || req.user) {
+      const query = maviId
+        ? { maviId: maviId.toUpperCase() }
+        : { email: (currentEmail || req.user?.email).toLowerCase().trim() };
+      user = await User.findOne(query).select('+verificationToken +verificationTokenExpires');
+    }
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pending account not found.',
+      });
+    }
+
+    if (user.emailVerified && user.accountStatus === 'ACTIVE') {
+      return res.status(400).json({
+        success: false,
+        message: 'Account is already verified and active.',
+      });
+    }
+
+    const oldEmail = user.email;
+    user.email = normalizedNewEmail;
+
+    // Issue new verification token & invalidate old token
+    const rawVerificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
+    user.verificationToken = hashedVerificationToken;
+    user.verificationTokenExpires = new Date(Date.now() + 30 * 60 * 1000);
+    user.emailVerified = false;
+    user.accountStatus = 'PENDING_VERIFICATION';
+
+    await user.save();
+
+    const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
+    const verificationLink = `${clientUrl}/verify-account?token=${rawVerificationToken}`;
+
+    const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
+    const emailHtml = generateStudentVerificationEmailHtml({
+      name: user.name,
+      verificationLink,
+      expiresMinutes: 30,
+    });
+
+    sendEmail({
+      to: user.email,
+      subject: 'Verify your MAVI Linking account',
+      html: emailHtml,
+    }).catch((err) => console.error('[EMAIL ERROR]', err.message));
+
+    try {
+      await AuditLog.create({
+        actorId: user._id,
+        targetUserId: user._id,
+        action: 'EMAIL_CHANGE_REQUESTED',
+        details: { oldEmail, newEmail: normalizedNewEmail },
+        result: 'SUCCESS',
+      });
+    } catch (auditErr) {
+      console.error('Audit Error:', auditErr.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Email address updated successfully. A new verification email has been dispatched.',
+      data: {
+        email: normalizedNewEmail,
+      },
     });
   } catch (error) {
     next(error);
@@ -1843,5 +2160,7 @@ module.exports = {
   requestEmailChange,
   verifyEmailChange,
   resendEmailChangeOtp,
+  resendVerification,
+  changeEmailPending,
 };
 

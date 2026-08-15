@@ -154,6 +154,15 @@ const getInstitutionById = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Institution not found' });
     }
 
+    if (!institution.institutionCode || !institution.code) {
+      const activeCode = institution.institutionCode || institution.code || institution.tenantId;
+      if (activeCode) {
+        institution.institutionCode = activeCode;
+        institution.code = activeCode;
+        await institution.save();
+      }
+    }
+
     // Security check: Institution Admin can only view their assigned institution
     if (req.isInstitutionAdmin && !req.isSuperAdmin) {
       if (req.user.institutionId?.toString() !== institution._id.toString()) {

@@ -492,7 +492,7 @@ const login = async (req, res, next) => {
 const getMe = async (req, res, next) => {
   try {
     // req.user is attached by the auth middleware
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).populate('institutionId', 'name tenantId institutionCode shortName code domain officialDomain logo status');
     if (user && !user.maviId) {
       user.maviId = 'MAVI-' + crypto.randomBytes(4).toString('hex').toUpperCase();
       await user.save();

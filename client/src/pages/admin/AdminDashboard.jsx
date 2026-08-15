@@ -231,10 +231,12 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
           const res = await api.get(`/admin/institutions/${instId}`).catch(() => null);
           if (res?.data?.data?.institution) {
             const inst = res.data.data.institution;
+            const assignedCode = inst.institutionCode || inst.code || inst.tenantId || inst.shortName || '';
             setInstitutionData(inst);
             setSettingsForm({
               name: inst.name || '',
-              code: inst.code || '',
+              institutionCode: assignedCode,
+              code: assignedCode,
               domain: inst.domain || inst.officialDomain || '',
               city: inst.city || '',
               state: inst.state || '',
@@ -351,9 +353,11 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     try {
+      const codeVal = settingsForm.institutionCode || settingsForm.code;
       await api.put('/admin/my-institution', {
         name: settingsForm.name,
-        code: settingsForm.code,
+        code: codeVal,
+        institutionCode: codeVal,
         domain: settingsForm.domain,
         city: settingsForm.city,
         state: settingsForm.state,
@@ -1133,33 +1137,50 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <code style={{
-                      background: 'rgba(0, 0, 0, 0.4)',
-                      border: '1px solid rgba(168, 85, 247, 0.4)',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '6px',
-                      fontFamily: 'monospace',
-                      fontSize: '1.1rem',
-                      fontWeight: 'bold',
-                      color: '#38bdf8',
-                      letterSpacing: '1px',
-                    }}>
-                      {settingsForm.institutionCode || settingsForm.code || 'NOT_ASSIGNED'}
-                    </code>
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      onClick={() => {
-                        const code = settingsForm.institutionCode || settingsForm.code;
-                        if (code) {
-                          navigator.clipboard.writeText(code);
-                          alert(`Institution Code "${code}" copied to clipboard!`);
-                        }
-                      }}
-                      style={{ padding: '0.5rem 0.9rem', fontSize: '0.85rem' }}
-                    >
-                      Copy Code
-                    </button>
+                    {(() => {
+                      const activeRegistrationCode =
+                        settingsForm.institutionCode ||
+                        settingsForm.code ||
+                        institutionData?.institutionCode ||
+                        institutionData?.tenantId ||
+                        institutionData?.code ||
+                        currentUser?.institutionId?.institutionCode ||
+                        currentUser?.institutionId?.tenantId ||
+                        currentUser?.tenantId ||
+                        'NOT_ASSIGNED';
+                      return (
+                        <>
+                          <code style={{
+                            background: 'rgba(0, 0, 0, 0.4)',
+                            border: '1px solid rgba(168, 85, 247, 0.4)',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '6px',
+                            fontFamily: 'monospace',
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold',
+                            color: '#38bdf8',
+                            letterSpacing: '1px',
+                          }}>
+                            {activeRegistrationCode}
+                          </code>
+                          <button
+                            type="button"
+                            className="btn btn-outline"
+                            onClick={() => {
+                              if (activeRegistrationCode && activeRegistrationCode !== 'NOT_ASSIGNED') {
+                                navigator.clipboard.writeText(activeRegistrationCode);
+                                alert(`Student Registration Code "${activeRegistrationCode}" copied to clipboard!`);
+                              } else {
+                                alert('No Student Registration Code assigned yet.');
+                              }
+                            }}
+                            style={{ padding: '0.5rem 0.9rem', fontSize: '0.85rem' }}
+                          >
+                            Copy Code
+                          </button>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 

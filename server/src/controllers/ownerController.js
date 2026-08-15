@@ -1200,6 +1200,260 @@ const getAuditLogs = async (req, res, next) => {
   }
 };
 
+/**
+ * Convert an existing Super Admin account to Student role.
+ * POST /api/owner/admins/:id/convert-to-student
+ * Access: Private (Platform Owner / Super Admin only)
+ */
+const convertSuperAdminToStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { institutionId, departmentId, prn, reason } = req.body;
+
+    // 1. Locate target user
+    const targetUser = await User.findById(id);
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        code: 'USER_NOT_FOUND',
+        message: 'Target user account not found.',
+      });
+    }
+
+    // 2. Validate target is currently a Super Admin / Platform Owner
+    const isSuperAdmin =
+      targetUser.role === 'super_admin' ||
+      targetUser.role === 'platform_owner' ||
+      targetUser.role === 'owner' ||
+      (Array.isArray(targetUser.roles) &&
+        (targetUser.roles.includes('super_admin') ||
+          targetUser.roles.includes('platform_owner') ||
+          targetUser.roles.includes('owner')));
+
+    if (!isSuperAdmin) {
+      return res.status(400).json({
+        success: false,
+        code: 'INVALID_ROLE_CONVERSION',
+        message: `Target user account (${targetUser.email}) is not a Super Admin.`,
+      });
+    }
+
+    // 3. LAST_SUPER_ADMIN_PROTECTION: Check remaining active Super Admins
+    const superAdminCount = await User.countDocuments({
+      $or: [
+        { role: { $in: ['super_admin', 'platform_owner', 'owner'] } },
+        { roles: { $in: ['super_admin', 'platform_owner', 'owner'] } },
+      ],
+      status: { $ne: 'suspended' },
+    });
+
+    if (superAdminCount <= 1) {
+      return res.status(400).json({
+        success: false,
+        code: 'LAST_SUPER_ADMIN_PROTECTION',
+        message: 'Cannot convert account. At least one active Super Admin must remain on the platform.',
+      });
+    }
+
+    // 4. Self-Conversion Safeguard (Requirement 20)
+    if (req.user._id.toString() === targetUser._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        code: 'SELF_CONVERSION_DENIED',
+        message: 'Super Admin self-conversion is restricted. Another authorized platform administrator must perform this action.',
+      });
+    }
+
+    // 5. Institution Validation (Requirement 4)
+    if (!institutionId) {
+      return res.status(400).json({
+        success: false,
+        code: 'MISSING_INSTITUTION',
+        message: 'Target institution selection is required.',
+      });
+    }
+
+    const institution = await Institution.findById(institutionId);
+    if (!institution || institution.status === 'suspended') {
+      return res.status(400).json({
+        success: false,
+        code: 'INVALID_INSTITUTION',
+        message: 'Selected institution does not exist or is currently suspended.',
+      });
+    }
+
+    // 6. Department Validation & Cross-Institution Mismatch Guard (Requirement 5)
+    if (!departmentId) {
+      return res.status(400).json({
+        success: false,
+        code: 'MISSING_DEPARTMENT',
+        message: 'Target department selection is required.',
+      });
+    }
+
+    const department = await Department.findById(departmentId);
+    if (!department) {
+      return res.status(400).json({
+        success: false,
+        code: 'INVALID_DEPARTMENT',
+        message: 'Selected department does not exist.',
+      });
+    }
+
+    if (department.institutionId.toString() !== institution._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        code: 'DEPARTMENT_INSTITUTION_MISMATCH',
+        message: 'Selected department does not belong to the chosen institution.',
+      });
+    }
+
+    // 7. PRN Validation & Uniqueness Check (Requirement 6)
+    if (!prn || !prn.trim()) {
+      return res.status(400).json({
+        success: false,
+        code: 'MISSING_PRN',
+        message: 'Student PRN is required for conversion.',
+      });
+    }
+
+    const cleanPrn = prn.trim();
+    const duplicatePrn = await User.findOne({
+      _id: { $ne: targetUser._id },
+      $or: [
+        { prn: cleanPrn },
+        { 'institutionalIdentifier.identifierValue': cleanPrn },
+      ],
+    });
+
+    if (duplicatePrn) {
+      return res.status(400).json({
+        success: false,
+        code: 'DUPLICATE_PRN',
+        message: `PRN '${cleanPrn}' is already assigned to another student (${duplicatePrn.name}).`,
+      });
+    }
+
+    // 8. Account Conversion & Scope Cleanup
+    const previousRole = targetUser.role;
+    const previousScope = targetUser.adminScope || 'PLATFORM';
+
+    // Role & Roles
+    targetUser.role = 'user';
+    targetUser.roles = ['user', 'student'];
+
+    // Remove administrative permissions & scopes
+    targetUser.permissions = [];
+    targetUser.adminScope = '';
+    targetUser.adminScopeDetails = { scope: '', institutionId: null, departmentId: null };
+    targetUser.adminId = '';
+    targetUser.adminLoginId = '';
+    targetUser.designation = '';
+
+    // Assign Student Information
+    targetUser.institutionId = institution._id;
+    targetUser.tenantId = institution.tenantId || '';
+    targetUser.departmentId = department._id;
+    targetUser.prn = cleanPrn;
+    targetUser.institutionalIdentifier = {
+      identifierType: 'PRN',
+      identifierValue: cleanPrn,
+    };
+    targetUser.university = {
+      name: institution.name,
+      department: department.name,
+      branch: department.name,
+    };
+
+    // Account Status & Approval State
+    targetUser.accountStatus = 'ACTIVE';
+    targetUser.status = 'active';
+    targetUser.prnVerificationStatus = 'approved';
+    targetUser.approvedBy = req.user._id;
+    targetUser.approvedAt = new Date();
+    targetUser.approvalSource = 'SUPER_ADMIN';
+
+    // Invalidate old sessions/tokens (Session Invalidation Requirement 16 & 17)
+    targetUser.refreshToken = null;
+    targetUser.tokenVersion = (targetUser.tokenVersion || 0) + 1;
+
+    await targetUser.save();
+
+    // 9. Create Audit Log Entry (Requirement 15)
+    await AuditLog.create({
+      actorId: req.user._id,
+      actorName: req.user.name,
+      actorRole: req.user.role,
+      targetUserId: targetUser._id,
+      targetUserName: targetUser.name,
+      targetUserEmail: targetUser.email,
+      action: 'USER_ROLE_CHANGED',
+      module: 'USER_MANAGEMENT',
+      previousRole,
+      newRole: 'student',
+      previousScope,
+      newScope: 'STUDENT',
+      institutionId: institution._id,
+      departmentId: department._id,
+      details: {
+        prn: cleanPrn,
+        maviId: targetUser.maviId,
+        reason: reason || 'Converted existing platform account to student account.',
+      },
+      result: 'SUCCESS',
+    });
+
+    // 10. Email Notification (Requirement 25)
+    try {
+      await sendEmail({
+        to: targetUser.email,
+        subject: 'Your MAVI Linking Account Role Has Been Changed',
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+            <h2 style="color: #6366f1;">MAVI Linking — Account Role Updated</h2>
+            <p>Hello <strong>${targetUser.name}</strong>,</p>
+            <p>Your MAVI Linking account role has been updated by an administrator.</p>
+            <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 15px 0;">
+              <p><strong>New Role:</strong> Student</p>
+              <p><strong>MAVI ID:</strong> ${targetUser.maviId}</p>
+              <p><strong>Institution:</strong> ${institution.name}</p>
+              <p><strong>Department:</strong> ${department.name}</p>
+              <p><strong>PRN:</strong> ${cleanPrn}</p>
+            </div>
+            <p>You can now log in using your existing password and access your Student Dashboard.</p>
+          </div>
+        `,
+      });
+    } catch (emailErr) {
+      console.error('[CONVERT EMAIL DISPATCH ERROR]', emailErr.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Account ${targetUser.name} (${targetUser.maviId}) successfully converted to Student.`,
+      data: {
+        _id: targetUser._id,
+        maviId: targetUser.maviId,
+        name: targetUser.name,
+        email: targetUser.email,
+        role: targetUser.role,
+        roles: targetUser.roles,
+        accountStatus: targetUser.accountStatus,
+        institutionId: targetUser.institutionId,
+        departmentId: targetUser.departmentId,
+        prn: targetUser.prn,
+      },
+    });
+  } catch (error) {
+    console.error('[CONVERT_SUPER_ADMIN_TO_STUDENT_ERROR]', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to convert account role.',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getOwnerOverview,
   getTenants,
@@ -1218,6 +1472,7 @@ module.exports = {
   resendAdminInvite,
   revokeAdminInvite,
   toggleAdminStatus,
+  convertSuperAdminToStudent,
   getUsers,
   toggleUserStatus,
   getLicensing,

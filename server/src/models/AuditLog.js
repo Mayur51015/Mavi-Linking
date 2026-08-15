@@ -90,6 +90,7 @@ const auditLogSchema = new mongoose.Schema(
         'ADMIN_INVITATION_SENT',
         'ADMIN_INVITATION_REVOKED',
         'ADMIN_ROLE_CHANGED',
+        'USER_ROLE_CHANGED',
         'ADMIN_SCOPE_CHANGED',
         'ADMIN_PERMISSIONS_CHANGED',
         'ADMIN_SUSPENDED',

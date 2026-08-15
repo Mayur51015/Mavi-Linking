@@ -19,6 +19,7 @@ const {
   resendAdminInvite,
   revokeAdminInvite,
   toggleAdminStatus,
+  convertSuperAdminToStudent,
   getUsers,
   toggleUserStatus,
   getLicensing,
@@ -64,6 +65,7 @@ router.patch('/admins/:id/reactivate', reactivateAdmin);
 router.post('/admins/:id/resend-invite', resendAdminInvite);
 router.patch('/admins/:id/revoke-invite', revokeAdminInvite);
 router.put('/admins/:id/status', toggleAdminStatus);
+router.post('/admins/:id/convert-to-student', convertSuperAdminToStudent);
 
 // Platform Users Management
 router.get('/users', getUsers);

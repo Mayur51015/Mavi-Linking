@@ -69,18 +69,42 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [planForm, setPlanForm] = useState({ name: '', code: 'PRO', priceAmount: 149999, maxStudents: 2500, maxTeachers: 200, maxDepartments: 15, description: '', status: 'ACTIVE' });
 
-  // Fetch departments when institution selection changes in modal
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertingAdmin, setConvertingAdmin] = useState(null);
+  const [convertForm, setConvertForm] = useState({ institutionId: '', departmentId: '', prn: '', reason: '' });
+  const [convertDepartments, setConvertDepartments] = useState([]);
+
   useEffect(() => {
-    if (newAdmin.institutionId) {
-      api.get(`/admin/departments?institutionId=${newAdmin.institutionId}`)
-        .then((res) => {
-          setAvailableDepartments(res.data?.data?.departments || res.data?.data || []);
-        })
-        .catch(() => setAvailableDepartments([]));
+    if (convertForm.institutionId) {
+      api.get(`/admin/departments?institutionId=${convertForm.institutionId}`)
+        .then((res) => setConvertDepartments(res.data?.data?.departments || res.data?.data || []))
+        .catch(() => setConvertDepartments([]));
     } else {
-      setAvailableDepartments([]);
+      setConvertDepartments([]);
     }
-  }, [newAdmin.institutionId]);
+  }, [convertForm.institutionId]);
+
+  const handleConvertToStudent = async (e) => {
+    e.preventDefault();
+    if (!convertingAdmin?._id) return;
+    if (!convertForm.institutionId || !convertForm.departmentId || !convertForm.prn) {
+      toast.error('Institution, Department, and PRN are required.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await api.post(`/owner/admins/${convertingAdmin._id}/convert-to-student`, convertForm);
+      toast.success(res.data?.message || 'Account successfully converted to Student role.');
+      setShowConvertModal(false);
+      setConvertingAdmin(null);
+      setConvertForm({ institutionId: '', departmentId: '', prn: '', reason: '' });
+      loadData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to convert account to student.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -636,9 +660,22 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                                   </>
                                 )}
                                 {status === 'ACTIVE' && (
-                                  <button onClick={() => handleSuspendAdmin(adm._id)} className="btn btn-sm btn-danger" style={{ fontSize: '0.72rem', background: '#ef4444', borderColor: '#ef4444' }}>
-                                    Suspend
-                                  </button>
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        setConvertingAdmin(adm);
+                                        setConvertForm({ institutionId: adm.institutionId?._id || '', departmentId: adm.departmentId?._id || '', prn: '', reason: '' });
+                                        setShowConvertModal(true);
+                                      }}
+                                      className="btn btn-sm btn-outline"
+                                      style={{ fontSize: '0.72rem', borderColor: '#f59e0b', color: '#f59e0b' }}
+                                    >
+                                      Convert to Student
+                                    </button>
+                                    <button onClick={() => handleSuspendAdmin(adm._id)} className="btn btn-sm btn-danger" style={{ fontSize: '0.72rem', background: '#ef4444', borderColor: '#ef4444' }}>
+                                      Suspend
+                                    </button>
+                                  </>
                                 )}
                                 {status === 'SUSPENDED' && (
                                   <button onClick={() => handleReactivateAdmin(adm._id)} className="btn btn-sm btn-success" style={{ fontSize: '0.72rem' }}>

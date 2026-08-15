@@ -28,6 +28,9 @@ const {
   getStudentsForAdmin,
   getStudentProfileForAdmin,
   updateStudentProfileForAdmin,
+  getPendingStudentApprovals,
+  approveStudentAccount,
+  rejectStudentAccount,
 } = require('../controllers/adminController');
 
 const {
@@ -59,6 +62,11 @@ const router = express.Router();
 
 // All routes require JWT authentication + Admin role (Super Admin or Institution Admin)
 router.use(protect, requireAdmin);
+
+// Student 2-Stage Verification & Approval Authority (Tenant/Department Scoped)
+router.get('/students/pending', getPendingStudentApprovals);
+router.post('/students/:studentId/approve', approveStudentAccount);
+router.post('/students/:studentId/reject', rejectStudentAccount);
 
 // Student Profile Management Authority (STUDENT_PROFILE_MANAGE permission + Tenant Scope)
 router.get('/students', enforceInstitutionScope, requirePermission('STUDENT_PROFILE_MANAGE'), getStudentsForAdmin);

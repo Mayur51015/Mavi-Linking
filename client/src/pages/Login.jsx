@@ -106,8 +106,13 @@ const Login = () => {
       handleNavigationByRole(res?.user);
     } catch (err) {
       if (err.response?.data?.code === 'EMAIL_VERIFICATION_REQUIRED') {
-        toast.info('Please verify your email address to activate your account.');
+        toast.info('Please verify your email address before accessing your account.');
         navigate('/verify-account');
+        return;
+      }
+      if (err.response?.data?.code === 'ACCOUNT_PENDING_ADMIN_APPROVAL' || err.response?.data?.code === 'ACCOUNT_REJECTED') {
+        toast.info(err.response?.data?.message || 'Your account is waiting for approval from your institution administrator.');
+        navigate('/pending-approval');
         return;
       }
       setError(getErrorMessage(err, 'Sign in failed. Please verify your identity credentials and password.'));

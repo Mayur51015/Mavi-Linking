@@ -126,7 +126,11 @@ const requireAdmin = (req, res, next) => {
     req.user.role === 'institution_admin' ||
     req.user.role === 'admin';
 
-  if (!isSuperAdmin && !isInstAdmin) {
+  const isDeptAdmin =
+    userRoles.includes('department_admin') ||
+    req.user.role === 'department_admin';
+
+  if (!isSuperAdmin && !isInstAdmin && !isDeptAdmin) {
     return res.status(403).json({
       success: false,
       message: 'Forbidden. Administrative authorization required.',
@@ -135,6 +139,7 @@ const requireAdmin = (req, res, next) => {
 
   req.isSuperAdmin = isSuperAdmin;
   req.isInstitutionAdmin = isInstAdmin && !isSuperAdmin;
+  req.isDepartmentAdmin = isDeptAdmin && !isSuperAdmin && !isInstAdmin;
 
   next();
 };

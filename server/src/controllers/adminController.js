@@ -1560,6 +1560,343 @@ const updateStudentProfileForAdmin = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get pending student approval requests with tenant isolation & counters
+ * @route   GET /api/admin/students/pending
+ * @access  Private (department_admin, institution_admin, super_admin, platform_owner, admin)
+ */
+const getPendingStudentApprovals = async (req, res, next) => {
+  try {
+    const admin = req.user;
+    const { statusFilter = 'PENDING_ADMIN_APPROVAL', search, department } = req.query;
+
+    const baseQuery = { role: { $in: ['user', 'student'] } };
+
+    // Tenant / Department Scope Isolation
+    const isDeptAdmin = admin.role === 'department_admin' || (Array.isArray(admin.roles) && admin.roles.includes('department_admin') && !admin.roles.includes('super_admin') && !admin.roles.includes('institution_admin'));
+    const isInstAdmin = admin.role === 'institution_admin' || (Array.isArray(admin.roles) && admin.roles.includes('institution_admin') && !admin.roles.includes('super_admin'));
+
+    if (isDeptAdmin) {
+      if (admin.departmentId) {
+        baseQuery.departmentId = admin.departmentId;
+      } else if (admin.university?.department) {
+        baseQuery['university.department'] = admin.university.department;
+      }
+    } else if (isInstAdmin) {
+      if (admin.institutionId) {
+        baseQuery.institutionId = admin.institutionId;
+      }
+    }
+
+    if (department && department.trim()) {
+      baseQuery['university.department'] = new RegExp(department.trim(), 'i');
+    }
+
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      baseQuery.$or = [
+        { name: searchRegex },
+        { email: searchRegex },
+        { maviId: searchRegex },
+        { prn: searchRegex },
+      ];
+    }
+
+    // Status filtering
+    const query = { ...baseQuery };
+    if (statusFilter && statusFilter !== 'ALL') {
+      query.accountStatus = statusFilter;
+    }
+
+    const [students, pendingCount, emailPendingCount, activeCount, rejectedCount] = await Promise.all([
+      User.find(query).sort({ createdAt: -1 }),
+      User.countDocuments({ ...baseQuery, accountStatus: 'PENDING_ADMIN_APPROVAL' }),
+      User.countDocuments({ ...baseQuery, accountStatus: 'PENDING_EMAIL_VERIFICATION' }),
+      User.countDocuments({ ...baseQuery, accountStatus: 'ACTIVE' }),
+      User.countDocuments({ ...baseQuery, accountStatus: 'REJECTED' }),
+    ]);
+
+    // Create Audit Event
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        actorId: admin._id,
+        action: 'STUDENT_APPROVAL_VIEWED',
+        institutionId: admin.institutionId,
+        departmentId: admin.departmentId,
+        details: { count: students.length, filter: statusFilter },
+        result: 'SUCCESS',
+      });
+    } catch (auditErr) {
+      console.error('Audit Log Error:', auditErr.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        students,
+        counters: {
+          pendingCount,
+          emailPendingCount,
+          activeCount,
+          rejectedCount,
+          totalCount: pendingCount + emailPendingCount + activeCount + rejectedCount,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Approve student account (Stage 2 Activation)
+ * @route   POST /api/admin/students/:studentId/approve
+ * @access  Private (department_admin, institution_admin, super_admin, platform_owner, admin)
+ */
+const approveStudentAccount = async (req, res, next) => {
+  try {
+    const admin = req.user;
+    const { studentId } = req.params;
+
+    const student = await User.findById(studentId);
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student account not found.',
+      });
+    }
+
+    // Check Multi-Tenant & Department Scope Authorization
+    const isSuper = admin.role === 'super_admin' || admin.role === 'platform_owner' || admin.role === 'owner' || (Array.isArray(admin.roles) && (admin.roles.includes('super_admin') || admin.roles.includes('platform_owner')));
+    const isInstAdmin = admin.role === 'institution_admin' || (Array.isArray(admin.roles) && admin.roles.includes('institution_admin'));
+    const isDeptAdmin = admin.role === 'department_admin' || (Array.isArray(admin.roles) && admin.roles.includes('department_admin'));
+
+    if (!isSuper) {
+      if (isInstAdmin) {
+        if (admin.institutionId && student.institutionId && admin.institutionId.toString() !== student.institutionId.toString()) {
+          return res.status(403).json({
+            success: false,
+            code: 'CROSS_TENANT_ACCESS_DENIED',
+            message: 'Cross-institution authorization denied. You can only approve students within your authorized institution.',
+          });
+        }
+      } else if (isDeptAdmin) {
+        const deptMatch =
+          (admin.departmentId && student.departmentId && admin.departmentId.toString() === student.departmentId.toString()) ||
+          (admin.university?.department && student.university?.department && admin.university.department.toLowerCase() === student.university.department.toLowerCase());
+
+        if (!deptMatch) {
+          return res.status(403).json({
+            success: false,
+            code: 'CROSS_TENANT_ACCESS_DENIED',
+            message: 'Cross-department authorization denied. You can only approve students within your authorized department.',
+          });
+        }
+      } else {
+        return res.status(403).json({
+          success: false,
+          code: 'UNAUTHORIZED_APPROVAL_ROLE',
+          message: 'Your role does not have authorization to approve student accounts.',
+        });
+      }
+    }
+
+    // MANDATORY SECURITY RULE: Admin MUST NOT approve account with unverified email unless explicit super admin override
+    if (!student.emailVerified && !isSuper) {
+      return res.status(400).json({
+        success: false,
+        code: 'UNVERIFIED_EMAIL_APPROVAL_DENIED',
+        message: 'Cannot approve student account whose email address has not been verified.',
+      });
+    }
+
+    // Safe Idempotency Check
+    if (student.accountStatus === 'ACTIVE') {
+      return res.status(200).json({
+        success: true,
+        message: 'Student account is already approved and active.',
+        data: { student },
+      });
+    }
+
+    const previousStatus = student.accountStatus;
+    student.accountStatus = 'ACTIVE';
+    student.approvedBy = admin._id;
+    student.approvedAt = new Date();
+    student.approvalSource = isSuper ? 'SUPER_ADMIN' : isInstAdmin ? 'INSTITUTION_ADMIN' : 'DEPARTMENT_ADMIN';
+    await student.save();
+
+    // Audit Log
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        actorId: admin._id,
+        targetUserId: student._id,
+        action: 'STUDENT_ACCOUNT_APPROVED',
+        institutionId: student.institutionId,
+        departmentId: student.departmentId,
+        previousStatus,
+        newStatus: 'ACTIVE',
+        details: { approvedByName: admin.name, maviId: student.maviId },
+        result: 'SUCCESS',
+      });
+    } catch (auditErr) {
+      console.error('Audit Log Error:', auditErr.message);
+    }
+
+    // Dispatch Email Notification to Student
+    const { sendEmail } = require('../utils/sendEmail');
+    sendEmail({
+      to: student.email,
+      subject: 'Your MAVI Linking account has been approved!',
+      html: `
+        <div style="font-family: Arial, sans-serif; background: #09090b; color: #f4f4f5; padding: 24px; border-radius: 8px;">
+          <h2 style="color: #a855f7;">Account Approved 🎉</h2>
+          <p>Hello <strong>${student.name}</strong>,</p>
+          <p>Your student account (MAVI ID: <strong>${student.maviId}</strong>) has been officially approved by your institution administrator.</p>
+          <p>You now have full access to your student dashboard, project tools, placement drives, and AI analytics.</p>
+          <div style="margin-top: 20px;">
+            <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login" style="background: #a855f7; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">Log In to Dashboard</a>
+          </div>
+        </div>
+      `,
+    }).catch((err) => console.error('[EMAIL ERROR]', err.message));
+
+    res.status(200).json({
+      success: true,
+      message: 'Student account has been approved successfully.',
+      data: { student },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Reject student account registration
+ * @route   POST /api/admin/students/:studentId/reject
+ * @access  Private (department_admin, institution_admin, super_admin, platform_owner, admin)
+ */
+const rejectStudentAccount = async (req, res, next) => {
+  try {
+    const admin = req.user;
+    const { studentId } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'A valid rejection reason is required.',
+      });
+    }
+
+    const student = await User.findById(studentId);
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student account not found.',
+      });
+    }
+
+    // Tenant / Department Authorization Check
+    const isSuper = admin.role === 'super_admin' || admin.role === 'platform_owner' || admin.role === 'owner' || (Array.isArray(admin.roles) && (admin.roles.includes('super_admin') || admin.roles.includes('platform_owner')));
+    const isInstAdmin = admin.role === 'institution_admin' || (Array.isArray(admin.roles) && admin.roles.includes('institution_admin'));
+    const isDeptAdmin = admin.role === 'department_admin' || (Array.isArray(admin.roles) && admin.roles.includes('department_admin'));
+
+    if (!isSuper) {
+      if (isInstAdmin) {
+        if (admin.institutionId && student.institutionId && admin.institutionId.toString() !== student.institutionId.toString()) {
+          return res.status(403).json({
+            success: false,
+            code: 'CROSS_TENANT_ACCESS_DENIED',
+            message: 'Cross-institution authorization denied.',
+          });
+        }
+      } else if (isDeptAdmin) {
+        const deptMatch =
+          (admin.departmentId && student.departmentId && admin.departmentId.toString() === student.departmentId.toString()) ||
+          (admin.university?.department && student.university?.department && admin.university.department.toLowerCase() === student.university.department.toLowerCase());
+
+        if (!deptMatch) {
+          return res.status(403).json({
+            success: false,
+            code: 'CROSS_TENANT_ACCESS_DENIED',
+            message: 'Cross-department authorization denied.',
+          });
+        }
+      } else {
+        return res.status(403).json({
+          success: false,
+          code: 'UNAUTHORIZED_APPROVAL_ROLE',
+          message: 'Your role does not have authorization to reject student accounts.',
+        });
+      }
+    }
+
+    // Safe Idempotent response
+    if (student.accountStatus === 'REJECTED') {
+      return res.status(200).json({
+        success: true,
+        message: 'Student account is already rejected.',
+        data: { student },
+      });
+    }
+
+    const previousStatus = student.accountStatus;
+    student.accountStatus = 'REJECTED';
+    student.rejectedBy = admin._id;
+    student.rejectedAt = new Date();
+    student.rejectionReason = reason.trim();
+    await student.save();
+
+    // Audit Log
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        actorId: admin._id,
+        targetUserId: student._id,
+        action: 'STUDENT_ACCOUNT_REJECTED',
+        institutionId: student.institutionId,
+        departmentId: student.departmentId,
+        previousStatus,
+        newStatus: 'REJECTED',
+        reason: reason.trim(),
+        details: { rejectedByName: admin.name, maviId: student.maviId },
+        result: 'REJECTED',
+      });
+    } catch (auditErr) {
+      console.error('Audit Log Error:', auditErr.message);
+    }
+
+    // Email Notification
+    const { sendEmail } = require('../utils/sendEmail');
+    sendEmail({
+      to: student.email,
+      subject: 'Your MAVI Linking account registration requires attention',
+      html: `
+        <div style="font-family: Arial, sans-serif; background: #09090b; color: #f4f4f5; padding: 24px; border-radius: 8px;">
+          <h2 style="color: #ef4444;">Registration Decision Notice</h2>
+          <p>Hello <strong>${student.name}</strong>,</p>
+          <p>Your student account registration (MAVI ID: <strong>${student.maviId}</strong>) was reviewed by your institution administrator and was not approved at this time.</p>
+          <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px; margin: 16px 0; border-radius: 4px; color: #fca5a5;">
+            <strong>Reason:</strong> ${reason.trim()}
+          </div>
+          <p>If you believe this is an error, please contact your department or institution administrator.</p>
+        </div>
+      `,
+    }).catch((err) => console.error('[EMAIL ERROR]', err.message));
+
+    res.status(200).json({
+      success: true,
+      message: 'Student account registration has been rejected.',
+      data: { student },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAdminStats,
   getAllUsers,
@@ -1581,5 +1918,8 @@ module.exports = {
   getStudentsForAdmin,
   getStudentProfileForAdmin,
   updateStudentProfileForAdmin,
+  getPendingStudentApprovals,
+  approveStudentAccount,
+  rejectStudentAccount,
 };
 

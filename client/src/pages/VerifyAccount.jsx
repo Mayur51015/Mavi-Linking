@@ -257,30 +257,33 @@ const VerifyAccount = () => {
 
             <div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: '#ffffff' }}>
-                Your account has been verified.
+                Email Verified Successfully!
               </h2>
               <p style={{ fontSize: '0.875rem', color: '#a1a1aa', marginTop: '0.5rem', lineHeight: '1.5' }}>
-                Your MAVI Linking account is now fully active. You have full access to your developer dashboard and placement opportunities.
+                Your email address has been verified. Your account is now waiting for approval from your institution administrator.
               </p>
             </div>
 
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/pending-approval')}
               className="btn btn-primary"
               style={{
                 width: '100%',
                 padding: '0.85rem',
-                fontSize: '0.9rem',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
                 fontWeight: '700',
+                fontSize: '0.95rem',
+                border: 'none',
+                color: '#ffffff',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.5rem',
-                borderRadius: '12px',
               }}
             >
-              Go to Student Dashboard
-              <ArrowRight size={18} />
+              View Approval Status <ArrowRight size={18} />
             </button>
           </div>
         )}

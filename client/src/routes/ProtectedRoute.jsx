@@ -75,9 +75,15 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
   const isSuperAdmin = normalizedUserRoles.includes('super_admin') || normalizedUserRoles.includes('admin');
   const isInstAdmin = normalizedUserRoles.includes('institution_admin');
 
-  // Student Email Verification Check
-  const isStudentRole = normalizedUserRoles.includes('user') && !isSuperAdmin && !isInstAdmin && !normalizedUserRoles.includes('teacher') && !normalizedUserRoles.includes('recruiter');
+  // Student 2-Stage Verification & Approval Check
+  const isStudentRole = normalizedUserRoles.includes('user') && !isSuperAdmin && !isInstAdmin && !normalizedUserRoles.includes('teacher') && !normalizedUserRoles.includes('recruiter') && !normalizedUserRoles.includes('department_admin');
   if (isStudentRole && (!user.emailVerified || user.accountStatus !== 'ACTIVE')) {
+    if (!user.emailVerified) {
+      return <Navigate to="/verify-account" replace />;
+    }
+    if (user.accountStatus === 'PENDING_ADMIN_APPROVAL' || user.accountStatus === 'REJECTED') {
+      return <Navigate to="/pending-approval" replace />;
+    }
     return <Navigate to="/verify-account" replace />;
   }
 

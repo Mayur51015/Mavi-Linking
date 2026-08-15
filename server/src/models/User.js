@@ -77,8 +77,8 @@ const userSchema = new mongoose.Schema(
     },
     accountStatus: {
       type: String,
-      enum: ['INVITED', 'PENDING_VERIFICATION', 'EMAIL_VERIFICATION_PENDING', 'PASSWORD_SETUP_REQUIRED', 'ACTIVE', 'SUSPENDED', 'DISABLED', 'INVITATION_EXPIRED'],
-      default: 'PENDING_VERIFICATION',
+      enum: ['INVITED', 'PENDING_EMAIL_VERIFICATION', 'PENDING_VERIFICATION', 'EMAIL_VERIFICATION_PENDING', 'PENDING_ADMIN_APPROVAL', 'PASSWORD_SETUP_REQUIRED', 'ACTIVE', 'REJECTED', 'SUSPENDED', 'DISABLED', 'INVITATION_EXPIRED'],
+      default: 'PENDING_EMAIL_VERIFICATION',
     },
     institutionalIdentifier: {
       identifierType: {
@@ -210,6 +210,16 @@ const userSchema = new mongoose.Schema(
     prnRejectionReason: { type: String, default: '' },
     prnVerifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     prnVerifiedAt: { type: Date, default: null },
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    approvedAt: { type: Date, default: null },
+    approvalSource: {
+      type: String,
+      enum: ['', 'DEPARTMENT_ADMIN', 'INSTITUTION_ADMIN', 'SUPER_ADMIN', 'PLATFORM_OWNER'],
+      default: '',
+    },
+    rejectedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    rejectedAt: { type: Date, default: null },
+    rejectionReason: { type: String, default: '' },
     degree: { type: String, default: '' },
     cgpa: { type: Number, default: 0.0 },
     graduationYear: { type: String, default: '' },

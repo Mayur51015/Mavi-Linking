@@ -94,7 +94,7 @@ const register = async (req, res, next) => {
     userData.roles = ['user'];
     userData.requestedRole = 'none';
     userData.roleStatus = 'active';
-    userData.accountStatus = 'PENDING_VERIFICATION';
+    userData.accountStatus = 'PENDING_EMAIL_VERIFICATION';
     userData.emailVerified = false;
 
     // Institutional identifiers & verification status
@@ -194,7 +194,7 @@ const register = async (req, res, next) => {
       message: 'Account created successfully. Please verify your email to activate your account.',
       data: {
         user,
-        accountStatus: 'PENDING_VERIFICATION',
+        accountStatus: 'PENDING_EMAIL_VERIFICATION',
         emailVerified: false,
       },
     });
@@ -300,32 +300,85 @@ const login = async (req, res, next) => {
     }
 
     // Check Email Verification & Account Activation Status for Student accounts
-    const isStudent = user.role === 'user' || (Array.isArray(user.roles) && user.roles.includes('user') && !user.roles.includes('admin') && !user.roles.includes('super_admin') && !user.roles.includes('institution_admin'));
+    const isStudent = user.role === 'user' || (Array.isArray(user.roles) && user.roles.includes('user') && !user.roles.includes('admin') && !user.roles.includes('super_admin') && !user.roles.includes('institution_admin') && !user.roles.includes('department_admin'));
 
-    if (isStudent && (user.accountStatus === 'PENDING_VERIFICATION' || !user.emailVerified)) {
-      try {
-        await AuditLog.create({
-          actorId: user._id,
-          targetUserId: user._id,
-          action: 'VERIFICATION_REQUIRED_LOGIN_BLOCKED',
-          details: { email: user.email, maviId: user.maviId },
-          result: 'REJECTED',
+    if (isStudent) {
+      if (!user.emailVerified) {
+        try {
+          await AuditLog.create({
+            actorId: user._id,
+            targetUserId: user._id,
+            action: 'STUDENT_LOGIN_BLOCKED_EMAIL_UNVERIFIED',
+            details: { email: user.email, maviId: user.maviId },
+            result: 'REJECTED',
+          });
+        } catch (auditErr) {
+          console.error('Audit Log Error:', auditErr.message);
+        }
+
+        return res.status(403).json({
+          success: false,
+          code: 'EMAIL_VERIFICATION_REQUIRED',
+          message: 'Please verify your email address before accessing your account.',
+          data: {
+            email: user.email,
+            maviId: user.maviId,
+            accountStatus: user.accountStatus,
+            emailVerified: false,
+          },
         });
-      } catch (auditErr) {
-        console.error('Audit Log Error:', auditErr.message);
       }
 
-      return res.status(403).json({
-        success: false,
-        code: 'EMAIL_VERIFICATION_REQUIRED',
-        message: 'Please verify your email address before accessing your account.',
-        data: {
-          email: user.email,
-          maviId: user.maviId,
-          accountStatus: user.accountStatus,
-          emailVerified: user.emailVerified,
-        },
-      });
+      if (user.accountStatus === 'PENDING_ADMIN_APPROVAL') {
+        try {
+          await AuditLog.create({
+            actorId: user._id,
+            targetUserId: user._id,
+            action: 'STUDENT_LOGIN_BLOCKED_PENDING_APPROVAL',
+            details: { email: user.email, maviId: user.maviId },
+            result: 'REJECTED',
+          });
+        } catch (auditErr) {
+          console.error('Audit Log Error:', auditErr.message);
+        }
+
+        return res.status(403).json({
+          success: false,
+          code: 'ACCOUNT_PENDING_ADMIN_APPROVAL',
+          message: 'Your email has been verified. Your account is waiting for approval from your institution administrator.',
+          data: {
+            email: user.email,
+            maviId: user.maviId,
+            accountStatus: 'PENDING_ADMIN_APPROVAL',
+            emailVerified: true,
+          },
+        });
+      }
+
+      if (user.accountStatus === 'REJECTED') {
+        return res.status(403).json({
+          success: false,
+          code: 'ACCOUNT_REJECTED',
+          message: 'Your student account registration was rejected by your institution administrator.',
+          data: {
+            email: user.email,
+            maviId: user.maviId,
+            accountStatus: 'REJECTED',
+            rejectionReason: user.rejectionReason || 'Account registration rejected by institution administrator.',
+          },
+        });
+      }
+
+      if (user.accountStatus !== 'ACTIVE') {
+        return res.status(403).json({
+          success: false,
+          code: 'ACCOUNT_INACTIVE',
+          message: 'Your student account is not active.',
+          data: {
+            accountStatus: user.accountStatus,
+          },
+        });
+      }
     }
 
     // Generate JWT and Refresh Token
@@ -591,16 +644,11 @@ const verifyEmail = async (req, res, next) => {
       });
     }
 
-    // Atomic activation
+    // Atomic email verification completion -> Move to PENDING_ADMIN_APPROVAL stage
     user.emailVerified = true;
-    user.accountStatus = 'ACTIVE';
+    user.accountStatus = 'PENDING_ADMIN_APPROVAL';
     user.verificationToken = null;
     user.verificationTokenExpires = null;
-
-    // Issue fresh tokens for automatic login upon verification
-    const authToken = user.generateAuthToken();
-    const refreshToken = crypto.randomBytes(40).toString('hex');
-    user.refreshToken = refreshToken;
 
     await user.save();
 
@@ -608,14 +656,14 @@ const verifyEmail = async (req, res, next) => {
       await AuditLog.create({
         actorId: user._id,
         targetUserId: user._id,
-        action: 'EMAIL_VERIFICATION_SUCCESS',
+        action: 'EMAIL_VERIFICATION_COMPLETED',
         details: { email: user.email, maviId: user.maviId },
         result: 'SUCCESS',
       });
       await AuditLog.create({
         actorId: user._id,
         targetUserId: user._id,
-        action: 'ACCOUNT_ACTIVATED',
+        action: 'STUDENT_MOVED_TO_PENDING_APPROVAL',
         details: { email: user.email, maviId: user.maviId },
         result: 'SUCCESS',
       });
@@ -625,12 +673,11 @@ const verifyEmail = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'Your account has been verified.',
+      code: 'ACCOUNT_PENDING_ADMIN_APPROVAL',
+      message: 'Email verified successfully. Your account is now waiting for approval from your institution administrator.',
       data: {
         user,
-        token: authToken,
-        refreshToken,
-        accountStatus: 'ACTIVE',
+        accountStatus: 'PENDING_ADMIN_APPROVAL',
         emailVerified: true,
       },
     });

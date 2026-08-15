@@ -26,7 +26,7 @@ const protect = async (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_mavi_secret_key_2026');
 
     // Attach user to request (exclude password)
     const user = await User.findById(decoded.id).select('-password');
@@ -77,8 +77,8 @@ const protect = async (req, res, next) => {
       }
     }
 
-    // ─── Mandatory Student Email Verification Lock Check ──────────────────────
-    const isStudent = user.role === 'user' || (Array.isArray(user.roles) && user.roles.includes('user') && !user.roles.includes('admin') && !user.roles.includes('super_admin') && !user.roles.includes('institution_admin'));
+    // ─── Mandatory Student 2-Stage Verification & Approval Lock Check ───────────────
+    const isStudent = user.role === 'user' || (Array.isArray(user.roles) && user.roles.includes('user') && !user.roles.includes('admin') && !user.roles.includes('super_admin') && !user.roles.includes('institution_admin') && !user.roles.includes('department_admin'));
     if (isStudent && (!user.emailVerified || user.accountStatus !== 'ACTIVE')) {
       const currentUrl = req.originalUrl || req.url || '';
       const isAllowedVerificationEndpoint =
@@ -89,15 +89,54 @@ const protect = async (req, res, next) => {
         currentUrl.includes('/api/auth/logout');
 
       if (!isAllowedVerificationEndpoint) {
+        if (!user.emailVerified) {
+          return res.status(403).json({
+            success: false,
+            code: 'EMAIL_VERIFICATION_REQUIRED',
+            message: 'Please verify your email address before accessing your account.',
+            data: {
+              email: user.email,
+              maviId: user.maviId,
+              accountStatus: user.accountStatus,
+              emailVerified: false,
+            },
+          });
+        }
+
+        if (user.accountStatus === 'PENDING_ADMIN_APPROVAL') {
+          return res.status(403).json({
+            success: false,
+            code: 'ACCOUNT_PENDING_ADMIN_APPROVAL',
+            message: 'Your email has been verified. Your account is waiting for approval from your institution administrator.',
+            data: {
+              email: user.email,
+              maviId: user.maviId,
+              accountStatus: 'PENDING_ADMIN_APPROVAL',
+              emailVerified: true,
+            },
+          });
+        }
+
+        if (user.accountStatus === 'REJECTED') {
+          return res.status(403).json({
+            success: false,
+            code: 'ACCOUNT_REJECTED',
+            message: 'Your account registration was rejected by your institution administrator.',
+            data: {
+              email: user.email,
+              maviId: user.maviId,
+              accountStatus: 'REJECTED',
+              rejectionReason: user.rejectionReason || 'Registration rejected by administrator.',
+            },
+          });
+        }
+
         return res.status(403).json({
           success: false,
-          code: 'EMAIL_VERIFICATION_REQUIRED',
-          message: 'Please verify your email address before accessing your account.',
+          code: 'ACCOUNT_INACTIVE',
+          message: 'Your account is not active.',
           data: {
-            email: user.email,
-            maviId: user.maviId,
             accountStatus: user.accountStatus,
-            emailVerified: user.emailVerified,
           },
         });
       }

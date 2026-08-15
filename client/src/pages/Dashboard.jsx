@@ -601,14 +601,26 @@ const Dashboard = () => {
     }
   };
 
+  const parseBlobError = async (err, defaultMsg) => {
+    if (err.response?.data instanceof Blob) {
+      try {
+        const text = await err.response.data.text();
+        const json = JSON.parse(text);
+        if (json.message) return json.message;
+      } catch (_) {}
+    }
+    return err.response?.data?.message || defaultMsg;
+  };
+
   const handlePreviewPortfolioDoc = async (id) => {
     try {
       const res = await api.get(`/auth/portfolio-doc/${id}/file`, { responseType: 'blob' });
       const blob = new Blob([res.data], { type: res.headers['content-type'] });
       window.open(window.URL.createObjectURL(blob), '_blank');
     } catch (err) {
-      console.error(err);
-      alert('Preview failed. File may be missing.');
+      console.error('Document preview error:', err);
+      const msg = await parseBlobError(err, 'Preview failed. File may be missing from server storage.');
+      showToast('error', msg);
     }
   };
 
@@ -619,14 +631,15 @@ const Dashboard = () => {
       const link = document.createElement('a');
       link.href = url;
       const ext = doc.originalName ? doc.originalName.substring(doc.originalName.lastIndexOf('.')) : '.pdf';
-      link.setAttribute('download', `${doc.title.replace(/\s+/g, '_')}${ext}`);
+      link.setAttribute('download', `${(doc.title || 'document').replace(/\s+/g, '_')}${ext}`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error(err);
-      alert('Download failed.');
+      console.error('Document download error:', err);
+      const msg = await parseBlobError(err, 'Download failed. File may be missing from server storage.');
+      showToast('error', msg);
     }
   };
 

@@ -730,18 +730,57 @@ const getPortfolioDocFile = async (req, res, next) => {
       }
     }
 
-    const doc = (user.portfolioDocs || []).find(d => d._id.toString() === id);
-    if (!doc || !doc.fileUrl) {
-      return res.status(404).json({ success: false, message: 'File not found.' });
+    // 1. Search in portfolioDocs
+    let doc = (user.portfolioDocs || []).find(d => d._id.toString() === id);
+
+    // 2. Fallback search in certificates
+    if (!doc && user.certificates) {
+      const cert = user.certificates.find(c => c._id.toString() === id);
+      if (cert) {
+        doc = { title: cert.title, fileUrl: cert.fileUrl };
+      }
     }
 
-    const filepath = path.join(__dirname, '..', '..', doc.fileUrl);
-    if (!fs.existsSync(filepath)) {
-      return res.status(404).json({ success: false, message: 'Physical file is missing.' });
+    // 3. Fallback search in documents.list
+    if (!doc && user.documents?.list) {
+      const dList = user.documents.list.find(d => d._id.toString() === id);
+      if (dList) {
+        doc = { title: dList.title, fileUrl: dList.fileUrl };
+      }
+    }
+
+    if (!doc || !doc.fileUrl) {
+      return res.status(404).json({ success: false, message: 'Document record or file URL not found in user profile.' });
+    }
+
+    // Multi-path file resolution strategy for local and production environments
+    const rawFileUrl = doc.fileUrl;
+    const basename = path.basename(rawFileUrl);
+    const cleanRelativeUrl = rawFileUrl.replace(/^[\/\\]+/, '');
+
+    const candidatePaths = [
+      path.join(__dirname, '..', '..', cleanRelativeUrl),
+      path.join(__dirname, '..', '..', 'public', 'uploads', basename),
+      path.join(__dirname, '..', '..', 'public', cleanRelativeUrl),
+      path.join(process.cwd(), cleanRelativeUrl),
+      path.join(process.cwd(), 'public', 'uploads', basename),
+      path.join(process.cwd(), 'server', 'public', 'uploads', basename),
+      path.resolve(rawFileUrl),
+    ];
+
+    const filepath = candidatePaths.find(p => fs.existsSync(p));
+
+    if (!filepath) {
+      console.error(`[DOCUMENT 404] Physical file missing for doc ID '${id}'. DB FileUrl: '${rawFileUrl}'. Tested paths:`, candidatePaths);
+      return res.status(404).json({
+        success: false,
+        message: `Physical file '${basename}' is missing from server storage. Please re-upload this document.`,
+      });
     }
 
     if (download === 'true') {
-      res.download(filepath, `${doc.title.replace(/\s+/g, '_')}${path.extname(filepath)}`);
+      const safeName = (doc.title || 'document').replace(/[^a-zA-Z0-9_-]/g, '_');
+      res.download(filepath, `${safeName}${path.extname(filepath)}`);
     } else {
       res.sendFile(filepath);
     }

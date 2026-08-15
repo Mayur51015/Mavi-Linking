@@ -4,6 +4,9 @@ const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const Activity = require('../models/Activity');
 const ActivityLog = require('../models/ActivityLog');
+const AuditLog = require('../models/AuditLog');
+const EmailChangeChallenge = require('../models/EmailChangeChallenge');
+const { sendEmail, generateEmailChangeOtpEmailHtml, generateEmailChangeNotificationOldEmailHtml } = require('../utils/sendEmail');
 const { getIO } = require('../config/socket');
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
@@ -1431,6 +1434,388 @@ const activateAccount = async (req, res, next) => {
   }
 };
 
+// Helper to mask email for security logging (e.g. m***@gmail.com)
+const maskEmail = (email) => {
+  if (!email || !email.includes('@')) return '***@***.com';
+  const [local, domain] = email.split('@');
+  const maskedLocal = local.length > 2 ? `${local[0]}***${local[local.length - 1]}` : `${local[0]}***`;
+  return `${maskedLocal}@${domain}`;
+};
+
+/**
+ * @desc    Request Email Change — Password Verification & OTP Generation
+ * @route   POST /api/auth/email-change/request
+ * @access  Private (Authenticated User)
+ */
+const requestEmailChange = async (req, res, next) => {
+  try {
+    const { newEmail, currentPassword } = req.body;
+
+    if (!newEmail || !currentPassword) {
+      return res.status(400).json({
+        success: false,
+        code: 'MISSING_FIELDS',
+        message: 'Both new email and current password are required.',
+      });
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const canonicalNewEmail = newEmail.trim().toLowerCase();
+    if (!emailRegex.test(canonicalNewEmail)) {
+      return res.status(400).json({
+        success: false,
+        code: 'INVALID_EMAIL',
+        message: 'Please provide a valid email address.',
+      });
+    }
+
+    // 1. Authenticate user & verify current password
+    const user = await User.findById(req.user._id).select('+password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User account not found.' });
+    }
+
+    const isPasswordCorrect = await user.comparePassword(currentPassword);
+    if (!isPasswordCorrect) {
+      await AuditLog.create({
+        actorId: user._id,
+        actorRole: user.role,
+        targetUserId: user._id,
+        institutionId: user.institutionId || null,
+        action: 'EMAIL_CHANGE_FAILED',
+        details: { reason: 'Incorrect current password provided' },
+        result: 'FAILURE',
+      });
+      return res.status(400).json({
+        success: false,
+        code: 'INVALID_CURRENT_PASSWORD',
+        message: 'The current password provided is incorrect.',
+      });
+    }
+
+    // 2. Check if new email is same as current email
+    if (canonicalNewEmail === user.email.toLowerCase()) {
+      return res.status(400).json({
+        success: false,
+        code: 'EMAIL_SAME_AS_CURRENT',
+        message: 'New email address cannot be the same as your current email address.',
+      });
+    }
+
+    // 3. Check email uniqueness against existing active accounts
+    const existingUser = await User.findOne({ email: canonicalNewEmail });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        code: 'EMAIL_ALREADY_IN_USE',
+        message: 'This email address is already registered to another account.',
+      });
+    }
+
+    // 4. Rate limiting: check for active challenge created less than 60 seconds ago
+    const existingChallenge = await EmailChangeChallenge.findOne({
+      userId: user._id,
+      status: 'PENDING',
+    }).sort({ createdAt: -1 });
+
+    if (existingChallenge && Date.now() - new Date(existingChallenge.lastResendAt).getTime() < 60000) {
+      const remainingSecs = Math.ceil((60000 - (Date.now() - new Date(existingChallenge.lastResendAt).getTime())) / 1000);
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMITED',
+        message: `Please wait ${remainingSecs} seconds before requesting another verification code.`,
+      });
+    }
+
+    // Invalidate any older PENDING challenges for this user
+    await EmailChangeChallenge.updateMany(
+      { userId: user._id, status: 'PENDING' },
+      { $set: { status: 'EXPIRED' } }
+    );
+
+    // 5. Generate cryptographically secure 6-digit OTP
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+
+    // 6. Create EmailChangeChallenge document (valid for 15 minutes)
+    await EmailChangeChallenge.create({
+      userId: user._id,
+      newEmail: canonicalNewEmail,
+      hashedOtp,
+      purpose: 'EMAIL_CHANGE',
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      status: 'PENDING',
+      lastResendAt: new Date(),
+    });
+
+    // 7. Dispatch OTP to NEW email via existing sendEmail utility
+    const emailResult = await sendEmail({
+      to: canonicalNewEmail,
+      subject: 'Verify your MAVI Linking email change',
+      html: generateEmailChangeOtpEmailHtml({ name: user.name, otp, newEmail: canonicalNewEmail }),
+    });
+
+    if (!emailResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send verification email. Please check email system configuration.',
+      });
+    }
+
+    await AuditLog.create({
+      actorId: user._id,
+      actorRole: user.role,
+      targetUserId: user._id,
+      institutionId: user.institutionId || null,
+      action: 'EMAIL_CHANGE_REQUESTED',
+      details: { newEmailMasked: maskEmail(canonicalNewEmail) },
+      result: 'SUCCESS',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `A 6-digit verification code has been sent to ${canonicalNewEmail}. Please verify within 15 minutes.`,
+      data: {
+        newEmail: canonicalNewEmail,
+        expiresInMinutes: 15,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Verify OTP & Atomically Update Email Address
+ * @route   POST /api/auth/email-change/verify
+ * @access  Private (Authenticated User)
+ */
+const verifyEmailChange = async (req, res, next) => {
+  try {
+    const { otp, newEmail } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        code: 'MISSING_OTP',
+        message: 'Verification OTP code is required.',
+      });
+    }
+
+    const userId = req.user._id;
+
+    // Retrieve active challenge for user
+    const challengeQuery = { userId, status: 'PENDING' };
+    if (newEmail) {
+      challengeQuery.newEmail = newEmail.trim().toLowerCase();
+    }
+
+    const challenge = await EmailChangeChallenge.findOne(challengeQuery).sort({ createdAt: -1 });
+
+    if (!challenge) {
+      return res.status(400).json({
+        success: false,
+        code: 'CHALLENGE_NOT_FOUND',
+        message: 'No active email change request found. Please request a new verification code.',
+      });
+    }
+
+    // Check expiry
+    if (new Date() > new Date(challenge.expiresAt)) {
+      challenge.status = 'EXPIRED';
+      await challenge.save();
+
+      await AuditLog.create({
+        actorId: userId,
+        action: 'EMAIL_CHANGE_EXPIRED',
+        details: { newEmailMasked: maskEmail(challenge.newEmail) },
+        result: 'FAILURE',
+      });
+
+      return res.status(400).json({
+        success: false,
+        code: 'OTP_EXPIRED',
+        message: 'The verification code has expired. Please request a new code.',
+      });
+    }
+
+    // Check attempt limits
+    if (challenge.attemptCount >= challenge.maxAttempts) {
+      challenge.status = 'MAX_ATTEMPTS_EXCEEDED';
+      await challenge.save();
+
+      return res.status(400).json({
+        success: false,
+        code: 'OTP_ATTEMPTS_EXCEEDED',
+        message: 'Maximum verification attempts exceeded. Please request a new code.',
+      });
+    }
+
+    // Increment attempt counter
+    challenge.attemptCount += 1;
+
+    // Verify submitted OTP hash against stored SHA-256 hash
+    const submittedHash = crypto.createHash('sha256').update(otp.toString().trim()).digest('hex');
+
+    if (submittedHash !== challenge.hashedOtp) {
+      await challenge.save();
+
+      await AuditLog.create({
+        actorId: userId,
+        action: 'EMAIL_CHANGE_FAILED',
+        details: { reason: 'Invalid OTP code entered', attemptCount: challenge.attemptCount },
+        result: 'FAILURE',
+      });
+
+      return res.status(400).json({
+        success: false,
+        code: 'OTP_INVALID',
+        message: `Invalid verification code. ${challenge.maxAttempts - challenge.attemptCount} attempt(s) remaining.`,
+      });
+    }
+
+    // RACE CONDITION PROTECTION: Re-verify email uniqueness immediately before DB update
+    const isEmailTaken = await User.findOne({ email: challenge.newEmail, _id: { $ne: userId } });
+    if (isEmailTaken) {
+      challenge.status = 'EXPIRED';
+      await challenge.save();
+
+      return res.status(409).json({
+        success: false,
+        code: 'EMAIL_ALREADY_IN_USE',
+        message: 'This email address is no longer available.',
+      });
+    }
+
+    // Retrieve user and capture old email
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User account not found.' });
+    }
+
+    const oldEmail = user.email;
+    const targetNewEmail = challenge.newEmail;
+
+    // Atomic User Update: Only email and emailVerified change.
+    // MAVI ID, PRN, role, institution, projects, linked accounts remain 100% untouched.
+    user.email = targetNewEmail;
+    user.emailVerified = true;
+    await user.save();
+
+    // Invalidate Challenge
+    challenge.status = 'USED';
+    challenge.usedAt = new Date();
+    await challenge.save();
+
+    // Dispatch Security Notification to OLD Email
+    await sendEmail({
+      to: oldEmail,
+      subject: 'Your MAVI Linking email address was changed',
+      html: generateEmailChangeNotificationOldEmailHtml({
+        name: user.name,
+        oldEmail,
+        newEmail: targetNewEmail,
+        maviId: user.maviId,
+        timestamp: new Date().toUTCString(),
+      }),
+    });
+
+    // Record Security Audit Event
+    await AuditLog.create({
+      actorId: user._id,
+      actorRole: user.role,
+      targetUserId: user._id,
+      institutionId: user.institutionId || null,
+      action: 'EMAIL_CHANGED',
+      details: {
+        oldEmailMasked: maskEmail(oldEmail),
+        newEmailMasked: maskEmail(targetNewEmail),
+        maviId: user.maviId,
+      },
+      result: 'SUCCESS',
+    });
+
+    // Generate fresh auth JWT reflecting updated email
+    const token = user.generateAuthToken();
+
+    res.status(200).json({
+      success: true,
+      message: 'Your email address has been successfully updated.',
+      data: {
+        user,
+        token,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Resend Email Change Verification OTP
+ * @route   POST /api/auth/email-change/resend
+ * @access  Private (Authenticated User)
+ */
+const resendEmailChangeOtp = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+
+    const challenge = await EmailChangeChallenge.findOne({ userId, status: 'PENDING' }).sort({ createdAt: -1 });
+
+    if (!challenge) {
+      return res.status(400).json({
+        success: false,
+        code: 'CHALLENGE_NOT_FOUND',
+        message: 'No pending email change verification session found. Please start a new request.',
+      });
+    }
+
+    // Rate Limit: Minimum 60s resend interval
+    if (Date.now() - new Date(challenge.lastResendAt).getTime() < 60000) {
+      const remainingSecs = Math.ceil((60000 - (Date.now() - new Date(challenge.lastResendAt).getTime())) / 1000);
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMITED',
+        message: `Please wait ${remainingSecs} seconds before requesting another code.`,
+      });
+    }
+
+    // Generate new OTP & hash
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+
+    challenge.hashedOtp = hashedOtp;
+    challenge.expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    challenge.lastResendAt = new Date();
+    challenge.resendCount += 1;
+    challenge.attemptCount = 0; // reset attempt counter on fresh resend
+    await challenge.save();
+
+    const user = await User.findById(userId);
+
+    await sendEmail({
+      to: challenge.newEmail,
+      subject: 'Verify your MAVI Linking email change',
+      html: generateEmailChangeOtpEmailHtml({ name: user?.name || 'User', otp, newEmail: challenge.newEmail }),
+    });
+
+    await AuditLog.create({
+      actorId: userId,
+      action: 'EMAIL_CHANGE_VERIFICATION_SENT',
+      details: { newEmailMasked: maskEmail(challenge.newEmail), resendCount: challenge.resendCount },
+      result: 'SUCCESS',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `A new 6-digit verification code has been sent to ${challenge.newEmail}.`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -1451,4 +1836,8 @@ module.exports = {
   changePassword,
   verifyInvitationToken,
   activateAccount,
+  requestEmailChange,
+  verifyEmailChange,
+  resendEmailChangeOtp,
 };
+

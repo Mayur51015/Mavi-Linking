@@ -12,6 +12,7 @@ import {
   GitBranch,
   Globe,
   Lock,
+  Mail,
   Plus,
   Search,
   Sparkles,
@@ -32,11 +33,14 @@ import TimelineWidget from '../components/TimelineWidget';
 import LeetCodeSection from '../components/leetcode/LeetCodeSection';
 import EmptyState from '../components/ui/EmptyState';
 import { SkeletonCard } from '../components/ui/Skeleton';
+import ChangeEmailModal from '../components/ChangeEmailModal';
 import { AuthContext } from '../context/AuthContext';
 import UserLayout from '../layouts/UserLayout';
 import Messages from '../pages/Messages';
+
 const Dashboard = () => {
   const { user, setUser, updateProfile, socket, refreshUser } = useContext(AuthContext);
+  const [showChangeEmailModal, setShowChangeEmailModal] = useState(false);
   const [scores, setScores] = useState(null);
   const [rankStatus, setRankStatus] = useState({ loading: true, value: null, error: false });
   const [loading, setLoading] = useState(true);
@@ -1555,10 +1559,57 @@ const Dashboard = () => {
                 />
               </div>
 
+              {/* Registered Email & Change Email Button */}
               <div className="input-group">
-                <label className="input-label">Assigned Institution (Protected / Read-Only)</label>
+                <label className="input-label">Registered Email Address</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div className="input-field" style={{ flex: 1, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'white' }}>{user?.email}</span>
+                    <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <CheckCircle size={12} /> Verified
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditProfileModal(false);
+                      setShowChangeEmailModal(true);
+                    }}
+                    className="btn btn-outline"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#c084fc', borderColor: '#8b5cf6', whiteSpace: 'nowrap' }}
+                  >
+                    <Mail size={14} /> Change Email
+                  </button>
+                </div>
+              </div>
+
+              {/* Protected Read-Only Identity Fields (MAVI ID & PRN) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="input-group">
+                  <label className="input-label">MAVI ID (Permanent Canonical Identity)</label>
+                  <div className="input-field" style={{ background: 'rgba(255,255,255,0.03)', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{user?.maviId || `MAVI-${user?._id?.slice(-8).toUpperCase()}`}</span>
+                    <span style={{ fontSize: '0.7rem', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '0.2rem', fontWeight: 'bold' }}>
+                      <Lock size={12} /> Permanent
+                    </span>
+                  </div>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">PRN / Faculty ID (Institution Controlled)</label>
+                  <div className="input-field" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{user?.prn || user?.facultyId || 'Not Assigned'}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      <Lock size={12} /> Institution
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Assigned Institution & Department (Protected / Read-Only)</label>
                 <div className="input-field" style={{ background: 'rgba(255,255,255,0.03)', color: '#fde047', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
-                  <span>{user?.institutionId?.name || user?.collegeName || 'Zeal College of Engineering and Research'}</span>
+                  <span>{user?.institutionId?.name || user?.collegeName || 'Zeal College of Engineering and Research'} ({user?.departmentId?.name || user?.departmentName || 'Computer Engineering'})</span>
                   <span style={{ fontSize: '0.75rem', color: '#eab308', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold' }}>
                     <Lock size={12} /> Managed by Institution Admin
                   </span>
@@ -1645,6 +1696,13 @@ const Dashboard = () => {
           </form>
         </div>
       )}
+
+      {/* Secure Password-Verified OTP Email Change Modal */}
+      <ChangeEmailModal
+        isOpen={showChangeEmailModal}
+        onClose={() => setShowChangeEmailModal(false)}
+        onSuccess={(newEmail) => showToast('success', `Email address updated to ${newEmail}`)}
+      />
     </UserLayout>
   );
 };

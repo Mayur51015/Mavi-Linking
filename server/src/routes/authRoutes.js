@@ -22,6 +22,9 @@ const { authLimiter, loginLimiter } = require('../middleware/authLimiter');const
   changePassword,
   verifyInvitationToken,
   activateAccount,
+  requestEmailChange,
+  verifyEmailChange,
+  resendEmailChangeOtp,
 } = require('../controllers/authController');
 const {
   upload,
@@ -119,6 +122,11 @@ router.put('/me', protect, updateProfileValidation, validate, updateProfile);
 router.post('/logout', protect, logout);
 router.post('/change-password', protect, changePassword);
 router.post('/request-role-upgrade', protect, authLimiter, requestRoleUpgrade);
+
+// Secure Email Change System Endpoints (Password + OTP Verification)
+router.post('/email-change/request', protect, authLimiter, requestEmailChange);
+router.post('/email-change/verify', protect, authLimiter, verifyEmailChange);
+router.post('/email-change/resend', protect, authLimiter, resendEmailChangeOtp);
 
 // Profile Document upload/download/preview routes
 router.post('/document/:type', protect, upload.single('file'), uploadProfileDocument);

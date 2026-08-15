@@ -197,8 +197,119 @@ const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activ
   `;
 };
 
+  `;
+};
+
+/**
+ * Generate Dark Theme HTML Email for Email Change OTP Verification (sent to NEW email)
+ */
+const generateEmailChangeOtpEmailHtml = ({ name, otp, newEmail }) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>MAVI Linking — Verify Your Email Change</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
+        .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .header { text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 24px; }
+        .brand { font-size: 24px; font-weight: 800; color: #a855f7; letter-spacing: 0.05em; text-transform: uppercase; }
+        .title { font-size: 20px; font-weight: 700; color: #ffffff; margin-top: 10px; }
+        .content { font-size: 15px; line-height: 1.6; color: #a1a1aa; }
+        .otp-box { background: rgba(168, 85, 247, 0.1); border: 2px dashed #a855f7; border-radius: 10px; padding: 20px; text-align: center; margin: 24px 0; }
+        .otp-code { font-family: monospace; font-size: 36px; font-weight: 800; color: #c084fc; letter-spacing: 8px; margin: 8px 0; }
+        .footer { font-size: 12px; color: #71717a; text-align: center; border-top: 1px solid #27272a; padding-top: 20px; margin-top: 32px; }
+        .warning { background: rgba(234, 179, 8, 0.1); border-left: 4px solid #eab308; color: #fde047; padding: 12px 16px; border-radius: 4px; font-size: 13px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="brand">MAVI Linking</div>
+          <div class="title">Verify New Email Address</div>
+        </div>
+        <div class="content">
+          <p>Hello ${name || 'User'},</p>
+          <p>You requested to change your MAVI account email address to <strong>${newEmail}</strong>.</p>
+          
+          <div class="otp-box">
+            <div style="font-size: 12px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px;">6-Digit Verification Code</div>
+            <div class="otp-code">${otp}</div>
+            <div style="font-size: 12px; color: #e4e4e7;">Enter this code on MAVI Linking to complete verification</div>
+          </div>
+
+          <div class="warning">
+            <strong>Security Notice:</strong> This code expires in <strong>15 minutes</strong>. If you did not initiate this email change request, please contact security immediately.
+          </div>
+        </div>
+        <div class="footer">
+          &copy; ${new Date().getFullYear()} MAVI Linking Security Platform. All rights reserved.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Generate Dark Theme HTML Email for Security Notification (sent to OLD email)
+ */
+const generateEmailChangeNotificationOldEmailHtml = ({ name, oldEmail, newEmail, maviId, timestamp }) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>MAVI Linking — Email Address Changed</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
+        .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .header { text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 24px; }
+        .brand { font-size: 24px; font-weight: 800; color: #a855f7; letter-spacing: 0.05em; text-transform: uppercase; }
+        .title { font-size: 20px; font-weight: 700; color: #ffffff; margin-top: 10px; }
+        .content { font-size: 15px; line-height: 1.6; color: #a1a1aa; }
+        .alert-box { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 18px; margin: 20px 0; color: #fca5a5; }
+        .footer { font-size: 12px; color: #71717a; text-align: center; border-top: 1px solid #27272a; padding-top: 20px; margin-top: 32px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="brand">MAVI Linking</div>
+          <div class="title">Security Notification — Email Address Changed</div>
+        </div>
+        <div class="content">
+          <p>Hello ${name || 'User'},</p>
+          <p>The registered email address for your MAVI Linking account (MAVI ID: <strong>${maviId || 'N/A'}</strong>) was successfully changed.</p>
+          
+          <div class="alert-box">
+            <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; color: #ef4444;">Change Summary</div>
+            <div>Previous Email: <code>${oldEmail}</code></div>
+            <div>New Email: <code>${newEmail}</code></div>
+            <div>Timestamp: ${timestamp || new Date().toISOString()}</div>
+          </div>
+
+          <p>Your MAVI ID, PRN, linked platform accounts (GitHub, LeetCode, LinkedIn), projects, analytics, and achievements remain fully intact on your permanent MAVI identity.</p>
+
+          <div style="background: rgba(234, 179, 8, 0.1); border-left: 4px solid #eab308; color: #fde047; padding: 12px 16px; border-radius: 4px; font-size: 13px; margin: 20px 0;">
+            <strong>Did not make this change?</strong> If you did not authorize this email update, your account may be compromised. Please secure your account or contact institutional support immediately.
+          </div>
+        </div>
+        <div class="footer">
+          &copy; ${new Date().getFullYear()} MAVI Linking Security Platform. All rights reserved.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
 module.exports = {
   sendEmail,
   generatePasswordResetEmailHtml,
   generateAccountInvitationEmailHtml,
+  generateEmailChangeOtpEmailHtml,
+  generateEmailChangeNotificationOldEmailHtml,
 };
+

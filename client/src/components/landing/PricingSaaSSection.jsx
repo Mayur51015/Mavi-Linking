@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Sparkles, Building2, Shield, ArrowRight } from 'lucide-react';
+import { Check, ArrowRight } from 'lucide-react';
 import api from '../../api/axios';
 
 const PricingSaaSSection = ({ onOpenDemoModal }) => {
@@ -146,8 +146,8 @@ const PricingSaaSSection = ({ onOpenDemoModal }) => {
                 border: isPop ? '2px solid var(--accent-purple)' : '1px solid var(--border-color)',
                 boxShadow: isPop ? 'var(--shadow-glow-strong)' : 'none',
                 background: isPop
-                  ? 'radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15) 0%, rgba(18, 18, 28, 0.9) 100%)'
-                  : 'rgba(26, 26, 40, 0.6)',
+                  ? 'radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15) 0%, var(--bg-card) 100%)'
+                  : 'var(--bg-card)',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
@@ -179,10 +179,10 @@ const PricingSaaSSection = ({ onOpenDemoModal }) => {
                 <span className="badge" style={{ background: `${planColor}20`, color: planColor, fontSize: '0.75rem', marginBottom: '0.5rem' }}>
                   {plan.badge || plan.code}
                 </span>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#ffffff', margin: '0.35rem 0' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', margin: '0.35rem 0' }}>
                   {plan.name}
                 </h3>
-                <div style={{ fontSize: '2.25rem', fontWeight: '900', color: '#ffffff', marginTop: '0.75rem' }}>
+                <div style={{ fontSize: '2.25rem', fontWeight: '900', color: 'var(--text-primary)', marginTop: '0.75rem' }}>
                   ₹{priceAmount.toLocaleString('en-IN')}{' '}
                   <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>/ year</span>
                 </div>

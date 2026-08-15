@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserCheck, Code, FolderGit2, CheckCircle2, TrendingUp, Sparkles, Award } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 const StudentGrowthSection = () => {
   return (
@@ -19,11 +19,11 @@ const StudentGrowthSection = () => {
       <div className="glass-card reveal" style={{ padding: '3rem 2.25rem', borderRadius: '28px', border: '1px solid var(--border-glow, rgba(139, 92, 246, 0.4))' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem', alignItems: 'center' }}>
           {/* Left: Interactive Growth Indicator Preview */}
-          <div style={{ background: 'rgba(10, 10, 15, 0.7)', borderRadius: '20px', padding: '2rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{ background: 'var(--bg-tertiary)', borderRadius: '20px', padding: '2rem', border: '1px solid var(--border-color)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
               <div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>STUDENT GROWTH SCORE</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#ffffff' }}>Developer Readiness</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--text-primary)' }}>Developer Readiness</div>
               </div>
               <div style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10b981', color: '#34d399', padding: '0.5rem 1rem', borderRadius: '30px', fontWeight: '800', fontSize: '1.1rem' }}>
                 88.4 / 100
@@ -35,9 +35,9 @@ const StudentGrowthSection = () => {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
                   <span>Development & Code Quality</span>
-                  <span style={{ color: '#c4b5fd', fontWeight: 'bold' }}>92%</span>
+                  <span style={{ color: 'var(--accent-purple)', fontWeight: 'bold' }}>92%</span>
                 </div>
-                <div style={{ height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ height: '8px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
                   <div style={{ width: '92%', height: '100%', background: 'linear-gradient(90deg, #8b5cf6, #ec4899)', borderRadius: '4px' }}></div>
                 </div>
               </div>
@@ -45,9 +45,9 @@ const StudentGrowthSection = () => {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
                   <span>Problem Solving (LeetCode)</span>
-                  <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>84%</span>
+                  <span style={{ color: 'var(--accent-cyan)', fontWeight: 'bold' }}>84%</span>
                 </div>
-                <div style={{ height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ height: '8px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
                   <div style={{ width: '84%', height: '100%', background: 'linear-gradient(90deg, #3b82f6, #06b6d4)', borderRadius: '4px' }}></div>
                 </div>
               </div>
@@ -55,9 +55,9 @@ const StudentGrowthSection = () => {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
                   <span>Project & Architecture Impact</span>
-                  <span style={{ color: '#34d399', fontWeight: 'bold' }}>89%</span>
+                  <span style={{ color: 'var(--accent-emerald)', fontWeight: 'bold' }}>89%</span>
                 </div>
-                <div style={{ height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ height: '8px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
                   <div style={{ width: '89%', height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '4px' }}></div>
                 </div>
               </div>
@@ -69,7 +69,7 @@ const StudentGrowthSection = () => {
             <div className="badge badge-purple" style={{ marginBottom: '1rem' }}>
               PERSONAL ACTIONABLE FEEDBACK
             </div>
-            <h3 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#ffffff', marginBottom: '1rem', lineHeight: 1.3 }}>
+            <h3 style={{ fontSize: '1.75rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '1rem', lineHeight: 1.3 }}>
               Continuous Feedback Loop for Student Career Growth
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: '1.5rem' }}>
@@ -77,16 +77,16 @@ const StudentGrowthSection = () => {
             </p>
 
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.75rem' }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#ffffff', fontSize: '0.95rem' }}>
-                <CheckCircle2 size={18} color="#8b5cf6" />
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                <CheckCircle2 size={18} color="var(--accent-purple)" />
                 <span>Centralized profile aggregating GitHub, LeetCode, and institutional PRN.</span>
               </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#ffffff', fontSize: '0.95rem' }}>
-                <CheckCircle2 size={18} color="#8b5cf6" />
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                <CheckCircle2 size={18} color="var(--accent-purple)" />
                 <span>AI-driven skill gap recommendations tailored to target corporate roles.</span>
               </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#ffffff', fontSize: '0.95rem' }}>
-                <CheckCircle2 size={18} color="#8b5cf6" />
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                <CheckCircle2 size={18} color="var(--accent-purple)" />
                 <span>Public verified identity page with dynamic QR code for instant recruiter sharing.</span>
               </li>
             </ul>

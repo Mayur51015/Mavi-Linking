@@ -31,7 +31,7 @@ const AnalyticsPreviewSection = () => {
           borderRadius: '28px',
           border: '1px solid var(--border-glow, rgba(139, 92, 246, 0.4))',
           boxShadow: 'var(--shadow-glow-strong)',
-          background: 'radial-gradient(ellipse at bottom, rgba(59, 130, 246, 0.12) 0%, rgba(18, 18, 28, 0.9) 100%)',
+          background: 'radial-gradient(ellipse at bottom, rgba(59, 130, 246, 0.12) 0%, var(--bg-card) 100%)',
           marginBottom: '2rem',
         }}
       >
@@ -42,17 +42,17 @@ const AnalyticsPreviewSection = () => {
               <div
                 key={idx}
                 style={{
-                  background: 'rgba(26, 26, 40, 0.7)',
+                  background: 'var(--bg-tertiary)',
                   borderRadius: '18px',
                   padding: '1.5rem',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  border: '1px solid var(--border-color)',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>{m.label}</span>
                   <Icon size={18} color={m.color} />
                 </div>
-                <div style={{ fontSize: '2rem', fontWeight: '900', color: '#ffffff', marginBottom: '0.25rem' }}>
+                <div style={{ fontSize: '2rem', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
                   {m.val}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: m.color, fontWeight: '600' }}>
@@ -64,23 +64,23 @@ const AnalyticsPreviewSection = () => {
         </div>
 
         {/* Department Trend Overview */}
-        <div style={{ background: 'rgba(10, 10, 15, 0.6)', borderRadius: '18px', padding: '1.5rem 2rem', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+        <div style={{ background: 'var(--bg-tertiary)', borderRadius: '18px', padding: '1.5rem 2rem', border: '1px solid var(--border-color)' }}>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <LineChart size={16} color="var(--accent-purple)" />
             DEPARTMENT READINESS & GROWTH TRENDS
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
-              <span style={{ fontWeight: '700', color: '#ffffff' }}>Computer Science (CSE)</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1.25rem', background: 'var(--bg-glass)', borderRadius: '12px' }}>
+              <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Computer Science (CSE)</span>
               <span style={{ color: '#34d399', fontWeight: '800' }}>↑ 89% Readiness</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
-              <span style={{ fontWeight: '700', color: '#ffffff' }}>Information Tech (IT)</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1.25rem', background: 'var(--bg-glass)', borderRadius: '12px' }}>
+              <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Information Tech (IT)</span>
               <span style={{ color: '#34d399', fontWeight: '800' }}>↑ 85% Readiness</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
-              <span style={{ fontWeight: '700', color: '#ffffff' }}>Mechanical Engineering</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1.25rem', background: 'var(--bg-glass)', borderRadius: '12px' }}>
+              <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Mechanical Engineering</span>
               <span style={{ color: '#f59e0b', fontWeight: '800' }}>→ 72% Readiness</span>
             </div>
           </div>

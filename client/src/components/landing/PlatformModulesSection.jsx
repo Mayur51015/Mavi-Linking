@@ -1,5 +1,5 @@
 import React from 'react';
-import { Fingerprint, Building2, Cpu, LineChart, Briefcase, ShieldCheck, MessageSquare, CreditCard, Sparkles } from 'lucide-react';
+import { Fingerprint, Building2, Cpu, LineChart, Briefcase, ShieldCheck, MessageSquare, CreditCard } from 'lucide-react';
 
 const PlatformModulesSection = () => {
   const modules = [
@@ -114,8 +114,8 @@ const PlatformModulesSection = () => {
                   : '1px solid var(--border-color)',
                 boxShadow: mod.isPrimary ? `0 0 25px ${mod.color}20` : 'none',
                 background: mod.isPrimary
-                  ? `radial-gradient(ellipse at top left, ${mod.color}15 0%, rgba(18, 18, 28, 0.8) 100%)`
-                  : 'rgba(26, 26, 40, 0.5)',
+                  ? `radial-gradient(ellipse at top left, ${mod.color}15 0%, var(--bg-card) 100%)`
+                  : 'var(--bg-card)',
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'all 0.3s ease',
@@ -141,7 +141,7 @@ const PlatformModulesSection = () => {
                 </span>
               </div>
 
-              <h3 style={{ fontSize: '1.35rem', fontWeight: '800', color: '#ffffff', marginBottom: '0.25rem' }}>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
                 {mod.title}
               </h3>
               <div style={{ fontSize: '0.825rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: '600' }}>

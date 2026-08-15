@@ -79,12 +79,12 @@ const ProblemSection = () => {
                 >
                   <IconComp size={24} />
                 </div>
-                <span className="badge" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+                <span className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', fontSize: '0.72rem' }}>
                   {prob.badge}
                 </span>
               </div>
 
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ffffff', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
                 {prob.title}
               </h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.65, flexGrow: 1 }}>
@@ -102,12 +102,12 @@ const ProblemSection = () => {
           borderRadius: '16px',
           textAlign: 'center',
           border: '1px solid var(--border-glow, rgba(139, 92, 246, 0.4))',
-          background: 'radial-gradient(ellipse at center, rgba(139, 92, 246, 0.15) 0%, rgba(18, 18, 28, 0.5) 100%)',
+          background: 'radial-gradient(ellipse at center, rgba(139, 92, 246, 0.15) 0%, var(--bg-card) 100%)',
           maxWidth: '560px',
           margin: '0 auto',
         }}
       >
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', fontWeight: '800', color: '#ffffff' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)' }}>
           <Sparkles size={20} color="var(--accent-purple)" />
           <span>MAVI Linking brings everything together.</span>
         </div>

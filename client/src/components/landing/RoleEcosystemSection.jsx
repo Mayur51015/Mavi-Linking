@@ -99,7 +99,7 @@ const RoleEcosystemSection = () => {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   cursor: 'pointer',
-                  color: isSel ? '#ffffff' : 'var(--text-secondary)',
+                  color: isSel ? 'var(--text-primary)' : 'var(--text-secondary)',
                   textAlign: 'left',
                   transition: 'all 0.2s ease',
                 }}
@@ -122,7 +122,7 @@ const RoleEcosystemSection = () => {
             borderRadius: '24px',
             border: `1px solid ${active.color}60`,
             boxShadow: `0 0 30px ${active.color}25`,
-            background: `radial-gradient(ellipse at top left, ${active.color}15 0%, rgba(18, 18, 28, 0.9) 100%)`,
+            background: `radial-gradient(ellipse at top left, ${active.color}15 0%, var(--bg-card) 100%)`,
           }}
         >
           <div
@@ -144,7 +144,7 @@ const RoleEcosystemSection = () => {
           <div style={{ fontSize: '0.8rem', color: active.color, fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.35rem' }}>
             {active.scope}
           </div>
-          <h3 style={{ fontSize: '1.75rem', fontWeight: '900', color: '#ffffff', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '1rem' }}>
             {active.title} Dashboard
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: '2rem' }}>
@@ -153,10 +153,10 @@ const RoleEcosystemSection = () => {
 
           <div
             style={{
-              background: 'rgba(10, 10, 15, 0.6)',
+              background: 'var(--bg-tertiary)',
               borderRadius: '14px',
               padding: '1rem 1.25rem',
-              border: '1px solid rgba(255,255,255,0.06)',
+              border: '1px solid var(--border-color)',
               fontSize: '0.85rem',
               color: 'var(--text-muted)',
             }}

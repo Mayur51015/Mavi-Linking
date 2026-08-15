@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Lock, KeyRound, EyeOff, Server, FileCode, CheckCircle, ShieldAlert } from 'lucide-react';
+import { ShieldCheck, Lock } from 'lucide-react';
 
 const SecuritySection = () => {
   const securityItems = [
@@ -41,7 +41,7 @@ const SecuritySection = () => {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
               <ShieldCheck size={20} color="var(--accent-emerald)" />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#ffffff' }}>{item.title}</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary)' }}>{item.title}</h3>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>
               {item.desc}
@@ -57,12 +57,12 @@ const SecuritySection = () => {
           borderRadius: '20px',
           textAlign: 'center',
           border: '1px solid rgba(16, 185, 129, 0.4)',
-          background: 'radial-gradient(ellipse at center, rgba(16, 185, 129, 0.15) 0%, rgba(18, 18, 28, 0.8) 100%)',
+          background: 'radial-gradient(ellipse at center, rgba(16, 185, 129, 0.15) 0%, var(--bg-card) 100%)',
           maxWidth: '540px',
           margin: '0 auto',
         }}
       >
-        <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+        <div style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
           <Lock size={22} color="#34d399" />
           <span>Your institution's data stays yours.</span>
         </div>

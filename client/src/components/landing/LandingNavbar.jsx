@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { Terminal, Sparkles, Menu, X, ArrowRight } from 'lucide-react';
+import { Sparkles, Menu, X, ArrowRight } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import ThemeToggle from '../ThemeToggle';
 
@@ -27,9 +27,10 @@ const LandingNavbar = ({ onOpenDemoModal }) => {
         right: 0,
         zIndex: 1000,
         transition: 'all 0.3s ease',
-        background: scrolled ? 'rgba(10, 10, 15, 0.88)' : 'transparent',
+        background: scrolled ? 'var(--bg-glass)' : 'transparent',
         backdropFilter: scrolled ? 'blur(16px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent',
+        WebkitBackdropFilter: scrolled ? 'blur(16px)' : 'none',
+        borderBottom: scrolled ? '1px solid var(--border-color)' : '1px solid transparent',
         padding: '0.9rem 0',
       }}
     >
@@ -51,8 +52,8 @@ const LandingNavbar = ({ onOpenDemoModal }) => {
           >
             <Sparkles size={20} />
           </div>
-          <span style={{ fontSize: '1.25rem', fontWeight: '900', color: '#ffffff', letterSpacing: '0.5px' }}>
-            MAVI <span style={{ color: '#c4b5fd', fontWeight: '400' }}>LINKING</span>
+          <span style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-primary)', letterSpacing: '0.5px' }}>
+            MAVI <span style={{ color: 'var(--accent-purple)', fontWeight: '600' }}>LINKING</span>
           </span>
         </Link>
 
@@ -87,7 +88,7 @@ const LandingNavbar = ({ onOpenDemoModal }) => {
             </Link>
           ) : (
             <>
-              <Link to="/login" className="nav-link" style={{ color: '#ffffff', fontSize: '0.9rem', fontWeight: '600', textDecoration: 'none' }}>
+              <Link to="/login" className="nav-link" style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: '600', textDecoration: 'none' }}>
                 Login
               </Link>
               <button onClick={onOpenDemoModal} className="btn btn-primary" style={{ padding: '0.6rem 1.25rem', fontSize: '0.875rem' }}>
@@ -100,7 +101,7 @@ const LandingNavbar = ({ onOpenDemoModal }) => {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="mobile-menu-btn"
-            style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', display: 'none' }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'none' }}
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>

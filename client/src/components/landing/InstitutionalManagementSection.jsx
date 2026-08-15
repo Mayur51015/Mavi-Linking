@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Users, GraduationCap, Briefcase, ShieldCheck, FileCheck, FileText, CheckCircle2 } from 'lucide-react';
+import { Building2, Users, GraduationCap, Briefcase, FileCheck, FileText } from 'lucide-react';
 
 const InstitutionalManagementSection = () => {
   const operations = [
@@ -58,7 +58,7 @@ const InstitutionalManagementSection = () => {
               </div>
 
               <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#ffffff', marginBottom: '0.35rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
                   {op.title}
                 </h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>

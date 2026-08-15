@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, GitBranch, Code2, FolderGit2, GraduationCap, Sparkles, TrendingUp, AlertTriangle, Target, Lightbulb, LineChart, ShieldAlert } from 'lucide-react';
+import { Cpu, Code2, TrendingUp, AlertTriangle, Target, Lightbulb, LineChart } from 'lucide-react';
 
 const AIIntelligenceSection = () => {
   const aiFeatures = [
@@ -63,14 +63,14 @@ const AIIntelligenceSection = () => {
           borderRadius: '24px',
           border: '1px solid var(--border-glow, rgba(139, 92, 246, 0.4))',
           boxShadow: 'var(--shadow-glow-strong)',
-          background: 'radial-gradient(ellipse at center, rgba(236, 72, 153, 0.1) 0%, rgba(18, 18, 28, 0.85) 100%)',
+          background: 'radial-gradient(ellipse at center, rgba(236, 72, 153, 0.1) 0%, var(--bg-card) 100%)',
           marginBottom: '3.5rem',
         }}
       >
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
           {/* Inputs */}
-          <div style={{ background: 'rgba(26, 26, 40, 0.7)', padding: '1.5rem', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', color: '#c4b5fd', marginBottom: '0.75rem' }}>
+          <div style={{ background: 'var(--bg-tertiary)', padding: '1.5rem', borderRadius: '18px', border: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', color: 'var(--accent-purple)', marginBottom: '0.75rem' }}>
               DATA INPUTS
             </div>
             <div style={{ display: 'grid', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -100,13 +100,13 @@ const AIIntelligenceSection = () => {
             >
               <Cpu size={32} />
             </div>
-            <div style={{ fontSize: '1.15rem', fontWeight: '900', color: '#ffffff' }}>MAVI AI ENGINE</div>
+            <div style={{ fontSize: '1.15rem', fontWeight: '900', color: 'var(--text-primary)' }}>MAVI AI ENGINE</div>
             <div style={{ fontSize: '0.75rem', color: '#ec4899', fontWeight: '700' }}>Deep Contextual Synthesis</div>
           </div>
 
           {/* Outputs */}
-          <div style={{ background: 'rgba(26, 26, 40, 0.7)', padding: '1.5rem', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', color: '#34d399', marginBottom: '0.75rem' }}>
+          <div style={{ background: 'var(--bg-tertiary)', padding: '1.5rem', borderRadius: '18px', border: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', color: 'var(--accent-emerald)', marginBottom: '0.75rem' }}>
               INTELLIGENT OUTPUTS
             </div>
             <div style={{ display: 'grid', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -152,7 +152,7 @@ const AIIntelligenceSection = () => {
               >
                 <IconComponent size={22} />
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', marginBottom: '0.5rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                 {feat.title}
               </h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.925rem', lineHeight: 1.6, marginTop: 'auto' }}>

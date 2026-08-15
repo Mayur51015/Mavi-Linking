@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ArrowRight, PlayCircle } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 
 const FinalCTASection = ({ onOpenDemoModal }) => {
   return (
@@ -13,7 +13,7 @@ const FinalCTASection = ({ onOpenDemoModal }) => {
           borderRadius: '32px',
           position: 'relative',
           overflow: 'hidden',
-          background: 'radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.18) 0%, rgba(18, 18, 28, 0.95) 75%)',
+          background: 'radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.18) 0%, var(--bg-card) 85%)',
           border: '1px solid var(--border-glow, rgba(139, 92, 246, 0.4))',
           boxShadow: 'var(--shadow-glow-strong)',
         }}
@@ -22,12 +22,12 @@ const FinalCTASection = ({ onOpenDemoModal }) => {
           {/* Eyebrow */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1.1rem', borderRadius: '30px', background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', marginBottom: '1.25rem' }}>
             <Sparkles size={16} color="var(--accent-purple)" />
-            <span style={{ fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#c4b5fd' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--accent-purple)' }}>
               THE FUTURE OF CONNECTED INSTITUTIONS
             </span>
           </div>
 
-          <h2 className="title-xl" style={{ fontSize: 'clamp(2.25rem, 4.5vw, 3.5rem)', marginBottom: '0.5rem', fontWeight: '800' }}>
+          <h2 className="title-xl" style={{ fontSize: 'clamp(2.25rem, 4.5vw, 3.5rem)', marginBottom: '0.5rem', fontWeight: '800', color: 'var(--text-primary)' }}>
             Your Institution Is Already Connected.
           </h2>
           <h3 style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.85rem)', fontWeight: '700', color: 'var(--text-accent)', marginBottom: '1.5rem' }}>

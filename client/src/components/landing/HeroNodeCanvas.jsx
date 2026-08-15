@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, GraduationCap, Briefcase, Building2, Cpu, BarChart3, Zap, ShieldCheck, Sparkles } from 'lucide-react';
+import { Users, GraduationCap, Briefcase, Building2, Cpu, ShieldCheck, Sparkles } from 'lucide-react';
 
 const HeroNodeCanvas = () => {
   const [activeNode, setActiveNode] = useState(null);
@@ -23,7 +23,7 @@ const HeroNodeCanvas = () => {
         height: '420px',
         margin: '3rem auto 0 auto',
         borderRadius: '24px',
-        background: 'radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.12) 0%, rgba(18, 18, 28, 0.6) 70%)',
+        background: 'radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.15) 0%, var(--bg-card) 75%)',
         border: '1px solid var(--border-glow, rgba(139, 92, 246, 0.3))',
         boxShadow: 'var(--shadow-glow-strong)',
         overflow: 'hidden',
@@ -71,7 +71,7 @@ const HeroNodeCanvas = () => {
           left: '50%',
           transform: 'translate(-50%, -50%)',
           zIndex: 10,
-          background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(59, 130, 246, 0.9))',
+          background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.95), rgba(59, 130, 246, 0.95))',
           padding: '1.25rem 2rem',
           borderRadius: '50px',
           boxShadow: '0 0 35px rgba(139, 92, 246, 0.6)',
@@ -104,10 +104,11 @@ const HeroNodeCanvas = () => {
               left: `${node.pos.x}%`,
               transform: 'translate(-50%, -50%)',
               zIndex: 5,
-              background: 'rgba(26, 26, 40, 0.85)',
+              background: 'var(--bg-glass)',
               backdropFilter: 'blur(12px)',
-              border: `1px solid ${isActive ? node.color : 'rgba(255, 255, 255, 0.12)'}`,
-              boxShadow: isActive ? `0 0 20px ${node.color}` : '0 4px 16px rgba(0,0,0,0.4)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: `1px solid ${isActive ? node.color : 'var(--border-color)'}`,
+              boxShadow: isActive ? `0 0 20px ${node.color}` : 'var(--shadow-card)',
               padding: '0.6rem 1rem',
               borderRadius: '30px',
               display: 'flex',
@@ -131,7 +132,7 @@ const HeroNodeCanvas = () => {
             >
               <NodeIcon size={16} />
             </div>
-            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#ffffff' }}>{node.label}</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{node.label}</span>
           </motion.div>
         );
       })}
@@ -145,10 +146,10 @@ const HeroNodeCanvas = () => {
           gap: '1.25rem',
           fontSize: '0.72rem',
           color: 'var(--text-muted)',
-          background: 'rgba(10, 10, 15, 0.7)',
+          background: 'var(--bg-tertiary)',
           padding: '0.35rem 1rem',
           borderRadius: '20px',
-          border: '1px solid rgba(255, 255, 255, 0.05)',
+          border: '1px solid var(--border-color)',
         }}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#8b5cf6' }}></span> People Linking</span>

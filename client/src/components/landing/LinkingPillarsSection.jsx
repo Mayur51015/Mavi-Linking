@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Database, BrainCircuit, Rocket, ArrowRight } from 'lucide-react';
+import { Users, Database, BrainCircuit, Rocket } from 'lucide-react';
 
 const LinkingPillarsSection = () => {
   const pillars = [
@@ -116,7 +116,7 @@ const LinkingPillarsSection = () => {
                 </div>
               </div>
 
-              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', marginBottom: '0.35rem', letterSpacing: '0.5px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '0.35rem', letterSpacing: '0.5px' }}>
                 {pillar.title}
               </h3>
               <div style={{ fontSize: '0.85rem', color: pillar.color, fontWeight: '600', marginBottom: '1.5rem' }}>
@@ -125,10 +125,10 @@ const LinkingPillarsSection = () => {
 
               <div
                 style={{
-                  background: 'rgba(10, 10, 15, 0.6)',
+                  background: 'var(--bg-tertiary)',
                   borderRadius: '14px',
                   padding: '1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  border: '1px solid var(--border-color)',
                   marginTop: 'auto',
                   display: 'grid',
                   gap: '0.5rem',
@@ -157,7 +157,7 @@ const LinkingPillarsSection = () => {
           margin: '0 auto',
         }}
       >
-        <p style={{ fontSize: '1.1rem', fontWeight: '700', color: '#ffffff', margin: 0, lineHeight: 1.6 }}>
+        <p style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0, lineHeight: 1.6 }}>
           "MAVI Linking connects the people, data, intelligence, and opportunities that drive institutional growth."
         </p>
       </div>

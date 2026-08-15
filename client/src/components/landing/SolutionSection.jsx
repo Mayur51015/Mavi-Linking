@@ -51,7 +51,7 @@ const SolutionSection = () => {
           borderRadius: '28px',
           border: '1px solid var(--border-glow, rgba(139, 92, 246, 0.4))',
           boxShadow: 'var(--shadow-glow-strong)',
-          background: 'radial-gradient(ellipse at center, rgba(139, 92, 246, 0.08) 0%, rgba(18, 18, 28, 0.8) 100%)',
+          background: 'radial-gradient(ellipse at center, rgba(139, 92, 246, 0.08) 0%, var(--bg-card) 100%)',
           position: 'relative',
         }}
       >
@@ -62,7 +62,7 @@ const SolutionSection = () => {
               <div
                 key={idx}
                 style={{
-                  background: 'rgba(26, 26, 40, 0.6)',
+                  background: 'var(--bg-glass)',
                   borderRadius: '20px',
                   padding: '1.75rem',
                   border: `1px solid ${quad.color}30`,
@@ -85,7 +85,7 @@ const SolutionSection = () => {
                   >
                     <IconComponent size={22} />
                   </div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#ffffff', letterSpacing: '1px' }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '1px' }}>
                     {quad.title}
                   </h3>
                 </div>
@@ -109,8 +109,8 @@ const SolutionSection = () => {
             marginTop: '2.5rem',
             padding: '1.25rem',
             borderRadius: '16px',
-            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(6, 182, 212, 0.25))',
-            border: '1px solid rgba(139, 92, 246, 0.5)',
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(6, 182, 212, 0.2))',
+            border: '1px solid rgba(139, 92, 246, 0.4)',
             textAlign: 'center',
             display: 'flex',
             alignItems: 'center',
@@ -118,8 +118,8 @@ const SolutionSection = () => {
             gap: '0.75rem',
           }}
         >
-          <Sparkles size={20} color="#c4b5fd" />
-          <span style={{ fontSize: '1.05rem', fontWeight: '800', color: '#ffffff' }}>
+          <Sparkles size={20} color="var(--accent-purple)" />
+          <span style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-primary)' }}>
             Everything connects seamlessly through MAVI LINKING
           </span>
         </div>

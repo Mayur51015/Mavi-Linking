@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, ArrowRight, Shield, Globe, Award, Layers } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 import HeroNodeCanvas from './HeroNodeCanvas';
 
 const HeroSection = ({ onOpenDemoModal }) => {
@@ -8,7 +8,7 @@ const HeroSection = ({ onOpenDemoModal }) => {
       {/* Eyebrow Badge */}
       <div className="reveal" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1.1rem', borderRadius: '30px', background: 'rgba(139, 92, 246, 0.12)', border: '1px solid rgba(139, 92, 246, 0.3)', marginBottom: '1.25rem' }}>
         <Sparkles size={16} color="var(--accent-purple)" />
-        <span style={{ fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#c4b5fd' }}>
+        <span style={{ fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--accent-purple)' }}>
           THE DIGITAL OPERATING PLATFORM FOR INSTITUTIONS
         </span>
       </div>
@@ -24,7 +24,7 @@ const HeroSection = ({ onOpenDemoModal }) => {
       </h2>
 
       {/* Primary Brand Statement */}
-      <div className="reveal" style={{ fontSize: '1.15rem', fontWeight: '700', color: '#ffffff', letterSpacing: '0.3px', marginBottom: '1.25rem' }}>
+      <div className="reveal" style={{ fontSize: '1.15rem', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '0.3px', marginBottom: '1.25rem' }}>
         "Connecting Institutions. Empowering People. Enabling Intelligence."
       </div>
 

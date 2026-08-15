@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Search, CheckCircle, Award, ArrowRight, UserCheck, Filter, ChevronRight } from 'lucide-react';
+import { Briefcase, Search, Filter } from 'lucide-react';
 
 const PlacementSection = () => {
   const steps = [
@@ -36,27 +36,26 @@ const PlacementSection = () => {
       >
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', alignItems: 'center' }}>
           {steps.map((s, idx) => (
-            <React.Fragment key={idx}>
-              <div
-                style={{
-                  background: 'rgba(26, 26, 40, 0.7)',
-                  borderRadius: '16px',
-                  padding: '1.25rem 1rem',
-                  textAlign: 'center',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                }}
-              >
-                <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--accent-purple)', marginBottom: '0.25rem' }}>
-                  STEP 0{idx + 1}
-                </div>
-                <div style={{ fontSize: '0.95rem', fontWeight: '800', color: '#ffffff', marginBottom: '0.25rem' }}>
-                  {s.title}
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  {s.desc}
-                </div>
+            <div
+              key={idx}
+              style={{
+                background: 'var(--bg-glass)',
+                borderRadius: '16px',
+                padding: '1.25rem 1rem',
+                textAlign: 'center',
+                border: '1px solid var(--border-color)',
+              }}
+            >
+              <div style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--accent-purple)', marginBottom: '0.25rem' }}>
+                STEP 0{idx + 1}
               </div>
-            </React.Fragment>
+              <div style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                {s.title}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                {s.desc}
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -67,7 +66,7 @@ const PlacementSection = () => {
           <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', marginBottom: '1.25rem' }}>
             <Search size={22} />
           </div>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', marginBottom: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
             Recruiter Talent Discovery
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.925rem', lineHeight: 1.6 }}>
@@ -79,7 +78,7 @@ const PlacementSection = () => {
           <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', marginBottom: '1.25rem' }}>
             <Filter size={22} />
           </div>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', marginBottom: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
             Skill Matching & Verification
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.925rem', lineHeight: 1.6 }}>
@@ -91,7 +90,7 @@ const PlacementSection = () => {
           <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b', marginBottom: '1.25rem' }}>
             <Briefcase size={22} />
           </div>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', marginBottom: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
             Placement Pipeline Tracking
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.925rem', lineHeight: 1.6 }}>

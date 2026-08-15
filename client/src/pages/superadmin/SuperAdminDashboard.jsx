@@ -93,6 +93,22 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [loadingInstitutions, setLoadingInstitutions] = useState(false);
   const [errorInstitutions, setErrorInstitutions] = useState('');
+  const [superAdminBilling, setSuperAdminBilling] = useState(null);
+  const [assigningPlan, setAssigningPlan] = useState(false);
+
+  const handleAssignPlan = async (targetInstitutionId, planCode) => {
+    setAssigningPlan(true);
+    try {
+      const res = await api.post('/super-admin/billing/assign-plan', { targetInstitutionId, planCode });
+      if (res.data?.success) {
+        loadTabData();
+      }
+    } catch (err) {
+      console.error('Failed to assign plan:', err);
+    } finally {
+      setAssigningPlan(false);
+    }
+  };
 
   // Platform Settings Form State
   const [settingsForm, setSettingsForm] = useState({
@@ -172,11 +188,16 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
         ]);
         setRoleRequests(Array.isArray(roleRes.data?.data) ? roleRes.data.data : []);
         setPrnRequests(Array.isArray(prnRes.data?.data) ? prnRes.data.data : []);
-      } else if (activeTab === 'licenses') {
-        const res = await api.get('/super-admin/licenses').catch(() => api.get('/super-admin/institutions'));
+      } else if (activeTab === 'licenses' || activeTab === 'billing') {
+        const res = await api.get('/super-admin/billing/institutions').catch(() => api.get('/super-admin/licenses').catch(() => api.get('/super-admin/institutions')));
         const rawData = res?.data?.data;
-        const licList = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.institutions) ? rawData.institutions : []);
-        setLicenses(licList);
+        if (rawData?.institutions) {
+          setLicenses(rawData.institutions);
+          setSuperAdminBilling(rawData);
+        } else {
+          const licList = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.institutions) ? rawData.institutions : []);
+          setLicenses(licList);
+        }
       } else if (activeTab === 'analytics') {
         const [statsRes, analyticsRes] = await Promise.all([
           api.get('/super-admin/stats').catch(() => null),
@@ -708,39 +729,67 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
               </div>
             )}
 
-            {/* ─── 6. LICENSES VIEW ───────────────────────────────────────────── */}
-            {activeTab === 'licenses' && (
+            {/* ─── 6. LICENSES & INSTITUTION SUBSCRIPTION OVERSIGHT ──────────── */}
+            {(activeTab === 'licenses' || activeTab === 'billing') && (
               <div className="animate-fade-in">
+                <div style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+                    Multi-College Institution SaaS Subscriptions & Plan Matrix
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Catalog pricing managed exclusively by Platform Owner
+                  </span>
+                </div>
+
                 <div className="glass-card-static" style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
                         <th style={{ padding: '1rem' }}>Institution</th>
                         <th style={{ padding: '1rem' }}>Tenant ID</th>
-                        <th style={{ padding: '1rem' }}>Tier & Subscription</th>
-                        <th style={{ padding: '1rem' }}>License Status</th>
+                        <th style={{ padding: '1rem' }}>Plan Tier & Version</th>
+                        <th style={{ padding: '1rem' }}>Price Snapshot</th>
+                        <th style={{ padding: '1rem' }}>Payment Status</th>
+                        <th style={{ padding: '1rem', textAlign: 'right' }}>Assign Catalog Plan</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(Array.isArray(licenses) ? licenses : []).map((lic) => (
-                        <tr key={lic._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <tr key={lic._id || lic.institutionId} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                           <td style={{ padding: '1rem' }}>
-                            <div style={{ fontWeight: '600' }}>{lic.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lic.domain || 'No domain'}</div>
+                            <div style={{ fontWeight: '600' }}>{lic.name || lic.institutionName}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lic.code || 'INST'}</div>
                           </td>
                           <td style={{ padding: '1rem', fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-purple)' }}>{lic.tenantId || 'INST-SCOPED'}</td>
                           <td style={{ padding: '1rem' }}>
                             <span className="badge badge-primary">{lic.plan || 'ENTERPRISE'}</span>
+                            <span className="badge badge-secondary" style={{ marginLeft: '0.4rem', fontSize: '0.7rem' }}>v{lic.planVersion || 1}</span>
+                          </td>
+                          <td style={{ padding: '1rem', fontWeight: 'bold', color: 'var(--accent-emerald)' }}>
+                            ₹{(lic.priceSnapshot?.amount || (lic.plan === 'BASIC' ? 49999 : lic.plan === 'PRO' ? 149999 : 299999)).toLocaleString()}/yr
                           </td>
                           <td style={{ padding: '1rem' }}>
-                            <span className="badge badge-outline" style={{ borderColor: 'var(--accent-emerald)', color: 'var(--accent-emerald)' }}>
-                              {lic.licenseStatus || lic.status || 'Active'}
+                            <span className="badge badge-success" style={{ background: lic.paymentStatus === 'FAILED' ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)', color: lic.paymentStatus === 'FAILED' ? '#ef4444' : '#10b981' }}>
+                              {lic.paymentStatus || lic.subscriptionStatus || 'SUCCESS'}
                             </span>
+                          </td>
+                          <td style={{ padding: '1rem', textAlign: 'right' }}>
+                            <select
+                              value={lic.plan || 'PRO'}
+                              onChange={(e) => handleAssignPlan(lic._id || lic.institutionId, e.target.value)}
+                              disabled={assigningPlan}
+                              className="input-field"
+                              style={{ width: 'auto', display: 'inline-block', padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}
+                            >
+                              <option value="BASIC">Assign BASIC (v1)</option>
+                              <option value="PRO">Assign PRO (v1)</option>
+                              <option value="ENTERPRISE">Assign ENTERPRISE (v1)</option>
+                            </select>
                           </td>
                         </tr>
                       ))}
                       {(!Array.isArray(licenses) || licenses.length === 0) && (
-                        <tr><td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No license records found.</td></tr>
+                        <tr><td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No license records found.</td></tr>
                       )}
                     </tbody>
                   </table>

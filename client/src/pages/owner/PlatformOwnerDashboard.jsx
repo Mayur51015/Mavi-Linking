@@ -53,6 +53,11 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
   const [newAdmin, setNewAdmin] = useState({ name: '', email: '', institutionId: '', designation: 'Institution Administrator', adminId: '' });
   const [inviteResult, setInviteResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [ownerPlans, setOwnerPlans] = useState([]);
+  const [ownerBilling, setOwnerBilling] = useState(null);
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [planForm, setPlanForm] = useState({ name: '', code: 'PRO', priceAmount: 149999, maxStudents: 2500, maxTeachers: 200, maxDepartments: 15, description: '', status: 'ACTIVE' });
 
   const loadData = async () => {
     setLoading(true);
@@ -68,6 +73,8 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
         secRes,
         configRes,
         auditRes,
+        plansRes,
+        billOverviewRes,
       ] = await Promise.all([
         api.get('/owner/overview').catch(() => api.get('/super-admin/stats').catch(() => ({ data: { data: {} } }))),
         api.get('/owner/tenants').catch(() => api.get('/super-admin/institutions').catch(() => ({ data: { data: { institutions: [] } } }))),
@@ -79,7 +86,15 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
         api.get('/owner/security-events').catch(() => api.get('/super-admin/security-events?limit=50').catch(() => ({ data: { data: { events: [] } } }))),
         api.get('/owner/configuration').catch(() => api.get('/super-admin/settings').catch(() => ({ data: { data: {} } }))),
         api.get('/owner/audit-logs').catch(() => ({ data: { data: { logs: [] } } })),
+        api.get('/owner/plans').catch(() => ({ data: { data: [] } })),
+        api.get('/owner/billing/overview').catch(() => ({ data: { data: {} } })),
       ]);
+
+      const plansData = Array.isArray(plansRes.data?.data) ? plansRes.data.data : [];
+      setOwnerPlans(plansData);
+
+      const billData = billOverviewRes.data?.data || null;
+      setOwnerBilling(billData);
 
       const statsData = statsRes.data?.data?.stats || statsRes.data?.data || {};
       setStats(statsData);
@@ -205,6 +220,52 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
       toast.error(getErrorMessage(err, 'Failed to update system configuration.'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSavePlan = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      if (editingPlan?._id) {
+        // Edit existing plan (increments version if price/limits change)
+        const res = await api.put(`/owner/plans/${editingPlan._id}`, {
+          name: planForm.name,
+          description: planForm.description,
+          price: { amount: Number(planForm.priceAmount), currency: 'INR', interval: 'annual' },
+          limits: { maxStudents: Number(planForm.maxStudents), maxTeachers: Number(planForm.maxTeachers), maxDepartments: Number(planForm.maxDepartments) },
+          status: planForm.status,
+        });
+        toast.success(res.data?.message || 'Plan updated successfully.');
+      } else {
+        // Create new plan tier
+        const res = await api.post('/owner/plans', {
+          name: planForm.name,
+          code: planForm.code,
+          description: planForm.description,
+          price: { amount: Number(planForm.priceAmount), currency: 'INR', interval: 'annual' },
+          limits: { maxStudents: Number(planForm.maxStudents), maxTeachers: Number(planForm.maxTeachers), maxDepartments: Number(planForm.maxDepartments) },
+          status: planForm.status,
+        });
+        toast.success(res.data?.message || 'Plan created successfully.');
+      }
+      setShowPlanModal(false);
+      setEditingPlan(null);
+      loadData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to save SaaS plan.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSetPlanStatus = async (planId, newStatus) => {
+    try {
+      const res = await api.patch(`/owner/plans/${planId}/status`, { status: newStatus });
+      toast.success(res.data?.message || `Plan status set to ${newStatus}.`);
+      loadData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to update plan status.'));
     }
   };
 
@@ -623,23 +684,138 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
           </div>
         )}
 
-        {/* ── TAB 6: SUBSCRIPTIONS ────────────────────────────────────────── */}
+        {/* ── TAB 6: SUBSCRIPTIONS & COMMERCIAL SAAS PRICING GOVERNANCE ───── */}
         {currentTab === 'subscriptions' && (
           <div className="animate-fade-in">
+            {/* Global Billing Metrics */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+              <div className="glass-card-static" style={{ padding: '1.5rem', borderLeft: '4px solid #10b981' }}>
+                <div style={{ fontSize: '0.8rem', color: '#a1a1aa' }}>TOTAL SAAS REVENUE</div>
+                <div style={{ fontSize: '2rem', fontWeight: '800', color: '#34d399' }}>₹{(ownerBilling?.metrics?.totalRevenue || 0).toLocaleString()}</div>
+              </div>
               <div className="glass-card-static" style={{ padding: '1.5rem', borderLeft: '4px solid #eab308' }}>
                 <div style={{ fontSize: '0.8rem', color: '#a1a1aa' }}>ACTIVE SUBSCRIPTIONS</div>
-                <div style={{ fontSize: '2rem', fontWeight: '800', color: '#fef08a' }}>{subscriptions.length}</div>
+                <div style={{ fontSize: '2rem', fontWeight: '800', color: '#fef08a' }}>{ownerBilling?.metrics?.activeSubscriptions || subscriptions.length}</div>
               </div>
-              <div className="glass-card-static" style={{ padding: '1.5rem', borderLeft: '4px solid var(--accent-cyan)' }}>
-                <div style={{ fontSize: '0.8rem', color: '#a1a1aa' }}>RENEWAL RATE</div>
-                <div style={{ fontSize: '2rem', fontWeight: '800', color: '#67e8f9' }}>100%</div>
+              <div className="glass-card-static" style={{ padding: '1.5rem', borderLeft: '4px solid var(--accent-purple)' }}>
+                <div style={{ fontSize: '0.8rem', color: '#a1a1aa' }}>SUCCESSFUL TRANSACTIONS</div>
+                <div style={{ fontSize: '2rem', fontWeight: '800', color: '#c084fc' }}>{ownerBilling?.metrics?.successfulPaymentsCount || 0}</div>
+              </div>
+              <div className="glass-card-static" style={{ padding: '1.5rem', borderLeft: '4px solid #ef4444' }}>
+                <div style={{ fontSize: '0.8rem', color: '#a1a1aa' }}>FAILED PAYMENTS</div>
+                <div style={{ fontSize: '2rem', fontWeight: '800', color: '#f87171' }}>{ownerBilling?.metrics?.failedPaymentsCount || 0}</div>
               </div>
             </div>
 
+            {/* Section 1: Commercial SaaS Plan Catalog (Sole Owner Pricing Authority) */}
+            <div className="glass-card-static" style={{ padding: '1.5rem', marginBottom: '2.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: '#fde047', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Crown size={20} /> SaaS Catalog Pricing Management (Owner Sole Authority)
+                  </h3>
+                  <p style={{ color: '#a1a1aa', fontSize: '0.85rem', margin: '0.3rem 0 0' }}>
+                    Modifying prices creates a new plan version snapshot (v1, v2). Existing paid subscriptions retain historical pricing.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingPlan(null);
+                    setPlanForm({ name: '', code: 'PRO', priceAmount: 149999, maxStudents: 2500, maxTeachers: 200, maxDepartments: 15, description: '', status: 'ACTIVE' });
+                    setShowPlanModal(true);
+                  }}
+                  className="btn btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+                >
+                  <Plus size={16} /> Create SaaS Plan
+                </button>
+              </div>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: '#a1a1aa' }}>
+                      <th style={{ padding: '0.75rem 1rem' }}>Plan Name & Code</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>Version</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>Official Price</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>Student Cap</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>Faculty Cap</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ownerPlans.length === 0 ? (
+                      <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center', color: '#a1a1aa' }}>No SaaS plans created yet. Click 'Create SaaS Plan' to add.</td></tr>
+                    ) : (
+                      ownerPlans.map((plan) => (
+                        <tr key={plan._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <div style={{ fontWeight: 'bold', color: 'white' }}>{plan.name}</div>
+                            <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#fde047' }}>{plan.code}</div>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <span className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>v{plan.version}</span>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 'bold', color: '#34d399' }}>
+                            ₹{plan.price?.amount?.toLocaleString()} {plan.price?.currency}/yr
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>
+                            {plan.limits?.maxStudents?.toLocaleString() || 500}
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>
+                            {plan.limits?.maxTeachers || 50}
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <span className={`badge ${plan.status === 'ACTIVE' ? 'badge-success' : plan.status === 'DRAFT' ? 'badge-warning' : 'badge-danger'}`} style={{ fontSize: '0.75rem' }}>
+                              {plan.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                              <button
+                                onClick={() => {
+                                  setEditingPlan(plan);
+                                  setPlanForm({
+                                    name: plan.name,
+                                    code: plan.code,
+                                    priceAmount: plan.price?.amount || 149999,
+                                    maxStudents: plan.limits?.maxStudents || 2500,
+                                    maxTeachers: plan.limits?.maxTeachers || 200,
+                                    maxDepartments: plan.limits?.maxDepartments || 15,
+                                    description: plan.description || '',
+                                    status: plan.status || 'ACTIVE',
+                                  });
+                                  setShowPlanModal(true);
+                                }}
+                                className="btn btn-sm btn-outline"
+                                style={{ fontSize: '0.75rem' }}
+                              >
+                                Edit Price / Version
+                              </button>
+                              {plan.status === 'ACTIVE' ? (
+                                <button onClick={() => handleSetPlanStatus(plan._id, 'INACTIVE')} className="btn btn-sm btn-outline" style={{ fontSize: '0.75rem', color: '#f59e0b' }}>
+                                  Unpublish
+                                </button>
+                              ) : (
+                                <button onClick={() => handleSetPlanStatus(plan._id, 'ACTIVE')} className="btn btn-sm btn-success" style={{ fontSize: '0.75rem' }}>
+                                  Publish
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Section 2: Multi-Tenant Institutional Subscriptions & Ledger */}
             <div className="glass-card-static" style={{ padding: '1.5rem' }}>
               <h3 style={{ marginBottom: '1rem', color: '#fde047', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CreditCard size={20} /> Multi-Tenant Institutional Subscriptions
+                <CreditCard size={20} /> Multi-Tenant Institutional Subscriptions & Payment Ledger
               </h3>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
@@ -647,21 +823,24 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                     <tr style={{ borderBottom: '1px solid var(--border-color)', color: '#a1a1aa' }}>
                       <th style={{ padding: '0.75rem 1rem' }}>Tenant ID</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Institution Name</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Plan Tier</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Billing Cycle</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>Plan Tier & Version</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Annual Fee</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>Price Snapshot</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {subscriptions.map((sub) => (
-                      <tr key={sub._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#fde047', fontWeight: 'bold' }}>{sub.tenantId}</td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>{sub.institutionName}</td>
-                        <td style={{ padding: '0.75rem 1rem' }}><span className="badge badge-primary">{sub.plan}</span></td>
-                        <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{sub.billingCycle}</td>
-                        <td style={{ padding: '0.75rem 1rem', color: 'var(--accent-emerald)', fontWeight: 'bold' }}>{sub.subscriptionStatus}</td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 'bold', color: '#fde047' }}>{sub.amount}</td>
+                    {(ownerBilling?.subscriptions || subscriptions).map((sub, i) => (
+                      <tr key={sub.id || sub._id || i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#fde047', fontWeight: 'bold' }}>{sub.tenantId || 'INST'}</td>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>{sub.institution || sub.institutionName || 'Institution'}</td>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <span className="badge badge-primary">{sub.planCode || sub.plan || 'PRO'}</span>
+                          <span className="badge badge-secondary" style={{ marginLeft: '0.4rem', fontSize: '0.7rem' }}>v{sub.planVersion || 1}</span>
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: 'var(--accent-emerald)', fontWeight: 'bold' }}>{sub.status || sub.subscriptionStatus || 'ACTIVE'}</td>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 'bold', color: '#fde047' }}>
+                          ₹{(sub.priceSnapshot?.amount || sub.amount || 149999).toLocaleString()}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -973,6 +1152,70 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                   </button>
                 </div>
               )}
+            </form>
+          </div>
+        )}
+
+        {/* ── MODAL 3: CREATE / EDIT SAAS PLAN (Sole Owner Authority) ─────────── */}
+        {showPlanModal && (
+          <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+            <form onSubmit={handleSavePlan} className="glass-card animate-fade-in" style={{ maxWidth: '520px', width: '100%', padding: '2rem', border: '1px solid var(--accent-purple)' }}>
+              <h3 style={{ margin: '0 0 0.5rem', color: '#fde047', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Crown size={22} /> {editingPlan ? `Edit SaaS Plan (v${editingPlan.version + 1} Preview)` : 'Create Commercial SaaS Plan'}
+              </h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+                {editingPlan ? 'Modifying price or limits will increment the plan version snapshot. Existing subscriptions retain historical price.' : 'Define official plan tier and entitlements for the platform catalog.'}
+              </p>
+
+              <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div className="input-group">
+                  <label className="input-label">Plan Name *</label>
+                  <input type="text" className="input-field" value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} placeholder="e.g. Professional Institutional Plan" required />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="input-group">
+                    <label className="input-label">Plan Code *</label>
+                    <select className="input-field" value={planForm.code} onChange={(e) => setPlanForm({ ...planForm, code: e.target.value })} disabled={Boolean(editingPlan)} required>
+                      <option value="BASIC">BASIC</option>
+                      <option value="PRO">PRO</option>
+                      <option value="ENTERPRISE">ENTERPRISE</option>
+                      <option value="CUSTOM">CUSTOM</option>
+                    </select>
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label">Price (INR / Annual) *</label>
+                    <input type="number" className="input-field" value={planForm.priceAmount} onChange={(e) => setPlanForm({ ...planForm, priceAmount: e.target.value })} required />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                  <div className="input-group">
+                    <label className="input-label">Student Cap</label>
+                    <input type="number" className="input-field" value={planForm.maxStudents} onChange={(e) => setPlanForm({ ...planForm, maxStudents: e.target.value })} />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label">Faculty Cap</label>
+                    <input type="number" className="input-field" value={planForm.maxTeachers} onChange={(e) => setPlanForm({ ...planForm, maxTeachers: e.target.value })} />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label">Dept Cap</label>
+                    <input type="number" className="input-field" value={planForm.maxDepartments} onChange={(e) => setPlanForm({ ...planForm, maxDepartments: e.target.value })} />
+                  </div>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Description / Entitlements</label>
+                  <textarea className="input-field" rows="2" value={planForm.description} onChange={(e) => setPlanForm({ ...planForm, description: e.target.value })} placeholder="Target institution tier and feature highlights..." />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button type="button" onClick={() => setShowPlanModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={submitting}>
+                  {submitting ? 'Saving...' : editingPlan ? 'Save & Increment Version' : 'Create & Publish Plan'}
+                </button>
+              </div>
             </form>
           </div>
         )}

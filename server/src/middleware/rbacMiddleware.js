@@ -368,6 +368,61 @@ const enforceDepartmentScope = async (req, res, next) => {
   }
 };
 
+/**
+ * Restrict access strictly to authorized Institution Billing Administrators.
+ * DENIED: Department Admin, Teacher, Recruiter, Student.
+ */
+const requireBillingAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'Authentication required.' });
+  }
+
+  const userRoles = req.user.roles && req.user.roles.length > 0 ? req.user.roles : [req.user.role];
+  const userPermissions = req.user.permissions || [];
+
+  // Deny non-billing roles explicitly
+  const isForbiddenRole =
+    userRoles.includes('department_admin') ||
+    userRoles.includes('teacher') ||
+    userRoles.includes('recruiter') ||
+    (userRoles.includes('user') && !userRoles.includes('institution_admin') && !userRoles.includes('admin'));
+
+  const isSuperAdmin =
+    userRoles.includes('super_admin') ||
+    userRoles.includes('platform_owner') ||
+    userRoles.includes('owner') ||
+    req.user.role === 'super_admin' ||
+    req.user.role === 'platform_owner' ||
+    req.user.role === 'owner';
+
+  const isInstAdmin =
+    userRoles.includes('institution_admin') ||
+    userRoles.includes('admin') ||
+    userRoles.includes('institution_billing_admin') ||
+    req.user.role === 'institution_admin' ||
+    req.user.role === 'admin' ||
+    req.user.role === 'institution_billing_admin' ||
+    userPermissions.includes('INSTITUTION_BILLING_MANAGE');
+
+  if (isForbiddenRole && !isInstAdmin && !isSuperAdmin) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden. Department Admins, Teachers, Recruiters, and Students cannot access billing operations.',
+    });
+  }
+
+  if (!isSuperAdmin && !isInstAdmin) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden. Authorized Institution Billing Administrator access required.',
+    });
+  }
+
+  req.isSuperAdmin = isSuperAdmin;
+  req.isBillingAdmin = true;
+  next();
+};
+
 module.exports = {
   requireRole,
   requireOwner,
@@ -375,6 +430,7 @@ module.exports = {
   requireAdmin,
   requireDepartmentAdmin,
   requirePermission,
+  requireBillingAdmin,
   enforceInstitutionScope,
   enforceDepartmentScope,
 };

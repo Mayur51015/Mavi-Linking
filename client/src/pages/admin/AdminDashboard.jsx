@@ -43,6 +43,7 @@ import { AuthContext } from '../../context/AuthContext';
 import StudentProfileEditorModal from '../../components/admin/StudentProfileEditorModal';
 import DepartmentAdminManager from '../../components/admin/DepartmentAdminManager';
 import CreateDepartmentModal from '../../components/admin/CreateDepartmentModal';
+import AdminBilling from './AdminBilling';
 
 const AdminDashboard = ({ activeTab: propActiveTab }) => {
   const { user: currentUser } = useContext(AuthContext);
@@ -66,6 +67,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
     if (path === '/admin/reports') return 'reports';
     if (path === '/admin/analytics') return 'analytics';
     if (path === '/admin/documents') return 'documents';
+    if (path === '/admin/billing') return 'billing';
     if (path === '/admin/audit-logs' || path === '/admin/audit') return 'audit-logs';
     if (path === '/admin/settings') return 'settings';
     if (path === '/admin/profile') return 'profile';
@@ -1098,6 +1100,9 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                 </table>
               </div>
             )}
+
+            {/* ─── 11.5. INSTITUTION BILLING & SUBSCRIPTION VIEW ─────────────────── */}
+            {activeTab === 'billing' && <AdminBilling />}
 
             {/* ─── 12. INSTITUTION SETTINGS VIEW ─────────────────────────────── */}
             {activeTab === 'settings' && (

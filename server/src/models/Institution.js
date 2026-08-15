@@ -79,8 +79,24 @@ const institutionSchema = new mongoose.Schema(
     },
     subscriptionStatus: {
       type: String,
-      enum: ['active', 'trial', 'cancelled'],
+      enum: ['active', 'trial', 'cancelled', 'TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELLED', 'EXPIRED', 'SUSPENDED'],
       default: 'active',
+    },
+    subscriptionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subscription',
+      default: null,
+    },
+    providerCustomerId: {
+      type: String,
+      default: '',
+    },
+    billingProfile: {
+      gstin: { type: String, default: '' },
+      billingEmail: { type: String, default: '' },
+      billingPhone: { type: String, default: '' },
+      billingAddress: { type: String, default: '' },
+      taxId: { type: String, default: '' },
     },
     features: {
       developerDNA: { type: Boolean, default: true },

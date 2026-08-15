@@ -47,4 +47,9 @@ router.post('/institutions/:id/assign-admin', assignInstitutionAdmin);
 router.post('/institutions/:id/invite-admin', createAdmin);
 router.post('/institutions/:id/remove-admin', removeInstitutionAdmin);
 
+// Super Admin Billing Oversight & Plan Assignment
+const { getSuperAdminBillingOverview, assignInstitutionPlan } = require('../controllers/billingController');
+router.get('/billing/institutions', getSuperAdminBillingOverview);
+router.post('/billing/assign-plan', assignInstitutionPlan);
+
 module.exports = router;

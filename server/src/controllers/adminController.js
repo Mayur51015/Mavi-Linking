@@ -5,6 +5,8 @@ const PlacementDrive = require('../models/PlacementDrive');
 const ActivityLog = require('../models/ActivityLog');
 const RecruitmentNotification = require('../models/RecruitmentNotification');
 const Institution = require('../models/Institution');
+const Department = require('../models/Department');
+const Project = require('../models/Project');
 const crypto = require('crypto');
 const { sendEmail, generateAccountInvitationEmailHtml } = require('../utils/sendEmail');
 
@@ -19,15 +21,55 @@ const getAdminStats = async (req, res, next) => {
       ? { institutionId: req.institutionScope.institutionId }
       : {};
 
-    const [studentCount, recruiterCount, teacherCount, jobCount, driveCount, institutionCount, suspendedCount] = await Promise.all([
-      User.countDocuments({ ...scopeQuery, role: 'user' }),
+    const [
+      studentCount,
+      recruiterCount,
+      teacherCount,
+      deptAdminCount,
+      departmentCount,
+      activeStudentCount,
+      activeTeacherCount,
+      activeRecruiterCount,
+      jobCount,
+      driveCount,
+      institutionCount,
+      suspendedCount,
+      instStudents,
+    ] = await Promise.all([
+      User.countDocuments({ ...scopeQuery, role: { $in: ['user', 'student', 'developer'] } }),
       User.countDocuments({ ...scopeQuery, role: 'recruiter' }),
-      User.countDocuments({ ...scopeQuery, role: 'teacher' }),
+      User.countDocuments({ ...scopeQuery, role: { $in: ['teacher', 'professor'] } }),
+      User.countDocuments({ ...scopeQuery, role: 'department_admin' }),
+      Department.countDocuments(scopeQuery),
+      User.countDocuments({ ...scopeQuery, role: { $in: ['user', 'student', 'developer'] }, status: 'active' }),
+      User.countDocuments({ ...scopeQuery, role: { $in: ['teacher', 'professor'] }, status: 'active' }),
+      User.countDocuments({ ...scopeQuery, role: 'recruiter', status: 'active' }),
       Job.countDocuments(),
       PlacementDrive.countDocuments(),
       Institution.countDocuments(req.institutionScope?.institutionId ? { _id: req.institutionScope.institutionId } : {}),
       User.countDocuments({ ...scopeQuery, status: 'suspended' }),
+      User.find({ ...scopeQuery, role: { $in: ['user', 'student', 'developer'] } }).select('_id scores platforms placementStatus'),
     ]);
+
+    let totalScore = 0;
+    let totalDev = 0;
+    let totalProblem = 0;
+    let ghCount = 0;
+    let lcCount = 0;
+    let placedCount = 0;
+    const studentIds = instStudents.map((s) => s._id);
+
+    instStudents.forEach((student) => {
+      totalScore += student.scores?.overall || 0;
+      totalDev += student.scores?.development || 0;
+      totalProblem += student.scores?.problemSolving || 0;
+      if (student.platforms?.github?.username) ghCount++;
+      if (student.platforms?.leetcode?.username) lcCount++;
+      if (student.placementStatus === 'Placed' || student.placementStatus === 'Hired') placedCount++;
+    });
+
+    const studentTotal = instStudents.length || 1;
+    const projectsCount = await Project.countDocuments({ user: { $in: studentIds } });
 
     res.status(200).json({
       success: true,
@@ -35,10 +77,25 @@ const getAdminStats = async (req, res, next) => {
         students: studentCount,
         recruiters: recruiterCount,
         teachers: teacherCount,
+        departmentAdmins: deptAdminCount,
+        departments: departmentCount,
+        activeStudents: activeStudentCount,
+        activeTeachers: activeTeacherCount,
+        activeRecruiters: activeRecruiterCount,
         jobs: jobCount,
         drives: driveCount,
         institutions: institutionCount,
         suspended: suspendedCount,
+        avgMaviScore: Math.round(totalScore / studentTotal),
+        avgDevScore: Math.round(totalDev / studentTotal),
+        avgProblemSolvingScore: Math.round(totalProblem / studentTotal),
+        projects: projectsCount,
+        githubConnections: ghCount,
+        leetcodeConnections: lcCount,
+        placementReadiness: {
+          placed: placedCount,
+          available: Math.max(0, studentCount - placedCount),
+        },
         isScoped: !!req.institutionScope?.institutionId,
       },
     });

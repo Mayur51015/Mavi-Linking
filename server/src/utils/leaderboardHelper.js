@@ -3,6 +3,7 @@ const PRIVILEGED_ROLES = [
   'superadmin',
   'admin',
   'institution_admin',
+  'department_admin',
   'platform_owner',
   'owner',
 ];

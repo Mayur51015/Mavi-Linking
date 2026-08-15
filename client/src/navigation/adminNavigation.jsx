@@ -13,6 +13,7 @@ import {
   ShieldAlert,
   Settings,
   UserCheck,
+  CreditCard,
 } from 'lucide-react';
 
 export const adminNavItems = [
@@ -26,6 +27,7 @@ export const adminNavItems = [
   { id: 'reports', name: 'Reports', path: '/admin/reports', icon: <FileText size={20} /> },
   { id: 'analytics', name: 'Analytics', path: '/admin/analytics', icon: <BarChart3 size={20} /> },
   { id: 'documents', name: 'Shared Documents', path: '/admin/documents', icon: <FolderOpen size={20} /> },
+  { id: 'billing', name: 'Billing & Subscription', path: '/admin/billing', icon: <CreditCard size={20} /> },
   { id: 'audit-logs', name: 'Audit Logs', path: '/admin/audit-logs', icon: <ShieldAlert size={20} /> },
   { id: 'settings', name: 'Institution Settings', path: '/admin/settings', icon: <Settings size={20} /> },
   { id: 'profile', name: 'Admin Profile', path: '/admin/profile', icon: <UserCheck size={20} /> },

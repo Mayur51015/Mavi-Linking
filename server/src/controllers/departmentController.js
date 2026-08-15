@@ -23,6 +23,17 @@ const createDepartment = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Institution ID is required.' });
     }
 
+    // Evaluate SaaS plan resource limits for departments
+    const { checkPlanLimit } = require('../services/entitlementService');
+    const limitCheck = await checkPlanLimit(institutionId, 'department');
+    if (!limitCheck.allowed) {
+      return res.status(400).json({
+        success: false,
+        code: 'PLAN_LIMIT_EXCEEDED',
+        message: limitCheck.message,
+      });
+    }
+
     // Check duplicate department name in institution
     const existing = await Department.findOne({
       institutionId,

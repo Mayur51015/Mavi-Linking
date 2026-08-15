@@ -36,6 +36,7 @@ const superAdminRoutes = require('./routes/superAdminRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
+const billingRoutes = require('./routes/billingRoutes');
 const { init } = require('./config/socket'); // socket.io
 const http = require('http');
 
@@ -77,8 +78,13 @@ app.use(
 
 // Rate limiting — 1000 requests per 15 minutes per IP
 app.use('/api', apiLimiter);// ─── Body Parsing ───────────────────────────────────────────────────────────
-app.use(express.json({ limit: '10kb' })); // Limit body size for security
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({
+  limit: '5mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  },
+}));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // ─── Logging ────────────────────────────────────────────────────────────────
 if (process.env.NODE_ENV === 'development') {
@@ -126,6 +132,12 @@ app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/billing', billingRoutes);
+
+// Direct Razorpay Standard Checkout API Aliases
+const { createOrderDirect, verifyPaymentDirect } = require('./controllers/billingController');
+app.post('/api/create-order', createOrderDirect);
+app.post('/api/verify-payment', verifyPaymentDirect);
 app.use('/api/career', careerRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', redirectRoutes);
@@ -145,6 +157,12 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
+
+    // Validate payment provider credentials in production mode (fail fast with safe error)
+    if (process.env.NODE_ENV === 'production') {
+      const { getPaymentProvider } = require('./services/paymentProvider');
+      getPaymentProvider().validateConfig();
+    }
 
     // ─── One-time role migration & admin bootstrap ───────────────────────────
     try {
@@ -180,7 +198,7 @@ const startServer = async () => {
       const ownerPassword = process.env.OWNER_PASSWORD || 'MaviOwner@2026!';
       const ownerAdminId = 'MAVI-OWNER-001';
 
-      let ownerUser = await User.findOne({ email: ownerEmail });
+      let ownerUser = await User.findOne({ $or: [{ email: ownerEmail }, { maviId: 'MAVI-OWNER01' }] });
       if (!ownerUser) {
         ownerUser = await User.create({
           name: 'Platform Owner',

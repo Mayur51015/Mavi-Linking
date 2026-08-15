@@ -52,8 +52,21 @@ router.get('/licensing', getLicensing);
 router.get('/licenses', getLicensing);
 router.put('/licensing/:id', updateLicense);
 
-// Subscriptions
+// Subscriptions & SaaS Plan Governance
 router.get('/subscriptions', getSubscriptions);
+const {
+  getOwnerPlans,
+  createOwnerPlan,
+  updateOwnerPlan,
+  setOwnerPlanStatus,
+  getOwnerBillingOverview,
+} = require('../controllers/billingController');
+
+router.get('/plans', getOwnerPlans);
+router.post('/plans', createOwnerPlan);
+router.put('/plans/:id', updateOwnerPlan);
+router.patch('/plans/:id/status', setOwnerPlanStatus);
+router.get('/billing/overview', getOwnerBillingOverview);
 
 // Global Analytics
 router.get('/analytics', getPlatformAnalytics);

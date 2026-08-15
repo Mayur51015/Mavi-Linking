@@ -27,9 +27,9 @@ class PaymentProvider {
 class RazorpayProvider extends PaymentProvider {
   constructor() {
     super();
-    this.keyId = process.env.RAZORPAY_KEY_ID || '';
-    this.keySecret = process.env.RAZORPAY_KEY_SECRET || '';
-    this.webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+    this.keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_TQ0mLvJPyus2JW';
+    this.keySecret = process.env.RAZORPAY_KEY_SECRET || 'BkefCUAgHrWwhIUQt8iSSNHM';
+    this.webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || 'BkefCUAgHrWwhIUQt8iSSNHM';
   }
 
   /**

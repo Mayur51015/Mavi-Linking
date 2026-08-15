@@ -197,9 +197,6 @@ const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activ
   `;
 };
 
-  `;
-};
-
 /**
  * Generate Dark Theme HTML Email for Email Change OTP Verification (sent to NEW email)
  */

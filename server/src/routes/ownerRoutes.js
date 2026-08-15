@@ -6,8 +6,18 @@ const {
   getTenants,
   createTenant,
   updateTenant,
+  getPermissions,
+  getRoles,
+  createCustomRole,
+  updateCustomRole,
+  deleteCustomRole,
   getAdmins,
   inviteAdmin,
+  updateAdmin,
+  suspendAdmin,
+  reactivateAdmin,
+  resendAdminInvite,
+  revokeAdminInvite,
   toggleAdminStatus,
   getUsers,
   toggleUserStatus,
@@ -38,9 +48,21 @@ router.post('/institutions', createTenant);
 router.put('/tenants/:id', updateTenant);
 router.put('/institutions/:id', updateTenant);
 
-// Admin Management
+// Permissions & Custom Role Governance
+router.get('/permissions', getPermissions);
+router.get('/roles', getRoles);
+router.post('/roles', createCustomRole);
+router.put('/roles/:id', updateCustomRole);
+router.delete('/roles/:id', deleteCustomRole);
+
+// Admin Management & Invitation Lifecycle
 router.get('/admins', getAdmins);
 router.post('/admins/invite', inviteAdmin);
+router.put('/admins/:id', updateAdmin);
+router.patch('/admins/:id/suspend', suspendAdmin);
+router.patch('/admins/:id/reactivate', reactivateAdmin);
+router.post('/admins/:id/resend-invite', resendAdminInvite);
+router.patch('/admins/:id/revoke-invite', revokeAdminInvite);
 router.put('/admins/:id/status', toggleAdminStatus);
 
 // Platform Users Management

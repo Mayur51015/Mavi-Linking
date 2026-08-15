@@ -64,14 +64,18 @@ const requireOwner = (req, res, next) => {
     req.user.adminId === 'MAVI-OWNER-001' ||
     req.user.email === (process.env.OWNER_EMAIL || 'owner@mavilinking.com').toLowerCase();
 
-  if (!isOwner && !userRoles.includes('super_admin')) {
+  const isSuper = isOwner || userRoles.includes('super_admin') || req.user.role === 'super_admin';
+  const hasAdminManagePerm = (req.user.permissions || []).includes('PLATFORM_ADMIN_MANAGE') || (req.user.permissions || []).includes('INSTITUTION_ADMIN_MANAGE');
+
+  if (!isSuper && !hasAdminManagePerm) {
     return res.status(403).json({
       success: false,
       message: 'Forbidden. Platform Owner authority required.',
     });
   }
 
-  req.isOwner = true;
+  req.isOwner = isOwner;
+  req.isSuperAdmin = isSuper;
   next();
 };
 
@@ -193,6 +197,9 @@ const requirePermission = (...requiredPermissions) => {
     }
 
     const userPermissions = req.user.permissions || [];
+    const { SYSTEM_ROLE_PERMISSIONS } = require('../utils/permissions');
+    const roleDefaultPermissions = SYSTEM_ROLE_PERMISSIONS[req.user.role] || [];
+    const effectivePermissions = new Set([...userPermissions, ...roleDefaultPermissions]);
 
     // Permission alias mapping for backward compatibility with legacy roles
     const permissionAliasMap = {
@@ -206,9 +213,9 @@ const requirePermission = (...requiredPermissions) => {
     };
 
     const hasPermission = requiredPermissions.some((p) => {
-      if (userPermissions.includes(p)) return true;
+      if (effectivePermissions.has(p)) return true;
       const aliases = permissionAliasMap[p] || [];
-      return aliases.some((alias) => userPermissions.includes(alias));
+      return aliases.some((alias) => effectivePermissions.has(alias));
     });
 
     if (!hasPermission) {

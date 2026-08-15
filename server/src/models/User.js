@@ -61,13 +61,13 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'recruiter', 'teacher', 'admin', 'institution_admin', 'department_admin', 'super_admin', 'platform_owner', 'owner', 'developer', 'professor'],
+      enum: ['user', 'recruiter', 'teacher', 'admin', 'institution_admin', 'department_admin', 'super_admin', 'platform_owner', 'owner', 'developer', 'professor', 'placement_admin', 'academic_admin', 'student_affairs_admin', 'exam_admin', 'finance_admin', 'training_admin'],
       default: 'user',
     },
     roles: [
       {
         type: String,
-        enum: ['user', 'student', 'teacher', 'recruiter', 'institution_admin', 'department_admin', 'super_admin', 'platform_owner', 'owner', 'admin', 'developer', 'professor'],
+        enum: ['user', 'student', 'teacher', 'recruiter', 'institution_admin', 'department_admin', 'super_admin', 'platform_owner', 'owner', 'admin', 'developer', 'professor', 'placement_admin', 'academic_admin', 'student_affairs_admin', 'exam_admin', 'finance_admin', 'training_admin'],
       },
     ],
     status: {
@@ -127,6 +127,38 @@ const userSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    adminScope: {
+      type: String,
+      enum: ['PLATFORM', 'INSTITUTION', 'DEPARTMENT', 'CUSTOM', ''],
+      default: '',
+    },
+    adminScopeDetails: {
+      scope: { type: String, enum: ['PLATFORM', 'INSTITUTION', 'DEPARTMENT', ''], default: '' },
+      institutionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Institution', default: null },
+      departmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', default: null },
+    },
+    invitedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    invitedAt: {
+      type: Date,
+      default: null,
+    },
+    suspendedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    suspendedAt: {
+      type: Date,
+      default: null,
+    },
+    suspensionReason: {
+      type: String,
+      default: '',
+    },
     invitationToken: {
       type: String,
       default: null,

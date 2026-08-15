@@ -50,7 +50,17 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
   const [showCreateInstModal, setShowCreateInstModal] = useState(false);
   const [newInst, setNewInst] = useState({ name: '', shortName: '', officialDomain: '', plan: 'PRO', primaryContactName: '', primaryContactEmail: '' });
   const [showInviteAdminModal, setShowInviteAdminModal] = useState(false);
-  const [newAdmin, setNewAdmin] = useState({ name: '', email: '', institutionId: '', designation: 'Institution Administrator', adminId: '' });
+  const [newAdmin, setNewAdmin] = useState({
+    name: '',
+    email: '',
+    role: 'institution_admin',
+    scope: 'INSTITUTION',
+    institutionId: '',
+    departmentId: '',
+    permissions: ['STUDENT_VIEW', 'STUDENT_APPROVE', 'STUDENT_PROFILE_MANAGE'],
+    designation: 'Administrator',
+  });
+  const [availableDepartments, setAvailableDepartments] = useState([]);
   const [inviteResult, setInviteResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [ownerPlans, setOwnerPlans] = useState([]);
@@ -58,6 +68,19 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
   const [editingPlan, setEditingPlan] = useState(null);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [planForm, setPlanForm] = useState({ name: '', code: 'PRO', priceAmount: 149999, maxStudents: 2500, maxTeachers: 200, maxDepartments: 15, description: '', status: 'ACTIVE' });
+
+  // Fetch departments when institution selection changes in modal
+  useEffect(() => {
+    if (newAdmin.institutionId) {
+      api.get(`/admin/departments?institutionId=${newAdmin.institutionId}`)
+        .then((res) => {
+          setAvailableDepartments(res.data?.data?.departments || res.data?.data || []);
+        })
+        .catch(() => setAvailableDepartments([]));
+    } else {
+      setAvailableDepartments([]);
+    }
+  }, [newAdmin.institutionId]);
 
   const loadData = async () => {
     setLoading(true);
@@ -187,14 +210,47 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
     }
   };
 
-  const handleToggleAdminStatus = async (adminId, currentStatus) => {
-    const nextStatus = currentStatus === 'active' ? 'suspended' : 'active';
+  const handleSuspendAdmin = async (adminId) => {
     try {
-      await api.put(`/owner/admins/${adminId}/status`, { status: nextStatus });
-      toast.success(`Admin account ${nextStatus === 'active' ? 'activated' : 'suspended'}.`);
+      await api.patch(`/owner/admins/${adminId}/suspend`, { reason: 'Suspended by Platform Owner' });
+      toast.success('Administrator account suspended.');
       loadData();
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to update admin account status.'));
+      toast.error(getErrorMessage(err, 'Failed to suspend admin account.'));
+    }
+  };
+
+  const handleReactivateAdmin = async (adminId) => {
+    try {
+      await api.patch(`/owner/admins/${adminId}/reactivate`);
+      toast.success('Administrator account reactivated.');
+      loadData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to reactivate admin account.'));
+    }
+  };
+
+  const handleResendInvite = async (adminId) => {
+    try {
+      const res = await api.post(`/owner/admins/${adminId}/resend-invite`);
+      toast.success('Admin invitation resent successfully.');
+      if (res.data?.data?.invitationLink) {
+        navigator.clipboard.writeText(res.data.data.invitationLink);
+        toast.info('Invitation link copied to clipboard.');
+      }
+      loadData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to resend admin invitation.'));
+    }
+  };
+
+  const handleRevokeInvite = async (adminId) => {
+    try {
+      await api.patch(`/owner/admins/${adminId}/revoke-invite`);
+      toast.success('Admin invitation revoked.');
+      loadData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to revoke admin invitation.'));
     }
   };
 
@@ -509,45 +565,91 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                       <th style={{ padding: '0.75rem 1rem' }}>Admin ID</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Administrator Name</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Email</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Assigned Tenant / Institution</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>Role & Scope</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>Assigned Tenant / Dept</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Account Status</th>
                       <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredAdmins.length === 0 ? (
-                      <tr><td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#a1a1aa' }}>No institution administrators found.</td></tr>
+                      <tr><td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#a1a1aa' }}>No institution administrators found.</td></tr>
                     ) : (
-                      filteredAdmins.map((adm) => (
-                        <tr key={adm._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                          <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#c084fc', fontWeight: 'bold' }}>
-                            {adm.adminId || adm.maviId}
-                          </td>
-                          <td style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>{adm.name}</td>
-                          <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{adm.email}</td>
-                          <td style={{ padding: '0.75rem 1rem' }}>
-                            {adm.institutionId ? (
-                              <span style={{ color: '#fde047', fontWeight: '600' }}>{adm.institutionId.name} ({adm.institutionId.tenantId})</span>
-                            ) : (
-                              <span style={{ color: 'var(--text-muted)' }}>Global Scoped</span>
-                            )}
-                          </td>
-                          <td style={{ padding: '0.75rem 1rem' }}>
-                            <span className={`badge ${adm.status === 'suspended' ? 'badge-danger' : 'badge-success'}`} style={{ fontSize: '0.7rem' }}>
-                              {adm.status || 'active'}
-                            </span>
-                          </td>
-                          <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                            <button
-                              onClick={() => handleToggleAdminStatus(adm._id, adm.status)}
-                              className={`btn btn-sm ${adm.status === 'suspended' ? 'btn-success' : 'btn-outline'}`}
-                              style={{ fontSize: '0.75rem' }}
-                            >
-                              {adm.status === 'suspended' ? 'Activate' : 'Suspend'}
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                      filteredAdmins.map((adm) => {
+                        const status = adm.accountStatus || (adm.status === 'suspended' ? 'SUSPENDED' : 'ACTIVE');
+                        return (
+                          <tr key={adm._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                            <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#c084fc', fontWeight: 'bold' }}>
+                              {adm.adminId || adm.maviId}
+                            </td>
+                            <td style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>
+                              <div>{adm.name}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#a1a1aa' }}>{adm.designation || 'Administrator'}</div>
+                            </td>
+                            <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{adm.email}</td>
+                            <td style={{ padding: '0.75rem 1rem' }}>
+                              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                                <span className="badge badge-primary" style={{ fontSize: '0.68rem', textTransform: 'uppercase' }}>
+                                  {adm.role?.replace(/_/g, ' ')}
+                                </span>
+                                <span className="badge" style={{ fontSize: '0.68rem', background: '#3f3f46', color: '#e4e4e7' }}>
+                                  {adm.adminScope || 'INSTITUTION'}
+                                </span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '0.75rem 1rem' }}>
+                              {adm.institutionId ? (
+                                <div>
+                                  <span style={{ color: '#fde047', fontWeight: '600' }}>{adm.institutionId.name}</span>
+                                  {adm.departmentId && <div style={{ fontSize: '0.75rem', color: '#a1a1aa' }}>Dept: {adm.departmentId.name}</div>}
+                                </div>
+                              ) : (
+                                <span style={{ color: 'var(--text-muted)' }}>Global Scoped</span>
+                              )}
+                            </td>
+                            <td style={{ padding: '0.75rem 1rem' }}>
+                              <span
+                                className={`badge ${
+                                  status === 'ACTIVE'
+                                    ? 'badge-success'
+                                    : status === 'INVITED'
+                                    ? 'badge-warning'
+                                    : status === 'SUSPENDED'
+                                    ? 'badge-danger'
+                                    : 'badge-secondary'
+                                }`}
+                                style={{ fontSize: '0.7rem' }}
+                              >
+                                {status}
+                              </span>
+                            </td>
+                            <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                                {status === 'INVITED' && (
+                                  <>
+                                    <button onClick={() => handleResendInvite(adm._id)} className="btn btn-sm btn-outline" style={{ fontSize: '0.72rem' }}>
+                                      Resend Invite
+                                    </button>
+                                    <button onClick={() => handleRevokeInvite(adm._id)} className="btn btn-sm btn-danger" style={{ fontSize: '0.72rem', background: '#ef4444', borderColor: '#ef4444' }}>
+                                      Revoke
+                                    </button>
+                                  </>
+                                )}
+                                {status === 'ACTIVE' && (
+                                  <button onClick={() => handleSuspendAdmin(adm._id)} className="btn btn-sm btn-danger" style={{ fontSize: '0.72rem', background: '#ef4444', borderColor: '#ef4444' }}>
+                                    Suspend
+                                  </button>
+                                )}
+                                {status === 'SUSPENDED' && (
+                                  <button onClick={() => handleReactivateAdmin(adm._id)} className="btn btn-sm btn-success" style={{ fontSize: '0.72rem' }}>
+                                    Reactivate
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -1112,43 +1214,126 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
 
         {/* Invite Admin Modal */}
         {showInviteAdminModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-            <form onSubmit={handleInviteAdmin} className="glass-card-static" style={{ width: '480px', padding: '2rem', border: '1px solid var(--accent-purple)' }}>
-              <h3 style={{ marginBottom: '1.25rem', color: 'var(--accent-purple)' }}>Invite Institution Administrator</h3>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
+            <form onSubmit={handleInviteAdmin} className="glass-card-static" style={{ width: '540px', maxHeight: '90vh', overflowY: 'auto', padding: '2rem', border: '1px solid var(--accent-purple)' }}>
+              <h3 style={{ marginBottom: '1.25rem', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <UserCheck size={22} /> Invite Platform Administrator
+              </h3>
+
               {inviteResult ? (
-                <div style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--accent-emerald)', borderRadius: '8px', color: 'var(--accent-emerald)', marginBottom: '1.5rem' }}>
-                  <p><strong>Invitation Link Generated!</strong></p>
-                  <p style={{ fontSize: '0.8rem', wordBreak: 'break-all', fontFamily: 'monospace', margin: '0.5rem 0' }}>{inviteResult.invitationLink}</p>
-                  <button type="button" onClick={() => { setInviteResult(null); setShowInviteAdminModal(false); }} className="btn btn-primary btn-sm">Done</button>
+                <div style={{ padding: '1.25rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--accent-emerald)', borderRadius: '8px', color: 'var(--accent-emerald)', marginBottom: '1.5rem' }}>
+                  <p style={{ fontWeight: 'bold', fontSize: '1rem', margin: 0 }}>✓ Single-Use Administrative Invitation Token Generated!</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                    An invitation email has been dispatched. You can also copy the secure single-use invitation link directly below:
+                  </p>
+                  <div style={{ background: '#09090b', padding: '0.75rem', borderRadius: '6px', fontSize: '0.8rem', wordBreak: 'break-all', fontFamily: 'monospace', margin: '0.75rem 0', border: '1px solid var(--border-subtle)', color: '#c084fc' }}>
+                    {inviteResult.invitationLink}
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(inviteResult.invitationLink);
+                        toast.info('Invitation link copied to clipboard!');
+                      }}
+                      className="btn btn-primary btn-sm"
+                      style={{ background: '#a78bfa', borderColor: '#a78bfa' }}
+                    >
+                      Copy Invitation Link
+                    </button>
+                    <button type="button" onClick={() => { setInviteResult(null); setShowInviteAdminModal(false); }} className="btn btn-outline btn-sm">
+                      Close
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
-                  <div className="input-group">
-                    <label className="input-label">Full Name *</label>
-                    <input type="text" className="input-field" value={newAdmin.name} onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })} required />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="input-group">
+                      <label className="input-label">Full Name *</label>
+                      <input type="text" className="input-field" value={newAdmin.name} onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })} required />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Official Email *</label>
+                      <input type="email" className="input-field" value={newAdmin.email} onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })} required />
+                    </div>
                   </div>
-                  <div className="input-group">
-                    <label className="input-label">Official Email *</label>
-                    <input type="email" className="input-field" value={newAdmin.email} onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })} required />
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="input-group">
+                      <label className="input-label">Management Scope *</label>
+                      <select
+                        className="input-field"
+                        value={newAdmin.scope}
+                        onChange={(e) => setNewAdmin({ ...newAdmin, scope: e.target.value, institutionId: e.target.value === 'PLATFORM' ? '' : newAdmin.institutionId })}
+                        required
+                      >
+                        <option value="INSTITUTION">INSTITUTION (Tenant-wide)</option>
+                        <option value="DEPARTMENT">DEPARTMENT (Department-specific)</option>
+                        <option value="PLATFORM">PLATFORM (Global Scope)</option>
+                      </select>
+                    </div>
+
+                    <div className="input-group">
+                      <label className="input-label">Administrative Role *</label>
+                      <select className="input-field" value={newAdmin.role} onChange={(e) => setNewAdmin({ ...newAdmin, role: e.target.value })} required>
+                        <option value="institution_admin">Institution Admin</option>
+                        <option value="department_admin">Department Admin</option>
+                        <option value="placement_admin">Placement & TPO Admin</option>
+                        <option value="academic_admin">Academic & Exam Admin</option>
+                        <option value="student_affairs_admin">Student Affairs Admin</option>
+                        <option value="finance_admin">Finance & Billing Admin</option>
+                        <option value="training_admin">Training & Development Admin</option>
+                      </select>
+                    </div>
                   </div>
+
+                  {newAdmin.scope !== 'PLATFORM' && (
+                    <div className="input-group">
+                      <label className="input-label">Target Institution *</label>
+                      <select className="input-field" value={newAdmin.institutionId} onChange={(e) => setNewAdmin({ ...newAdmin, institutionId: e.target.value })} required>
+                        <option value="">Select College / Institution...</option>
+                        {institutions.map((inst) => (
+                          <option key={inst._id} value={inst._id}>
+                            {inst.name} ({inst.tenantId})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {newAdmin.scope === 'DEPARTMENT' && (
+                    <div className="input-group">
+                      <label className="input-label">Target Department *</label>
+                      <select className="input-field" value={newAdmin.departmentId} onChange={(e) => setNewAdmin({ ...newAdmin, departmentId: e.target.value })} required>
+                        <option value="">Select Department...</option>
+                        {availableDepartments.map((dept) => (
+                          <option key={dept._id} value={dept._id}>
+                            {dept.name} ({dept.code})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div className="input-group">
-                    <label className="input-label">Target Institution *</label>
-                    <select className="input-field" value={newAdmin.institutionId} onChange={(e) => setNewAdmin({ ...newAdmin, institutionId: e.target.value })} required>
-                      <option value="">Select College / Institution...</option>
-                      {institutions.map((inst) => (
-                        <option key={inst._id} value={inst._id}>
-                          {inst.name} ({inst.tenantId})
-                        </option>
-                      ))}
-                    </select>
+                    <label className="input-label">Designation / Title</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. Head of Placement, HOD CSE"
+                      value={newAdmin.designation}
+                      onChange={(e) => setNewAdmin({ ...newAdmin, designation: e.target.value })}
+                    />
                   </div>
                 </div>
               )}
+
               {!inviteResult && (
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                   <button type="button" onClick={() => setShowInviteAdminModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={submitting}>
-                    {submitting ? 'Generating...' : 'Generate Invite Token'}
+                  <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#a78bfa', borderColor: '#a78bfa' }} disabled={submitting}>
+                    {submitting ? 'Generating...' : 'Dispatch Invitation Email'}
                   </button>
                 </div>
               )}

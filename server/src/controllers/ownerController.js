@@ -1,7 +1,12 @@
 const crypto = require('crypto');
 const User = require('../models/User');
 const Institution = require('../models/Institution');
+const Department = require('../models/Department');
+const Role = require('../models/Role');
 const ActivityLog = require('../models/ActivityLog');
+const AuditLog = require('../models/AuditLog');
+const { sendEmail } = require('../utils/sendEmail');
+const { ALL_PERMISSIONS, SYSTEM_ROLE_PERMISSIONS, checkPermissionDelegation } = require('../utils/permissions');
 
 // Default in-memory platform system configuration fallback
 let globalSystemConfig = {
@@ -211,30 +216,206 @@ const updateTenant = async (req, res, next) => {
 };
 
 /**
- * @desc    Get all Institution Admins
+ * @desc    Get all available system permissions
+ * @route   GET /api/owner/permissions
+ * @access  Private (Platform Owner / Super Admin)
+ */
+const getPermissions = async (req, res, next) => {
+  try {
+    res.status(200).json({
+      success: true,
+      data: {
+        permissions: ALL_PERMISSIONS,
+        systemRoles: Object.keys(SYSTEM_ROLE_PERMISSIONS),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get system and custom roles
+ * @route   GET /api/owner/roles
+ * @access  Private (Platform Owner / Super Admin)
+ */
+const getRoles = async (req, res, next) => {
+  try {
+    const customRoles = await Role.find().sort({ createdAt: -1 });
+
+    const systemRoles = Object.keys(SYSTEM_ROLE_PERMISSIONS).map((code) => ({
+      code,
+      name: code.replace(/_/g, ' ').toUpperCase(),
+      isSystemRole: true,
+      permissions: SYSTEM_ROLE_PERMISSIONS[code],
+      scope: code === 'super_admin' || code === 'platform_owner' ? 'PLATFORM' : code === 'department_admin' ? 'DEPARTMENT' : 'INSTITUTION',
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        systemRoles,
+        customRoles,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Create a Custom Administrative Role
+ * @route   POST /api/owner/roles
+ * @access  Private (Platform Owner / Super Admin)
+ */
+const createCustomRole = async (req, res, next) => {
+  try {
+    const { name, code, description, scope, institutionId, permissions } = req.body;
+
+    if (!name || !code) {
+      return res.status(400).json({ success: false, message: 'Role name and role code are required.' });
+    }
+
+    const formattedCode = code.toUpperCase().trim().replace(/[^A_Z0-9_]/g, '_');
+
+    // Prevent overwriting built-in system role codes
+    if (SYSTEM_ROLE_PERMISSIONS[formattedCode.toLowerCase()]) {
+      return res.status(400).json({ success: false, message: 'Cannot override built-in system role codes.' });
+    }
+
+    const existingRole = await Role.findOne({ code: formattedCode });
+    if (existingRole) {
+      return res.status(409).json({ success: false, message: `Role code "${formattedCode}" already exists.` });
+    }
+
+    const role = await Role.create({
+      name: name.trim(),
+      code: formattedCode,
+      description: description || '',
+      scope: scope || 'INSTITUTION',
+      institutionId: institutionId || null,
+      permissions: Array.isArray(permissions) ? permissions : [],
+      isSystemRole: false,
+      createdBy: req.user._id,
+    });
+
+    await AuditLog.create({
+      actorId: req.user._id,
+      action: 'ADMIN_ROLE_CHANGED',
+      details: `Created custom admin role: ${role.name} (${role.code})`,
+      result: 'SUCCESS',
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Custom administrative role created successfully.',
+      data: { role },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Update Custom Administrative Role
+ * @route   PUT /api/owner/roles/:id
+ * @access  Private (Platform Owner / Super Admin)
+ */
+const updateCustomRole = async (req, res, next) => {
+  try {
+    const { name, description, scope, permissions } = req.body;
+    const role = await Role.findById(req.params.id);
+
+    if (!role) {
+      return res.status(404).json({ success: false, message: 'Custom role not found.' });
+    }
+
+    if (role.isSystemRole) {
+      return res.status(400).json({ success: false, message: 'System built-in roles cannot be modified directly.' });
+    }
+
+    if (name) role.name = name.trim();
+    if (description !== undefined) role.description = description;
+    if (scope) role.scope = scope;
+    if (Array.isArray(permissions)) role.permissions = permissions;
+
+    await role.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Custom administrative role updated successfully.',
+      data: { role },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Delete Custom Administrative Role
+ * @route   DELETE /api/owner/roles/:id
+ * @access  Private (Platform Owner / Super Admin)
+ */
+const deleteCustomRole = async (req, res, next) => {
+  try {
+    const role = await Role.findById(req.params.id);
+    if (!role) {
+      return res.status(404).json({ success: false, message: 'Role not found.' });
+    }
+
+    if (role.isSystemRole) {
+      return res.status(400).json({ success: false, message: 'System built-in roles cannot be deleted.' });
+    }
+
+    await Role.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Custom administrative role deleted successfully.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get all Administrators with filtering (Owner & Admin View)
  * @route   GET /api/owner/admins
- * @access  Private (Platform Owner)
+ * @access  Private (Platform Owner / Super Admin / Admin)
  */
 const getAdmins = async (req, res, next) => {
   try {
-    const { search, institutionId } = req.query;
-    const filter = { role: { $in: ['institution_admin', 'admin'] } };
+    const { search, institutionId, role, scope, status } = req.query;
+    const filter = {
+      role: { $in: ['institution_admin', 'department_admin', 'admin', 'placement_admin', 'academic_admin', 'super_admin'] },
+    };
 
     if (institutionId && institutionId !== 'all') {
       filter.institutionId = institutionId;
     }
+    if (role && role !== 'all') {
+      filter.role = role.toLowerCase();
+    }
+    if (scope && scope !== 'all') {
+      filter.adminScope = scope.toUpperCase();
+    }
+    if (status && status !== 'all') {
+      filter.accountStatus = status.toUpperCase();
+    }
 
     if (search) {
+      const searchRegex = new RegExp(search.trim(), 'i');
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { adminId: { $regex: search, $options: 'i' } },
-        { maviId: { $regex: search, $options: 'i' } },
+        { name: searchRegex },
+        { email: searchRegex },
+        { adminId: searchRegex },
+        { maviId: searchRegex },
       ];
     }
 
     const admins = await User.find(filter)
       .populate('institutionId', 'name tenantId shortName domain')
+      .populate('departmentId', 'name code')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -248,71 +429,191 @@ const getAdmins = async (req, res, next) => {
 };
 
 /**
- * @desc    Invite Institution Administrator
+ * @desc    Invite Administrator with custom role, scope & permissions
  * @route   POST /api/owner/admins/invite
- * @access  Private (Platform Owner)
+ * @access  Private (Owner / Super Admin / Admin with ADMIN_CREATE)
  */
 const inviteAdmin = async (req, res, next) => {
   try {
-    const { name, email, institutionId, designation, adminId } = req.body;
+    const {
+      name,
+      email,
+      institutionId,
+      departmentId,
+      role = 'institution_admin',
+      scope = 'INSTITUTION',
+      permissions = [],
+      designation,
+      adminId,
+    } = req.body;
 
-    if (!name || !email || !institutionId) {
+    if (!name || !email) {
       return res.status(400).json({
         success: false,
-        message: 'Name, email, and target institution are required.',
+        message: 'Administrator name and email address are required.',
       });
     }
 
-    const targetInst = await Institution.findById(institutionId);
-    if (!targetInst) {
-      return res.status(404).json({ success: false, message: 'Target institution not found.' });
+    const lowerEmail = email.toLowerCase().trim();
+
+    // 1. Scope & Institution Validation
+    let targetInst = null;
+    if (scope !== 'PLATFORM') {
+      if (!institutionId) {
+        return res.status(400).json({ success: false, message: 'Target institution is required for INSTITUTION or DEPARTMENT scope.' });
+      }
+      targetInst = await Institution.findById(institutionId);
+      if (!targetInst) {
+        return res.status(404).json({ success: false, message: 'Target institution not found.' });
+      }
     }
 
-    const lowerEmail = email.toLowerCase().trim();
+    // 2. Department Scoping Validation
+    let targetDept = null;
+    if (scope === 'DEPARTMENT') {
+      if (!departmentId) {
+        return res.status(400).json({ success: false, message: 'Department selection is required for DEPARTMENT scope.' });
+      }
+      targetDept = await Department.findById(departmentId);
+      if (!targetDept) {
+        return res.status(404).json({ success: false, message: 'Target department not found.' });
+      }
+      if (targetDept.institutionId.toString() !== targetInst._id.toString()) {
+        return res.status(400).json({
+          success: false,
+          code: 'DEPARTMENT_INSTITUTION_MISMATCH',
+          message: 'Selected department does not belong to the chosen institution.',
+        });
+      }
+    }
+
+    // 3. Super Admin Protection & Permission Escalation Safeguard
+    const isActorSuper =
+      req.user.role === 'super_admin' ||
+      req.user.role === 'platform_owner' ||
+      (Array.isArray(req.user.roles) && (req.user.roles.includes('super_admin') || req.user.roles.includes('platform_owner')));
+
+    if (role === 'super_admin' || role === 'platform_owner') {
+      if (!isActorSuper) {
+        return res.status(403).json({
+          success: false,
+          code: 'SUPER_ADMIN_CREATION_DENIED',
+          message: 'Forbidden. Ordinary admins cannot create Super Admin accounts.',
+        });
+      }
+    }
+
+    // Check permission delegation
+    if (!checkPermissionDelegation(req.user, permissions)) {
+      return res.status(403).json({
+        success: false,
+        code: 'PERMISSION_DELEGATION_DENIED',
+        message: 'You cannot grant administrative permissions that you yourself do not possess.',
+      });
+    }
+
+    // 4. Generate Single-Use Token & Identifiers
+    const inviteToken = crypto.randomBytes(32).toString('hex');
+    const inviteExpires = new Date(Date.now() + 48 * 3600 * 1000); // 48 Hours
+    const customAdminId = adminId || `ADM-${targetInst?.shortName || 'PLAT'}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+
     let existingUser = await User.findOne({ email: lowerEmail });
 
-    const inviteToken = crypto.randomBytes(32).toString('hex');
-    const customAdminId = adminId || `ADM-${targetInst.shortName || 'INST'}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-
     if (existingUser) {
-      existingUser.role = 'institution_admin';
-      existingUser.roles = Array.from(new Set([...(existingUser.roles || []), 'institution_admin', 'user']));
-      existingUser.institutionId = targetInst._id;
-      existingUser.tenantId = targetInst.tenantId;
+      existingUser.role = role;
+      existingUser.roles = Array.from(new Set([...(existingUser.roles || []), role, 'user']));
+      existingUser.adminScope = scope;
+      existingUser.adminScopeDetails = {
+        scope,
+        institutionId: targetInst ? targetInst._id : null,
+        departmentId: targetDept ? targetDept._id : null,
+      };
+      existingUser.institutionId = targetInst ? targetInst._id : null;
+      existingUser.departmentId = targetDept ? targetDept._id : null;
+      existingUser.tenantId = targetInst ? targetInst.tenantId : '';
       existingUser.adminId = customAdminId;
       existingUser.adminLoginId = customAdminId;
-      existingUser.verificationToken = inviteToken;
+      existingUser.designation = designation || existingUser.designation || 'Administrator';
+      existingUser.permissions = permissions;
+      existingUser.invitationToken = inviteToken;
+      existingUser.invitationExpires = inviteExpires;
+      existingUser.invitedBy = req.user._id;
+      existingUser.invitedAt = new Date();
+      existingUser.accountStatus = 'INVITED';
       await existingUser.save();
     } else {
       existingUser = await User.create({
         name: name.trim(),
         email: lowerEmail,
-        password: crypto.randomBytes(16).toString('hex'),
-        role: 'institution_admin',
-        roles: ['institution_admin', 'user'],
-        institutionId: targetInst._id,
-        tenantId: targetInst.tenantId,
+        password: crypto.randomBytes(16).toString('hex'), // Temporary Hash until setup
+        role,
+        roles: [role, 'user'],
+        adminScope: scope,
+        adminScopeDetails: {
+          scope,
+          institutionId: targetInst ? targetInst._id : null,
+          departmentId: targetDept ? targetDept._id : null,
+        },
+        institutionId: targetInst ? targetInst._id : null,
+        departmentId: targetDept ? targetDept._id : null,
+        tenantId: targetInst ? targetInst.tenantId : '',
         adminId: customAdminId,
         adminLoginId: customAdminId,
+        designation: designation || 'Administrator',
+        permissions,
         mustChangePassword: true,
-        verificationToken: inviteToken,
+        invitationToken: inviteToken,
+        invitationExpires: inviteExpires,
+        invitedBy: req.user._id,
+        invitedAt: new Date(),
+        accountStatus: 'INVITED',
+        status: 'active',
       });
     }
 
+    // 5. Send Invitation Email
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
-    await ActivityLog.create({
-      userId: req.user._id,
-      action: 'INVITE_ADMIN',
-      details: `Invited Institution Admin ${existingUser.email} for ${targetInst.name} (${targetInst.tenantId})`,
-      ipAddress: req.ip || '',
-      userAgent: req.headers['user-agent'] || '',
+    try {
+      await sendEmail({
+        to: lowerEmail,
+        subject: `You've been invited to administer MAVI Linking`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+            <h2 style="color: #6366f1;">MAVI Linking — Administrative Invitation</h2>
+            <p>Hello <strong>${existingUser.name}</strong>,</p>
+            <p>You have been invited to join <strong>MAVI Linking</strong> as an administrator.</p>
+            <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 15px 0;">
+              <p><strong>Role:</strong> ${role.replace(/_/g, ' ').toUpperCase()}</p>
+              <p><strong>Management Scope:</strong> ${scope}</p>
+              <p><strong>Institution:</strong> ${targetInst ? targetInst.name : 'Platform Wide'}</p>
+              ${targetDept ? `<p><strong>Department:</strong> ${targetDept.name}</p>` : ''}
+            </div>
+            <p>Please click the button below to accept your invitation and create your password:</p>
+            <a href="${invitationLink}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Accept Invitation</a>
+            <p style="margin-top: 20px; font-size: 0.85em; color: #666;">This invitation link is valid for 48 hours.</p>
+          </div>
+        `,
+      });
+    } catch (emailErr) {
+      console.error('[INVITATION EMAIL DISPATCH NON-FATAL ERROR]', emailErr.message);
+    }
+
+    // Audit Logging
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: existingUser._id,
+      action: 'ADMIN_INVITATION_SENT',
+      institutionId: targetInst ? targetInst._id : null,
+      departmentId: targetDept ? targetDept._id : null,
+      details: { role, scope, permissions },
+      result: 'SUCCESS',
     });
 
-    res.status(200).json({
+    res.status(201).json({
       success: true,
-      message: 'Institution Admin invited successfully.',
+      message: 'Administrator invitation created and email dispatched successfully.',
       data: {
         admin: existingUser,
         invitationLink,
@@ -324,7 +625,227 @@ const inviteAdmin = async (req, res, next) => {
 };
 
 /**
- * @desc    Toggle Admin Account Status (Activate/Suspend)
+ * @desc    Edit Administrator Role, Scope, Department & Permissions
+ * @route   PUT /api/owner/admins/:id
+ * @access  Private (Owner / Super Admin / Authorized Admin)
+ */
+const updateAdmin = async (req, res, next) => {
+  try {
+    const { role, scope, institutionId, departmentId, permissions, designation } = req.body;
+    const adminUser = await User.findById(req.params.id);
+
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Administrator account not found.' });
+    }
+
+    // Permission delegation safeguard
+    if (permissions && !checkPermissionDelegation(req.user, permissions)) {
+      return res.status(403).json({
+        success: false,
+        code: 'PERMISSION_DELEGATION_DENIED',
+        message: 'You cannot grant permissions that you yourself do not possess.',
+      });
+    }
+
+    if (role) adminUser.role = role;
+    if (scope) adminUser.adminScope = scope;
+    if (designation !== undefined) adminUser.designation = designation;
+    if (Array.isArray(permissions)) adminUser.permissions = permissions;
+
+    if (institutionId) {
+      adminUser.institutionId = institutionId;
+    }
+    if (departmentId !== undefined) {
+      adminUser.departmentId = departmentId || null;
+    }
+
+    adminUser.adminScopeDetails = {
+      scope: scope || adminUser.adminScope,
+      institutionId: adminUser.institutionId,
+      departmentId: adminUser.departmentId,
+    };
+
+    await adminUser.save();
+
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: adminUser._id,
+      action: 'ADMIN_ROLE_CHANGED',
+      institutionId: adminUser.institutionId,
+      details: { role: adminUser.role, scope: adminUser.adminScope, permissions: adminUser.permissions },
+      result: 'SUCCESS',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Administrator settings updated successfully.',
+      data: { admin: adminUser },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Suspend Administrator Account
+ * @route   PATCH /api/owner/admins/:id/suspend
+ * @access  Private (Owner / Super Admin / Authorized Admin)
+ */
+const suspendAdmin = async (req, res, next) => {
+  try {
+    const { reason = 'Account suspended by administrator.' } = req.body;
+    const adminUser = await User.findById(req.params.id);
+
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin account not found.' });
+    }
+
+    adminUser.accountStatus = 'SUSPENDED';
+    adminUser.status = 'suspended';
+    adminUser.suspendedBy = req.user._id;
+    adminUser.suspendedAt = new Date();
+    adminUser.suspensionReason = reason.trim();
+    await adminUser.save();
+
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: adminUser._id,
+      action: 'ADMIN_SUSPENDED',
+      institutionId: adminUser.institutionId,
+      details: { reason },
+      result: 'SUCCESS',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Administrator account has been suspended.',
+      data: { admin: adminUser },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Reactivate Suspended Administrator Account
+ * @route   PATCH /api/owner/admins/:id/reactivate
+ * @access  Private (Owner / Super Admin / Authorized Admin)
+ */
+const reactivateAdmin = async (req, res, next) => {
+  try {
+    const adminUser = await User.findById(req.params.id);
+
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin account not found.' });
+    }
+
+    adminUser.accountStatus = 'ACTIVE';
+    adminUser.status = 'active';
+    adminUser.suspendedBy = null;
+    adminUser.suspendedAt = null;
+    adminUser.suspensionReason = '';
+    await adminUser.save();
+
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: adminUser._id,
+      action: 'ADMIN_REACTIVATED',
+      institutionId: adminUser.institutionId,
+      result: 'SUCCESS',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Administrator account reactivated successfully.',
+      data: { admin: adminUser },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Resend Admin Invitation
+ * @route   POST /api/owner/admins/:id/resend-invite
+ * @access  Private (Owner / Super Admin)
+ */
+const resendAdminInvite = async (req, res, next) => {
+  try {
+    const adminUser = await User.findById(req.params.id).populate('institutionId', 'name');
+
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin account not found.' });
+    }
+
+    const inviteToken = crypto.randomBytes(32).toString('hex');
+    adminUser.invitationToken = inviteToken;
+    adminUser.invitationExpires = new Date(Date.now() + 48 * 3600 * 1000);
+    adminUser.accountStatus = 'INVITED';
+    await adminUser.save();
+
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
+
+    await sendEmail({
+      email: adminUser.email,
+      subject: `MAVI Linking — Resent Administrative Invitation`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+          <h2 style="color: #6366f1;">MAVI Linking — Administrative Invitation</h2>
+          <p>Hello <strong>${adminUser.name}</strong>,</p>
+          <p>Your administrative invitation for MAVI Linking has been resent.</p>
+          <a href="${invitationLink}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Accept Invitation</a>
+        </div>
+      `,
+    }).catch((err) => console.error('[RESEND EMAIL ERROR]', err.message));
+
+    res.status(200).json({
+      success: true,
+      message: 'Invitation resent successfully.',
+      data: { invitationLink },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Revoke Pending Admin Invitation
+ * @route   PATCH /api/owner/admins/:id/revoke-invite
+ * @access  Private (Owner / Super Admin)
+ */
+const revokeAdminInvite = async (req, res, next) => {
+  try {
+    const adminUser = await User.findById(req.params.id);
+
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin account not found.' });
+    }
+
+    adminUser.invitationToken = null;
+    adminUser.invitationExpires = null;
+    adminUser.accountStatus = 'INVITATION_REVOKED';
+    await adminUser.save();
+
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: adminUser._id,
+      action: 'ADMIN_INVITATION_REVOKED',
+      result: 'SUCCESS',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Administrator invitation revoked successfully.',
+      data: { admin: adminUser },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Toggle Admin Account Status (Legacy Compatibility)
  * @route   PUT /api/owner/admins/:id/status
  * @access  Private (Platform Owner)
  */
@@ -338,15 +859,12 @@ const toggleAdminStatus = async (req, res, next) => {
     }
 
     adminUser.status = status || (adminUser.status === 'active' ? 'suspended' : 'active');
+    if (adminUser.status === 'suspended') {
+      adminUser.accountStatus = 'SUSPENDED';
+    } else if (adminUser.accountStatus === 'SUSPENDED') {
+      adminUser.accountStatus = 'ACTIVE';
+    }
     await adminUser.save();
-
-    await ActivityLog.create({
-      userId: req.user._id,
-      action: 'TOGGLE_ADMIN_STATUS',
-      details: `Updated Admin ${adminUser.email} status to ${adminUser.status}`,
-      ipAddress: req.ip || '',
-      userAgent: req.headers['user-agent'] || '',
-    });
 
     res.status(200).json({
       success: true,
@@ -687,8 +1205,18 @@ module.exports = {
   getTenants,
   createTenant,
   updateTenant,
+  getPermissions,
+  getRoles,
+  createCustomRole,
+  updateCustomRole,
+  deleteCustomRole,
   getAdmins,
   inviteAdmin,
+  updateAdmin,
+  suspendAdmin,
+  reactivateAdmin,
+  resendAdminInvite,
+  revokeAdminInvite,
   toggleAdminStatus,
   getUsers,
   toggleUserStatus,

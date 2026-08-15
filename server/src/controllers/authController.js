@@ -1603,7 +1603,9 @@ const acceptAdminInvite = async (req, res, next) => {
 
     user.password = password;
     user.status = 'active';
+    user.accountStatus = 'ACTIVE';
     user.isInvitedAdmin = false;
+    user.mustChangePassword = false;
     user.invitationToken = null;
     user.invitationExpires = null;
     user.emailVerified = true;

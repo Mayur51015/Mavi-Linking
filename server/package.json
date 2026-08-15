@@ -8,6 +8,7 @@
     "dev": "nodemon src/server.js",
     "dev:workflows": "nitro dev",
     "build:workflows": "nitro build",
+    "db:reset-demo": "node src/scripts/resetDemoDatabase.js",
     "test": "jest --runInBand"
   },
   "keywords": [

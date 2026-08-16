@@ -1,24 +1,9 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const SharedDocument = require('../models/SharedDocument');
 
-// Ensure upload directory exists
-const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer Storage Configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, 'doc-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Multer Memory Storage Configuration (stores file in memory buffer, avoiding local disk writes)
+const storage = multer.memoryStorage();
 
 // File Type Validation filter
 const fileFilter = (req, file, cb) => {
@@ -50,8 +35,6 @@ const uploadDocument = async (req, res, next) => {
 
     const { title, description, department } = req.body;
     if (!title) {
-      // Clean up uploaded file if validation fails
-      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(400).json({ success: false, message: 'Document title is required.' });
     }
 
@@ -59,7 +42,6 @@ const uploadDocument = async (req, res, next) => {
     if (req.user.role !== 'admin' && req.user.university?.department) {
       const allowedDepts = req.user.university.department.split(',').map(d => d.trim()).filter(Boolean);
       if (targetDept && targetDept !== 'All' && !allowedDepts.includes(targetDept)) {
-        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         return res.status(400).json({ 
           success: false, 
           message: `Invalid department. Allowed departments: ${allowedDepts.join(', ')}` 
@@ -72,13 +54,18 @@ const uploadDocument = async (req, res, next) => {
       targetDept = 'All';
     }
 
+    // Convert buffer to Data URL for database storage
+    const mimeType = req.file.mimetype || 'application/octet-stream';
+    const base64Data = req.file.buffer.toString('base64');
+    const fileUrl = `data:${mimeType};base64,${base64Data}`;
+
     const doc = await SharedDocument.create({
       title,
       description: description || '',
       fileName: req.file.originalname,
-      fileUrl: `/public/uploads/${req.file.filename}`,
+      fileUrl,
       fileSize: req.file.size,
-      mimeType: req.file.mimetype,
+      mimeType,
       uploadedBy: req.user.id,
       college: req.user.university?.name || '',
       department: targetDept,

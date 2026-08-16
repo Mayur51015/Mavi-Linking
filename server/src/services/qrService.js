@@ -1,25 +1,14 @@
 const QRCode = require('qrcode');
-const path = require('path');
-const fs = require('fs');
 
 // In-memory cache to avoid regenerating frequently.
-// For production scale, this can be swapped for Redis.
-const memoryCache = new Map(); // key -> { dataUrl, updatedAt }
+const memoryCache = new Map(); // key -> { value, updatedAt }
 const CACHE_TTL_MS = parseInt(process.env.QR_CACHE_TTL_MS || '86400000', 10); // 24h default
 
-const getQrKey = ({ username, targetUrl }) => {
-  return `${username}::${targetUrl}`;
-};
-
-const ensureDir = (dir) => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-};
-
-const qrToFilePath = (publicBaseDir, filename) => path.join(publicBaseDir, filename);
+const getQrKey = ({ username, targetUrl }) => `${username}::${targetUrl}`;
 
 /**
  * Generate QR for a username profile.
- * Returns { dataUrl, fileUrl }
+ * Returns { dataUrl, fileUrl, svgUrl }
  */
 const generateQrForUsername = async ({ username, targetUrl }) => {
   if (!username || !targetUrl) throw new Error('username and targetUrl are required');
@@ -52,26 +41,9 @@ const generateQrForUsername = async ({ username, targetUrl }) => {
     },
   });
 
-  // Persist as PNG and SVG for download.
-  const publicReportsDir = path.join(__dirname, '..', '..', 'public', 'qr');
-  ensureDir(publicReportsDir);
+  const svgUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svgData)}`;
 
-  const timestamp = Date.now();
-  const filenamePng = `qr_${encodeURIComponent(username)}_${timestamp}.png`;
-  const filenameSvg = `qr_${encodeURIComponent(username)}_${timestamp}.svg`;
-  
-  const filePathPng = qrToFilePath(publicReportsDir, filenamePng);
-  const filePathSvg = qrToFilePath(publicReportsDir, filenameSvg);
-
-  const base64 = dataUrl.split(',')[1];
-  fs.writeFileSync(filePathPng, Buffer.from(base64, 'base64'));
-  fs.writeFileSync(filePathSvg, svgData, 'utf8');
-
-  const serverUrl = process.env.SERVER_URL || 'http://localhost:5000';
-  const fileUrl = `${serverUrl}/public/qr/${filenamePng}`;
-  const svgUrl = `${serverUrl}/public/qr/${filenameSvg}`;
-
-  const result = { dataUrl, fileUrl, svgUrl };
+  const result = { dataUrl, fileUrl: dataUrl, svgUrl };
   memoryCache.set(key, { value: result, updatedAt: now });
   return result;
 };

@@ -159,30 +159,20 @@ exports.logActivity = async (req, res, next) => {
 exports.generateReport = async (req, res, next) => {
   try {
     const PDFDocument = require('pdfkit');
-    const path = require('path');
-    const fs = require('fs');
 
     const user = await User.findById(req.user.id);
     const insight = await Insight.findOne({ userId: req.user.id });
     const dna = await DNA.findOne({ userId: req.user.id });
     const ranking = await Ranking.findOne({ userId: req.user.id });
 
-    // Ensure directory exists
-    const reportsDir = path.join(__dirname, '..', '..', 'public', 'reports');
-    if (!fs.existsSync(reportsDir)){
-        fs.mkdirSync(reportsDir, { recursive: true });
-    }
-
-    const fileName = `report_${req.user.id}_${Date.now()}.pdf`;
-    const filePath = path.join(reportsDir, fileName);
-
     const doc = new PDFDocument({ margin: 50 });
-    doc.pipe(fs.createWriteStream(filePath));
+    const buffers = [];
+    doc.on('data', (chunk) => buffers.push(chunk));
 
-    // Title
-    doc.fontSize(24).fillColor('#333').text(`AI Developer Report`, { align: 'center' });
+    // Header & Title
+    doc.fontSize(24).fillColor('#0f172a').text('MAVI Developer Intelligence Report', { align: 'center' });
     doc.moveDown();
-    
+
     // User info
     doc.fontSize(16).fillColor('#555').text(`Name: ${user.name}`);
     doc.text(`Email: ${user.email}`);
@@ -205,8 +195,8 @@ exports.generateReport = async (req, res, next) => {
       doc.fontSize(12).fillColor('#444');
       doc.text(`Personality: ${dna.personalityType}`);
       doc.text(`Working Style: ${dna.workingStyle}`);
-      doc.text(`Collaboration Score: ${dna.scores.collaboration}`);
-      doc.text(`Innovation Score: ${dna.scores.innovation}`);
+      doc.text(`Collaboration Score: ${dna.scores?.collaboration || 0}`);
+      doc.text(`Innovation Score: ${dna.scores?.innovation || 0}`);
       doc.moveDown();
     }
 
@@ -221,9 +211,11 @@ exports.generateReport = async (req, res, next) => {
 
     doc.end();
 
-    const reportUrl = `${process.env.SERVER_URL || 'http://localhost:5000'}/public/reports/${fileName}`;
-    
-    res.status(200).json({ success: true, data: { reportUrl } });
+    doc.on('end', () => {
+      const pdfBuffer = Buffer.concat(buffers);
+      const reportUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
+      res.status(200).json({ success: true, data: { reportUrl } });
+    });
   } catch (error) {
     next(error);
   }

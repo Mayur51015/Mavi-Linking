@@ -1,23 +1,9 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const User = require('../models/User');
 
-const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer Storage config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, 'profile-doc-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Multer Memory Storage config (stores file in memory buffer, avoiding local disk writes)
+const storage = multer.memoryStorage();
 
 // File Type Validation: PDF, JPG, JPEG, PNG
 const fileFilter = (req, file, cb) => {
@@ -50,7 +36,6 @@ const uploadProfileDocument = async (req, res, next) => {
       'transcript', 'projectReport', 'internshipOffer', 'internshipCompletion', 'experienceLetter', 'researchPaper', 'other'
     ];
     if (!allowedTypes.includes(type)) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(400).json({ success: false, message: 'Invalid document type.' });
     }
 
@@ -60,11 +45,13 @@ const uploadProfileDocument = async (req, res, next) => {
 
     const user = await User.findById(req.user.id);
     if (!user) {
-      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
-    const fileUrl = `/public/uploads/${req.file.filename}`;
+    // Convert file buffer to Base64 Data URL for database storage
+    const mimeType = req.file.mimetype || 'application/octet-stream';
+    const base64Data = req.file.buffer.toString('base64');
+    const fileUrl = `data:${mimeType};base64,${base64Data}`;
 
     // 1. Keep legacy fields in sync for backward compatibility
     if (!user.documents) {
@@ -85,15 +72,6 @@ const uploadProfileDocument = async (req, res, next) => {
     // Replace existing item of same type if present
     const existingIndex = user.documents.list.findIndex(item => item.type === type);
     if (existingIndex !== -1) {
-      const oldItemUrl = user.documents.list[existingIndex].fileUrl;
-      if (oldItemUrl) {
-        const oldFilepath = path.join(__dirname, '..', '..', oldItemUrl);
-        if (fs.existsSync(oldFilepath)) {
-          try {
-            fs.unlinkSync(oldFilepath);
-          } catch (err) {}
-        }
-      }
       user.documents.list.splice(existingIndex, 1);
     }
 

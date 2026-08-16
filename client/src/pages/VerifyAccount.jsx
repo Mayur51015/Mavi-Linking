@@ -44,12 +44,6 @@ const VerifyAccount = () => {
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // Change Email Modal / Inline Form state
-  const [showChangeEmailModal, setShowChangeEmailModal] = useState(false);
-  const [newEmail, setNewEmail] = useState('');
-  const [changingEmail, setChangingEmail] = useState(false);
-  const [changeEmailError, setChangeEmailError] = useState('');
-
   // Auto-verify token from URL on mount
   useEffect(() => {
     if (!tokenFromUrl) return;
@@ -107,8 +101,7 @@ const VerifyAccount = () => {
 
     const emailOrId = activeEmail || user?.maviId || '';
     if (!emailOrId) {
-      toast.error('Email address is missing. Please click "Change Email" to specify your email address.');
-      setShowChangeEmailModal(true);
+      toast.error('Registered email address is missing. Please log in or re-register.');
       return;
     }
 
@@ -120,7 +113,7 @@ const VerifyAccount = () => {
       });
 
       if (res.data?.success) {
-        toast.success(res.data?.message || `A new verification link has been dispatched to ${emailOrId}!`);
+        toast.success(res.data?.message || `A new verification link has been dispatched to ${emailOrId} and your Institution Administrator!`);
         setResendCooldown(60);
         setVerificationError('');
       } else {
@@ -133,46 +126,6 @@ const VerifyAccount = () => {
       toast.error(getErrorMessage(err, 'Failed to resend verification email. Please try again.'));
     } finally {
       setResending(false);
-    }
-  };
-
-  // Change Email Before Activation
-  const handleChangeEmailSubmit = async (e) => {
-    e.preventDefault();
-    setChangeEmailError('');
-
-    if (!newEmail || !newEmail.includes('@')) {
-      setChangeEmailError('Please enter a valid email address.');
-      return;
-    }
-
-    const formattedNewEmail = newEmail.toLowerCase().trim();
-    setChangingEmail(true);
-    try {
-      const res = await api.post('/auth/change-email-pending', {
-        token: tokenFromUrl,
-        currentEmail: activeEmail,
-        maviId: user?.maviId,
-        newEmail: formattedNewEmail,
-      });
-
-      if (res.data?.success) {
-        toast.success(`Email updated! A verification link was sent to ${formattedNewEmail}.`);
-        localStorage.setItem('pendingVerificationEmail', formattedNewEmail);
-        if (setUser && user) {
-          setUser({ ...user, email: formattedNewEmail });
-        }
-        setShowChangeEmailModal(false);
-        setNewEmail('');
-        setVerificationError('');
-        setResendCooldown(60);
-      } else {
-        setChangeEmailError(res.data?.message || 'Failed to update email address.');
-      }
-    } catch (err) {
-      setChangeEmailError(getErrorMessage(err, 'Failed to update email address. Please try again.'));
-    } finally {
-      setChangingEmail(false);
     }
   };
 
@@ -362,28 +315,6 @@ const VerifyAccount = () => {
                     </div>
                   )}
                 </div>
-
-                <button
-                  onClick={() => setShowChangeEmailModal(true)}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    color: '#ffffff',
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: '10px',
-                    fontSize: '0.78rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    transition: 'all 0.2s',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Edit3 size={14} />
-                  Change
-                </button>
               </div>
 
               {/* Institution MAVI ID Verifier Notice */}
@@ -451,7 +382,7 @@ const VerifyAccount = () => {
                 {resending ? (
                   <>
                     <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                    Sending Email...
+                    Sending Verification Email & Notifying Admin...
                   </>
                 ) : resendCooldown > 0 ? (
                   <>
@@ -466,178 +397,30 @@ const VerifyAccount = () => {
                 )}
               </button>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <button
-                  onClick={() => setShowChangeEmailModal(true)}
-                  style={{
-                    padding: '0.75rem',
-                    background: '#18181b',
-                    border: '1px solid #27272a',
-                    borderRadius: '12px',
-                    color: '#ffffff',
-                    fontSize: '0.85rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.4rem',
-                  }}
-                >
-                  <Edit3 size={15} />
-                  Change Email
-                </button>
-
-                <button
-                  onClick={() => {
-                    if (logout) logout();
-                    navigate('/login');
-                  }}
-                  style={{
-                    padding: '0.75rem',
-                    background: '#18181b',
-                    border: '1px solid #27272a',
-                    borderRadius: '12px',
-                    color: '#a1a1aa',
-                    fontSize: '0.85rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.4rem',
-                  }}
-                >
-                  <ArrowLeft size={15} />
-                  Back to Login
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  if (logout) logout();
+                  navigate('/login');
+                }}
+                style={{
+                  padding: '0.75rem',
+                  background: '#18181b',
+                  border: '1px solid #27272a',
+                  borderRadius: '12px',
+                  color: '#a1a1aa',
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                <ArrowLeft size={15} />
+                Back to Login
+              </button>
             </div>
-          </div>
-        )}
-
-        {/* Change Email Modal */}
-        {showChangeEmailModal && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.8)',
-              backdropFilter: 'blur(8px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 100,
-              padding: '1rem',
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              style={{
-                width: '100%',
-                maxWidth: '420px',
-                background: '#18181b',
-                border: '1px solid #27272a',
-                borderRadius: '20px',
-                padding: '1.75rem',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
-              }}
-            >
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', margin: '0 0 0.5rem 0', color: '#ffffff' }}>
-                Correct Email Address
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: '#a1a1aa', margin: '0 0 1.25rem 0', lineHeight: '1.4' }}>
-                Entered the wrong email? Enter your correct email address below. We'll send a fresh activation link.
-              </p>
-
-              <form onSubmit={handleChangeEmailSubmit} style={{ display: 'grid', gap: '1rem' }}>
-                {changeEmailError && (
-                  <div
-                    style={{
-                      padding: '0.75rem',
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.25)',
-                      borderRadius: '10px',
-                      fontSize: '0.8rem',
-                      color: '#f87171',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                    }}
-                  >
-                    <AlertCircle size={16} style={{ flexShrink: 0 }} />
-                    {changeEmailError}
-                  </div>
-                )}
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#d4d4d8', marginBottom: '0.4rem' }}>
-                    New Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="correct.student@example.com"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    style={{
-                      width: '100%',
-                      background: '#09090b',
-                      border: '1px solid #27272a',
-                      borderRadius: '10px',
-                      padding: '0.7rem 0.9rem',
-                      fontSize: '0.875rem',
-                      color: '#ffffff',
-                      boxSizing: 'border-box',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowChangeEmailModal(false);
-                      setChangeEmailError('');
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: '0.75rem',
-                      background: '#27272a',
-                      border: 'none',
-                      borderRadius: '10px',
-                      color: '#ffffff',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={changingEmail}
-                    className="btn btn-primary"
-                    style={{
-                      flex: 1,
-                      padding: '0.75rem',
-                      fontSize: '0.85rem',
-                      fontWeight: '700',
-                      borderRadius: '10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.4rem',
-                    }}
-                  >
-                    {changingEmail ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : 'Update & Send Link'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
           </div>
         )}
       </motion.div>

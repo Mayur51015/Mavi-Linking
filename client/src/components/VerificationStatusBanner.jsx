@@ -1,10 +1,11 @@
 import React, { useContext, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { CheckCircle2, Clock, Lock, RefreshCw, ShieldAlert, Sparkles, Building2, UserCheck } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 
 const VerificationStatusBanner = () => {
   const { user, refreshUser } = useContext(AuthContext);
+  const toast = useToast();
   const [refreshing, setRefreshing] = useState(false);
 
   if (!user) return null;
@@ -19,9 +20,9 @@ const VerificationStatusBanner = () => {
     setRefreshing(true);
     try {
       await refreshUser();
-      toast.success('Account status updated!');
+      if (toast?.success) toast.success('Account status updated!');
     } catch (err) {
-      toast.error('Failed to refresh status.');
+      if (toast?.error) toast.error('Failed to refresh status.');
     } finally {
       setRefreshing(false);
     }

@@ -12,20 +12,46 @@ const createInstitution = async (req, res, next) => {
   try {
     const { name, shortName, code, officialDomain, domain, type, address, city, state, country, plan, primaryContact, features } = req.body;
 
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Institution name is required' });
+    }
+
+    const cleanName = name.trim();
+    const cleanDomain = (officialDomain || domain || '').toLowerCase().trim();
+    const cleanCode = code ? code.trim().toUpperCase() : '';
+
+    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const queryConditions = [
+      { name: { $regex: new RegExp(`^${escapeRegex(cleanName)}$`, 'i') } },
+    ];
+    if (cleanDomain) {
+      queryConditions.push({ officialDomain: cleanDomain });
+      queryConditions.push({ domain: cleanDomain });
+    }
+    if (cleanCode) {
+      queryConditions.push({ code: cleanCode });
+      queryConditions.push({ institutionCode: cleanCode });
+      queryConditions.push({ tenantId: cleanCode });
+    }
+
+    const existingInst = await Institution.findOne({
+      status: { $ne: 'deleted' },
+      $or: queryConditions,
+    });
+
+    if (existingInst) {
+      let message = `An institution with name "${existingInst.name}" already exists.`;
+      if (cleanDomain && (existingInst.officialDomain === cleanDomain || existingInst.domain === cleanDomain)) {
+        message = `An institution with domain "${cleanDomain}" already exists.`;
+      } else if (cleanCode && (existingInst.code === cleanCode || existingInst.institutionCode === cleanCode || existingInst.tenantId === cleanCode)) {
+        message = `An institution with code "${cleanCode}" already exists.`;
+      }
+      return res.status(409).json({ success: false, message });
     }
 
     const crypto = require('crypto');
     const codePrefix = (code || shortName || name.substring(0, 4)).replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     const generatedTenantId = `INST-${codePrefix.substring(0, 6)}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
-
-    if (code) {
-      const existingCode = await Institution.findOne({ code: code.toUpperCase() });
-      if (existingCode) {
-        return res.status(409).json({ success: false, message: 'Institution code already exists' });
-      }
-    }
 
     const institution = await Institution.create({
       name,

@@ -120,21 +120,34 @@ const createTenant = async (req, res, next) => {
   try {
     const { name, shortName, officialDomain, plan, primaryContactName, primaryContactEmail } = req.body;
 
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Institution name is required.' });
     }
 
+    const cleanName = name.trim();
+    const cleanDomain = officialDomain ? officialDomain.toLowerCase().trim() : '';
+
+    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const queryConditions = [
+      { name: { $regex: new RegExp(`^${escapeRegex(cleanName)}$`, 'i') } },
+    ];
+    if (cleanDomain) {
+      queryConditions.push({ officialDomain: cleanDomain });
+      queryConditions.push({ domain: cleanDomain });
+    }
+
     const existingInst = await Institution.findOne({
-      $or: [
-        { name: name.trim() },
-        ...(officialDomain ? [{ officialDomain: officialDomain.toLowerCase().trim() }] : []),
-      ],
+      status: { $ne: 'deleted' },
+      $or: queryConditions,
     });
 
     if (existingInst) {
+      const isDomainMatch = cleanDomain && (existingInst.officialDomain === cleanDomain || existingInst.domain === cleanDomain);
       return res.status(409).json({
         success: false,
-        message: 'An institution with this name or domain already exists.',
+        message: isDomainMatch
+          ? `An institution with official domain "${cleanDomain}" already exists.`
+          : `An institution with name "${existingInst.name}" already exists.`,
       });
     }
 

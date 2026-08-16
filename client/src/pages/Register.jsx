@@ -176,12 +176,15 @@ const Register = () => {
 
       const res = await register(payload);
 
+      const registeredEmail = formData.email.toLowerCase().trim();
+      localStorage.setItem('pendingVerificationEmail', registeredEmail);
+
       if (res?.code === 'EMAIL_VERIFICATION_REQUIRED') {
-        toast.success('🎉 Account created! Please check your email to verify your address.');
-        navigate('/verify-account');
+        toast.success(`🎉 Account created! Please check ${registeredEmail} to verify your address.`);
+        navigate('/verify-account', { state: { email: registeredEmail } });
       } else {
         toast.success('Account created successfully!');
-        navigate('/verify-account');
+        navigate('/verify-account', { state: { email: registeredEmail } });
       }
     } catch (err) {
       setError(getErrorMessage(err, 'Account registration failed. Please try again.'));

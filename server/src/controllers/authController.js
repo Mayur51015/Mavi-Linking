@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+const Institution = require('../models/Institution');
 const Activity = require('../models/Activity');
 const ActivityLog = require('../models/ActivityLog');
 const AuditLog = require('../models/AuditLog');
@@ -11,6 +12,71 @@ const { getIO } = require('../config/socket');
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 const oauth2Client = new OAuth2Client(googleClientId);
+
+/**
+ * Dispatch MAVI ID verification notice to Institution Admins when a student registers or requests verification
+ */
+const notifyInstitutionAdminsOfStudentVerification = async ({ user, institutionId }) => {
+  try {
+    if (!user || !user.maviId) return;
+    const targetInstId = institutionId || user.institutionId;
+    if (!targetInstId) return;
+
+    const institution = await Institution.findById(targetInstId);
+    if (!institution) return;
+
+    // Retrieve active institution admins & department admins for this institution
+    const admins = await User.find({
+      institutionId: targetInstId,
+      role: { $in: ['institution_admin', 'admin', 'department_admin', 'super_admin'] },
+      status: 'active',
+    }).select('email name role');
+
+    const adminEmails = new Set();
+    admins.forEach((admin) => {
+      if (admin.email) adminEmails.add(admin.email.toLowerCase().trim());
+    });
+
+    if (institution.primaryContact?.email) {
+      adminEmails.add(institution.primaryContact.email.toLowerCase().trim());
+    }
+
+    if (adminEmails.size === 0) {
+      console.log(`[ADMIN VERIFICATION NOTICE] No active institution admins found for institution ${institution.name}`);
+      return;
+    }
+
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const adminVerificationLink = `${clientUrl}/login?redirect=${encodeURIComponent(`/admin?search=${user.maviId}`)}`;
+
+    const { sendEmail, generateInstitutionAdminStudentVerificationEmailHtml } = require('../utils/sendEmail');
+
+    for (const adminEmail of adminEmails) {
+      const adminObj = admins.find((a) => a.email.toLowerCase().trim() === adminEmail);
+      const emailHtml = generateInstitutionAdminStudentVerificationEmailHtml({
+        adminName: adminObj?.name || 'Institution Administrator',
+        studentName: user.name,
+        studentEmail: user.email,
+        maviId: user.maviId,
+        prn: user.prn,
+        institutionName: institution.name,
+        verificationLink: adminVerificationLink,
+      });
+
+      sendEmail({
+        to: adminEmail,
+        subject: `MAVI Linking — MAVI ID Verification Request for Student ${user.name} [${user.maviId}]`,
+        html: emailHtml,
+      }).then(() => {
+        console.log(`[INSTITUTION ADMIN NOTIFIED] Dispatched verification request to admin ${adminEmail} for student MAVI ID ${user.maviId}`);
+      }).catch((err) => {
+        console.error(`[EMAIL ERROR] Failed to send admin verification notice to ${adminEmail}:`, err.message);
+      });
+    }
+  } catch (err) {
+    console.error('[INSTITUTION ADMIN NOTIFICATION ERROR]', err.message);
+  }
+};
 
 /**
  * @desc    Register a new user (supports user/recruiter/teacher roles)
@@ -157,7 +223,7 @@ const register = async (req, res, next) => {
     userData.roles = ['user'];
     userData.requestedRole = 'none';
     userData.roleStatus = 'active';
-    userData.accountStatus = 'PENDING_EMAIL_VERIFICATION';
+    userData.accountStatus = 'PENDING_VERIFICATION';
     userData.emailVerified = false;
 
     // Institutional identifiers & verification status
@@ -196,7 +262,7 @@ const register = async (req, res, next) => {
     // Generate cryptographic verification token (SHA-256 hashed in DB)
     const rawVerificationToken = crypto.randomBytes(32).toString('hex');
     const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
-    const tokenExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     userData.verificationToken = hashedVerificationToken;
     userData.verificationTokenExpires = tokenExpires;
@@ -213,7 +279,7 @@ const register = async (req, res, next) => {
     const emailHtml = generateStudentVerificationEmailHtml({
       name: user.name,
       verificationLink,
-      expiresMinutes: 30,
+      expiresHours: 24,
     });
 
     sendEmail({
@@ -223,6 +289,9 @@ const register = async (req, res, next) => {
     }).catch((emailErr) => {
       console.error('[EMAIL ERROR] Failed to dispatch verification email:', emailErr.message);
     });
+
+    // Notify Institution Admin(s) of new student registration & MAVI ID verification request
+    notifyInstitutionAdminsOfStudentVerification({ user, institutionId: targetInst?._id || user.institutionId });
 
     // Log Activity Feed
     try {
@@ -264,7 +333,7 @@ const register = async (req, res, next) => {
       message: 'Account created successfully. Please verify your email to activate your account.',
       data: {
         user,
-        accountStatus: 'PENDING_EMAIL_VERIFICATION',
+        accountStatus: user.accountStatus,
         emailVerified: false,
       },
     });
@@ -714,9 +783,10 @@ const verifyEmail = async (req, res, next) => {
       });
     }
 
-    // Atomic email verification completion -> Move to PENDING_ADMIN_APPROVAL stage
+    // Atomic email verification completion -> Set ACTIVE for independent accounts or PENDING_ADMIN_APPROVAL if institution is linked
+    const nextStatus = user.institutionId ? 'PENDING_ADMIN_APPROVAL' : 'ACTIVE';
     user.emailVerified = true;
-    user.accountStatus = 'PENDING_ADMIN_APPROVAL';
+    user.accountStatus = nextStatus;
     user.verificationToken = null;
     user.verificationTokenExpires = null;
 
@@ -733,7 +803,7 @@ const verifyEmail = async (req, res, next) => {
       await AuditLog.create({
         actorId: user._id,
         targetUserId: user._id,
-        action: 'STUDENT_MOVED_TO_PENDING_APPROVAL',
+        action: nextStatus === 'ACTIVE' ? 'EMAIL_VERIFICATION_SUCCESS' : 'STUDENT_MOVED_TO_PENDING_APPROVAL',
         details: { email: user.email, maviId: user.maviId },
         result: 'SUCCESS',
       });
@@ -743,11 +813,13 @@ const verifyEmail = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      code: 'ACCOUNT_PENDING_ADMIN_APPROVAL',
-      message: 'Email verified successfully. Your account is now waiting for approval from your institution administrator.',
+      code: nextStatus === 'ACTIVE' ? 'ACCOUNT_ACTIVATED' : 'ACCOUNT_PENDING_ADMIN_APPROVAL',
+      message: nextStatus === 'ACTIVE'
+        ? 'Email verified successfully. Your account is now active.'
+        : 'Email verified successfully. Your account is now waiting for approval from your institution administrator.',
       data: {
         user,
-        accountStatus: 'PENDING_ADMIN_APPROVAL',
+        accountStatus: user.accountStatus,
         emailVerified: true,
       },
     });
@@ -794,7 +866,7 @@ const resendVerification = async (req, res, next) => {
 
     // Rate limit check: 60 seconds minimum between resends
     if (user.verificationTokenExpires) {
-      const lastSentTime = new Date(user.verificationTokenExpires.getTime() - 30 * 60 * 1000);
+      const lastSentTime = new Date(user.verificationTokenExpires.getTime() - 24 * 60 * 60 * 1000);
       const secondsSinceLastSent = (Date.now() - lastSentTime.getTime()) / 1000;
       if (secondsSinceLastSent < 60) {
         const secondsToWait = Math.ceil(60 - secondsSinceLastSent);
@@ -806,10 +878,10 @@ const resendVerification = async (req, res, next) => {
       }
     }
 
-    // Generate new token (30-min expiry)
+    // Generate new token (24-hour expiry)
     const rawVerificationToken = crypto.randomBytes(32).toString('hex');
     const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
-    const tokenExpires = new Date(Date.now() + 30 * 60 * 1000);
+    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     user.verificationToken = hashedVerificationToken;
     user.verificationTokenExpires = tokenExpires;
@@ -823,14 +895,25 @@ const resendVerification = async (req, res, next) => {
     const emailHtml = generateStudentVerificationEmailHtml({
       name: user.name,
       verificationLink,
-      expiresMinutes: 30,
+      expiresHours: 24,
     });
 
-    sendEmail({
+    const emailResult = await sendEmail({
       to: user.email,
       subject: 'Verify your MAVI Linking account',
       html: emailHtml,
-    }).catch((err) => console.error('[EMAIL ERROR]', err.message));
+    });
+
+    if (!emailResult.success) {
+      console.error('[EMAIL DISPATCH FAILURE] Failed to resend verification email:', emailResult.error);
+      return res.status(500).json({
+        success: false,
+        message: `Failed to send verification email to ${user.email}. Please try again later.`,
+      });
+    }
+
+    // Notify Institution Admin(s) of student verification resend request
+    notifyInstitutionAdminsOfStudentVerification({ user, institutionId: user.institutionId });
 
     try {
       await AuditLog.create({
@@ -870,33 +953,40 @@ const changeEmailPending = async (req, res, next) => {
 
     const normalizedNewEmail = newEmail.toLowerCase().trim();
 
-    // Check uniqueness of new email
-    const existingUser = await User.findOne({ email: normalizedNewEmail });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        code: 'EMAIL_ALREADY_REGISTERED',
-        message: 'This email address is already registered to another account.',
-      });
-    }
-
     let user = null;
     if (token) {
       const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
       user = await User.findOne({
         $or: [{ verificationToken: hashedToken }, { verificationToken: token }],
       }).select('+verificationToken +verificationTokenExpires');
-    } else if (currentEmail || maviId || req.user) {
-      const query = maviId
-        ? { maviId: maviId.toUpperCase() }
-        : { email: (currentEmail || req.user?.email).toLowerCase().trim() };
-      user = await User.findOne(query).select('+verificationToken +verificationTokenExpires');
+    }
+
+    if (!user && (currentEmail || maviId || req.user)) {
+      const queryOr = [];
+      if (maviId) queryOr.push({ maviId: maviId.toUpperCase() });
+      if (currentEmail) queryOr.push({ email: currentEmail.toLowerCase().trim() });
+      if (req.user?.email) queryOr.push({ email: req.user.email.toLowerCase().trim() });
+      user = await User.findOne({ $or: queryOr }).select('+verificationToken +verificationTokenExpires');
+    }
+
+    if (!user) {
+      user = await User.findOne({ email: normalizedNewEmail }).select('+verificationToken +verificationTokenExpires');
     }
 
     if (!user) {
       return res.status(400).json({
         success: false,
         message: 'Pending account not found.',
+      });
+    }
+
+    // Check uniqueness: reject only if registered to ANOTHER user account
+    const existingUser = await User.findOne({ email: normalizedNewEmail });
+    if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+      return res.status(409).json({
+        success: false,
+        code: 'EMAIL_ALREADY_REGISTERED',
+        message: 'This email address is already registered to another account.',
       });
     }
 
@@ -914,7 +1004,7 @@ const changeEmailPending = async (req, res, next) => {
     const rawVerificationToken = crypto.randomBytes(32).toString('hex');
     const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
     user.verificationToken = hashedVerificationToken;
-    user.verificationTokenExpires = new Date(Date.now() + 30 * 60 * 1000);
+    user.verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     user.emailVerified = false;
     user.accountStatus = 'PENDING_VERIFICATION';
 
@@ -927,14 +1017,25 @@ const changeEmailPending = async (req, res, next) => {
     const emailHtml = generateStudentVerificationEmailHtml({
       name: user.name,
       verificationLink,
-      expiresMinutes: 30,
+      expiresHours: 24,
     });
 
-    sendEmail({
+    const emailResult = await sendEmail({
       to: user.email,
       subject: 'Verify your MAVI Linking account',
       html: emailHtml,
-    }).catch((err) => console.error('[EMAIL ERROR]', err.message));
+    });
+
+    if (!emailResult.success) {
+      console.error('[EMAIL DISPATCH FAILURE] Failed to send verification email for changed address:', emailResult.error);
+      return res.status(500).json({
+        success: false,
+        message: `Failed to send verification email to ${user.email}. Please try again.`,
+      });
+    }
+
+    // Notify Institution Admin(s) of student verification request
+    notifyInstitutionAdminsOfStudentVerification({ user, institutionId: user.institutionId });
 
     try {
       await AuditLog.create({
@@ -995,6 +1096,7 @@ const forgotPassword = async (req, res, next) => {
     const genericSuccessMsg = 'If an account matching that verified recovery channel exists, a password reset link and OTP have been dispatched to your recovery channel.';
 
     if (!user) {
+      console.warn(`[RECOVERY NOTICE] Password recovery requested for unregistered recovery channel: ${email || phone}`);
       return res.status(200).json({
         success: true,
         message: genericSuccessMsg,
@@ -1041,14 +1143,19 @@ const forgotPassword = async (req, res, next) => {
       resetLink,
     });
 
-    // Asynchronously dispatch email so HTTP response remains snappy
-    sendEmail({
+    const emailResult = await sendEmail({
       to: user.email,
       subject: 'MAVI Linking — Password Reset Request & Security OTP',
       html: emailHtml,
-    }).catch(emailErr => {
-      console.error('[EMAIL ERROR] Failed to dispatch password reset email:', emailErr);
     });
+
+    if (!emailResult.success) {
+      console.error('[EMAIL ERROR] Failed to dispatch password reset email:', emailResult.error);
+      return res.status(500).json({
+        success: false,
+        message: `Failed to send password reset OTP email (${emailResult.error || 'SMTP delivery failure'}). Please check email configuration or try again.`,
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -2234,11 +2341,19 @@ const resendEmailChangeOtp = async (req, res, next) => {
 
     const user = await User.findById(userId);
 
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: challenge.newEmail,
       subject: 'Verify your MAVI Linking email change',
       html: generateEmailChangeOtpEmailHtml({ name: user?.name || 'User', otp, newEmail: challenge.newEmail }),
     });
+
+    if (!emailResult.success) {
+      console.error('[EMAIL ERROR] Resend OTP email failed:', emailResult.error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to resend verification email code. Please check email system settings.',
+      });
+    }
 
     await AuditLog.create({
       actorId: userId,

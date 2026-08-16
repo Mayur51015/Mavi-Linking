@@ -13,10 +13,10 @@ const sendEmail = async ({ to, subject, html, text }) => {
   try {
     let transporter;
 
-    const emailHost = process.env.EMAIL_HOST || 'smtp.gmail.com';
+    const emailHost = (process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
     const emailPort = parseInt(process.env.EMAIL_PORT || '587', 10);
-    const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER;
-    const emailPass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+    const emailUser = (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim();
+    const emailPass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').trim();
 
     if (emailUser && emailPass) {
       // Production SMTP Transporter
@@ -24,6 +24,10 @@ const sendEmail = async ({ to, subject, html, text }) => {
         host: emailHost,
         port: emailPort,
         secure: emailPort === 465, // true for 465, false for 587
+        family: 4, // Force IPv4 to prevent 15-20s connection timeout on dual-stack IPv6 networks
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
         auth: {
           user: emailUser,
           pass: emailPass,
@@ -308,7 +312,7 @@ const generateEmailChangeNotificationOldEmailHtml = ({ name, oldEmail, newEmail,
 /**
  * Generate Dark Theme HTML Email for Student Account Verification
  */
-const generateStudentVerificationEmailHtml = ({ name, verificationLink, expiresMinutes = 30 }) => {
+const generateStudentVerificationEmailHtml = ({ name, verificationLink, expiresHours = 24 }) => {
   return `
     <!DOCTYPE html>
     <html>
@@ -342,7 +346,83 @@ const generateStudentVerificationEmailHtml = ({ name, verificationLink, expiresM
           </div>
 
           <div class="warning">
-            <strong>Security Notice:</strong> This verification link is valid for <strong>${expiresMinutes} minutes</strong> and can only be used once. If you did not register for a MAVI Linking account, please disregard this message.
+            <strong>Security Notice:</strong> This verification link is valid for <strong>${expiresHours} hours</strong> and can only be used once. If you did not register for a MAVI Linking account, please disregard this message.
+          </div>
+        </div>
+        <div class="footer">
+          &copy; ${new Date().getFullYear()} MAVI Linking Security Platform. All rights reserved.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Generate Dark Theme HTML Email for Institution Admin to Verify Student MAVI ID & Identity
+ */
+const generateInstitutionAdminStudentVerificationEmailHtml = ({
+  adminName,
+  studentName,
+  studentEmail,
+  maviId,
+  prn,
+  institutionName,
+  verificationLink,
+}) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Student MAVI ID Verification Request — MAVI Linking</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
+        .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .header { text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 24px; }
+        .brand { font-size: 24px; font-weight: 800; color: #a855f7; letter-spacing: 0.05em; text-transform: uppercase; }
+        .title { font-size: 18px; font-weight: 700; color: #ffffff; margin-top: 10px; }
+        .content { font-size: 15px; line-height: 1.6; color: #a1a1aa; }
+        .info-box { background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 10px; padding: 18px; margin: 20px 0; }
+        .btn-link { display: inline-block; background: linear-gradient(135deg, #a855f7, #6366f1); color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 700; font-size: 15px; margin: 16px 0; }
+        .footer { font-size: 12px; color: #71717a; text-align: center; border-top: 1px solid #27272a; padding-top: 20px; margin-top: 32px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="brand">MAVI Linking</div>
+          <div class="title">Student MAVI ID Verification Request</div>
+        </div>
+        <div class="content">
+          <p>Hello ${adminName || 'Institution Administrator'},</p>
+          <p>A student has registered under <strong>${institutionName || 'your institution'}</strong> and requires identity & MAVI ID verification.</p>
+          
+          <div class="info-box">
+            <table width="100%" style="border-collapse: collapse;">
+              <tr>
+                <td style="padding: 6px 0; color: #a1a1aa;">Student Name:</td>
+                <td style="padding: 6px 0; color: #ffffff; font-weight: 700; text-align: right;">${studentName || 'Student'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #a1a1aa;">Email Address:</td>
+                <td style="padding: 6px 0; color: #ffffff; font-weight: 700; text-align: right;">${studentEmail}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #a1a1aa;">Permanent MAVI ID:</td>
+                <td style="padding: 6px 0; color: #c084fc; font-weight: 800; font-family: monospace; text-align: right;">${maviId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #a1a1aa;">PRN / Roll No:</td>
+                <td style="padding: 6px 0; color: #ffffff; font-weight: 700; text-align: right;">${prn || 'N/A'}</td>
+              </tr>
+            </table>
+          </div>
+
+          <p>As an authorized Institution Administrator, please review the student's credentials and verify their MAVI ID to grant full platform access.</p>
+
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${verificationLink}" class="btn-link" target="_blank">Verify Student MAVI ID & Account</a>
           </div>
         </div>
         <div class="footer">
@@ -361,5 +441,6 @@ module.exports = {
   generateEmailChangeOtpEmailHtml,
   generateEmailChangeNotificationOldEmailHtml,
   generateStudentVerificationEmailHtml,
+  generateInstitutionAdminStudentVerificationEmailHtml,
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Mail,
@@ -30,6 +30,7 @@ const maskEmail = (email) => {
 
 const VerifyAccount = () => {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const tokenFromUrl = searchParams.get('token') || searchParams.get('code');
   const navigate = useNavigate();
   const toast = useToast();
@@ -94,20 +95,32 @@ const VerifyAccount = () => {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  // Resolve pending email address for verification display & resend handlers
+  const emailFromLocation = location.state?.email;
+  const emailFromQuery = searchParams.get('email');
+  const savedPendingEmail = localStorage.getItem('pendingVerificationEmail') || '';
+  const activeEmail = (user?.email || emailFromLocation || emailFromQuery || savedPendingEmail || '').trim();
+
   // Resend Verification Email
   const handleResend = async () => {
     if (resendCooldown > 0 || resending) return;
 
+    const emailOrId = activeEmail || user?.maviId || '';
+    if (!emailOrId) {
+      toast.error('Email address is missing. Please click "Change Email" to specify your email address.');
+      setShowChangeEmailModal(true);
+      return;
+    }
+
     setResending(true);
     try {
-      const emailOrId = user?.email || user?.maviId || '';
       const res = await api.post('/auth/resend-verification', {
         email: emailOrId,
         maviId: user?.maviId,
       });
 
       if (res.data?.success) {
-        toast.success(res.data?.message || 'A new verification link has been dispatched!');
+        toast.success(res.data?.message || `A new verification link has been dispatched to ${emailOrId}!`);
         setResendCooldown(60);
         setVerificationError('');
       } else {
@@ -133,19 +146,21 @@ const VerifyAccount = () => {
       return;
     }
 
+    const formattedNewEmail = newEmail.toLowerCase().trim();
     setChangingEmail(true);
     try {
       const res = await api.post('/auth/change-email-pending', {
         token: tokenFromUrl,
-        currentEmail: user?.email,
+        currentEmail: activeEmail,
         maviId: user?.maviId,
-        newEmail,
+        newEmail: formattedNewEmail,
       });
 
       if (res.data?.success) {
-        toast.success('Email updated! Check your new inbox for the verification link.');
+        toast.success(`Email updated! A verification link was sent to ${formattedNewEmail}.`);
+        localStorage.setItem('pendingVerificationEmail', formattedNewEmail);
         if (setUser && user) {
-          setUser({ ...user, email: newEmail.toLowerCase().trim() });
+          setUser({ ...user, email: formattedNewEmail });
         }
         setShowChangeEmailModal(false);
         setNewEmail('');
@@ -161,7 +176,7 @@ const VerifyAccount = () => {
     }
   };
 
-  const displayEmail = user?.email ? maskEmail(user.email) : 'your registered email';
+  const displayEmail = activeEmail || 'your registered email';
 
   return (
     <div
@@ -322,53 +337,74 @@ const VerifyAccount = () => {
               </p>
             </div>
 
-            {/* Email Details Card */}
+            {/* Email Details & Institution Verifier Card */}
             <div
               style={{
                 padding: '1.1rem',
                 background: 'rgba(255, 255, 255, 0.03)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
+                display: 'grid',
+                gap: '0.85rem',
               }}
             >
-              <div>
-                <div style={{ fontSize: '0.75rem', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
-                  Verification Dispatched To
-                </div>
-                <div style={{ fontSize: '0.95rem', fontWeight: '700', color: '#c084fc', marginTop: '0.2rem' }}>
-                  {displayEmail}
-                </div>
-                {user?.maviId && (
-                  <div style={{ fontSize: '0.75rem', color: '#71717a', marginTop: '0.2rem' }}>
-                    MAVI ID: <span style={{ color: '#e4e4e7', fontFamily: 'monospace' }}>{user.maviId}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
+                    Verification Dispatched To Student Email
                   </div>
-                )}
+                  <div style={{ fontSize: '0.95rem', fontWeight: '700', color: '#c084fc', marginTop: '0.2rem', wordBreak: 'break-all' }}>
+                    {activeEmail || 'mayur2006khandare@gmail.com'}
+                  </div>
+                  {user?.maviId && (
+                    <div style={{ fontSize: '0.75rem', color: '#71717a', marginTop: '0.2rem' }}>
+                      Permanent MAVI ID: <span style={{ color: '#e4e4e7', fontFamily: 'monospace', fontWeight: '700' }}>{user.maviId}</span>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setShowChangeEmailModal(true)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: '#ffffff',
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '10px',
+                    fontSize: '0.78rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    transition: 'all 0.2s',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Edit3 size={14} />
+                  Change
+                </button>
               </div>
 
-              <button
-                onClick={() => setShowChangeEmailModal(true)}
+              {/* Institution MAVI ID Verifier Notice */}
+              <div
                 style={{
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  color: '#ffffff',
-                  padding: '0.5rem 0.75rem',
+                  padding: '0.65rem 0.85rem',
+                  background: 'rgba(168, 85, 247, 0.08)',
+                  border: '1px solid rgba(168, 85, 247, 0.2)',
                   borderRadius: '10px',
-                  fontSize: '0.78rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
+                  fontSize: '0.775rem',
+                  color: '#e4e4e7',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  transition: 'all 0.2s',
+                  gap: '0.5rem',
                 }}
               >
-                <Edit3 size={14} />
-                Change
-              </button>
+                <ShieldCheck size={16} style={{ color: '#c084fc', flexShrink: 0 }} />
+                <span>
+                  <strong>Institutional Verifier:</strong> MAVI ID & verification notice sent to <strong>Institution Administrator</strong> for identity verification.
+                </span>
+              </div>
             </div>
 
             {/* Security Notice */}
@@ -388,7 +424,7 @@ const VerifyAccount = () => {
             >
               <ShieldCheck size={16} style={{ color: '#c084fc', flexShrink: 0, marginTop: '2px' }} />
               <span>
-                Account activation links expire in <strong>30 minutes</strong> for your security. Check your inbox and spam folder.
+                Account activation links expire in <strong>24 hours</strong> for your security. Check your inbox and spam folder.
               </span>
             </div>
 
@@ -425,7 +461,7 @@ const VerifyAccount = () => {
                 ) : (
                   <>
                     <Send size={16} />
-                    Resend Verification Email
+                    Resend Verification & Notify Institution Admin
                   </>
                 )}
               </button>

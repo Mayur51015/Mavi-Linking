@@ -3,6 +3,7 @@ import { Lock, KeyRound, ShieldCheck, CheckCircle, AlertCircle } from 'lucide-re
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
+import PasswordInput from './ui/PasswordInput';
 
 const VoluntaryChangePasswordForm = ({ onSuccess }) => {
   const { changePassword } = useContext(AuthContext);
@@ -37,7 +38,7 @@ const VoluntaryChangePasswordForm = ({ onSuccess }) => {
     }
 
     if (newPassword !== confirmPassword) {
-      setError('New password and confirmation password do not match.');
+      setError('New passwords do not match.');
       return;
     }
 
@@ -49,30 +50,28 @@ const VoluntaryChangePasswordForm = ({ onSuccess }) => {
     setSubmitting(true);
     try {
       await changePassword(currentPassword, newPassword, confirmPassword);
+      setSuccessMsg('Password updated successfully!');
       toast.success('Your password has been changed successfully.');
-      setSuccessMsg('Your password has been updated successfully.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       if (onSuccess) onSuccess();
     } catch (err) {
-      setError(getErrorMessage(err, 'Failed to update password. Verify current password.'));
+      setError(getErrorMessage(err, 'Failed to update password. Please check your current password.'));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="glass-card-static" style={{ padding: '2rem', maxWidth: '520px', borderRadius: '14px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-        <div style={{ padding: '0.6rem', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.15)', color: 'var(--accent-purple)' }}>
+    <div className="glass-card-static" style={{ padding: '1.75rem', borderRadius: '14px', border: '1px solid var(--border-color)', maxWidth: '520px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-purple)' }}>
           <KeyRound size={22} />
         </div>
         <div>
-          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '700', color: 'white' }}>Change Password</h3>
-          <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Update your account credentials to keep your profile secure.
-          </p>
+          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>Change Password</h3>
+          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Update your account security credentials</p>
         </div>
       </div>
 
@@ -93,27 +92,27 @@ const VoluntaryChangePasswordForm = ({ onSuccess }) => {
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.15rem' }}>
         <div className="input-group">
           <label className="input-label">Current Password *</label>
-          <input
-            type="password"
+          <PasswordInput
             className="input-field"
             placeholder="Enter current password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             required
             disabled={submitting}
+            autoComplete="current-password"
           />
         </div>
 
         <div className="input-group">
           <label className="input-label">New Password *</label>
-          <input
-            type="password"
+          <PasswordInput
             className="input-field"
             placeholder="Min 6 chars, uppercase, lowercase, number"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
             disabled={submitting}
+            autoComplete="new-password"
           />
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             Must contain min 6 characters with uppercase, lowercase & number
@@ -122,14 +121,14 @@ const VoluntaryChangePasswordForm = ({ onSuccess }) => {
 
         <div className="input-group">
           <label className="input-label">Confirm New Password *</label>
-          <input
-            type="password"
+          <PasswordInput
             className="input-field"
             placeholder="Re-enter new password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             disabled={submitting}
+            autoComplete="new-password"
           />
         </div>
 

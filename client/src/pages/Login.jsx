@@ -5,6 +5,7 @@ import { Terminal, Shield, Lock, KeyRound, X } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
 import api from '../api/axios';
+import PasswordInput from '../components/ui/PasswordInput';
 
 const Login = () => {
   const [identifier, setIdentifier] = useState('');
@@ -28,15 +29,15 @@ const Login = () => {
 
   const handleRequestRecovery = async (e) => {
     e.preventDefault();
+    setSendingForgot(true);
     setForgotError('');
     setForgotSuccessMsg('');
-    setSendingForgot(true);
     try {
       const res = await api.post('/auth/forgot-password', { email: forgotEmail });
-      setForgotSuccessMsg(res.data?.message || 'Recovery instructions sent.');
+      setForgotSuccessMsg(res.data?.message || 'OTP sent successfully to your recovery email!');
       setForgotStep(2);
     } catch (err) {
-      setForgotError(getErrorMessage(err, 'Failed to request recovery code.'));
+      setForgotError(getErrorMessage(err, 'Failed to send recovery OTP. Please check your email.'));
     } finally {
       setSendingForgot(false);
     }
@@ -44,55 +45,22 @@ const Login = () => {
 
   const handleExecuteReset = async (e) => {
     e.preventDefault();
-    setForgotError('');
     setSendingForgot(true);
+    setForgotError('');
+    setForgotSuccessMsg('');
     try {
       const res = await api.post('/auth/reset-password', {
         email: forgotEmail,
         otp: forgotOtp,
-        password: forgotNewPassword,
+        newPassword: forgotNewPassword,
       });
-      toast.success(res.data?.message || 'Password reset successful!');
+      toast.success(res.data?.message || 'Password reset successfully! You can now log in.');
       setShowForgotModal(false);
-      setPassword('');
+      setPassword(forgotNewPassword);
     } catch (err) {
-      setForgotError(getErrorMessage(err, 'Password reset failed.'));
+      setForgotError(getErrorMessage(err, 'Failed to reset password. Verify your 6-digit OTP.'));
     } finally {
       setSendingForgot(false);
-    }
-  };
-
-  const handleNavigationByRole = (userObj) => {
-    if (userObj?.mustChangePassword) {
-      navigate('/change-password');
-      return;
-    }
-    const userRole = userObj?.role;
-    switch (userRole) {
-      case 'department_admin':
-        navigate('/department-admin');
-        break;
-      case 'recruiter':
-        navigate('/dashboard/recruiter');
-        break;
-      case 'teacher':
-      case 'professor':
-        navigate('/dashboard/teacher');
-        break;
-      case 'institution_admin':
-      case 'admin':
-        navigate('/admin');
-        break;
-      case 'super_admin':
-        navigate('/super-admin');
-        break;
-      case 'owner':
-      case 'platform_owner':
-        navigate('/owner');
-        break;
-      default:
-        navigate('/dashboard');
-        break;
     }
   };
 
@@ -101,62 +69,76 @@ const Login = () => {
     setError('');
     setSubmitting(true);
     try {
-      const res = await login(identifier, password);
-      toast.success('Welcome back! You are now signed in.');
-      handleNavigationByRole(res?.user);
+      const data = await login(identifier, password);
+      toast.success('Successfully authenticated!');
+      
+      const role = data?.user?.role;
+      const mustChangePassword = data?.user?.mustChangePassword;
+
+      if (mustChangePassword) {
+        navigate('/change-password');
+        return;
+      }
+
+      if (role === 'department_admin') {
+        navigate('/department-admin');
+      } else if (role === 'institution_admin' || role === 'admin') {
+        navigate('/admin');
+      } else if (role === 'super_admin') {
+        navigate('/super-admin');
+      } else if (role === 'owner' || role === 'platform_owner') {
+        navigate('/owner');
+      } else if (role === 'recruiter') {
+        navigate('/dashboard/recruiter');
+      } else if (role === 'teacher' || role === 'professor') {
+        navigate('/dashboard/teacher');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
-      if (err.response?.data?.code === 'EMAIL_VERIFICATION_REQUIRED') {
-        toast.info('Please verify your email address before accessing your account.');
-        navigate('/verify-account');
-        return;
-      }
-      if (err.response?.data?.code === 'ACCOUNT_PENDING_ADMIN_APPROVAL' || err.response?.data?.code === 'ACCOUNT_REJECTED') {
-        toast.info(err.response?.data?.message || 'Your account is waiting for approval from your institution administrator.');
-        navigate('/pending-approval');
-        return;
-      }
-      setError(getErrorMessage(err, 'Sign in failed. Please verify your identity credentials and password.'));
+      setError(getErrorMessage(err, 'Login failed. Please check your credentials.'));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: '#09090b' }}>
-      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '420px', padding: '2.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
-          <Link to="/" className="nav-brand">
-            <Terminal size={32} className="text-gradient" />
-            <span>MaVi Linking</span>
-          </Link>
-        </div>
+    <div className="auth-shell" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: '#09090b' }}>
+      <div className="glass-card-static auth-card animate-fade-in" style={{ width: '100%', maxWidth: '440px', padding: '2.5rem' }}>
         
-        <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', fontSize: '1.75rem', color: 'white' }}>Welcome Back</h2>
-        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.875rem' }}>
-          Sign in with your permanent MAVI ID, verified student PRN, or email address.
-        </p>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '54px', height: '54px', borderRadius: '16px', background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', color: 'var(--accent-purple)', marginBottom: '1rem' }}>
+            <Terminal size={28} />
+          </div>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: 'white' }}>Identity Verification</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.4rem' }}>
+            Sign in to access your MAVI Linking portal
+          </p>
+        </div>
 
         {error && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', padding: '0.75rem 1rem', borderRadius: '10px', marginBottom: '1.5rem', fontSize: '0.85rem', textAlign: 'center' }}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label className="input-label">MAVI ID / Student PRN / Email</label>
+          <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+            <label className="input-label">Email Address or MAVI ID</label>
             <input 
               type="text" 
               className="input-field" 
-              placeholder="e.g. MAVI-8F3K7Q2P, 124BT10461, or email"
+              placeholder="e.g. user@institution.edu or MAVI-1A2B3C"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              required 
+              required
               disabled={submitting}
+              autoComplete="username"
             />
           </div>
-          <div className="input-group">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+
+          <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
               <label className="input-label" style={{ margin: 0 }}>Password</label>
               <button
                 type="button"
@@ -174,14 +156,14 @@ const Login = () => {
                 Forgot Password?
               </button>
             </div>
-            <input 
-              type="password" 
-              className="input-field" 
+            <PasswordInput
+              className="input-field"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required 
+              required
               disabled={submitting}
+              autoComplete="current-password"
             />
           </div>
 
@@ -195,7 +177,6 @@ const Login = () => {
         </p>
       </div>
 
-      {/* Forgot Password / Account Recovery Modal */}
       {showForgotModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
           <div className="glass-card-static animate-fade-in" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
@@ -225,10 +206,6 @@ const Login = () => {
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.5' }}>
                   Enter your previously verified account email address to receive password recovery instructions and a 6-digit OTP code.
                 </p>
-
-                <div style={{ background: 'rgba(234, 179, 8, 0.08)', border: '1px solid rgba(234, 179, 8, 0.25)', color: '#fde047', padding: '0.65rem 0.85rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.775rem', lineHeight: '1.4' }}>
-                  <strong>Security Policy:</strong> Recovery proof must come from a verified channel (email/phone). MAVI ID or PRN alone cannot be used to reset an account.
-                </div>
 
                 <div className="input-group">
                   <label className="input-label">Verified Recovery Email</label>
@@ -271,14 +248,14 @@ const Login = () => {
 
                 <div className="input-group">
                   <label className="input-label">New Password</label>
-                  <input
-                    type="password"
+                  <PasswordInput
                     className="input-field"
                     placeholder="Min 6 chars (A-Z, a-z, 0-9)"
                     value={forgotNewPassword}
                     onChange={(e) => setForgotNewPassword(e.target.value)}
                     required
                     disabled={sendingForgot}
+                    autoComplete="new-password"
                   />
                 </div>
 

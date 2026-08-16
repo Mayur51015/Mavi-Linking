@@ -34,6 +34,7 @@ import {
 import SuperAdminLayout from '../../layouts/SuperAdminLayout';
 import api from '../../api/axios';
 import VoluntaryChangePasswordForm from '../../components/VoluntaryChangePasswordForm';
+import PasswordInput from '../../components/ui/PasswordInput';
 import { AuthContext } from '../../context/AuthContext';
 
 const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
@@ -971,7 +972,13 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
                 </div>
                 <div className="input-group">
                   <label className="input-label">Initial Password (If creating directly)</label>
-                  <input type="password" className="input-field" placeholder="••••••••" value={newAdmin.password} onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })} />
+                  <PasswordInput
+                    className="input-field"
+                    placeholder="••••••••"
+                    value={newAdmin.password}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
+                    autoComplete="new-password"
+                  />
                 </div>
                 <div className="input-group">
                   <label className="input-label">Admin Role Level *</label>

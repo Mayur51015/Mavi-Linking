@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Mail, Lock, KeyRound, ShieldCheck, AlertCircle, RefreshCw, CheckCircle, X } from 'lucide-react';
 import api from '../api/axios';
+import PasswordInput from './ui/PasswordInput';
 import { AuthContext } from '../context/AuthContext';
 
 /**
@@ -285,13 +286,13 @@ const ChangeEmailModal = ({ isOpen, onClose, onSuccess }) => {
                 <label className="input-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                   Current Password *
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   className="input-field"
                   placeholder="Enter current password for verification"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                 />
               </div>
             </div>

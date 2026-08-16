@@ -5,6 +5,7 @@ import { Terminal, Building2, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, 
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
 import api from '../api/axios';
+import PasswordInput from '../components/ui/PasswordInput';
 
 const Register = () => {
   // Step 1: Institution Code | Step 2: Department & PRN | Step 3: Account Details | Step 4: Verification
@@ -424,25 +425,25 @@ const Register = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#e4e4e7', marginBottom: '0.4rem' }}>Password</label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => updateField('password', e.target.value)}
                   required
                   minLength={8}
+                  autoComplete="new-password"
                   style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: '#09090b', border: '1px solid #27272a', color: 'white', fontSize: '0.85rem' }}
                 />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#e4e4e7', marginBottom: '0.4rem' }}>Confirm Password</label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={(e) => updateField('confirmPassword', e.target.value)}
                   required
+                  autoComplete="new-password"
                   style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: '#09090b', border: '1px solid #27272a', color: 'white', fontSize: '0.85rem' }}
                 />
               </div>

@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { Lock, ShieldAlert, KeyRound, CheckCircle } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
+import PasswordInput from '../components/ui/PasswordInput';
 
 const ChangePassword = () => {
   const { user, changePassword, logout } = useContext(AuthContext);
@@ -32,24 +33,34 @@ const ChangePassword = () => {
     }
 
     if (newPassword !== confirmPassword) {
-      setError('New password and confirmation password do not match.');
+      setError('New passwords do not match.');
       return;
     }
 
     setSubmitting(true);
     try {
       await changePassword(currentPassword, newPassword, confirmPassword);
-      toast.success('Password changed successfully! You now have full platform access.');
+      toast.success('Password updated successfully! Mandatory setup completed.');
 
-      // Navigate to user role dashboard
-      if (user?.role === 'recruiter') navigate('/dashboard/recruiter');
-      else if (user?.role === 'teacher') navigate('/dashboard/teacher');
-      else if (user?.role === 'institution_admin' || user?.role === 'admin') navigate('/admin');
-      else if (user?.role === 'super_admin') navigate('/super-admin');
-      else if (user?.role === 'owner' || user?.role === 'platform_owner') navigate('/owner');
-      else navigate('/dashboard');
+      // Route based on role
+      const userRole = user?.role;
+      if (userRole === 'department_admin') {
+        navigate('/department-admin');
+      } else if (userRole === 'institution_admin' || userRole === 'admin') {
+        navigate('/admin');
+      } else if (userRole === 'super_admin') {
+        navigate('/super-admin');
+      } else if (userRole === 'owner' || userRole === 'platform_owner') {
+        navigate('/owner');
+      } else if (userRole === 'recruiter') {
+        navigate('/dashboard/recruiter');
+      } else if (userRole === 'teacher' || userRole === 'professor') {
+        navigate('/dashboard/teacher');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
-      setError(getErrorMessage(err, 'Failed to change password. Please verify inputs.'));
+      setError(getErrorMessage(err, 'Failed to update password. Verify your current password.'));
     } finally {
       setSubmitting(false);
     }
@@ -61,19 +72,15 @@ const ChangePassword = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: '#09090b' }}>
-      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '440px', padding: '2.5rem', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'inline-flex', padding: '0.75rem', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', marginBottom: '1rem' }}>
-            <Lock size={32} />
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: '#09090b' }}>
+      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '440px', padding: '2.5rem', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', marginBottom: '1rem' }}>
+            <KeyRound size={28} />
           </div>
-          <h2 style={{ fontSize: '1.65rem', fontWeight: '800', margin: 0, color: 'white' }}>
-            {user?.mustChangePassword ? 'Mandatory Password Update' : 'Change Your Password'}
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: '0.875rem' }}>
-            {user?.mustChangePassword
-              ? 'Your account was provisioned with a temporary credential. Please set a new secure password to activate your access.'
-              : 'Update your account credentials to keep your profile secure.'}
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: 'white' }}>Establish New Password</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem', lineHeight: '1.4' }}>
+            For security compliance, you must change your initial temporary password before accessing MAVI Linking portal services.
           </p>
         </div>
 
@@ -93,39 +100,39 @@ const ChangePassword = () => {
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
           <div className="input-group">
             <label className="input-label">Current / Temporary Password</label>
-            <input
-              type="password"
+            <PasswordInput
               className="input-field"
               placeholder="Enter current or temporary password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               disabled={submitting}
+              autoComplete="current-password"
             />
           </div>
 
           <div className="input-group">
             <label className="input-label">New Password *</label>
-            <input
-              type="password"
+            <PasswordInput
               className="input-field"
               placeholder="Minimum 6 characters"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
               disabled={submitting}
+              autoComplete="new-password"
             />
           </div>
 
           <div className="input-group">
             <label className="input-label">Confirm New Password *</label>
-            <input
-              type="password"
+            <PasswordInput
               className="input-field"
               placeholder="Re-enter new password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               disabled={submitting}
+              autoComplete="new-password"
             />
           </div>
 

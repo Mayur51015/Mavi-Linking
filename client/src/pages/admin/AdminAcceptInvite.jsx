@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Terminal, Shield, CheckCircle, AlertTriangle, Key } from 'lucide-react';
 import api from '../../api/axios';
+import PasswordInput from '../../components/ui/PasswordInput';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -125,27 +126,29 @@ const AdminAcceptInvite = () => {
             <form onSubmit={handleSubmit}>
               <div className="input-group" style={{ marginBottom: '1rem' }}>
                 <label className="input-label">Create Permanent Password *</label>
-                <input
-                  type="password"
+                <PasswordInput
                   className="input-field"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   minLength={6}
                   required
+                  disabled={submitting}
+                  autoComplete="new-password"
                 />
               </div>
 
               <div className="input-group" style={{ marginBottom: '1.5rem' }}>
                 <label className="input-label">Confirm Permanent Password *</label>
-                <input
-                  type="password"
+                <PasswordInput
                   className="input-field"
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   minLength={6}
                   required
+                  disabled={submitting}
+                  autoComplete="new-password"
                 />
               </div>
 

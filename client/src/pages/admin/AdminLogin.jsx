@@ -4,7 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { Shield, Lock, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { getErrorMessage } from '../../utils/errorMessage';
-import api from '../../api/axios';
+import PasswordInput from '../../components/ui/PasswordInput';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -145,13 +145,14 @@ const AdminLogin = () => {
 
           <div className="input-group">
             <label className="input-label" style={{ color: 'var(--text-secondary)' }}>Password</label>
-            <input
-              type="password"
+            <PasswordInput
               className="input-field"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={submitting}
+              autoComplete="current-password"
             />
           </div>
 

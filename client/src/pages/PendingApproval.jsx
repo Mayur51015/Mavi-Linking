@@ -93,7 +93,7 @@ const PendingApproval = () => {
         <div style={{ background: '#09090b', border: '1px solid #27272a', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.85rem' }}>
             <div>
-              <span style={{ color: '#71717a', display: 'block', fontSize: '0.75rem' }}>Student Name</span>
+              <span style={{ color: '#71717a', display: 'block', fontSize: '0.75rem' }}>{user?.role === 'user' ? 'Student Name' : 'Account Name'}</span>
               <strong style={{ color: '#ffffff' }}>{user?.name || 'Student'}</strong>
             </div>
             <div>

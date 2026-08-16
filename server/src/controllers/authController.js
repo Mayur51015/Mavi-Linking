@@ -783,14 +783,64 @@ const verifyEmail = async (req, res, next) => {
       });
     }
 
-    // Atomic email verification completion -> Set ACTIVE for independent accounts or PENDING_ADMIN_APPROVAL if institution is linked
-    const nextStatus = user.institutionId ? 'PENDING_ADMIN_APPROVAL' : 'ACTIVE';
+    // Complete account verification and activate user account
     user.emailVerified = true;
-    user.accountStatus = nextStatus;
+    user.accountStatus = 'ACTIVE';
+    user.prnVerificationStatus = 'approved';
+    user.roleStatus = 'approved';
     user.verificationToken = null;
     user.verificationTokenExpires = null;
 
     await user.save();
+
+    // Send confirmation email to student that account is verified and active
+    const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
+    const { sendEmail } = require('../utils/sendEmail');
+    sendEmail({
+      to: user.email,
+      subject: '🎉 Your MAVI Linking Account has been Verified & Activated!',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Account Verified & Activated</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
+            .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+            .header { text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 24px; }
+            .brand { font-size: 24px; font-weight: 800; color: #a855f7; letter-spacing: 0.05em; text-transform: uppercase; }
+            .title { font-size: 20px; font-weight: 700; color: #22c55e; margin-top: 10px; }
+            .content { font-size: 15px; line-height: 1.6; color: #a1a1aa; }
+            .btn-link { display: inline-block; background: linear-gradient(135deg, #a855f7, #6366f1); color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 700; font-size: 15px; margin: 20px 0; }
+            .footer { font-size: 12px; color: #71717a; text-align: center; border-top: 1px solid #27272a; padding-top: 20px; margin-top: 32px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="brand">MAVI Linking</div>
+              <div class="title">Account Verified & Activated 🎉</div>
+            </div>
+            <div class="content">
+              <p>Hello ${user.name || 'Student'},</p>
+              <p>Great news! Your student account (MAVI ID: <strong style="color: #c084fc; font-family: monospace;">${user.maviId}</strong>) has been verified and activated by your Institution Administrator.</p>
+              <p>You can now log in using your MAVI ID, PRN, or Email address to access your dashboard.</p>
+              
+              <div style="text-align: center; margin: 24px 0;">
+                <a href="${clientUrl}/login" class="btn-link" target="_blank">Log In to MAVI Linking</a>
+              </div>
+            </div>
+            <div class="footer">
+              &copy; ${new Date().getFullYear()} MAVI Linking Security Platform. All rights reserved.
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    }).catch((emailErr) => {
+      console.error('[EMAIL ERROR] Failed to send activation confirmation to student:', emailErr.message);
+    });
 
     try {
       await AuditLog.create({
@@ -803,7 +853,7 @@ const verifyEmail = async (req, res, next) => {
       await AuditLog.create({
         actorId: user._id,
         targetUserId: user._id,
-        action: nextStatus === 'ACTIVE' ? 'EMAIL_VERIFICATION_SUCCESS' : 'STUDENT_MOVED_TO_PENDING_APPROVAL',
+        action: 'EMAIL_VERIFICATION_SUCCESS',
         details: { email: user.email, maviId: user.maviId },
         result: 'SUCCESS',
       });
@@ -813,13 +863,11 @@ const verifyEmail = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      code: nextStatus === 'ACTIVE' ? 'ACCOUNT_ACTIVATED' : 'ACCOUNT_PENDING_ADMIN_APPROVAL',
-      message: nextStatus === 'ACTIVE'
-        ? 'Email verified successfully. Your account is now active.'
-        : 'Email verified successfully. Your account is now waiting for approval from your institution administrator.',
+      code: 'ACCOUNT_ACTIVATED',
+      message: 'Account verified and activated successfully! You can now log in to your account.',
       data: {
         user,
-        accountStatus: user.accountStatus,
+        accountStatus: 'ACTIVE',
         emailVerified: true,
       },
     });

@@ -159,7 +159,13 @@ describe('Student Account Activation & Security Tests', () => {
     expect(res.body.code).toBe('VERIFICATION_TOKEN_ALREADY_USED');
   });
 
-  test('TEST 9: Verified student can now log in successfully', async () => {
+  test('TEST 9: Email-verified student with PENDING_ADMIN_APPROVAL status can log in to access limited dashboard shell', async () => {
+    // Set accountStatus to PENDING_ADMIN_APPROVAL and emailVerified to true
+    await User.updateOne(
+      { _id: studentUserId },
+      { $set: { accountStatus: 'PENDING_ADMIN_APPROVAL', emailVerified: true } }
+    );
+
     const res = await request(app)
       .post('/api/auth/login')
       .send({
@@ -170,5 +176,25 @@ describe('Student Account Activation & Security Tests', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.token).toBeDefined();
+    expect(res.body.data.user.accountStatus).toBe('PENDING_ADMIN_APPROVAL');
+  });
+
+  test('TEST 10: Approved active student can log in and access full dashboard features', async () => {
+    await User.updateOne(
+      { _id: studentUserId },
+      { $set: { accountStatus: 'ACTIVE', emailVerified: true, prnVerificationStatus: 'approved' } }
+    );
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({
+        identifier: testEmail,
+        password: 'Password123!',
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.token).toBeDefined();
+    expect(res.body.data.user.accountStatus).toBe('ACTIVE');
   });
 });

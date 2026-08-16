@@ -7,6 +7,8 @@ import NotificationBell from '../components/NotificationBell';
 import ThemeToggle from '../components/ThemeToggle';
 import UserSidebar from '../components/navigation/UserSidebar';
 
+import VerificationStatusBanner from '../components/VerificationStatusBanner';
+
 const UserLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -56,6 +58,9 @@ const UserLayout = ({ children }) => {
         </header>
 
         <div className="dashboard-content" style={{ flex: 1, overflowY: 'auto' }}>
+          {/* Institutional Account Verification Status Banner */}
+          <VerificationStatusBanner />
+
           {user?.roleStatus === 'pending' && (
             <div style={{
               background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)',

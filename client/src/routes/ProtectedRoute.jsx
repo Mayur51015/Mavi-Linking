@@ -75,16 +75,16 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
   const isSuperAdmin = normalizedUserRoles.includes('super_admin') || normalizedUserRoles.includes('admin');
   const isInstAdmin = normalizedUserRoles.includes('institution_admin');
 
-  // Student 2-Stage Verification & Approval Check
+  // Student 2-Stage Verification & Approval Access Check
   const isStudentRole = normalizedUserRoles.includes('user') && !isSuperAdmin && !isInstAdmin && !normalizedUserRoles.includes('teacher') && !normalizedUserRoles.includes('recruiter') && !normalizedUserRoles.includes('department_admin');
-  if (isStudentRole && (!user.emailVerified || user.accountStatus !== 'ACTIVE')) {
+  if (isStudentRole) {
     if (!user.emailVerified) {
       return <Navigate to="/verify-account" replace />;
     }
-    if (user.accountStatus === 'PENDING_ADMIN_APPROVAL' || user.accountStatus === 'REJECTED') {
+    if (user.accountStatus === 'REJECTED') {
       return <Navigate to="/pending-approval" replace />;
     }
-    return <Navigate to="/verify-account" replace />;
+    // Pre-approval student accounts (PENDING_ADMIN_APPROVAL / PENDING_VERIFICATION) are permitted to access the limited Student Dashboard shell!
   }
 
   if (roles && roles.length > 0) {

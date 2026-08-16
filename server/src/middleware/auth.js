@@ -77,19 +77,19 @@ const protect = async (req, res, next) => {
       }
     }
 
-    // ─── Mandatory Student 2-Stage Verification & Approval Lock Check ───────────────
+    // ─── Mandatory Student 2-Stage Verification & Access Matrix Check ───────────────
     const isStudent = user.role === 'user' || (Array.isArray(user.roles) && user.roles.includes('user') && !user.roles.includes('admin') && !user.roles.includes('super_admin') && !user.roles.includes('institution_admin') && !user.roles.includes('department_admin'));
-    if (isStudent && (!user.emailVerified || user.accountStatus !== 'ACTIVE')) {
-      const currentUrl = req.originalUrl || req.url || '';
-      const isAllowedVerificationEndpoint =
-        currentUrl.includes('/api/auth/me') ||
-        currentUrl.includes('/api/auth/verify-email') ||
-        currentUrl.includes('/api/auth/resend-verification') ||
-        currentUrl.includes('/api/auth/change-email-pending') ||
-        currentUrl.includes('/api/auth/logout');
+    if (isStudent) {
+      if (!user.emailVerified) {
+        const currentUrl = req.originalUrl || req.url || '';
+        const isAllowedVerificationEndpoint =
+          currentUrl.includes('/api/auth/me') ||
+          currentUrl.includes('/api/auth/verify-email') ||
+          currentUrl.includes('/api/auth/resend-verification') ||
+          currentUrl.includes('/api/auth/change-email-pending') ||
+          currentUrl.includes('/api/auth/logout');
 
-      if (!isAllowedVerificationEndpoint) {
-        if (!user.emailVerified) {
+        if (!isAllowedVerificationEndpoint) {
           return res.status(403).json({
             success: false,
             code: 'EMAIL_VERIFICATION_REQUIRED',
@@ -102,43 +102,43 @@ const protect = async (req, res, next) => {
             },
           });
         }
+      }
 
-        if (user.accountStatus === 'PENDING_ADMIN_APPROVAL') {
-          return res.status(403).json({
-            success: false,
-            code: 'ACCOUNT_PENDING_ADMIN_APPROVAL',
-            message: 'Your email has been verified. Your account is waiting for approval from your institution administrator.',
-            data: {
-              email: user.email,
-              maviId: user.maviId,
-              accountStatus: 'PENDING_ADMIN_APPROVAL',
-              emailVerified: true,
-            },
-          });
-        }
-
-        if (user.accountStatus === 'REJECTED') {
-          return res.status(403).json({
-            success: false,
-            code: 'ACCOUNT_REJECTED',
-            message: 'Your account registration was rejected by your institution administrator.',
-            data: {
-              email: user.email,
-              maviId: user.maviId,
-              accountStatus: 'REJECTED',
-              rejectionReason: user.rejectionReason || 'Registration rejected by administrator.',
-            },
-          });
-        }
-
+      if (user.accountStatus === 'REJECTED') {
         return res.status(403).json({
           success: false,
-          code: 'ACCOUNT_INACTIVE',
-          message: 'Your account is not active.',
+          code: 'ACCOUNT_REJECTED',
+          message: 'Your account registration was rejected by your institution administrator.',
           data: {
-            accountStatus: user.accountStatus,
+            email: user.email,
+            maviId: user.maviId,
+            accountStatus: 'REJECTED',
+            rejectionReason: user.rejectionReason || 'Registration rejected by administrator.',
           },
         });
+      }
+
+      if (user.accountStatus === 'PENDING_ADMIN_APPROVAL' || user.accountStatus === 'PENDING_VERIFICATION') {
+        const currentUrl = req.originalUrl || req.url || '';
+        const isRestrictedEndpoint =
+          currentUrl.includes('/api/analytics') ||
+          currentUrl.includes('/api/placement') ||
+          currentUrl.includes('/api/jobs') ||
+          currentUrl.includes('/api/leaderboard') ||
+          currentUrl.includes('/api/recruiters') ||
+          currentUrl.includes('/api/ai-insights');
+
+        if (isRestrictedEndpoint) {
+          return res.status(403).json({
+            success: false,
+            code: 'ACCOUNT_PENDING_VERIFICATION',
+            message: 'Verification Required. This feature will become available after your account is approved by your institution administrator.',
+            data: {
+              accountStatus: user.accountStatus,
+              maviId: user.maviId,
+            },
+          });
+        }
       }
     }
 

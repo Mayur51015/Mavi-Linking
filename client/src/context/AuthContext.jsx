@@ -75,6 +75,13 @@ export const AuthProvider = ({ children }) => {
         }
       });
 
+      newSocket.on('account_status_updated', (data) => {
+        console.log('Account status updated event received:', data);
+        if (data?.accountStatus) {
+          setUser((prev) => prev ? { ...prev, accountStatus: data.accountStatus, emailVerified: true, prnVerificationStatus: 'approved' } : prev);
+        }
+      });
+
       setSocket(newSocket);
 
       return () => {
@@ -153,9 +160,18 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
+  const isPendingVerification = useMemo(() => {
+    return Boolean(
+      user &&
+      (user.role === 'user' || (Array.isArray(user.roles) && user.roles.includes('user'))) &&
+      (user.accountStatus === 'PENDING_ADMIN_APPROVAL' || user.accountStatus === 'PENDING_VERIFICATION')
+    );
+  }, [user]);
+
   const contextValue = useMemo(() => ({
     user,
     loading,
+    isPendingVerification,
     login,
     changePassword,
     register,
@@ -166,7 +182,7 @@ export const AuthProvider = ({ children }) => {
     getDashboardPath,
     setUser,
     socket,
-  }), [user, loading, socket, login, changePassword, register, requestRoleUpgrade, updateProfile, logout, refreshUser, getDashboardPath]);
+  }), [user, loading, isPendingVerification, socket, login, changePassword, register, requestRoleUpgrade, updateProfile, logout, refreshUser, getDashboardPath]);
 
   return (
     <AuthContext.Provider value={contextValue}>

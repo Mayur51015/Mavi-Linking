@@ -468,32 +468,6 @@ const login = async (req, res, next) => {
         });
       }
 
-      if (user.accountStatus === 'PENDING_ADMIN_APPROVAL') {
-        try {
-          await AuditLog.create({
-            actorId: user._id,
-            targetUserId: user._id,
-            action: 'STUDENT_LOGIN_BLOCKED_PENDING_APPROVAL',
-            details: { email: user.email, maviId: user.maviId },
-            result: 'REJECTED',
-          });
-        } catch (auditErr) {
-          console.error('Audit Log Error:', auditErr.message);
-        }
-
-        return res.status(403).json({
-          success: false,
-          code: 'ACCOUNT_PENDING_ADMIN_APPROVAL',
-          message: 'Your email has been verified. Your account is waiting for approval from your institution administrator.',
-          data: {
-            email: user.email,
-            maviId: user.maviId,
-            accountStatus: 'PENDING_ADMIN_APPROVAL',
-            emailVerified: true,
-          },
-        });
-      }
-
       if (user.accountStatus === 'REJECTED') {
         return res.status(403).json({
           success: false,
@@ -508,16 +482,17 @@ const login = async (req, res, next) => {
         });
       }
 
-      if (user.accountStatus !== 'ACTIVE') {
+      if (user.accountStatus === 'DISABLED' || user.accountStatus === 'SUSPENDED') {
         return res.status(403).json({
           success: false,
           code: 'ACCOUNT_INACTIVE',
-          message: 'Your student account is not active.',
+          message: 'Your student account is suspended or disabled.',
           data: {
             accountStatus: user.accountStatus,
           },
         });
       }
+      // Note: PENDING_ADMIN_APPROVAL and PENDING_VERIFICATION students are allowed to log in to access the limited Student Dashboard shell!
     }
 
     // Generate JWT and Refresh Token

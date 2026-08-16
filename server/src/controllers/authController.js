@@ -1676,15 +1676,32 @@ const superAdminLogin = async (req, res, next) => {
 const verifyAdminInvite = async (req, res, next) => {
   try {
     const { token } = req.params;
+
+    if (!token || !token.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation token is required.',
+      });
+    }
+
+    const cleanToken = token.trim();
     const user = await User.findOne({
-      invitationToken: token,
-      invitationExpires: { $gt: Date.now() },
-    }).populate('institutionId', 'name shortName tenantId logo');
+      invitationToken: cleanToken,
+    })
+      .select('+invitationToken +invitationExpires')
+      .populate('institutionId', 'name shortName tenantId institutionCode code logo');
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Invitation link is invalid or has expired.',
+        message: 'Invitation link is invalid or has already been used.',
+      });
+    }
+
+    if (user.invitationExpires && new Date() > new Date(user.invitationExpires)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation link has expired. Please request a new invitation.',
       });
     }
 
@@ -1693,8 +1710,8 @@ const verifyAdminInvite = async (req, res, next) => {
       data: {
         name: user.name,
         email: user.email,
-        adminId: user.adminId,
-        designation: user.designation,
+        adminId: user.adminId || user.maviId || '',
+        designation: user.designation || 'Institution Administrator',
         institution: user.institutionId,
       },
     });
@@ -1712,22 +1729,29 @@ const acceptAdminInvite = async (req, res, next) => {
   try {
     const { token, password } = req.body;
 
-    if (!token || !password || password.length < 6) {
+    if (!token || !token.trim() || !password || password.length < 6) {
       return res.status(400).json({
         success: false,
         message: 'Valid token and password (at least 6 characters) required.',
       });
     }
 
+    const cleanToken = token.trim();
     const user = await User.findOne({
-      invitationToken: token,
-      invitationExpires: { $gt: Date.now() },
-    }).select('+password');
+      invitationToken: cleanToken,
+    }).select('+invitationToken +invitationExpires +password +refreshToken');
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Invitation link is invalid or has expired.',
+        message: 'Invitation link is invalid or has already been accepted.',
+      });
+    }
+
+    if (user.invitationExpires && new Date() > new Date(user.invitationExpires)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation link has expired. Please request a new invitation.',
       });
     }
 
@@ -1746,13 +1770,17 @@ const acceptAdminInvite = async (req, res, next) => {
 
     await user.save();
 
-    await ActivityLog.create({
-      userId: user._id,
-      action: 'ADMIN_INVITE_ACCEPTED',
-      details: `Admin ${user.email} accepted invitation and activated account`,
-      ipAddress: req.ip || '',
-      userAgent: req.headers['user-agent'] || '',
-    });
+    try {
+      await ActivityLog.create({
+        userId: user._id,
+        action: 'ADMIN_INVITE_ACCEPTED',
+        details: `Admin ${user.email} accepted invitation and activated account`,
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+      });
+    } catch (auditErr) {
+      console.error('[AUDIT LOG ERROR]', auditErr.message);
+    }
 
     res.status(200).json({
       success: true,

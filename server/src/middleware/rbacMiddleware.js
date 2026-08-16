@@ -64,13 +64,24 @@ const requireOwner = (req, res, next) => {
     req.user.adminId === 'MAVI-OWNER-001' ||
     req.user.email === (process.env.OWNER_EMAIL || 'owner@mavilinking.com').toLowerCase();
 
-  const isSuper = isOwner || userRoles.includes('super_admin') || req.user.role === 'super_admin';
-  const hasAdminManagePerm = (req.user.permissions || []).includes('PLATFORM_ADMIN_MANAGE') || (req.user.permissions || []).includes('INSTITUTION_ADMIN_MANAGE');
+  const isSuper =
+    isOwner ||
+    userRoles.includes('super_admin') ||
+    userRoles.includes('institution_admin') ||
+    userRoles.includes('admin') ||
+    req.user.role === 'super_admin' ||
+    req.user.role === 'institution_admin' ||
+    req.user.role === 'admin';
+
+  const hasAdminManagePerm =
+    (req.user.permissions || []).includes('PLATFORM_ADMIN_MANAGE') ||
+    (req.user.permissions || []).includes('INSTITUTION_ADMIN_MANAGE') ||
+    (req.user.permissions || []).includes('ADMIN_CREATE');
 
   if (!isSuper && !hasAdminManagePerm) {
     return res.status(403).json({
       success: false,
-      message: 'Forbidden. Platform Owner authority required.',
+      message: 'Forbidden. Administrative or Platform Owner authority required.',
     });
   }
 

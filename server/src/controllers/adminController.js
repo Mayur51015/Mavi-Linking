@@ -508,14 +508,26 @@ const rejectRoleRequest = async (req, res, next) => {
 const getPrnVerifications = async (req, res, next) => {
   try {
     const { status = 'pending' } = req.query;
-    const query = { prnVerificationStatus: status };
+    let query;
+
+    if (status === 'pending') {
+      query = {
+        $or: [
+          { prnVerificationStatus: 'pending' },
+          { accountStatus: 'PENDING_ADMIN_APPROVAL' },
+          { accountStatus: 'PENDING_VERIFICATION' },
+        ],
+      };
+    } else {
+      query = { prnVerificationStatus: status };
+    }
 
     if (req.institutionScope?.institutionId) {
       query.institutionId = req.institutionScope.institutionId;
     }
 
     const verifications = await User.find(query)
-      .select('name email maviId prn facultyId role requestedRole prnVerificationStatus prnRejectionReason createdAt institutionId university degree')
+      .select('name email maviId prn facultyId role requestedRole accountStatus prnVerificationStatus prnRejectionReason createdAt institutionId university degree')
       .populate('institutionId', 'name code domain')
       .sort({ createdAt: -1 });
 
@@ -545,6 +557,9 @@ const approvePrnVerification = async (req, res, next) => {
     }
 
     user.prnVerificationStatus = 'approved';
+    user.accountStatus = 'ACTIVE';
+    user.roleStatus = 'approved';
+    user.isVerified = true;
     user.prnVerifiedBy = req.user._id;
     user.prnVerifiedAt = new Date();
 
@@ -554,15 +569,20 @@ const approvePrnVerification = async (req, res, next) => {
       if (!user.roles.includes(user.requestedRole)) {
         user.roles.push(user.requestedRole);
       }
-      user.roleStatus = 'approved';
     }
 
     await user.save();
 
+    // Emit real-time Socket.io update to student
+    const io = req.app.get('io');
+    if (io) {
+      io.to(user._id.toString()).emit('account_status_updated', { accountStatus: 'ACTIVE' });
+    }
+
     await ActivityLog.create({
       userId: req.user._id,
       action: 'ADMIN_APPROVED_PRN',
-      details: `Approved institutional PRN identity verification for ${user.email} (PRN: ${user.prn || user.facultyId || 'N/A'}, MAVI ID: ${user.maviId})`,
+      details: `Approved institutional identity verification for ${user.email} (PRN: ${user.prn || user.facultyId || 'N/A'}, MAVI ID: ${user.maviId})`,
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
@@ -579,7 +599,7 @@ const approvePrnVerification = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: `Successfully approved PRN verification for ${user.email}`,
+      message: `Successfully approved verification for ${user.email}`,
       data: user,
     });
   } catch (error) {

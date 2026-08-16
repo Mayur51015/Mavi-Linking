@@ -9,6 +9,8 @@
     "dev:workflows": "nitro dev",
     "build:workflows": "nitro build",
     "db:reset-demo": "node src/scripts/resetDemoDatabase.js",
+    "db:reset-users": "node src/scripts/resetUsersQA.js",
+    "db:seed-super-admin": "node src/scripts/seedSuperAdmin.js",
     "test": "jest --runInBand"
   },
   "keywords": [

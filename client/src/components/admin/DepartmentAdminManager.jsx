@@ -63,8 +63,11 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
   const handleResendInvite = async (adminId) => {
     setResendingId(adminId);
     try {
-      const res = await api.post(`/admin/users/${adminId}/resend-invitation`);
-      toast.success(res.data?.message || 'Invitation email resent successfully!');
+      const res = await api.post(`/admin/department-admins/${adminId}/resend-invite`).catch(() =>
+        api.post(`/admin/users/${adminId}/resend-invitation`)
+      );
+      toast.success(res.data?.message || 'New 24-hour invitation email resent successfully!');
+      loadData();
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to resend invitation email.'));
     } finally {
@@ -215,16 +218,15 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
                       </td>
                       <td style={{ padding: '1rem' }}>
                         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                          {isInvited && (
-                            <button
-                              onClick={() => handleResendInvite(admin._id)}
-                              disabled={resendingId === admin._id}
-                              className="btn btn-outline"
-                              style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', borderColor: '#f59e0b', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                            >
-                              <RefreshCw size={12} className={resendingId === admin._id ? 'animate-spin' : ''} /> Resend Invite
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleResendInvite(admin._id)}
+                            disabled={resendingId === admin._id}
+                            className="btn btn-outline"
+                            title="Resend 24-Hour Invitation / Setup Email"
+                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', borderColor: 'var(--accent-purple, #a855f7)', color: 'var(--accent-purple, #a855f7)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                          >
+                            <RefreshCw size={12} className={resendingId === admin._id ? 'animate-spin' : ''} /> Resend Invite
+                          </button>
                           <button
                             onClick={() => setReassigningAdmin(admin)}
                             className="btn btn-outline"

@@ -54,18 +54,18 @@ const createDepartmentAdmin = async (req, res, next) => {
 
     const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
 
-    // 3. Handle Existing User Appointment or Duplicate Check
+    // 3. Handle Existing User Appointment or Re-Invitation
     const existingUser = await User.findOne({ email: lowerEmail });
     if (existingUser) {
-      if (existingUser.role === 'department_admin') {
-        return res.status(409).json({
+      if (existingUser.institutionId && targetInstId && existingUser.institutionId.toString() !== targetInstId) {
+        return res.status(403).json({
           success: false,
-          code: 'EMAIL_EXISTS',
-          message: `An active Department Admin account with email '${lowerEmail}' already exists. Use 'Reassign' or 'Resend Invite' to manage their assignment.`,
+          code: 'INSTITUTION_MISMATCH',
+          message: `User with email '${lowerEmail}' is already registered with another institution.`,
         });
       }
 
-      // Appoint existing user as Department Admin
+      // Appoint or Re-invite existing user as Department Admin
       const rawInviteToken = crypto.randomBytes(32).toString('hex');
       const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
       const oldRole = existingUser.role;
@@ -73,6 +73,8 @@ const createDepartmentAdmin = async (req, res, next) => {
       if (!Array.isArray(existingUser.roles)) existingUser.roles = [existingUser.role];
       if (!existingUser.roles.includes('department_admin')) existingUser.roles.push('department_admin');
       
+      if (name && name.trim()) existingUser.name = name.trim();
+      if (phone && phone.trim()) existingUser.phone = phone.trim();
       existingUser.departmentId = department._id;
       existingUser.institutionId = targetInstId || existingUser.institutionId;
       existingUser.designation = designation ? designation.trim() : existingUser.designation || 'Department Administrator';

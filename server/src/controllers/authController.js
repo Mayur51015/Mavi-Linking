@@ -1604,13 +1604,34 @@ const adminLogin = async (req, res, next) => {
       });
     }
 
+    const adminRoles = [
+      'platform_owner',
+      'owner',
+      'super_admin',
+      'institution_admin',
+      'department_admin',
+      'placement_admin',
+      'academic_admin',
+      'finance_admin',
+      'training_admin',
+      'admin',
+    ];
+
     const user = await User.findOne({
       $or: [
         { adminId: rawIdentifier.toUpperCase() },
         { adminLoginId: rawIdentifier.toUpperCase() },
         { email: rawIdentifier.toLowerCase() },
+        { maviId: rawIdentifier.toUpperCase() },
       ],
-      role: { $in: ['institution_admin', 'admin', 'super_admin'] },
+      $and: [
+        {
+          $or: [
+            { role: { $in: adminRoles } },
+            { roles: { $in: adminRoles } },
+          ],
+        },
+      ],
     }).select('+password');
 
     if (!user) {
@@ -1620,10 +1641,17 @@ const adminLogin = async (req, res, next) => {
       });
     }
 
-    if (user.status === 'suspended') {
+    if (user.status === 'suspended' || user.accountStatus === 'SUSPENDED') {
       return res.status(403).json({
         success: false,
         message: 'Administrative access suspended. Contact platform administrator.',
+      });
+    }
+
+    if (user.status === 'deactivated' || user.accountStatus === 'DEACTIVATED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Administrative account has been deactivated.',
       });
     }
 
@@ -1638,19 +1666,20 @@ const adminLogin = async (req, res, next) => {
     const token = user.generateAuthToken();
     const refreshToken = crypto.randomBytes(40).toString('hex');
     user.refreshToken = refreshToken;
+    user.lastLogin = new Date();
     await user.save();
 
     await ActivityLog.create({
       userId: user._id,
       action: 'ADMIN_LOGIN',
-      details: `Institution Admin ${user.email} logged in via ${rawIdentifier}`,
+      details: `Admin ${user.email} logged in via ${rawIdentifier}`,
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
 
     res.status(200).json({
       success: true,
-      message: 'Institution Admin login successful',
+      message: 'Administrator login successful',
       data: { user, token, refreshToken },
     });
   } catch (error) {

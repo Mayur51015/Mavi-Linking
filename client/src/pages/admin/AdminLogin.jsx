@@ -4,6 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { Shield, Lock, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { getErrorMessage } from '../../utils/errorMessage';
+import api from '../../api/axios';
 import PasswordInput from '../../components/ui/PasswordInput';
 
 const AdminLogin = () => {
@@ -23,23 +24,33 @@ const AdminLogin = () => {
     }
   }, [searchParams]);
 
+  const getTargetRouteForRole = (r) => {
+    if (r === 'department_admin') return '/department-admin';
+    if (r === 'super_admin') return '/super-admin';
+    if (r === 'platform_owner' || r === 'owner') return '/owner';
+    return '/admin';
+  };
+
   useEffect(() => {
     if (user) {
       const userRoles = Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [user.role];
-      const isAuthorized = userRoles.some((r) => ['admin', 'institution_admin', 'super_admin'].includes(r)) || ['admin', 'institution_admin', 'super_admin'].includes(user.role);
-      if (isAuthorized) {
-        navigate('/admin', { replace: true });
+      const adminRoles = ['admin', 'institution_admin', 'department_admin', 'super_admin', 'platform_owner', 'owner', 'placement_admin', 'academic_admin', 'finance_admin', 'training_admin'];
+      const matchedRole = userRoles.find((r) => adminRoles.includes(r)) || (adminRoles.includes(user.role) ? user.role : null);
+
+      if (matchedRole) {
+        navigate(getTargetRouteForRole(matchedRole), { replace: true });
       }
     }
   }, [user, navigate]);
 
   const verifyAndRedirect = (userData) => {
     const userRoles = Array.isArray(userData.roles) && userData.roles.length > 0 ? userData.roles : [userData.role];
-    const isAuthorized = userRoles.some((r) => ['admin', 'institution_admin', 'super_admin'].includes(r)) || ['admin', 'institution_admin', 'super_admin'].includes(userData.role);
+    const adminRoles = ['admin', 'institution_admin', 'department_admin', 'super_admin', 'platform_owner', 'owner', 'placement_admin', 'academic_admin', 'finance_admin', 'training_admin'];
+    const matchedRole = userRoles.find((r) => adminRoles.includes(r)) || (adminRoles.includes(userData.role) ? userData.role : null);
 
-    if (isAuthorized) {
+    if (matchedRole) {
       toast.success('Admin authentication verified.');
-      navigate('/admin', { replace: true });
+      window.location.href = getTargetRouteForRole(matchedRole);
     } else {
       setError('Forbidden. Your account does not have Administrative privileges.');
       toast.error('Access Denied. Admin privileges required.');
@@ -61,19 +72,6 @@ const AdminLogin = () => {
       verifyAndRedirect(userData);
     } catch (err) {
       setError(getErrorMessage(err, 'Admin login failed. Check Admin ID or credentials.'));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleGoogleSuccess = async (credential) => {
-    setError('');
-    setSubmitting(true);
-    try {
-      const res = await loginWithGoogle(credential);
-      verifyAndRedirect(res.user);
-    } catch (err) {
-      setError(getErrorMessage(err, 'Google verification failed.'));
     } finally {
       setSubmitting(false);
     }

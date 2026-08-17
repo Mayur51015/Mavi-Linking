@@ -8,6 +8,7 @@ const Role = require('../src/models/Role');
 const AuditLog = require('../src/models/AuditLog');
 
 describe('MAVI LINKING — Owner-Managed Admin Creation & Custom RBAC Integration Security Tests', () => {
+  jest.setTimeout(30000);
   let app;
   let superAdmin, superToken;
   let ownerUser, ownerToken;

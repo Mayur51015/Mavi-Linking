@@ -634,16 +634,22 @@ const inviteAdmin = async (req, res, next) => {
       });
     }
 
+    const userPayload = existingUser.toObject ? existingUser.toObject() : { ...existingUser };
+    delete userPayload.invitationToken;
+    delete userPayload.password;
+
     res.status(201).json({
       success: true,
+      administratorCreated: true,
       emailSent: emailResult.success,
+      recipient: lowerEmail,
       message: emailResult.success
         ? 'Administrator invitation created and email dispatched successfully.'
         : 'Administrator created, but invitation email could not be sent.',
       data: {
-        admin: existingUser,
-        invitationLink,
+        admin: userPayload,
         emailSent: emailResult.success,
+        recipient: lowerEmail,
       },
     });
   } catch (error) {
@@ -858,10 +864,14 @@ const resendAdminInvite = async (req, res, next) => {
     res.status(200).json({
       success: true,
       emailSent: emailResult.success,
+      recipient: adminUser.email,
       message: emailResult.success
-        ? 'Invitation resent successfully.'
+        ? 'Invitation email resent successfully.'
         : 'Invitation updated, but email could not be sent.',
-      data: { invitationLink, emailSent: emailResult.success },
+      data: {
+        emailSent: emailResult.success,
+        recipient: adminUser.email,
+      },
     });
   } catch (error) {
     next(error);

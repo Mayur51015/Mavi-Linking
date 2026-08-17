@@ -152,11 +152,7 @@ const createAdmin = async (req, res, next) => {
         if (user.status === 'pending' && user.invitationToken) {
           return res.status(409).json({
             success: false,
-            message: `A pending invitation already exists for ${lowerEmail} at ${targetInst?.name || 'this institution'}.`,
-            data: {
-              invitationToken: user.invitationToken,
-              invitationLink: `${process.env.CLIENT_URL || 'https://mavi-linking-mq7d.vercel.app'}/admin/accept-invite?token=${user.invitationToken}`,
-            },
+            message: `A pending invitation already exists for ${lowerEmail} at ${targetInst?.name || 'this institution'}. Use Resend Invite from the management roster.`,
           });
         }
         if (user.role === targetRole || user.roles.includes(targetRole)) {
@@ -297,18 +293,23 @@ const createAdmin = async (req, res, next) => {
       });
     } catch (_) {}
 
+    const userPayload = user.toObject ? user.toObject() : { ...user };
+    delete userPayload.invitationToken;
+    delete userPayload.password;
+
     res.status(201).json({
       success: true,
+      administratorCreated: true,
       emailSent: emailResult.success,
+      recipient: user.email,
       message: emailResult.success
         ? `Administrator created successfully. Invitation email sent to ${user.email}.`
         : `Administrator created, but invitation email could not be sent to ${user.email}.`,
       data: {
-        user,
+        user: userPayload,
         adminId: finalAdminId,
-        invitationToken: inviteToken,
-        invitationLink,
         emailSent: emailResult.success,
+        recipient: user.email,
       },
     });
   } catch (error) {

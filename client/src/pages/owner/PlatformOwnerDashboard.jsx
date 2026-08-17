@@ -63,7 +63,7 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
     designation: 'Administrator',
   });
   const [availableDepartments, setAvailableDepartments] = useState([]);
-  const [inviteResult, setInviteResult] = useState(null);
+  const [inviteDeliveryResult, setInviteDeliveryResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [ownerPlans, setOwnerPlans] = useState([]);
   const [ownerBilling, setOwnerBilling] = useState(null);
@@ -220,12 +220,27 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
     setSubmitting(true);
     try {
       const res = await api.post('/owner/admins/invite', newAdmin);
-      setInviteResult(res.data.data);
-      if (res.data?.emailSent || res.data?.data?.emailSent) {
-        toast.success('Administrator created successfully. Invitation email sent.');
+      const emailWasSent = res.data?.emailSent ?? res.data?.data?.emailSent ?? true;
+      setInviteDeliveryResult({
+        email: newAdmin.email,
+        name: newAdmin.name,
+        emailSent: emailWasSent,
+      });
+      if (emailWasSent) {
+        toast.success(`Administrator created. Invitation email sent to ${newAdmin.email}.`);
       } else {
-        toast.warning('Administrator created, but invitation email could not be sent. You can copy the link below.');
+        toast.warning(`Administrator created, but invitation email could not be sent to ${newAdmin.email}.`);
       }
+      setNewAdmin({
+        name: '',
+        email: '',
+        role: 'institution_admin',
+        scope: 'INSTITUTION',
+        institutionId: '',
+        departmentId: '',
+        permissions: ['STUDENT_VIEW', 'STUDENT_APPROVE', 'STUDENT_PROFILE_MANAGE'],
+        designation: 'Administrator',
+      });
       loadData();
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to invite administrator.'));
@@ -302,10 +317,6 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
         toast.success('Admin invitation resent and email dispatched successfully.');
       } else {
         toast.warning('Admin invitation updated, but email could not be sent.');
-      }
-      if (res.data?.data?.invitationLink) {
-        navigator.clipboard.writeText(res.data.data.invitationLink);
-        toast.info('Invitation link copied to clipboard.');
       }
       loadData();
     } catch (err) {
@@ -1265,35 +1276,58 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
         {showInviteAdminModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
             <form onSubmit={handleInviteAdmin} className="glass-card-static" style={{ width: '540px', maxHeight: '90vh', overflowY: 'auto', padding: '2rem', border: '1px solid var(--accent-purple)' }}>
-              <h3 style={{ marginBottom: '1.25rem', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <UserCheck size={22} /> Invite Platform Administrator
-              </h3>
+              {!inviteDeliveryResult && (
+                <h3 style={{ marginBottom: '1.25rem', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <UserCheck size={22} /> Invite Platform Administrator
+                </h3>
+              )}
 
-              {inviteResult ? (
-                <div style={{ padding: '1.25rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--accent-emerald)', borderRadius: '8px', color: 'var(--accent-emerald)', marginBottom: '1.5rem' }}>
-                  <p style={{ fontWeight: 'bold', fontSize: '1rem', margin: 0 }}>✓ Single-Use Administrative Invitation Token Generated!</p>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                    An invitation email has been dispatched. You can also copy the secure single-use invitation link directly below:
+              {inviteDeliveryResult ? (
+                <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                  {inviteDeliveryResult.emailSent ? (
+                    <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+                      <CheckCircle size={32} />
+                    </div>
+                  ) : (
+                    <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+                      <AlertTriangle size={32} />
+                    </div>
+                  )}
+
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.75rem', color: inviteDeliveryResult.emailSent ? 'var(--accent-emerald)' : '#ef4444' }}>
+                    {inviteDeliveryResult.emailSent ? 'Administrator Invitation Sent' : 'Administrator Created — Email Failed'}
+                  </h3>
+
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: '1.5' }}>
+                    The administrator account for <strong>{inviteDeliveryResult.name || 'the administrator'}</strong> has been created successfully.
                   </p>
-                  <div style={{ background: '#09090b', padding: '0.75rem', borderRadius: '6px', fontSize: '0.8rem', wordBreak: 'break-all', fontFamily: 'monospace', margin: '0.75rem 0', border: '1px solid var(--border-subtle)', color: '#c084fc' }}>
-                    {inviteResult.invitationLink}
+
+                  <div style={{ background: '#09090b', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', margin: '1rem 0 1.5rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
+                      {inviteDeliveryResult.emailSent ? 'An invitation email has been sent to:' : 'Failed to deliver invitation email to:'}
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: '600', color: '#ffffff', wordBreak: 'break-all' }}>
+                      {inviteDeliveryResult.email}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(inviteResult.invitationLink);
-                        toast.info('Invitation link copied to clipboard!');
-                      }}
-                      className="btn btn-primary btn-sm"
-                      style={{ background: '#a78bfa', borderColor: '#a78bfa' }}
-                    >
-                      Copy Invitation Link
-                    </button>
-                    <button type="button" onClick={() => { setInviteResult(null); setShowInviteAdminModal(false); }} className="btn btn-outline btn-sm">
-                      Close
-                    </button>
-                  </div>
+
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.75rem', lineHeight: '1.5' }}>
+                    {inviteDeliveryResult.emailSent
+                      ? 'The recipient can complete account setup and configure their credentials using the secure link in their email.'
+                      : 'The administrator record was saved, but the email delivery encountered an error. You can resend the invitation at any time from Admin Management.'}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInviteDeliveryResult(null);
+                      setShowInviteAdminModal(false);
+                    }}
+                    className="btn btn-primary"
+                    style={{ width: '100%', padding: '0.75rem', fontWeight: '600' }}
+                  >
+                    Close
+                  </button>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -1378,11 +1412,11 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                 </div>
               )}
 
-              {!inviteResult && (
+              {!inviteDeliveryResult && (
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                   <button type="button" onClick={() => setShowInviteAdminModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
                   <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#a78bfa', borderColor: '#a78bfa' }} disabled={submitting}>
-                    {submitting ? 'Generating...' : 'Dispatch Invitation Email'}
+                    {submitting ? 'Dispatching...' : 'Dispatch Invitation Email'}
                   </button>
                 </div>
               )}

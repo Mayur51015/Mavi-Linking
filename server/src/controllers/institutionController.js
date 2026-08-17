@@ -392,17 +392,23 @@ const assignInstitutionAdmin = async (req, res, next) => {
       });
     }
 
+    const userPayload = targetUser.toObject ? targetUser.toObject() : { ...targetUser };
+    delete userPayload.invitationToken;
+    delete userPayload.password;
+
     res.status(200).json({
       success: true,
+      administratorCreated: true,
       emailSent: emailResult.success,
+      recipient: targetUser.email,
       message: emailResult.success
         ? `Successfully assigned ${targetUser.name} as Institution Admin for ${institution.name}. Invitation email sent.`
         : `Assigned ${targetUser.name} as Institution Admin, but invitation email could not be sent.`,
       data: {
-        user: targetUser,
+        user: userPayload,
         institution,
-        invitationLink,
         emailSent: emailResult.success,
+        recipient: targetUser.email,
       },
     });
   } catch (error) {

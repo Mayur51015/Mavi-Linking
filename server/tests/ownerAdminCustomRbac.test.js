@@ -119,7 +119,8 @@ describe('MAVI LINKING — Owner-Managed Admin Creation & Custom RBAC Integratio
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.data.admin.accountStatus).toBe('INVITED');
-    expect(res.body.data.invitationLink).toContain('/admin/accept-invite?token=');
+    expect(res.body.data.invitationLink).toBeUndefined();
+    expect(res.body.data.admin.invitationToken).toBeUndefined();
   });
 
   // ─── TEST 2: Owner creates CSE Admin with scope DEPARTMENT ───────────────
@@ -379,8 +380,11 @@ describe('MAVI LINKING — Owner-Managed Admin Creation & Custom RBAC Integratio
       });
 
     expect(inviteRes.statusCode).toBe(201);
-    const link = inviteRes.body.data.invitationLink;
-    const token = link.split('token=')[1];
+    expect(inviteRes.body.data.invitationLink).toBeUndefined();
+    expect(inviteRes.body.data.admin.invitationToken).toBeUndefined();
+
+    const invitedUser = await User.findOne({ email: `lifecycle_invite_${timestamp}_rbac_test@example.com` }).select('+invitationToken');
+    const token = invitedUser.invitationToken;
 
     // Verify token GET
     const verifyRes = await request(app).get(`/api/auth/verify-admin-invite/${token}`);

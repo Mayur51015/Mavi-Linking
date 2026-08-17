@@ -71,7 +71,8 @@ const requireOwner = (req, res, next) => {
 
   const hasAdminManagePerm =
     (req.user.permissions || []).includes('PLATFORM_ADMIN_MANAGE') ||
-    (req.user.permissions || []).includes('ADMIN_CREATE');
+    (req.user.permissions || []).includes('ADMIN_CREATE') ||
+    (req.user.permissions || []).includes('INSTITUTION_ADMIN_MANAGE');
 
   if (!isSuper && !hasAdminManagePerm) {
     return res.status(403).json({

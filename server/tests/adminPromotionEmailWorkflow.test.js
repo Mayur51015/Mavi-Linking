@@ -166,7 +166,8 @@ describe('MAVI LINKING — Fix Promoted Admin Invitation Email Workflow Integrat
     expect(res.body.success).toBe(true);
     expect(res.body.emailSent).toBe(true);
     expect(res.body.data.admin.accountStatus).toBe('INVITED');
-    expect(res.body.data.invitationLink).toContain('/admin/accept-invite?token=');
+    expect(res.body.data.invitationLink).toBeUndefined();
+    expect(res.body.data.admin.invitationToken).toBeUndefined();
 
     // Verify User record in DB
     const dbUser = await User.findOne({ email: candidateEmail }).select('+invitationToken +invitationExpires');
@@ -193,7 +194,8 @@ describe('MAVI LINKING — Fix Promoted Admin Invitation Email Workflow Integrat
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.emailSent).toBe(true);
-    expect(res.body.data.invitationLink).toContain('/admin/accept-invite?token=');
+    expect(res.body.data.invitationLink).toBeUndefined();
+    expect(res.body.data.user.invitationToken).toBeUndefined();
 
     const dbUser = await User.findOne({ email: candidateEmail }).select('+invitationToken');
     expect(dbUser.accountStatus).toBe('INVITED');
@@ -223,7 +225,8 @@ describe('MAVI LINKING — Fix Promoted Admin Invitation Email Workflow Integrat
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.emailSent).toBe(true);
-    expect(res.body.data.invitationLink).toContain('/admin/accept-invite?token=');
+    expect(res.body.data.invitationLink).toBeUndefined();
+    expect(res.body.data.user.invitationToken).toBeUndefined();
 
     const updatedUser = await User.findById(studentUser._id).select('+invitationToken');
     expect(updatedUser.role).toBe('institution_admin');
@@ -248,7 +251,7 @@ describe('MAVI LINKING — Fix Promoted Admin Invitation Email Workflow Integrat
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.emailSent).toBe(true);
-    expect(res.body.data.invitationLink).toContain('/admin/accept-invite?token=');
+    expect(res.body.data.invitationLink).toBeUndefined();
 
     const dbDeptAdmin = await User.findOne({ email: deptCandidateEmail }).select('+invitationToken');
     expect(dbDeptAdmin.role).toBe('department_admin');
@@ -293,7 +296,7 @@ describe('MAVI LINKING — Fix Promoted Admin Invitation Email Workflow Integrat
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.emailSent).toBe(true);
-    expect(res.body.data.invitationLink).toContain('/admin/accept-invite?token=');
+    expect(res.body.data.invitationLink).toBeUndefined();
 
     const updated = await User.findById(targetAdmin._id).select('+invitationToken +invitationExpires');
     expect(updated.invitationToken).not.toBe('old_expired_token_12345');

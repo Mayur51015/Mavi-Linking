@@ -140,16 +140,22 @@ const createDepartmentAdmin = async (req, res, next) => {
         });
       }
 
+      const userPayload = existingUser.toObject ? existingUser.toObject() : { ...existingUser };
+      delete userPayload.invitationToken;
+      delete userPayload.password;
+
       return res.status(200).json({
         success: true,
+        administratorCreated: true,
         emailSent: emailResult.success,
+        recipient: lowerEmail,
         message: emailResult.success
           ? `Successfully appointed ${existingUser.name} (${lowerEmail}) as Department Admin for ${department.name}. Invitation email sent.`
           : `Appointed ${existingUser.name} as Department Admin, but invitation email could not be sent.`,
         data: {
-          user: existingUser,
-          invitationLink,
+          user: userPayload,
           emailSent: emailResult.success,
+          recipient: lowerEmail,
         },
       });
     }
@@ -277,7 +283,9 @@ const createDepartmentAdmin = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
+      administratorCreated: true,
       emailSent: emailResult.success,
+      recipient: newDeptAdmin.email,
       message: emailResult.success
         ? `Successfully provisioned Department Admin account for ${newDeptAdmin.name}. Invitation email sent.`
         : `Provisioned Department Admin account for ${newDeptAdmin.name}, but invitation email could not be sent.`,
@@ -288,8 +296,8 @@ const createDepartmentAdmin = async (req, res, next) => {
         maviId: newDeptAdmin.maviId,
         role: newDeptAdmin.role,
         accountStatus: newDeptAdmin.accountStatus,
-        invitationLink,
         emailSent: emailResult.success,
+        recipient: newDeptAdmin.email,
         department: {
           id: department._id,
           name: department.name,

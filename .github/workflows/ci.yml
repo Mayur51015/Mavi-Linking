@@ -52,6 +52,17 @@ jobs:
       run:
         working-directory: server
 
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -68,6 +79,7 @@ jobs:
         run: npm test
         env:
           NODE_ENV: test
-          # The suite is unit-level and never opens a connection, but the model
-          # needs a secret present to sign a token.
+          # Server tests use MongoDB for integration-style model cleanup/setup.
+          # The MongoDB service above provides the local test database expected
+          # by the test configuration.
           JWT_SECRET: ci-test-secret

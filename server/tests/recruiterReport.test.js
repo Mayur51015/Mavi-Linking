@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { Writable } = require('stream');
 const QRCode = require('qrcode');
 const { generateRecruiterReport, writeRecruiterReportPdf } = require('../src/services/recruiterReportService');
 const User = require('../src/models/User');
@@ -127,7 +128,7 @@ describe('Recruiter Report Service', () => {
   });
 
   describe('writeRecruiterReportPdf', () => {
-    it('sets correct response headers and streams PDF binary data', async () => {
+    it('sets correct response headers and emits a valid PDF binary response', async () => {
       const report = {
         candidate: candidateUser,
         insight: { topSkills: ['React'] },
@@ -141,24 +142,29 @@ describe('Recruiter Report Service', () => {
       };
 
       const chunks = [];
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        setHeader: jest.fn(),
-        write: jest.fn((chunk) => chunks.push(Buffer.from(chunk))),
-        end: jest.fn((chunk) => {
-          if (chunk) chunks.push(Buffer.from(chunk));
-        }),
-        on: jest.fn(),
-        once: jest.fn(),
-        emit: jest.fn(),
-      };
+      const responseStream = new Writable({
+        write(chunk, encoding, callback) {
+          chunks.push(Buffer.from(chunk));
+          callback();
+        },
+      });
+      responseStream.status = jest.fn().mockReturnThis();
+      responseStream.setHeader = jest.fn();
 
-      await writeRecruiterReportPdf(report, res);
+      const finished = new Promise((resolve, reject) => {
+        responseStream.once('finish', resolve);
+        responseStream.once('error', reject);
+      });
 
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
-      expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="MAVI-Linking-Recruiter-AI-Report.pdf"');
-      expect(chunks.length).toBeGreaterThan(0);
+      await writeRecruiterReportPdf(report, responseStream);
+      await finished;
+
+      const pdf = Buffer.concat(chunks);
+      expect(responseStream.status).toHaveBeenCalledWith(200);
+      expect(responseStream.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
+      expect(responseStream.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="MAVI-Linking-Recruiter-AI-Report.pdf"');
+      expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+      expect(pdf.length).toBeGreaterThan(1000);
     });
   });
 });

@@ -314,7 +314,7 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
     try {
       const res = await api.post(`/owner/admins/${adminId}/resend-invite`);
       if (res.data?.emailSent || res.data?.data?.emailSent) {
-        toast.success('Admin invitation resent and email dispatched successfully.');
+        toast.success('New 24-hour administrator invitation email dispatched successfully.');
       } else {
         toast.warning('Admin invitation updated, but email could not be sent.');
       }
@@ -705,15 +705,18 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                             </td>
                             <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                               <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                                <button
+                                  onClick={() => handleResendInvite(adm._id)}
+                                  className="btn btn-sm btn-outline"
+                                  title="Resend 24-Hour Invitation / Setup Email"
+                                  style={{ fontSize: '0.72rem', borderColor: 'var(--accent-purple, #a855f7)', color: 'var(--accent-purple, #a855f7)' }}
+                                >
+                                  Resend Invite
+                                </button>
                                 {status === 'INVITED' && (
-                                  <>
-                                    <button onClick={() => handleResendInvite(adm._id)} className="btn btn-sm btn-outline" style={{ fontSize: '0.72rem' }}>
-                                      Resend Invite
-                                    </button>
-                                    <button onClick={() => handleRevokeInvite(adm._id)} className="btn btn-sm btn-danger" style={{ fontSize: '0.72rem', background: '#ef4444', borderColor: '#ef4444' }}>
-                                      Revoke
-                                    </button>
-                                  </>
+                                  <button onClick={() => handleRevokeInvite(adm._id)} className="btn btn-sm btn-danger" style={{ fontSize: '0.72rem', background: '#ef4444', borderColor: '#ef4444' }}>
+                                    Revoke
+                                  </button>
                                 )}
                                 {status === 'ACTIVE' && (
                                   <>

@@ -53,6 +53,7 @@ const {
   reassignDepartmentAdmin,
   updateDepartmentAdminStatus,
   getAppointmentHistory,
+  resendDepartmentAdminInvite,
 } = require('../controllers/departmentAdminController');
 
 const {
@@ -62,9 +63,22 @@ const {
   deleteDepartment,
 } = require('../controllers/departmentController');
 
+const {
+  verifyAdminInvite,
+  acceptAdminInvite,
+} = require('../controllers/authController');
+
+const { authLimiter } = require('../middleware/authLimiter');
+
 const router = express.Router();
 
-// All routes require JWT authentication + Admin role (Super Admin or Institution Admin)
+// ─── Public Invitation Endpoints (Pre-Authentication) ────────────────────────
+router.get('/invitations/validate', authLimiter, verifyAdminInvite);
+router.get('/invitations/validate/:token', authLimiter, verifyAdminInvite);
+router.post('/invitations/activate', authLimiter, acceptAdminInvite);
+router.post('/invitations/accept', authLimiter, acceptAdminInvite);
+
+// All other routes require JWT authentication + Admin role (Super Admin or Institution Admin)
 router.use(protect, requireAdmin);
 
 // Student 2-Stage Verification & Approval Authority (Tenant/Department Scoped)
@@ -92,6 +106,8 @@ router.get('/departments/:departmentId/appointment-history', enforceInstitutionS
 
 router.post('/department-admins', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_APPOINT'), appointDepartmentAdmin);
 router.get('/department-admins', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_VIEW'), getDepartmentAdmins);
+router.post('/department-admins/:adminId/resend-invite', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_APPOINT'), resendDepartmentAdminInvite);
+router.post('/departments/:departmentId/admins/:adminId/resend-invite', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_APPOINT'), resendDepartmentAdminInvite);
 router.patch('/department-admins/:adminId/reassign', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_REASSIGN'), reassignDepartmentAdmin);
 router.put('/department-admins/:adminId/status', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_SUSPEND'), updateDepartmentAdminStatus);
 

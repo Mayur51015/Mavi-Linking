@@ -3,12 +3,14 @@ const axios = require('axios');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const Institution = require('../models/Institution');
+const InstitutionMembership = require('../models/InstitutionMembership');
 const Activity = require('../models/Activity');
 const ActivityLog = require('../models/ActivityLog');
 const AuditLog = require('../models/AuditLog');
 const EmailChangeChallenge = require('../models/EmailChangeChallenge');
 const { sendEmail, generateEmailChangeOtpEmailHtml, generateEmailChangeNotificationOldEmailHtml } = require('../utils/sendEmail');
 const { getIO } = require('../config/socket');
+const { getAdminInvitationExpiryHours } = require('../config/invitationConfig');
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 const oauth2Client = new OAuth2Client(googleClientId);
@@ -1734,44 +1736,107 @@ const superAdminLogin = async (req, res, next) => {
  */
 const verifyAdminInvite = async (req, res, next) => {
   try {
-    const { token } = req.params;
+    const token = req.params.token || req.query.token || req.body?.token;
 
     if (!token || !token.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Invitation token is required.',
+        code: 'INVITATION_INVALID',
+        message: 'Invalid or missing invitation token link.',
       });
     }
 
     const cleanToken = token.trim();
+    const hashedToken = crypto.createHash('sha256').update(cleanToken).digest('hex');
     const user = await User.findOne({
-      invitationToken: cleanToken,
+      $or: [
+        { invitationToken: cleanToken },
+        { invitationToken: hashedToken },
+      ],
     })
-      .select('+invitationToken +invitationExpires')
-      .populate('institutionId', 'name shortName tenantId institutionCode code logo');
+      .select('+invitationToken +invitationExpires +accountStatus +isDeleted')
+      .populate('institutionId', 'name shortName tenantId institutionCode code logo')
+      .populate('departmentId', 'name code');
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Invitation link is invalid or has already been used.',
+        code: 'INVITATION_INVALID',
+        message: 'This administrator invitation is not valid or link has expired.',
+      });
+    }
+
+    if (user.isDeleted || user.accountStatus === 'PERMANENTLY_DELETED') {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITED_USER_NOT_FOUND',
+        message: 'The invited administrator account could not be found.',
+      });
+    }
+
+    if (user.accountStatus === 'REVOKED') {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_REVOKED',
+        message: 'A newer invitation has been issued. Please use the latest invitation email.',
+      });
+    }
+
+    if (user.accountStatus === 'ACTIVE' && !user.invitationToken) {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_ALREADY_USED',
+        message: 'This invitation has already been used. Please log in using your administrator credentials.',
       });
     }
 
     if (user.invitationExpires && new Date() > new Date(user.invitationExpires)) {
+      try {
+        await AuditLog.create({
+          actorId: user._id,
+          targetUserId: user._id,
+          action: 'ADMIN_INVITATION_EXPIRED',
+          institutionId: user.institutionId?._id || user.institutionId || null,
+          departmentId: user.departmentId?._id || user.departmentId || null,
+          details: { email: user.email, role: user.role, expiredAt: user.invitationExpires },
+          result: 'FAILED',
+        });
+      } catch (err) {}
+
       return res.status(400).json({
         success: false,
-        message: 'Invitation link has expired. Please request a new invitation.',
+        code: 'INVITATION_EXPIRED',
+        message: 'This invitation has expired. Please ask an administrator to send a new invitation.',
       });
+    }
+
+    try {
+      await AuditLog.create({
+        actorId: user._id,
+        targetUserId: user._id,
+        action: 'ADMIN_INVITATION_OPENED',
+        institutionId: user.institutionId?._id || user.institutionId || null,
+        departmentId: user.departmentId?._id || user.departmentId || null,
+        details: { email: user.email, role: user.role },
+        result: 'SUCCESS',
+      });
+    } catch (auditErr) {
+      // Non-blocking audit failure
     }
 
     res.status(200).json({
       success: true,
+      code: 'INVITATION_VALID',
       data: {
         name: user.name,
         email: user.email,
-        adminId: user.adminId || user.maviId || '',
-        designation: user.designation || 'Institution Administrator',
+        role: user.role,
+        adminId: user.adminId || user.maviId || user.adminLoginId || '',
+        designation: user.designation || 'Administrator',
         institution: user.institutionId,
+        department: user.departmentId,
+        expiresAt: user.invitationExpires,
+        validityHours: getAdminInvitationExpiryHours(),
       },
     });
   } catch (error) {
@@ -1786,42 +1851,122 @@ const verifyAdminInvite = async (req, res, next) => {
  */
 const acceptAdminInvite = async (req, res, next) => {
   try {
-    const { token, password } = req.body;
+    const { token, password, confirmPassword } = req.body;
 
-    if (!token || !token.trim() || !password || password.length < 6) {
+    if (!token || !token.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Valid token and password (at least 6 characters) required.',
+        code: 'INVITATION_INVALID',
+        message: 'Invitation token is required.',
+      });
+    }
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        code: 'PASSWORD_REQUIRED',
+        message: 'Password is required.',
+      });
+    }
+
+    if (confirmPassword && password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        code: 'PASSWORD_MISMATCH',
+        message: 'Passwords do not match.',
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        code: 'PASSWORD_TOO_SHORT',
+        message: 'Password must be at least 6 characters long.',
+      });
+    }
+
+    const passwordPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordPolicy.test(password)) {
+      return res.status(400).json({
+        success: false,
+        code: 'PASSWORD_INVALID',
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
       });
     }
 
     const cleanToken = token.trim();
+    const hashedToken = crypto.createHash('sha256').update(cleanToken).digest('hex');
     const user = await User.findOne({
-      invitationToken: cleanToken,
-    }).select('+invitationToken +invitationExpires +password +refreshToken');
+      $or: [
+        { invitationToken: cleanToken },
+        { invitationToken: hashedToken },
+      ],
+    }).select('+invitationToken +invitationExpires +password +refreshToken +accountStatus +isDeleted');
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Invitation link is invalid or has already been accepted.',
+        code: 'INVITATION_INVALID',
+        message: 'This administrator invitation is not valid or link has already been used.',
+      });
+    }
+
+    if (user.isDeleted || user.accountStatus === 'PERMANENTLY_DELETED') {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITED_USER_NOT_FOUND',
+        message: 'The invited administrator account could not be found.',
+      });
+    }
+
+    if (user.accountStatus === 'REVOKED') {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_REVOKED',
+        message: 'A newer invitation has been issued. Please use the latest invitation email.',
+      });
+    }
+
+    if (user.accountStatus === 'ACTIVE' && !user.invitationToken) {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_ALREADY_USED',
+        message: 'This invitation has already been used. Please log in using your administrator credentials.',
       });
     }
 
     if (user.invitationExpires && new Date() > new Date(user.invitationExpires)) {
+      try {
+        await AuditLog.create({
+          actorId: user._id,
+          targetUserId: user._id,
+          action: 'ADMIN_INVITATION_EXPIRED',
+          institutionId: user.institutionId || null,
+          departmentId: user.departmentId || null,
+          details: { email: user.email, role: user.role, expiredAt: user.invitationExpires },
+          result: 'FAILED',
+        });
+      } catch (err) {}
+
       return res.status(400).json({
         success: false,
-        message: 'Invitation link has expired. Please request a new invitation.',
+        code: 'INVITATION_EXPIRED',
+        message: 'This invitation has expired. Please ask an administrator to send a new invitation.',
       });
     }
 
     user.password = password;
     user.status = 'active';
     user.accountStatus = 'ACTIVE';
+    user.roleStatus = 'approved';
     user.isInvitedAdmin = false;
+    user.passwordSetupRequired = false;
     user.mustChangePassword = false;
     user.invitationToken = null;
     user.invitationExpires = null;
     user.emailVerified = true;
+    user.activatedAt = new Date();
+    user.passwordChangedAt = Date.now();
 
     const jwtToken = user.generateAuthToken();
     const refreshToken = crypto.randomBytes(40).toString('hex');
@@ -1829,13 +1974,30 @@ const acceptAdminInvite = async (req, res, next) => {
 
     await user.save();
 
+    // Update InstitutionMembership status if present
+    if (user.institutionId) {
+      await InstitutionMembership.updateMany(
+        { userId: user._id, institutionId: user.institutionId },
+        { $set: { status: 'active' } }
+      ).catch(() => null);
+    }
+
     try {
       await ActivityLog.create({
         userId: user._id,
-        action: 'ADMIN_INVITE_ACCEPTED',
-        details: `Admin ${user.email} accepted invitation and activated account`,
+        action: 'ADMIN_INVITATION_ACCEPTED',
+        details: `Admin ${user.email} accepted invitation and configured permanent password`,
         ipAddress: req.ip || '',
         userAgent: req.headers['user-agent'] || '',
+      });
+      await AuditLog.create({
+        actorId: user._id,
+        targetUserId: user._id,
+        action: 'ADMIN_INVITATION_ACCEPTED',
+        institutionId: user.institutionId || null,
+        departmentId: user.departmentId || null,
+        details: { email: user.email, role: user.role },
+        result: 'SUCCESS',
       });
     } catch (auditErr) {
       console.error('[AUDIT LOG ERROR]', auditErr.message);
@@ -1843,8 +2005,21 @@ const acceptAdminInvite = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'Admin account activated successfully.',
-      data: { user, token: jwtToken, refreshToken },
+      message: 'Your administrator account has been successfully activated.',
+      data: {
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          roles: user.roles,
+          institutionId: user.institutionId,
+          departmentId: user.departmentId,
+          accountStatus: user.accountStatus,
+        },
+        token: jwtToken,
+        refreshToken,
+      },
     });
   } catch (error) {
     next(error);

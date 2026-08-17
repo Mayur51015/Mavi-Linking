@@ -6,6 +6,7 @@ const {
   getAllAdmins,
   createAdmin,
   removeAdmin,
+  resendAdminInvite,
   getSecurityEvents,
   getLicenses,
   getPlatformAnalytics,
@@ -38,6 +39,7 @@ const {
 router.get('/stats', getSuperAdminStats);
 router.get('/admins', getAllAdmins);
 router.post('/admins', createAdmin);
+router.post('/admins/:id/resend-invite', resendAdminInvite);
 router.delete('/admins/:id/permanent', deleteUserPermanently);
 router.delete('/admins/:id', removeAdmin);
 

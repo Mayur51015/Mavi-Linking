@@ -4,6 +4,7 @@ const Department = require('../models/Department');
 const Institution = require('../models/Institution');
 const AuditLog = require('../models/AuditLog');
 const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml } = require('../utils/sendEmail');
+const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
 /**
  * @desc    Create a new institution-provisioned Department Admin account
@@ -66,6 +67,7 @@ const createDepartmentAdmin = async (req, res, next) => {
 
       // Appoint existing user as Department Admin
       const rawInviteToken = crypto.randomBytes(32).toString('hex');
+      const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
       const oldRole = existingUser.role;
       existingUser.role = 'department_admin';
       if (!Array.isArray(existingUser.roles)) existingUser.roles = [existingUser.role];
@@ -80,8 +82,8 @@ const createDepartmentAdmin = async (req, res, next) => {
           identifierValue: adminIdValue,
         };
       }
-      existingUser.invitationToken = rawInviteToken;
-      existingUser.invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      existingUser.invitationToken = hashedInviteToken;
+      existingUser.invitationExpires = getAdminInvitationExpiresAt();
       existingUser.accountStatus = 'INVITED';
       existingUser.isInvitedAdmin = true;
       existingUser.invitedBy = req.user._id;
@@ -115,7 +117,7 @@ const createDepartmentAdmin = async (req, res, next) => {
         departmentName: department.name,
         managementScope: 'DEPARTMENT',
         invitationLink,
-        expiresHours: 48,
+        expiresHours: getAdminInvitationExpiryHours(),
       });
 
       if (emailResult.success) {
@@ -179,9 +181,11 @@ const createDepartmentAdmin = async (req, res, next) => {
     // 5. Generate System MAVI ID
     const generatedMaviId = `MAVI-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
-    // 6. Single-Use Cryptographic Invitation Token & 48h Expiration
+    // 6. Single-Use Cryptographic Invitation Token & Expiration
     const rawInviteToken = crypto.randomBytes(32).toString('hex');
-    const invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
+    const invitationExpires = getAdminInvitationExpiresAt();
+    const expiryHours = getAdminInvitationExpiryHours();
 
     // 7. Create User Document in INVITED State (Zero Password!)
     const newDeptAdmin = await User.create({
@@ -216,7 +220,7 @@ const createDepartmentAdmin = async (req, res, next) => {
       passwordSetupRequired: true,
       mustChangePassword: true,
       isInvitedAdmin: true,
-      invitationToken: rawInviteToken,
+      invitationToken: hashedInviteToken,
       invitationExpires,
       invitedBy: req.user._id,
       invitedAt: new Date(),
@@ -256,7 +260,7 @@ const createDepartmentAdmin = async (req, res, next) => {
       departmentName: department.name,
       managementScope: 'DEPARTMENT',
       invitationLink,
-      expiresHours: 48,
+      expiresHours: expiryHours,
     });
 
     if (emailResult.success) {
@@ -541,6 +545,99 @@ const getAppointmentHistory = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Resend Department Admin Invitation Email
+ * @route   POST /api/admin/departments/:departmentId/admins/:adminId/resend-invite
+ * @route   POST /api/admin/department-admins/:adminId/resend-invite
+ * @access  Private (Owner, Super Admin, Institution Admin)
+ */
+const resendDepartmentAdminInvite = async (req, res, next) => {
+  try {
+    const adminId = req.params.adminId || req.params.id;
+
+    const deptAdmin = await User.findById(adminId)
+      .populate('departmentId', 'name code')
+      .populate('institutionId', 'name shortName tenantId');
+
+    if (!deptAdmin || deptAdmin.role !== 'department_admin') {
+      return res.status(404).json({
+        success: false,
+        message: 'Department Administrator account not found.',
+      });
+    }
+
+    // Tenant Isolation Check
+    if (req.institutionScope?.institutionId) {
+      const reqInstId = req.institutionScope.institutionId.toString();
+      const adminInstId = (deptAdmin.institutionId?._id || deptAdmin.institutionId || '').toString();
+      if (adminInstId !== reqInstId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden. You cannot resend invitations for another institution.',
+        });
+      }
+    }
+
+    // Rate Limit: Minimum 60s resend interval
+    if (deptAdmin.invitedAt && Date.now() - new Date(deptAdmin.invitedAt).getTime() < 60000) {
+      const remainingSecs = Math.ceil((60000 - (Date.now() - new Date(deptAdmin.invitedAt).getTime())) / 1000);
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMITED',
+        message: `Please wait ${remainingSecs} seconds before resending another invitation email.`,
+      });
+    }
+
+    const rawInviteToken = crypto.randomBytes(32).toString('hex');
+    const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
+    deptAdmin.invitationToken = hashedInviteToken;
+    deptAdmin.invitationExpires = getAdminInvitationExpiresAt();
+    deptAdmin.accountStatus = 'INVITED';
+    deptAdmin.invitedAt = new Date();
+    await deptAdmin.save();
+
+    const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
+    const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;
+
+    const emailResult = await sendAdminInvitationEmail({
+      to: deptAdmin.email,
+      name: deptAdmin.name,
+      role: 'department_admin',
+      institutionName: deptAdmin.institutionId?.name || 'Authorized Institution',
+      departmentName: deptAdmin.departmentId?.name || 'Department',
+      managementScope: 'DEPARTMENT',
+      invitationLink,
+      expiresHours: getAdminInvitationExpiryHours(),
+    });
+
+    await AuditLog.create({
+      actorId: req.user._id,
+      actorRole: req.user.role,
+      targetUserId: deptAdmin._id,
+      action: 'ADMIN_INVITATION_RESENT',
+      institutionId: deptAdmin.institutionId?._id || deptAdmin.institutionId || null,
+      departmentId: deptAdmin.departmentId?._id || deptAdmin.departmentId || null,
+      details: { email: deptAdmin.email, emailSent: emailResult.success },
+      result: emailResult.success ? 'SUCCESS' : 'FAILED',
+    });
+
+    res.status(200).json({
+      success: true,
+      emailSent: emailResult.success,
+      recipient: deptAdmin.email,
+      message: emailResult.success
+        ? `Invitation email resent successfully to ${deptAdmin.email}.`
+        : `Invitation updated, but email could not be sent.`,
+      data: {
+        emailSent: emailResult.success,
+        recipient: deptAdmin.email,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createDepartmentAdmin,
   appointDepartmentAdmin: createDepartmentAdmin, // Alias for backward compatibility
@@ -549,4 +646,5 @@ module.exports = {
   reassignDepartmentAdmin,
   updateDepartmentAdminStatus,
   getAppointmentHistory,
+  resendDepartmentAdminInvite,
 };

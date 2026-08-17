@@ -7,6 +7,7 @@ const ActivityLog = require('../models/ActivityLog');
 const AuditLog = require('../models/AuditLog');
 const { sendEmail, sendAdminInvitationEmail } = require('../utils/sendEmail');
 const { ALL_PERMISSIONS, SYSTEM_ROLE_PERMISSIONS, checkPermissionDelegation } = require('../utils/permissions');
+const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
 // Default in-memory platform system configuration fallback
 let globalSystemConfig = {
@@ -527,7 +528,9 @@ const inviteAdmin = async (req, res, next) => {
 
     // 4. Generate Single-Use Token & Identifiers
     const inviteToken = crypto.randomBytes(32).toString('hex');
-    const inviteExpires = new Date(Date.now() + 48 * 3600 * 1000); // 48 Hours
+    const hashedInviteToken = crypto.createHash('sha256').update(inviteToken).digest('hex');
+    const inviteExpires = getAdminInvitationExpiresAt();
+    const expiryHours = getAdminInvitationExpiryHours();
     const customAdminId = adminId || `ADM-${targetInst?.shortName || 'PLAT'}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 
     let existingUser = await User.findOne({ email: lowerEmail });
@@ -548,7 +551,7 @@ const inviteAdmin = async (req, res, next) => {
       existingUser.adminLoginId = customAdminId;
       existingUser.designation = designation || existingUser.designation || 'Administrator';
       existingUser.permissions = permissions;
-      existingUser.invitationToken = inviteToken;
+      existingUser.invitationToken = hashedInviteToken;
       existingUser.invitationExpires = inviteExpires;
       existingUser.invitedBy = req.user._id;
       existingUser.invitedAt = new Date();
@@ -577,7 +580,7 @@ const inviteAdmin = async (req, res, next) => {
         permissions,
         mustChangePassword: true,
         isInvitedAdmin: true,
-        invitationToken: inviteToken,
+        invitationToken: hashedInviteToken,
         invitationExpires: inviteExpires,
         invitedBy: req.user._id,
         invitedAt: new Date(),
@@ -598,7 +601,7 @@ const inviteAdmin = async (req, res, next) => {
       departmentName: targetDept ? targetDept.name : null,
       managementScope: scope,
       invitationLink,
-      expiresHours: 48,
+      expiresHours: expiryHours,
     });
 
     // Audit Logging
@@ -831,8 +834,9 @@ const resendAdminInvite = async (req, res, next) => {
     }
 
     const inviteToken = crypto.randomBytes(32).toString('hex');
-    adminUser.invitationToken = inviteToken;
-    adminUser.invitationExpires = new Date(Date.now() + 48 * 3600 * 1000);
+    const hashedInviteToken = crypto.createHash('sha256').update(inviteToken).digest('hex');
+    adminUser.invitationToken = hashedInviteToken;
+    adminUser.invitationExpires = getAdminInvitationExpiresAt();
     adminUser.accountStatus = 'INVITED';
     adminUser.invitedAt = new Date();
     await adminUser.save();
@@ -848,7 +852,7 @@ const resendAdminInvite = async (req, res, next) => {
       departmentName: adminUser.departmentId?.name || null,
       managementScope: adminUser.adminScope || (adminUser.departmentId ? 'DEPARTMENT' : adminUser.institutionId ? 'INSTITUTION' : 'PLATFORM'),
       invitationLink,
-      expiresHours: 48,
+      expiresHours: getAdminInvitationExpiryHours(),
     });
 
     await AuditLog.create({

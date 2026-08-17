@@ -274,9 +274,24 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
       await api.post('/super-admin/admins', newAdmin);
       setShowCreateAdminModal(false);
       setNewAdmin({ name: '', email: '', password: '', role: 'admin', institutionId: '' });
+      toast.success('Admin provisioned successfully. Invitation email dispatched.');
       loadTabData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to provision admin.');
+      toast.error(getErrorMessage(err, 'Failed to provision admin.'));
+    }
+  };
+
+  const handleResendAdminInvite = async (adminId, adminEmail) => {
+    try {
+      const res = await api.post(`/super-admin/admins/${adminId}/resend-invite`);
+      if (res.data?.emailSent || res.data?.data?.emailSent) {
+        toast.success(`New 24-hour invitation email sent to ${adminEmail}`);
+      } else {
+        toast.warning(`Admin invitation updated, but email could not be sent to ${adminEmail}`);
+      }
+      loadTabData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to resend admin invitation.'));
     }
   };
 
@@ -553,48 +568,90 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
                           <th style={{ padding: '1rem' }}>Admin ID</th>
                           <th style={{ padding: '1rem' }}>Role Level</th>
                           <th style={{ padding: '1rem' }}>Assigned Institution</th>
+                          <th style={{ padding: '1rem' }}>Status</th>
+                          <th style={{ padding: '1rem' }}>Invitation</th>
                           <th style={{ padding: '1rem' }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {admins.map((adm) => (
-                          <tr key={adm._id} style={{ borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'middle' }}>
-                            <td style={{ padding: '1rem' }}>
-                              <div style={{ fontWeight: '600' }}>{adm.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{adm.email}</div>
-                            </td>
-                            <td style={{ padding: '1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--accent-cyan)', fontWeight: 'bold' }}>
-                              {adm.adminId || adm.adminLoginId || '—'}
-                            </td>
-                            <td style={{ padding: '1rem' }}>
-                              <span className="badge badge-primary" style={{ textTransform: 'uppercase', fontSize: '0.7rem', background: adm.role === 'super_admin' ? '#ef4444' : undefined }}>
-                                {adm.role}
-                              </span>
-                            </td>
-                            <td style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                              {adm.institutionId?.name || 'Platform Wide (Global)'}
-                            </td>
-                            <td style={{ padding: '1rem' }}>
-                              {adm._id !== currentUser._id && (
-                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                  <button onClick={() => handleRevokeAdmin(adm._id)} className="btn btn-outline" style={{ borderColor: '#f59e0b', color: '#f59e0b', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}>
-                                    Revoke Privileges
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setSelectedAdminForLifecycle(adm);
-                                      setAdminLifecycleModalType('permanent_delete');
-                                    }}
-                                    className="btn btn-outline"
-                                    style={{ borderColor: '#ef4444', color: '#ef4444', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-                                  >
-                                    Delete Permanently
-                                  </button>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
+                        {admins.map((adm) => {
+                          const isInvited = adm.accountStatus === 'INVITED' || adm.status === 'invited';
+                          const status = adm.accountStatus || (adm.status === 'suspended' ? 'SUSPENDED' : 'ACTIVE');
+
+                          return (
+                            <tr key={adm._id} style={{ borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'middle' }}>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ fontWeight: '600' }}>{adm.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{adm.email}</div>
+                              </td>
+                              <td style={{ padding: '1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--accent-cyan)', fontWeight: 'bold' }}>
+                                {adm.adminId || adm.adminLoginId || '—'}
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <span className="badge badge-primary" style={{ textTransform: 'uppercase', fontSize: '0.7rem', background: adm.role === 'super_admin' ? '#ef4444' : undefined }}>
+                                  {adm.role}
+                                </span>
+                              </td>
+                              <td style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                {adm.institutionId?.name || 'Platform Wide (Global)'}
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <span
+                                  className={`badge ${
+                                    status === 'ACTIVE'
+                                      ? 'badge-success'
+                                      : status === 'INVITED'
+                                      ? 'badge-warning'
+                                      : status === 'SUSPENDED'
+                                      ? 'badge-danger'
+                                      : 'badge-secondary'
+                                  }`}
+                                  style={{ fontSize: '0.7rem' }}
+                                >
+                                  {status}
+                                </span>
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                {isInvited ? (
+                                  <span style={{ color: 'var(--accent-amber)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    <Clock size={13} /> Email Sent
+                                  </span>
+                                ) : (
+                                  <span style={{ color: 'var(--accent-emerald)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    <CheckCircle size={13} /> Activated
+                                  </span>
+                                )}
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                {adm._id !== currentUser._id && (
+                                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                    <button
+                                      onClick={() => handleResendAdminInvite(adm._id, adm.email)}
+                                      className="btn btn-outline"
+                                      title="Resend 24-Hour Invitation / Setup Email"
+                                      style={{ borderColor: 'var(--accent-purple)', color: 'var(--accent-purple)', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                                    >
+                                      Resend Invite
+                                    </button>
+                                    <button onClick={() => handleRevokeAdmin(adm._id)} className="btn btn-outline" style={{ borderColor: '#f59e0b', color: '#f59e0b', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}>
+                                      Revoke Privileges
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedAdminForLifecycle(adm);
+                                        setAdminLifecycleModalType('permanent_delete');
+                                      }}
+                                      className="btn btn-outline"
+                                      style={{ borderColor: '#ef4444', color: '#ef4444', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                                    >
+                                      Delete Permanently
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}

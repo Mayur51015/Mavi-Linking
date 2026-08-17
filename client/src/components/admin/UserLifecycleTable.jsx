@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Eye,
   Edit2,
+  Mail,
   AlertTriangle,
   Lock,
   UserCheck,
@@ -73,8 +74,70 @@ export default function UserLifecycleTable({
     }
   };
 
-  const getStatusBadge = (accStatus, simpleStatus) => {
+  const handleResendInvite = async (user) => {
+    try {
+      setActionLoading(true);
+      let res = null;
+      if (user.role === 'department_admin') {
+        res = await api.post(`/admin/department-admins/${user._id}/resend-invite`).catch(() => null);
+        if (!res) res = await api.post(`/admin/users/${user._id}/resend-invitation`).catch(() => null);
+      } else if (['institution_admin', 'super_admin', 'platform_owner', 'academic_admin', 'placement_admin', 'finance_admin', 'training_admin'].includes(user.role) || user.role?.includes('admin')) {
+        res = await api.post(`/owner/admins/${user._id}/resend-invite`).catch(() => null);
+        if (!res) res = await api.post(`/super-admin/admins/${user._id}/resend-invite`).catch(() => null);
+        if (!res) res = await api.post(`/admin/users/${user._id}/resend-invitation`).catch(() => null);
+      } else {
+        res = await api.post(`/admin/users/${user._id}/resend-invitation`).catch(() => null);
+      }
+
+      if (res?.data?.success || res?.status === 200) {
+        alert(res.data?.message || `New 24-hour invitation and setup email dispatched to ${user.email}`);
+      } else {
+        alert(res?.data?.message || 'Failed to dispatch email. Please check server logs.');
+      }
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to resend invitation email.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const getStatusBadge = (accStatus, simpleStatus, expiresAt) => {
     const s = (accStatus || simpleStatus || 'ACTIVE').toUpperCase();
+    const isExpired = expiresAt && new Date(expiresAt) < new Date();
+
+    if (s === 'INVITED' || s === 'INVITATION_PENDING') {
+      if (isExpired) {
+        return (
+          <span
+            className="badge"
+            style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              color: '#f87171',
+              border: '1px solid #ef4444',
+              fontWeight: '600',
+              fontSize: '0.75rem',
+            }}
+          >
+            INVITE EXPIRED
+          </span>
+        );
+      }
+      return (
+        <span
+          className="badge"
+          style={{
+            background: 'rgba(168, 85, 247, 0.15)',
+            color: '#c084fc',
+            border: '1px solid #a855f7',
+            fontWeight: '600',
+            fontSize: '0.75rem',
+          }}
+        >
+          INVITED (24H)
+        </span>
+      );
+    }
     if (s === 'ACTIVE') {
       return (
         <span
@@ -213,7 +276,7 @@ export default function UserLifecycleTable({
                     {u.departmentId?.name || u.departmentId?.code || 'All Depts'}
                   </td>
                   <td style={{ padding: '0.85rem 0.75rem' }}>
-                    {getStatusBadge(u.accountStatus, u.status)}
+                    {getStatusBadge(u.accountStatus, u.status, u.invitationExpires)}
                   </td>
                   <td style={{ padding: '0.85rem 0.75rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                     {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}
@@ -242,6 +305,26 @@ export default function UserLifecycleTable({
                       >
                         <Edit2 size={13} /> Edit
                       </button>
+
+                      {/* Resend Invite / Setup Mail Action */}
+                      {!u.isDeleted && u.accountStatus !== 'PERMANENTLY_DELETED' && (
+                        <button
+                          onClick={() => handleResendInvite(u)}
+                          className="btn btn-outline"
+                          title="Resend 24-Hour Invitation / Setup Email"
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.75rem',
+                            borderColor: 'var(--accent-purple, #a855f7)',
+                            color: 'var(--accent-purple, #a855f7)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.2rem',
+                          }}
+                        >
+                          <Mail size={13} /> Resend Mail
+                        </button>
+                      )}
 
                       {/* Suspend / Reactivate Action */}
                       {isSuspended || isDeactivated ? (

@@ -5,6 +5,7 @@ const ActivityLog = require('../models/ActivityLog');
 const AuditLog = require('../models/AuditLog');
 const crypto = require('crypto');
 const { sendAdminInvitationEmail } = require('../utils/sendEmail');
+const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
 /**
  * @desc    Create a new Institution (College / University)
@@ -312,7 +313,9 @@ const assignInstitutionAdmin = async (req, res, next) => {
     }
 
     const inviteToken = crypto.randomBytes(32).toString('hex');
-    const inviteExpires = new Date(Date.now() + 48 * 3600 * 1000); // 48 Hours
+    const hashedInviteToken = crypto.createHash('sha256').update(inviteToken).digest('hex');
+    const inviteExpires = getAdminInvitationExpiresAt();
+    const expiryHours = getAdminInvitationExpiryHours();
 
     // Update user role, roles array, institutionId & invitation token
     targetUser.role = 'institution_admin';
@@ -320,7 +323,7 @@ const assignInstitutionAdmin = async (req, res, next) => {
       targetUser.roles.push('institution_admin');
     }
     targetUser.institutionId = institution._id;
-    targetUser.invitationToken = inviteToken;
+    targetUser.invitationToken = hashedInviteToken;
     targetUser.invitationExpires = inviteExpires;
     targetUser.accountStatus = 'INVITED';
     targetUser.isInvitedAdmin = true;
@@ -352,7 +355,7 @@ const assignInstitutionAdmin = async (req, res, next) => {
       institutionName: institution.name,
       managementScope: 'INSTITUTION',
       invitationLink,
-      expiresHours: 48,
+      expiresHours: expiryHours,
     });
 
     await ActivityLog.create({

@@ -7,9 +7,9 @@ const AuditLog = require('../models/AuditLog');
 const RecruitmentNotification = require('../models/RecruitmentNotification');
 const Institution = require('../models/Institution');
 const Department = require('../models/Department');
-const Project = require('../models/Project');
 const crypto = require('crypto');
-const { sendEmail, generateAccountInvitationEmailHtml, sendAccountLifecycleEmail } = require('../utils/sendEmail');
+const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml, sendAccountLifecycleEmail } = require('../utils/sendEmail');
+const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
 /**
  * @desc    Get Admin Dashboard metrics (Platform-wide or Institution-scoped)
@@ -1463,7 +1463,7 @@ const createStaffUser = async (req, res, next) => {
       const rawInviteToken = crypto.randomBytes(32).toString('hex');
       const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
       existingUser.invitationToken = hashedInviteToken;
-      existingUser.invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      existingUser.invitationExpires = getAdminInvitationExpiresAt();
       if (existingUser.accountStatus !== 'ACTIVE') {
         existingUser.accountStatus = 'INVITED';
         existingUser.status = 'invited';
@@ -1477,7 +1477,7 @@ const createStaffUser = async (req, res, next) => {
         role: lowerRole,
         institutionName: targetInst?.name || 'Zeal College of Engineering and Research',
         activationLink,
-        expiresHours: 48,
+        expiresHours: getAdminInvitationExpiryHours(),
       });
 
       sendEmail({
@@ -1508,10 +1508,11 @@ const createStaffUser = async (req, res, next) => {
     // 5. Generate Immutable MAVI ID
     const generatedMaviId = `MAVI-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
-    // 6. Generate 32-byte cryptographic single-use invitation token & 48h expiration
+    // 6. Generate 32-byte cryptographic single-use invitation token & expiration
     const rawInviteToken = crypto.randomBytes(32).toString('hex');
     const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
-    const invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+    const invitationExpires = getAdminInvitationExpiresAt();
+    const expiryHours = getAdminInvitationExpiryHours();
 
     // 7. Determine institutional identifier type
     const validIdType = identifierType || (lowerRole === 'teacher' ? 'FACULTY_ID' : lowerRole === 'department_admin' ? 'EMPLOYEE_ID' : 'RECRUITER_ID');
@@ -1563,7 +1564,7 @@ const createStaffUser = async (req, res, next) => {
       role: lowerRole,
       institutionName: targetInst?.name || 'Zeal College of Engineering and Research',
       activationLink,
-      expiresHours: 48,
+      expiresHours: expiryHours,
     });
 
     sendEmail({
@@ -1605,44 +1606,68 @@ const resendUserInvitation = async (req, res, next) => {
   try {
     const { userId } = req.params;
 
-    const user = await User.findById(userId).populate('institutionId', 'name tenantId');
+    const user = await User.findById(userId)
+      .populate('institutionId', 'name tenantId')
+      .populate('departmentId', 'name');
     if (!user) {
       return res.status(404).json({ success: false, message: 'Target user not found.' });
     }
 
-    if (user.accountStatus === 'ACTIVE' && user.emailVerified) {
-      return res.status(400).json({
+    // Rate Limit: 60s cooldown
+    if (user.invitedAt && Date.now() - new Date(user.invitedAt).getTime() < 60000) {
+      const remainingSecs = Math.ceil((60000 - (Date.now() - new Date(user.invitedAt).getTime())) / 1000);
+      return res.status(429).json({
         success: false,
-        message: 'This account is already activated and active. Resending invitation is not applicable.',
+        code: 'RATE_LIMITED',
+        message: `Please wait ${remainingSecs} seconds before resending another invitation email.`,
       });
     }
 
-    // Generate fresh cryptographic token & 48h expiration
+    // Generate fresh cryptographic token & expiration
     const rawInviteToken = crypto.randomBytes(32).toString('hex');
     const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
-    const invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    const invitationExpires = getAdminInvitationExpiresAt();
+    const expiryHours = getAdminInvitationExpiryHours();
 
     user.invitationToken = hashedInviteToken;
     user.invitationExpires = invitationExpires;
     user.accountStatus = 'INVITED';
     user.status = 'invited';
+    user.invitedAt = new Date();
     await user.save();
 
     const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
-    const activationLink = `${clientUrl}/activate-account?token=${rawInviteToken}`;
-    const emailHtml = generateAccountInvitationEmailHtml({
-      name: user.name,
-      role: user.role,
-      institutionName: user.institutionId?.name || 'Zeal College of Engineering and Research',
-      activationLink,
-      expiresHours: 48,
-    });
+    const isAdminRole = ['platform_owner', 'super_admin', 'institution_admin', 'department_admin', 'placement_admin', 'academic_admin', 'finance_admin', 'training_admin', 'admin'].includes(user.role) || user.role?.includes('admin');
 
-    await sendEmail({
-      to: user.email,
-      subject: `New Invitation: Activate your MAVI Linking ${user.role === 'teacher' ? 'Teacher' : 'Recruiter'} Account`,
-      html: emailHtml,
-    });
+    let emailResult;
+    if (isAdminRole) {
+      const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;
+      emailResult = await sendAdminInvitationEmail({
+        to: user.email,
+        name: user.name,
+        role: user.role,
+        institutionName: user.institutionId?.name || 'Platform Wide',
+        departmentName: user.departmentId?.name || null,
+        managementScope: user.adminScope || (user.departmentId ? 'DEPARTMENT' : user.institutionId ? 'INSTITUTION' : 'PLATFORM'),
+        invitationLink,
+        expiresHours: expiryHours,
+      });
+    } else {
+      const activationLink = `${clientUrl}/activate-account?token=${rawInviteToken}`;
+      const emailHtml = generateAccountInvitationEmailHtml({
+        name: user.name,
+        role: user.role,
+        institutionName: user.institutionId?.name || 'Zeal College of Engineering and Research',
+        activationLink,
+        expiresHours: expiryHours,
+      });
+
+      emailResult = await sendEmail({
+        to: user.email,
+        subject: `New Invitation: Activate your MAVI Linking ${user.role === 'teacher' ? 'Teacher' : user.role === 'recruiter' ? 'Recruiter' : 'Student'} Account`,
+        html: emailHtml,
+      });
+    }
 
     await ActivityLog.create({
       userId: req.user._id,
@@ -1654,7 +1679,12 @@ const resendUserInvitation = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: `Invitation email successfully resent to ${user.email}.`,
+      message: `New 24-hour invitation email successfully dispatched to ${user.email}.`,
+      data: {
+        emailSent: emailResult?.success ?? true,
+        expiresAt: invitationExpires,
+        validityHours: expiryHours,
+      },
     });
   } catch (error) {
     next(error);

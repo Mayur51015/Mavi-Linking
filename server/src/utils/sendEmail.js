@@ -160,7 +160,7 @@ const generatePasswordResetEmailHtml = ({ name, otp, resetLink }) => {
 /**
  * Generate Dark Theme HTML Email for Account Activation (Teacher / Recruiter Invitations)
  */
-const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activationLink, expiresHours = 48 }) => {
+const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activationLink, expiresHours = 24 }) => {
   const roleTitle = role === 'teacher' ? 'Teacher / Faculty' : role === 'recruiter' ? 'Corporate Recruiter' : role === 'department_admin' ? 'Department Administrator' : 'Staff Member';
   return `
     <!DOCTYPE html>
@@ -203,7 +203,7 @@ const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activ
           </div>
 
           <div class="warning">
-            <strong>Security Notice:</strong> No default password is sent in plain text. You will create your confidential password directly on the activation portal. This single-use link expires in <strong>${expiresHours} hours</strong>.
+            <strong>Security Notice:</strong> No default password is sent in plain text. You will create your confidential password directly on the activation portal. This single-use link is valid for <strong>${expiresHours} hours</strong>. Please complete your account setup before the invitation expires.
           </div>
         </div>
         <div class="footer">
@@ -455,7 +455,7 @@ const generateAdminInvitationEmailHtml = ({
   departmentName,
   managementScope = 'INSTITUTION',
   invitationLink,
-  expiresHours = 48,
+  expiresHours = 24,
 }) => {
   const formatRoleTitle = (r) => {
     if (!r) return 'Administrator';
@@ -531,9 +531,12 @@ const generateAdminInvitationEmailHtml = ({
             </table>
           </div>
 
+          <p style="font-size: 14px; color: #e4e4e7; text-align: center; margin-top: 16px;">
+            Your MAVI Linking administrator invitation is valid for <strong>${expiresHours} hours</strong>. Please complete your account setup before the invitation expires.
+          </p>
+
           <div style="text-align: center; margin: 24px 0;">
-            <p style="font-size: 14px; color: #e4e4e7;">Click the secure link below to accept your invitation and set up your permanent administrative password:</p>
-            <a href="${invitationLink}" class="btn-link" target="_blank">Accept Invitation & Activate Admin Account</a>
+            <a href="${invitationLink}" class="btn-link" target="_blank">Accept Administrator Invitation</a>
           </div>
 
           <div class="warning">
@@ -560,7 +563,7 @@ const sendAdminInvitationEmail = async ({
   departmentName,
   managementScope,
   invitationLink,
-  expiresHours = 48,
+  expiresHours = 24,
 }) => {
   if (!to || typeof to !== 'string' || !to.includes('@')) {
     console.error(`[EMAIL ERROR] Recipient email is missing or invalid: ${to}`);

@@ -6,6 +6,7 @@ const AuditLog = require('../models/AuditLog');
 const RecruitmentNotification = require('../models/RecruitmentNotification');
 const crypto = require('crypto');
 const { sendAdminInvitationEmail } = require('../utils/sendEmail');
+const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
 /**
  * @desc    Get Global Super Admin Dashboard Metrics
@@ -165,7 +166,9 @@ const createAdmin = async (req, res, next) => {
     }
 
     const inviteToken = crypto.randomBytes(32).toString('hex');
-    const inviteExpires = new Date(Date.now() + 48 * 3600 * 1000); // 48 Hours
+    const hashedInviteToken = crypto.createHash('sha256').update(inviteToken).digest('hex');
+    const inviteExpires = getAdminInvitationExpiresAt();
+    const expiryHours = getAdminInvitationExpiryHours();
 
     if (user) {
       // Upgrade existing user to admin
@@ -178,7 +181,7 @@ const createAdmin = async (req, res, next) => {
       user.adminLoginId = finalAdminId;
       if (designation) user.designation = designation;
       if (permissions && Array.isArray(permissions)) user.permissions = permissions;
-      user.invitationToken = inviteToken;
+      user.invitationToken = hashedInviteToken;
       user.invitationExpires = inviteExpires;
       user.accountStatus = 'INVITED';
       user.isInvitedAdmin = true;
@@ -206,7 +209,7 @@ const createAdmin = async (req, res, next) => {
         accountStatus: 'INVITED',
         isInvitedAdmin: true,
         mustChangePassword: true,
-        invitationToken: inviteToken,
+        invitationToken: hashedInviteToken,
         invitationExpires: inviteExpires,
         invitedBy: req.user._id,
         invitedAt: new Date(),
@@ -243,7 +246,7 @@ const createAdmin = async (req, res, next) => {
       institutionName: targetInst?.name || 'Platform Wide',
       managementScope: targetInst ? 'INSTITUTION' : 'PLATFORM',
       invitationLink,
-      expiresHours: 48,
+      expiresHours: expiryHours,
     });
 
     await ActivityLog.create({
@@ -500,11 +503,83 @@ const updatePlatformSettings = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Resend Admin Invitation Email (Super Admin authority)
+ * @route   POST /api/super-admin/admins/:id/resend-invite
+ * @access  Private (Super Admin)
+ */
+const resendAdminInvite = async (req, res, next) => {
+  try {
+    const adminUser = await User.findById(req.params.id)
+      .populate('institutionId', 'name shortName tenantId');
+
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin account not found.' });
+    }
+
+    // Rate Limit: Minimum 60s resend interval
+    if (adminUser.invitedAt && Date.now() - new Date(adminUser.invitedAt).getTime() < 60000) {
+      const remainingSecs = Math.ceil((60000 - (Date.now() - new Date(adminUser.invitedAt).getTime())) / 1000);
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMITED',
+        message: `Please wait ${remainingSecs} seconds before resending another invitation email.`,
+      });
+    }
+
+    const inviteToken = crypto.randomBytes(32).toString('hex');
+    const hashedInviteToken = crypto.createHash('sha256').update(inviteToken).digest('hex');
+    adminUser.invitationToken = hashedInviteToken;
+    adminUser.invitationExpires = getAdminInvitationExpiresAt();
+    adminUser.accountStatus = 'INVITED';
+    adminUser.invitedAt = new Date();
+    await adminUser.save();
+
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
+
+    const emailResult = await sendAdminInvitationEmail({
+      to: adminUser.email,
+      name: adminUser.name,
+      role: adminUser.role,
+      institutionName: adminUser.institutionId?.name || 'Platform Wide',
+      managementScope: adminUser.institutionId ? 'INSTITUTION' : 'PLATFORM',
+      invitationLink,
+      expiresHours: getAdminInvitationExpiryHours(),
+    });
+
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: adminUser._id,
+      action: 'ADMIN_INVITATION_RESENT',
+      institutionId: adminUser.institutionId?._id || adminUser.institutionId || null,
+      details: { email: adminUser.email, emailSent: emailResult.success },
+      result: emailResult.success ? 'SUCCESS' : 'FAILED',
+    });
+
+    res.status(200).json({
+      success: true,
+      emailSent: emailResult.success,
+      recipient: adminUser.email,
+      message: emailResult.success
+        ? 'Invitation email resent successfully.'
+        : 'Invitation updated, but email could not be sent.',
+      data: {
+        emailSent: emailResult.success,
+        recipient: adminUser.email,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getSuperAdminStats,
   getAllAdmins,
   createAdmin,
   removeAdmin,
+  resendAdminInvite,
   getSecurityEvents,
   getLicenses,
   getPlatformAnalytics,

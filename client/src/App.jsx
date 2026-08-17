@@ -255,8 +255,12 @@ const App = () => {
             {/* ─── Operational Admin Portal ───────────────────────────────── */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/accept-invite" element={<AdminAcceptInvite />} />
+            <Route path="/admin/setup-account" element={<AdminAcceptInvite />} />
+            <Route path="/admin/invitation" element={<AdminAcceptInvite />} />
             <Route path="/accept-admin-invite" element={<AdminAcceptInvite />} />
             <Route path="/accept-admin-invitation" element={<AdminAcceptInvite />} />
+            <Route path="/setup-admin-account" element={<AdminAcceptInvite />} />
+            <Route path="/activate-admin-account" element={<AdminAcceptInvite />} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard activeTab="overview" /></AdminRoute>} />
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard activeTab="overview" /></AdminRoute>} />
             <Route path="/admin/students" element={<AdminRoute><AdminDashboard activeTab="students" /></AdminRoute>} />

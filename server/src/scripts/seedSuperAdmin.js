@@ -41,19 +41,17 @@ async function seedSuperAdmin() {
       user.institutionId = null;
       user.departmentId = null;
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-      user.password = hashedPassword;
+      user.password = password;
 
       await user.save();
       console.log(`✅ Platform Super Admin account updated: ${email}`);
     } else {
       console.log(`👑 Creating new Platform Super Admin account for ${email}...`);
-      const hashedPassword = await bcrypt.hash(password, 10);
 
       user = await User.create({
         name,
         email,
-        password: hashedPassword,
+        password: password,
         role: 'super_admin',
         roles: ['super_admin', 'admin', 'user'],
         status: 'active',

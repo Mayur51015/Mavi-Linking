@@ -214,7 +214,11 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
     try {
       const res = await api.post('/owner/admins/invite', newAdmin);
       setInviteResult(res.data.data);
-      toast.success('Institution Admin invite token generated.');
+      if (res.data?.emailSent || res.data?.data?.emailSent) {
+        toast.success('Administrator created successfully. Invitation email sent.');
+      } else {
+        toast.warning('Administrator created, but invitation email could not be sent. You can copy the link below.');
+      }
       loadData();
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to invite administrator.'));
@@ -257,7 +261,11 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
   const handleResendInvite = async (adminId) => {
     try {
       const res = await api.post(`/owner/admins/${adminId}/resend-invite`);
-      toast.success('Admin invitation resent successfully.');
+      if (res.data?.emailSent || res.data?.data?.emailSent) {
+        toast.success('Admin invitation resent and email dispatched successfully.');
+      } else {
+        toast.warning('Admin invitation updated, but email could not be sent.');
+      }
       if (res.data?.data?.invitationLink) {
         navigator.clipboard.writeText(res.data.data.invitationLink);
         toast.info('Invitation link copied to clipboard.');

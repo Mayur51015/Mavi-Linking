@@ -3,7 +3,7 @@ const User = require('../models/User');
 const Department = require('../models/Department');
 const Institution = require('../models/Institution');
 const AuditLog = require('../models/AuditLog');
-const { sendEmail, generateAccountInvitationEmailHtml } = require('../utils/sendEmail');
+const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml } = require('../utils/sendEmail');
 
 /**
  * @desc    Create a new institution-provisioned Department Admin account
@@ -51,6 +51,8 @@ const createDepartmentAdmin = async (req, res, next) => {
       }
     }
 
+    const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
+
     // 3. Handle Existing User Appointment or Duplicate Check
     const existingUser = await User.findOne({ email: lowerEmail });
     if (existingUser) {
@@ -63,6 +65,7 @@ const createDepartmentAdmin = async (req, res, next) => {
       }
 
       // Appoint existing user as Department Admin
+      const rawInviteToken = crypto.randomBytes(32).toString('hex');
       const oldRole = existingUser.role;
       existingUser.role = 'department_admin';
       if (!Array.isArray(existingUser.roles)) existingUser.roles = [existingUser.role];
@@ -77,6 +80,12 @@ const createDepartmentAdmin = async (req, res, next) => {
           identifierValue: adminIdValue,
         };
       }
+      existingUser.invitationToken = rawInviteToken;
+      existingUser.invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      existingUser.accountStatus = 'INVITED';
+      existingUser.isInvitedAdmin = true;
+      existingUser.invitedBy = req.user._id;
+      existingUser.invitedAt = new Date();
       await existingUser.save();
 
       await AuditLog.create({
@@ -96,10 +105,52 @@ const createDepartmentAdmin = async (req, res, next) => {
         result: 'SUCCESS',
       });
 
+      // Dispatch Invitation Email to Promoted User
+      const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;
+      const emailResult = await sendAdminInvitationEmail({
+        to: lowerEmail,
+        name: existingUser.name,
+        role: 'department_admin',
+        institutionName: institution?.name || 'Authorized Institution',
+        departmentName: department.name,
+        managementScope: 'DEPARTMENT',
+        invitationLink,
+        expiresHours: 48,
+      });
+
+      if (emailResult.success) {
+        await AuditLog.create({
+          actorId: req.user._id,
+          targetUserId: existingUser._id,
+          action: 'ADMIN_INVITATION_EMAIL_SENT',
+          institutionId: targetInstId,
+          departmentId: department._id,
+          details: { email: lowerEmail, messageId: emailResult.messageId },
+          result: 'SUCCESS',
+        });
+      } else {
+        await AuditLog.create({
+          actorId: req.user._id,
+          targetUserId: existingUser._id,
+          action: 'ADMIN_INVITATION_EMAIL_FAILED',
+          institutionId: targetInstId,
+          departmentId: department._id,
+          details: { email: lowerEmail, error: emailResult.error },
+          result: 'FAILED',
+        });
+      }
+
       return res.status(200).json({
         success: true,
-        message: `Successfully appointed ${existingUser.name} (${lowerEmail}) as Department Admin for ${department.name}.`,
-        data: existingUser,
+        emailSent: emailResult.success,
+        message: emailResult.success
+          ? `Successfully appointed ${existingUser.name} (${lowerEmail}) as Department Admin for ${department.name}. Invitation email sent.`
+          : `Appointed ${existingUser.name} as Department Admin, but invitation email could not be sent.`,
+        data: {
+          user: existingUser,
+          invitationLink,
+          emailSent: emailResult.success,
+        },
       });
     }
 
@@ -124,7 +175,6 @@ const createDepartmentAdmin = async (req, res, next) => {
 
     // 6. Single-Use Cryptographic Invitation Token & 48h Expiration
     const rawInviteToken = crypto.randomBytes(32).toString('hex');
-    const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
     const invitationExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
     // 7. Create User Document in INVITED State (Zero Password!)
@@ -155,13 +205,15 @@ const createDepartmentAdmin = async (req, res, next) => {
         'DEPARTMENT_REPORTS_GENERATE',
       ],
       accountStatus: 'INVITED',
-      status: 'invited',
-      emailVerified: false,
+      status: 'active',
+      emailVerified: true,
       passwordSetupRequired: true,
-      mustChangePassword: false,
-      roleStatus: 'approved',
-      invitationToken: hashedInviteToken,
+      mustChangePassword: true,
+      isInvitedAdmin: true,
+      invitationToken: rawInviteToken,
       invitationExpires,
+      invitedBy: req.user._id,
+      invitedAt: new Date(),
     });
 
     // Optionally set department headUserId if unassigned
@@ -189,25 +241,46 @@ const createDepartmentAdmin = async (req, res, next) => {
     });
 
     // 9. Send Secure Invitation Email
-    const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
-    const activationLink = `${clientUrl}/activate-account?token=${rawInviteToken}`;
-    const emailHtml = generateAccountInvitationEmailHtml({
+    const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;
+    const emailResult = await sendAdminInvitationEmail({
+      to: lowerEmail,
       name: newDeptAdmin.name,
-      role: 'Department Administrator',
-      institutionName: institution?.name || 'Zeal College of Engineering & Research',
-      activationLink,
+      role: 'department_admin',
+      institutionName: institution?.name || 'Authorized Institution',
+      departmentName: department.name,
+      managementScope: 'DEPARTMENT',
+      invitationLink,
       expiresHours: 48,
     });
 
-    sendEmail({
-      to: lowerEmail,
-      subject: `Invitation to join as Department Administrator - ${department.name}`,
-      html: emailHtml,
-    }).catch(err => console.error('[ASYNC EMAIL ERROR]', err));
+    if (emailResult.success) {
+      await AuditLog.create({
+        actorId: req.user._id,
+        targetUserId: newDeptAdmin._id,
+        action: 'ADMIN_INVITATION_EMAIL_SENT',
+        institutionId: targetInstId,
+        departmentId: department._id,
+        details: { email: lowerEmail, messageId: emailResult.messageId },
+        result: 'SUCCESS',
+      });
+    } else {
+      await AuditLog.create({
+        actorId: req.user._id,
+        targetUserId: newDeptAdmin._id,
+        action: 'ADMIN_INVITATION_EMAIL_FAILED',
+        institutionId: targetInstId,
+        departmentId: department._id,
+        details: { email: lowerEmail, error: emailResult.error },
+        result: 'FAILED',
+      });
+    }
 
     res.status(201).json({
       success: true,
-      message: `Successfully provisioned Department Admin account for ${newDeptAdmin.name}. Invitation email sent.`,
+      emailSent: emailResult.success,
+      message: emailResult.success
+        ? `Successfully provisioned Department Admin account for ${newDeptAdmin.name}. Invitation email sent.`
+        : `Provisioned Department Admin account for ${newDeptAdmin.name}, but invitation email could not be sent.`,
       data: {
         id: newDeptAdmin._id,
         name: newDeptAdmin.name,
@@ -215,6 +288,8 @@ const createDepartmentAdmin = async (req, res, next) => {
         maviId: newDeptAdmin.maviId,
         role: newDeptAdmin.role,
         accountStatus: newDeptAdmin.accountStatus,
+        invitationLink,
+        emailSent: emailResult.success,
         department: {
           id: department._id,
           name: department.name,

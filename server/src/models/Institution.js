@@ -139,7 +139,8 @@ institutionSchema.pre('validate', function (next) {
   
   if (!this.institutionCode) {
     const cityPrefix = (this.city || 'HQ').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-    this.institutionCode = `${codePrefix.substring(0, 6)}-${cityPrefix.substring(0, 4)}-01`;
+    const randHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+    this.institutionCode = `${codePrefix.substring(0, 6)}-${cityPrefix.substring(0, 4)}-${randHex}`;
   }
   next();
 });

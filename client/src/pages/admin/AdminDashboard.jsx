@@ -43,6 +43,7 @@ import { AuthContext } from '../../context/AuthContext';
 import StudentProfileEditorModal from '../../components/admin/StudentProfileEditorModal';
 import DepartmentAdminManager from '../../components/admin/DepartmentAdminManager';
 import CreateDepartmentModal from '../../components/admin/CreateDepartmentModal';
+import UserLifecycleTable from '../../components/admin/UserLifecycleTable';
 import AdminBilling from './AdminBilling';
 
 const AdminDashboard = ({ activeTab: propActiveTab }) => {
@@ -568,74 +569,31 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
                     <option value="">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="suspended">Suspended</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="SUSPENDED">Suspended</option>
+                    <option value="DEACTIVATED">Deactivated</option>
+                    <option value="PENDING_VERIFICATION">Pending Verification</option>
                   </select>
                 </div>
 
-                <div className="glass-card-static" style={{ overflowX: 'auto' }}>
-                  {students.length === 0 ? (
-                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      <GraduationCap size={36} style={{ marginBottom: '0.5rem', color: 'var(--text-muted)' }} />
-                      <p>No students found. Search criteria yielded no results.</p>
-                    </div>
-                  ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                          <th style={{ padding: '1rem' }}>Student Profile</th>
-                          <th style={{ padding: '1rem' }}>MAVI ID / PRN</th>
-                          <th style={{ padding: '1rem' }}>Department & Year</th>
-                          <th style={{ padding: '1rem' }}>Status</th>
-                          <th style={{ padding: '1rem' }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {students.map((s) => (
-                          <tr key={s._id} style={{ borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'middle' }}>
-                            <td style={{ padding: '1rem' }}>
-                              <div style={{ fontWeight: '600' }}>{s.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{s.email}</div>
-                            </td>
-                            <td style={{ padding: '1rem' }}>
-                              <div style={{ fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-purple)' }}>{s.maviId || '—'}</div>
-                              <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>{s.prn || 'PRN Pending'}</div>
-                            </td>
-                            <td style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                              <div>{s.department || s.university?.department || 'Computer Science'}</div>
-                              <div>Batch {s.university?.batch || '2026'}</div>
-                            </td>
-                            <td style={{ padding: '1rem' }}>
-                              <span className={`badge ${s.status === 'suspended' ? 'badge-outline' : 'badge-primary'}`} style={{ color: s.status === 'suspended' ? '#ef4444' : undefined }}>
-                                {s.status === 'suspended' ? 'Suspended' : 'Active'}
-                              </span>
-                            </td>
-                            <td style={{ padding: '1rem' }}>
-                              <div style={{ display: 'flex', gap: '0.4rem' }}>
-                                <button onClick={() => setSelectedStudentForProfileEdit(s._id)} className="btn btn-primary" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                  <Edit size={12} /> Edit Profile
-                                </button>
-                                <button onClick={() => setSuspendingUser(s)} className="btn btn-outline" style={{ borderColor: s.status === 'suspended' ? 'var(--accent-emerald)' : '#eab308', color: s.status === 'suspended' ? 'var(--accent-emerald)' : '#eab308', padding: '0.35rem 0.55rem', fontSize: '0.75rem' }}>
-                                  {s.status === 'suspended' ? 'Activate' : 'Suspend'}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
+                <UserLifecycleTable
+                  users={students}
+                  departments={departments}
+                  institutions={allInstitutions}
+                  onRefresh={loadTabData}
+                  loading={loading}
+                  currentUserRole="institution_admin"
+                />
 
-                  {pagination.pages > 1 && (
-                    <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Page {pagination.page} of {pagination.pages} ({pagination.total} students)</span>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Prev</button>
-                        <button disabled={page >= pagination.pages} onClick={() => setPage(page + 1)} className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Next</button>
-                      </div>
+                {pagination.pages > 1 && (
+                  <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Page {pagination.page} of {pagination.pages} ({pagination.total} students)</span>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Prev</button>
+                      <button disabled={page >= pagination.pages} onClick={() => setPage(page + 1)} className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Next</button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -659,72 +617,14 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                   </button>
                 </div>
 
-                <div className="glass-card-static" style={{ overflowX: 'auto' }}>
-                  {teachers.length === 0 ? (
-                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      <Users size={36} style={{ marginBottom: '0.5rem' }} />
-                      <p>No teachers found for this institution.</p>
-                    </div>
-                  ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                          <th style={{ padding: '1rem' }}>Faculty Member</th>
-                          <th style={{ padding: '1rem' }}>Department & Designation</th>
-                          <th style={{ padding: '1rem' }}>Status</th>
-                          <th style={{ padding: '1rem' }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {teachers.map((t) => {
-                          const isInvited = t.accountStatus === 'INVITED' || t.status === 'invited';
-                          const isSuspended = t.status === 'suspended' || t.accountStatus === 'SUSPENDED';
-
-                          return (
-                            <tr key={t._id} style={{ borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'middle' }}>
-                              <td style={{ padding: '1rem' }}>
-                                <div style={{ fontWeight: '600' }}>{t.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.email}</div>
-                              </td>
-                              <td style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                <div>{t.department || t.university?.department || 'Computer Engineering'}</div>
-                                <div>{t.designation || 'Assistant Professor'}</div>
-                              </td>
-                              <td style={{ padding: '1rem' }}>
-                                <span
-                                  className={`badge ${isInvited ? 'badge-amber' : isSuspended ? 'badge-outline' : 'badge-primary'}`}
-                                  style={{
-                                    color: isInvited ? '#f59e0b' : isSuspended ? '#ef4444' : '#10b981',
-                                    borderColor: isInvited ? '#f59e0b' : isSuspended ? '#ef4444' : '#10b981',
-                                  }}
-                                >
-                                  {isInvited ? 'INVITED' : isSuspended ? 'SUSPENDED' : 'ACTIVE'}
-                                </span>
-                              </td>
-                              <td style={{ padding: '1rem' }}>
-                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                  {isInvited && (
-                                    <button
-                                      onClick={() => handleResendInvitation(t._id, t.email)}
-                                      disabled={resendingInviteId === t._id}
-                                      className="btn btn-outline"
-                                      style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', borderColor: '#f59e0b', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                                    >
-                                      <RefreshCw size={12} className={resendingInviteId === t._id ? 'animate-spin' : ''} /> Resend Invite
-                                    </button>
-                                  )}
-                                  <button onClick={() => setEditUser(t)} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}>
-                                    Edit Profile
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
+                <UserLifecycleTable
+                  users={teachers}
+                  departments={departments}
+                  institutions={allInstitutions}
+                  onRefresh={loadTabData}
+                  loading={loading}
+                  currentUserRole="institution_admin"
+                />
               </div>
             )}
 
@@ -748,69 +648,14 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                   </button>
                 </div>
 
-                <div className="glass-card-static" style={{ overflowX: 'auto' }}>
-                  {recruiters.length === 0 ? (
-                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      <Briefcase size={36} style={{ marginBottom: '0.5rem' }} />
-                      <p>No corporate recruiters registered under this institution.</p>
-                    </div>
-                  ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                          <th style={{ padding: '1rem' }}>Recruiter</th>
-                          <th style={{ padding: '1rem' }}>Company / Organization</th>
-                          <th style={{ padding: '1rem' }}>Status</th>
-                          <th style={{ padding: '1rem' }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recruiters.map((r) => {
-                          const isInvited = r.accountStatus === 'INVITED' || r.status === 'invited';
-                          const isSuspended = r.status === 'suspended' || r.accountStatus === 'SUSPENDED';
-
-                          return (
-                            <tr key={r._id} style={{ borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'middle' }}>
-                              <td style={{ padding: '1rem' }}>
-                                <div style={{ fontWeight: '600' }}>{r.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{r.email}</div>
-                              </td>
-                              <td style={{ padding: '1rem', fontWeight: '500' }}>{r.companyName || r.organization || 'Hiring Partner'}</td>
-                              <td style={{ padding: '1rem' }}>
-                                <span
-                                  className={`badge ${isInvited ? 'badge-amber' : isSuspended ? 'badge-outline' : 'badge-primary'}`}
-                                  style={{
-                                    color: isInvited ? '#f59e0b' : isSuspended ? '#ef4444' : '#10b981',
-                                    borderColor: isInvited ? '#f59e0b' : isSuspended ? '#ef4444' : '#10b981',
-                                  }}
-                                >
-                                  {isInvited ? 'INVITED' : isSuspended ? 'SUSPENDED' : 'ACTIVE'}
-                                </span>
-                              </td>
-                              <td style={{ padding: '1rem' }}>
-                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                  {isInvited && (
-                                    <button
-                                      onClick={() => handleResendInvitation(r._id, r.email)}
-                                      disabled={resendingInviteId === r._id}
-                                      className="btn btn-outline"
-                                      style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', borderColor: '#f59e0b', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                                    >
-                                      <RefreshCw size={12} className={resendingInviteId === r._id ? 'animate-spin' : ''} /> Resend Invite
-                                    </button>
-                                  )}
-                                  <button onClick={() => setEditUser(r)} className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}>
-                                    Edit Profile
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
+                <UserLifecycleTable
+                  users={recruiters}
+                  departments={departments}
+                  institutions={allInstitutions}
+                  onRefresh={loadTabData}
+                  loading={loading}
+                  currentUserRole="institution_admin"
+                />
               </div>
             )}
 

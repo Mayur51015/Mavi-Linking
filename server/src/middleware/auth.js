@@ -38,12 +38,56 @@ const protect = async (req, res, next) => {
       });
     }
 
-    // ─── Account Suspension Check ────────────────────────────────────
-    if (user.status === 'suspended') {
+    // ─── Session / Token Version Invalidation Check ──────────────────
+    if (
+      decoded.tokenVersion !== undefined &&
+      user.tokenVersion !== undefined &&
+      decoded.tokenVersion !== user.tokenVersion
+    ) {
+      return res.status(401).json({
+        success: false,
+        code: 'SESSION_INVALIDATED',
+        message: 'Your session has been invalidated or expired. Please log in again.',
+      });
+    }
+
+    // ─── Account Deactivation Check (Indefinite Disable) ────────────
+    if (user.accountStatus === 'DEACTIVATED' || user.status === 'deactivated') {
       return res.status(403).json({
         success: false,
-        message: 'Your account has been suspended by an administrator. Please contact support.',
+        code: 'ACCOUNT_DEACTIVATED',
+        message: 'Your account has been deactivated. Please contact an authorized administrator to reactivate your account.',
+        data: {
+          accountStatus: 'DEACTIVATED',
+          deactivatedAt: user.deactivatedAt,
+          reason: user.deactivationReason || 'Account deactivated',
+        },
       });
+    }
+
+    // ─── Account Suspension Check with Auto-Expiration Support ───────
+    if (user.accountStatus === 'SUSPENDED' || user.status === 'suspended') {
+      if (user.suspendedUntil && new Date(user.suspendedUntil).getTime() <= Date.now()) {
+        user.accountStatus = 'ACTIVE';
+        user.status = 'active';
+        user.suspendedAt = null;
+        user.suspendedBy = null;
+        user.suspendedUntil = null;
+        user.suspensionReason = '';
+        await user.save();
+      } else {
+        return res.status(403).json({
+          success: false,
+          code: 'ACCOUNT_SUSPENDED',
+          message: 'Your account has been temporarily suspended by an administrator.',
+          data: {
+            accountStatus: 'SUSPENDED',
+            suspendedAt: user.suspendedAt,
+            suspendedUntil: user.suspendedUntil,
+            reason: user.suspensionReason || 'Administrative suspension',
+          },
+        });
+      }
     }
 
     // ─── Backward Compatibility: migrate old role names & sync roles array ─────

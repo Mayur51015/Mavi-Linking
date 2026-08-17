@@ -3,12 +3,13 @@ const Job = require('../models/Job');
 const Company = require('../models/Company');
 const PlacementDrive = require('../models/PlacementDrive');
 const ActivityLog = require('../models/ActivityLog');
+const AuditLog = require('../models/AuditLog');
 const RecruitmentNotification = require('../models/RecruitmentNotification');
 const Institution = require('../models/Institution');
 const Department = require('../models/Department');
 const Project = require('../models/Project');
 const crypto = require('crypto');
-const { sendEmail, generateAccountInvitationEmailHtml } = require('../utils/sendEmail');
+const { sendEmail, generateAccountInvitationEmailHtml, sendAccountLifecycleEmail } = require('../utils/sendEmail');
 
 /**
  * @desc    Get Admin Dashboard metrics (Platform-wide or Institution-scoped)
@@ -109,6 +110,178 @@ const getAdminStats = async (req, res, next) => {
  * @route   GET /api/admin/users
  * @access  Private (admin)
  */
+/**
+ * Helper to verify actor authority over target user and prevent privilege escalation / rule violations
+ */
+const verifyUserManagementScope = async (actor, targetUser, isDelete = false) => {
+  if (!actor || !targetUser) {
+    return { allowed: false, status: 400, message: 'Invalid actor or target user.' };
+  }
+
+  // 1. Cannot manage self
+  if (actor._id.toString() === targetUser._id.toString()) {
+    return { allowed: false, status: 400, message: 'You cannot perform lifecycle management actions on your own account.' };
+  }
+
+  // 2. Owner Protection
+  const isOwner = (user) =>
+    user.role === 'owner' ||
+    user.role === 'platform_owner' ||
+    (Array.isArray(user.roles) && (user.roles.includes('owner') || user.roles.includes('platform_owner')));
+
+  if (isOwner(targetUser)) {
+    return { allowed: false, status: 403, message: 'Platform Owner accounts cannot be modified or deleted through this workflow.' };
+  }
+
+  // 3. Super Admin & Last Super Admin Protection
+  const targetIsSuperAdmin =
+    targetUser.role === 'super_admin' || (Array.isArray(targetUser.roles) && targetUser.roles.includes('super_admin'));
+  const actorIsSuperAdmin =
+    actor.role === 'super_admin' ||
+    actor.role === 'platform_owner' ||
+    actor.role === 'owner' ||
+    (Array.isArray(actor.roles) && (actor.roles.includes('super_admin') || actor.roles.includes('platform_owner') || actor.roles.includes('owner')));
+
+  if (targetIsSuperAdmin) {
+    if (!actorIsSuperAdmin) {
+      return { allowed: false, status: 403, message: 'Administrative privilege required. Only Super Admins can manage Super Admin accounts.' };
+    }
+
+    // Check if target is the last active Super Admin
+    const activeSuperAdminCount = await User.countDocuments({
+      role: 'super_admin',
+      accountStatus: { $nin: ['SUSPENDED', 'DEACTIVATED', 'DISABLED', 'REJECTED', 'DELETED'] },
+      status: { $ne: 'suspended' },
+    });
+
+    if (activeSuperAdminCount <= 1) {
+      return {
+        allowed: false,
+        status: 403,
+        code: 'LAST_SUPER_ADMIN_PROTECTION',
+        message: 'Operation blocked. Cannot suspend, deactivate, or delete the last active Super Admin on the platform.',
+      };
+    }
+  }
+
+  // 4. Institution Scoping
+  const actorInstId = (actor.institutionScope?.institutionId || actor.institutionId || '').toString();
+  if (actorInstId && !actorIsSuperAdmin) {
+    const targetInstId = (targetUser.institutionId || '').toString();
+    if (!targetInstId || targetInstId !== actorInstId) {
+      return {
+        allowed: false,
+        status: 403,
+        code: 'CROSS_INSTITUTION_ACCESS_DENIED',
+        message: 'Forbidden. User belongs to another institution.',
+      };
+    }
+  }
+
+  // 5. Department Scoping (Department Admin)
+  const isDeptAdmin =
+    actor.role === 'department_admin' ||
+    (Array.isArray(actor.roles) && actor.roles.includes('department_admin') && !actorIsSuperAdmin && actor.role !== 'institution_admin');
+
+  if (isDeptAdmin) {
+    const actorDeptId = (actor.departmentId || '').toString();
+    const targetDeptId = (targetUser.departmentId || '').toString();
+    if (!actorDeptId || !targetDeptId || actorDeptId !== targetDeptId) {
+      return {
+        allowed: false,
+        status: 403,
+        code: 'CROSS_DEPARTMENT_ACCESS_DENIED',
+        message: 'Forbidden. User belongs to another department.',
+      };
+    }
+
+    if (['institution_admin', 'admin', 'super_admin', 'platform_owner', 'owner'].includes(targetUser.role)) {
+      return {
+        allowed: false,
+        status: 403,
+        message: 'Department administrators cannot manage higher administrative roles.',
+      };
+    }
+  }
+
+  return { allowed: true };
+};
+
+/**
+ * Cascade Delete User Dependent Records
+ */
+const cascadeDeleteUserData = async (userId) => {
+  // 1. Institution Membership
+  try {
+    const InstitutionMembership = require('../models/InstitutionMembership');
+    await InstitutionMembership.deleteMany({ userId });
+  } catch (_) {}
+
+  // 2. DNA Profile
+  try {
+    const DNA = require('../models/DNA');
+    await DNA.deleteMany({ userId });
+  } catch (_) {}
+
+  // 3. Career and Analytics records
+  try {
+    const Activity = require('../models/Activity');
+    const TimelineEvent = require('../models/TimelineEvent');
+    const CareerScore = require('../models/CareerScore');
+    const CareerBadge = require('../models/CareerBadge');
+    const CareerInsight = require('../models/CareerInsight');
+    const CareerSkillAnalysis = require('../models/CareerSkillAnalysis');
+    const CareerTimeline = require('../models/CareerTimeline');
+    const CareerAnalytics = require('../models/CareerAnalytics');
+    const LeetCodeAnalytics = require('../models/LeetCodeAnalytics');
+    const Analytics = require('../models/Analytics');
+    const Ranking = require('../models/Ranking');
+
+    await Promise.allSettled([
+      Activity.deleteMany({ userId }),
+      TimelineEvent.deleteMany({ userId }),
+      CareerScore.deleteMany({ userId }),
+      CareerBadge.deleteMany({ userId }),
+      CareerInsight.deleteMany({ userId }),
+      CareerSkillAnalysis.deleteMany({ userId }),
+      CareerTimeline.deleteMany({ userId }),
+      CareerAnalytics.deleteMany({ userId }),
+      LeetCodeAnalytics.deleteMany({ userId }),
+      Analytics.deleteMany({ userId }),
+      Ranking.deleteMany({ userId }),
+    ]);
+  } catch (_) {}
+
+  // 4. Recruitment, Bookmarks, Notifications, Verification
+  try {
+    const RecruiterBookmark = require('../models/RecruiterBookmark');
+    const RecruitmentPipeline = require('../models/RecruitmentPipeline');
+    const EmailChangeChallenge = require('../models/EmailChangeChallenge');
+    const SharedDocument = require('../models/SharedDocument');
+    const Verification = require('../models/Verification');
+
+    await Promise.allSettled([
+      RecruiterBookmark.deleteMany({ $or: [{ studentId: userId }, { recruiterId: userId }] }),
+      RecruitmentNotification.deleteMany({ $or: [{ recipientId: userId }, { senderId: userId }] }),
+      RecruitmentPipeline.deleteMany({ studentId: userId }),
+      EmailChangeChallenge.deleteMany({ userId }),
+      SharedDocument.deleteMany({ $or: [{ ownerId: userId }, { userId }] }),
+      Project.deleteMany({ userId }),
+      Verification.deleteMany({ userId }),
+    ]);
+  } catch (_) {}
+
+  // 5. Unlink if Department Head
+  try {
+    await Department.updateMany({ headUserId: userId }, { $set: { headUserId: null } });
+  } catch (_) {}
+};
+
+/**
+ * @desc    Get all users with optional role filtering and institution scope
+ * @route   GET /api/admin/users
+ * @access  Private (admin)
+ */
 const getAllUsers = async (req, res, next) => {
   try {
     const { role, search, status, page = 1, limit = 50 } = req.query;
@@ -120,7 +293,14 @@ const getAllUsers = async (req, res, next) => {
     }
 
     if (role) query.role = role;
-    if (status) query.status = status;
+    if (status) {
+      const upperStatus = status.toUpperCase();
+      if (['ACTIVE', 'SUSPENDED', 'DEACTIVATED', 'PENDING_VERIFICATION', 'REJECTED', 'PENDING_ADMIN_APPROVAL', 'INVITED'].includes(upperStatus)) {
+        query.accountStatus = upperStatus;
+      } else {
+        query.status = status.toLowerCase();
+      }
+    }
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -134,7 +314,8 @@ const getAllUsers = async (req, res, next) => {
     const [users, total] = await Promise.all([
       User.find(query)
         .select('-password')
-        .populate('institutionId', 'name code')
+        .populate('institutionId', 'name code domain')
+        .populate('departmentId', 'name code')
         .skip(skip)
         .limit(parseInt(limit))
         .sort({ createdAt: -1 }),
@@ -164,20 +345,25 @@ const getAllUsers = async (req, res, next) => {
  */
 const updateUser = async (req, res, next) => {
   try {
-    const { role, isVerified, name, email, status } = req.body;
+    const { role, isVerified, name, email, status, departmentId } = req.body;
     const userToUpdate = await User.findById(req.params.id);
 
     if (!userToUpdate) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Security check: Institution Admin cannot modify users outside their institution
-    if (req.institutionScope?.institutionId && userToUpdate.institutionId?.toString() !== req.institutionScope.institutionId.toString()) {
-      return res.status(403).json({ success: false, message: 'Forbidden. You can only manage users within your assigned institution.' });
+    // Security check via unified scope helper
+    const scopeCheck = await verifyUserManagementScope(req.user, userToUpdate);
+    if (!scopeCheck.allowed) {
+      return res.status(scopeCheck.status || 403).json({
+        success: false,
+        code: scopeCheck.code || 'FORBIDDEN',
+        message: scopeCheck.message,
+      });
     }
 
     // Security check: Institution Admin cannot assign super_admin or admin roles
-    if (role && ['super_admin', 'admin'].includes(role) && !req.isSuperAdmin) {
+    if (role && ['super_admin', 'admin', 'platform_owner', 'owner'].includes(role) && !req.isSuperAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden. Only Super Admins can grant administrative privileges.' });
     }
 
@@ -189,15 +375,19 @@ const updateUser = async (req, res, next) => {
       }
     }
     if (isVerified !== undefined) updateFields.isVerified = isVerified;
-    if (name) updateFields.name = name;
-    if (email) updateFields.email = email;
+    if (name) updateFields.name = name.trim();
+    if (email) updateFields.email = email.toLowerCase().trim();
     if (status) updateFields.status = status;
+    if (departmentId !== undefined) updateFields.departmentId = departmentId;
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { $set: updateFields },
       { new: true, runValidators: true }
-    ).select('-password');
+    )
+      .select('-password')
+      .populate('institutionId', 'name code')
+      .populate('departmentId', 'name code');
 
     await ActivityLog.create({
       userId: req.user._id,
@@ -218,15 +408,18 @@ const updateUser = async (req, res, next) => {
 };
 
 /**
- * @desc    Suspend or activate a user account
- * @route   PUT /api/admin/users/:id/status
+ * @desc    Suspend a user account (Temporary restriction, reason required, optional expiry)
+ * @route   POST /api/admin/users/:id/suspend
  * @access  Private (admin)
  */
-const updateUserStatus = async (req, res, next) => {
+const suspendUser = async (req, res, next) => {
   try {
-    const { status, reason } = req.body;
-    if (!['active', 'suspended'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid status. Must be active or suspended.' });
+    const { reason, suspendedUntil } = req.body;
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Suspension reason is required.',
+      });
     }
 
     const user = await User.findById(req.params.id);
@@ -234,43 +427,80 @@ const updateUserStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Security check: Cannot suspend Super Admin unless self/Super Admin
-    if (['super_admin', 'admin'].includes(user.role) && !req.isSuperAdmin) {
-      return res.status(403).json({ success: false, message: 'Cannot modify administrative user accounts.' });
+    const scopeCheck = await verifyUserManagementScope(req.user, user);
+    if (!scopeCheck.allowed) {
+      return res.status(scopeCheck.status || 403).json({
+        success: false,
+        code: scopeCheck.code || 'FORBIDDEN',
+        message: scopeCheck.message,
+      });
     }
 
-    // Security check: Institution Admin scope
-    if (req.institutionScope?.institutionId && user.institutionId?.toString() !== req.institutionScope.institutionId.toString()) {
-      return res.status(403).json({ success: false, message: 'Forbidden. User belongs to another institution.' });
-    }
+    const previousStatus = user.accountStatus || (user.status === 'suspended' ? 'SUSPENDED' : 'ACTIVE');
+    const expiryDate = suspendedUntil ? new Date(suspendedUntil) : null;
 
-    user.status = status;
+    user.accountStatus = 'SUSPENDED';
+    user.status = 'suspended';
+    user.suspendedBy = req.user._id;
+    user.suspendedAt = new Date();
+    user.suspensionReason = reason.trim();
+    user.suspendedUntil = expiryDate;
+    user.tokenVersion = (user.tokenVersion || 0) + 1; // Invalidate active JWTs/sessions immediately
+
     await user.save();
 
-    const actionName = status === 'suspended' ? 'ADMIN_SUSPENDED_USER' : 'ADMIN_ACTIVATED_USER';
+    // Audit Logging
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: user._id,
+      action: 'USER_SUSPENDED',
+      institutionId: user.institutionId || req.user.institutionId,
+      departmentId: user.departmentId,
+      previousStatus,
+      newStatus: 'SUSPENDED',
+      reason: reason.trim(),
+      details: {
+        suspendedUntil: expiryDate,
+        suspendedByName: req.user.name,
+        targetEmail: user.email,
+        targetMaviId: user.maviId,
+      },
+      result: 'SUCCESS',
+    });
+
     await ActivityLog.create({
       userId: req.user._id,
-      action: actionName,
-      details: `${status === 'suspended' ? 'Suspended' : 'Activated'} user ${user.email}. Reason: ${reason || 'Not specified'}`,
+      action: 'ADMIN_SUSPENDED_USER',
+      details: `Suspended user ${user.email}. Reason: ${reason.trim()}${expiryDate ? `. Suspended until: ${expiryDate.toISOString()}` : ''}`,
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
 
+    // In-App Notification
     try {
       await RecruitmentNotification.create({
         recipientId: user._id,
         senderId: req.user._id,
         type: 'general',
-        title: status === 'suspended' ? 'Account Suspended ⚠️' : 'Account Reactivated ✅',
-        message: status === 'suspended'
-          ? `Your MAVI Linking account has been suspended. Reason: ${reason || 'Policy review'}. Contact support for assistance.`
-          : 'Your MAVI Linking account has been reactivated. You may now log in.',
+        title: 'Account Suspended ⚠️',
+        message: `Your MAVI Linking account has been temporarily suspended. Reason: ${reason.trim()}.${expiryDate ? ` Suspension expires on: ${expiryDate.toUTCString()}.` : ' Contact support for assistance.'}`,
       });
     } catch (_) {}
 
+    // Email Notification
+    sendAccountLifecycleEmail({
+      to: user.email,
+      name: user.name,
+      maviId: user.maviId,
+      role: user.role,
+      type: 'SUSPENDED',
+      reason: reason.trim(),
+      expiresDate: expiryDate,
+    }).catch((err) => console.error('[EMAIL ERROR]', err.message));
+
     res.status(200).json({
       success: true,
-      message: `User account ${status === 'suspended' ? 'suspended' : 'activated'} successfully`,
+      message: 'User account suspended successfully',
       data: user,
     });
   } catch (error) {
@@ -279,42 +509,293 @@ const updateUserStatus = async (req, res, next) => {
 };
 
 /**
- * @desc    Delete a user account
- * @route   DELETE /api/admin/users/:id
+ * @desc    Deactivate a user account (Intentional disablement, requires explicit admin reactivation)
+ * @route   POST /api/admin/users/:id/deactivate
  * @access  Private (admin)
  */
-const deleteUser = async (req, res, next) => {
+const deactivateUser = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const deactivationReasonText = reason ? reason.trim() : 'Administrative deactivation';
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const scopeCheck = await verifyUserManagementScope(req.user, user);
+    if (!scopeCheck.allowed) {
+      return res.status(scopeCheck.status || 403).json({
+        success: false,
+        code: scopeCheck.code || 'FORBIDDEN',
+        message: scopeCheck.message,
+      });
+    }
+
+    const previousStatus = user.accountStatus || (user.status === 'suspended' ? 'SUSPENDED' : 'ACTIVE');
+
+    user.accountStatus = 'DEACTIVATED';
+    user.status = 'suspended';
+    user.deactivatedBy = req.user._id;
+    user.deactivatedAt = new Date();
+    user.deactivationReason = deactivationReasonText;
+    user.suspendedUntil = null; // Deactivation is indefinite until manual reactivation
+    user.tokenVersion = (user.tokenVersion || 0) + 1; // Invalidate active JWTs/sessions immediately
+
+    await user.save();
+
+    // Audit Logging
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: user._id,
+      action: 'USER_DEACTIVATED',
+      institutionId: user.institutionId || req.user.institutionId,
+      departmentId: user.departmentId,
+      previousStatus,
+      newStatus: 'DEACTIVATED',
+      reason: deactivationReasonText,
+      details: {
+        deactivatedByName: req.user.name,
+        targetEmail: user.email,
+        targetMaviId: user.maviId,
+      },
+      result: 'SUCCESS',
+    });
+
+    await ActivityLog.create({
+      userId: req.user._id,
+      action: 'ADMIN_DEACTIVATED_USER',
+      details: `Deactivated user account ${user.email}. Reason: ${deactivationReasonText}`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    // In-App Notification
+    try {
+      await RecruitmentNotification.create({
+        recipientId: user._id,
+        senderId: req.user._id,
+        type: 'general',
+        title: 'Account Deactivated ⛔',
+        message: `Your MAVI Linking account has been deactivated. Reason: ${deactivationReasonText}. Contact your administrator for reactivation.`,
+      });
+    } catch (_) {}
+
+    // Email Notification
+    sendAccountLifecycleEmail({
+      to: user.email,
+      name: user.name,
+      maviId: user.maviId,
+      role: user.role,
+      type: 'DEACTIVATED',
+      reason: deactivationReasonText,
+    }).catch((err) => console.error('[EMAIL ERROR]', err.message));
+
+    res.status(200).json({
+      success: true,
+      message: 'User account deactivated successfully',
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Reactivate a suspended or deactivated user account
+ * @route   POST /api/admin/users/:id/reactivate
+ * @access  Private (admin)
+ */
+const reactivateUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    if (['super_admin', 'admin'].includes(user.role) && !req.isSuperAdmin) {
-      return res.status(403).json({ success: false, message: 'Cannot delete administrative user accounts.' });
+    const scopeCheck = await verifyUserManagementScope(req.user, user);
+    if (!scopeCheck.allowed) {
+      return res.status(scopeCheck.status || 403).json({
+        success: false,
+        code: scopeCheck.code || 'FORBIDDEN',
+        message: scopeCheck.message,
+      });
     }
 
-    if (req.institutionScope?.institutionId && user.institutionId?.toString() !== req.institutionScope.institutionId.toString()) {
-      return res.status(403).json({ success: false, message: 'Forbidden. User belongs to another institution.' });
-    }
+    const previousStatus = user.accountStatus || (user.status === 'suspended' ? 'SUSPENDED' : 'ACTIVE');
 
-    await user.deleteOne();
+    user.accountStatus = 'ACTIVE';
+    user.status = 'active';
+    user.suspendedBy = null;
+    user.suspendedAt = null;
+    user.suspensionReason = '';
+    user.suspendedUntil = null;
+    user.deactivatedBy = null;
+    user.deactivatedAt = null;
+    user.deactivationReason = '';
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
+
+    await user.save();
+
+    // Audit Logging
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: user._id,
+      action: 'USER_REACTIVATED',
+      institutionId: user.institutionId || req.user.institutionId,
+      departmentId: user.departmentId,
+      previousStatus,
+      newStatus: 'ACTIVE',
+      details: {
+        reactivatedByName: req.user.name,
+        targetEmail: user.email,
+        targetMaviId: user.maviId,
+      },
+      result: 'SUCCESS',
+    });
 
     await ActivityLog.create({
       userId: req.user._id,
-      action: 'ADMIN_DELETED_USER',
-      details: `Admin ${req.user.email} deleted user account: ${user.email}`,
+      action: 'ADMIN_ACTIVATED_USER',
+      details: `Reactivated user account ${user.email}`,
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
 
+    // In-App Notification
+    try {
+      await RecruitmentNotification.create({
+        recipientId: user._id,
+        senderId: req.user._id,
+        type: 'general',
+        title: 'Account Reactivated ✅',
+        message: 'Your MAVI Linking account has been reactivated. You may now log in to the portal.',
+      });
+    } catch (_) {}
+
+    // Email Notification
+    sendAccountLifecycleEmail({
+      to: user.email,
+      name: user.name,
+      maviId: user.maviId,
+      role: user.role,
+      type: 'REACTIVATED',
+    }).catch((err) => console.error('[EMAIL ERROR]', err.message));
+
     res.status(200).json({
       success: true,
-      message: 'User deleted successfully',
+      message: 'User account reactivated successfully',
+      data: user,
     });
   } catch (error) {
     next(error);
   }
+};
+
+/**
+ * @desc    Permanently delete a user account and dependent data (Releases email for future registrations)
+ * @route   DELETE /api/admin/users/:id/permanent (and DELETE /api/admin/users/:id)
+ * @access  Private (admin)
+ */
+const deleteUserPermanently = async (req, res, next) => {
+  try {
+    const { reason, confirmationText } = req.body || {};
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const scopeCheck = await verifyUserManagementScope(req.user, user, true);
+    if (!scopeCheck.allowed) {
+      return res.status(scopeCheck.status || 403).json({
+        success: false,
+        code: scopeCheck.code || 'FORBIDDEN',
+        message: scopeCheck.message,
+      });
+    }
+
+    // Cascade delete eligible user dependent collections
+    await cascadeDeleteUserData(user._id);
+
+    // Audit Logging: Preserved permanently in AuditLog for compliance
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: user._id,
+      action: 'USER_PERMANENTLY_DELETED',
+      institutionId: user.institutionId || req.user.institutionId,
+      departmentId: user.departmentId,
+      previousStatus: user.accountStatus || user.status,
+      newStatus: 'DELETED',
+      reason: reason || 'Permanent administrative account deletion',
+      details: {
+        deletedUserEmail: user.email,
+        deletedUserMaviId: user.maviId,
+        deletedUserRole: user.role,
+        deletedBy: req.user.email,
+        deletedAt: new Date(),
+      },
+      result: 'SUCCESS',
+    });
+
+    await ActivityLog.create({
+      userId: req.user._id,
+      action: 'ADMIN_DELETED_USER',
+      details: `Admin ${req.user.email} permanently deleted user account: ${user.email} (MAVI ID: ${user.maviId})`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    // Delete user from MongoDB, releasing the email address for new registrations
+    await User.findByIdAndDelete(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: 'User account permanently deleted and eligible data cleaned up successfully.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Backward compatible updateUserStatus endpoint
+ * @route   PUT /api/admin/users/:id/status
+ * @access  Private (admin)
+ */
+const updateUserStatus = async (req, res, next) => {
+  try {
+    const { status, reason, suspendedUntil } = req.body;
+    if (!['active', 'suspended', 'deactivated'].includes(status?.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be active, suspended, or deactivated.',
+      });
+    }
+
+    const normalizedStatus = status.toLowerCase();
+    if (normalizedStatus === 'suspended') {
+      req.body.reason = reason || 'Administrative suspension';
+      req.body.suspendedUntil = suspendedUntil;
+      return suspendUser(req, res, next);
+    } else if (normalizedStatus === 'deactivated') {
+      req.body.reason = reason || 'Administrative deactivation';
+      return deactivateUser(req, res, next);
+    } else {
+      return reactivateUser(req, res, next);
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Backward compatible deleteUser endpoint
+ * @route   DELETE /api/admin/users/:id
+ * @access  Private (admin)
+ */
+const deleteUser = async (req, res, next) => {
+  return deleteUserPermanently(req, res, next);
 };
 
 /**
@@ -1922,6 +2403,10 @@ module.exports = {
   getAllUsers,
   updateUser,
   updateUserStatus,
+  suspendUser,
+  deactivateUser,
+  reactivateUser,
+  deleteUserPermanently,
   deleteUser,
   getAuditLogs,
   getRoleRequests,

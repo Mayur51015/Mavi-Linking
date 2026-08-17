@@ -12,6 +12,10 @@ const {
   getAllUsers,
   updateUser,
   updateUserStatus,
+  suspendUser,
+  deactivateUser,
+  reactivateUser,
+  deleteUserPermanently,
   deleteUser,
   getAuditLogs,
   getRoleRequests,
@@ -91,7 +95,23 @@ router.get('/department-admins', enforceInstitutionScope, requirePermission('DEP
 router.patch('/department-admins/:adminId/reassign', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_REASSIGN'), reassignDepartmentAdmin);
 router.put('/department-admins/:adminId/status', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_SUSPEND'), updateDepartmentAdminStatus);
 
-// Admin stats & user moderation (scoped by institution if institution_admin)
+// User Lifecycle Management (Suspend, Deactivate, Reactivate, Permanent Delete)
+router.post('/users/:id/suspend', enforceInstitutionScope, suspendUser);
+router.put('/users/:id/suspend', enforceInstitutionScope, suspendUser);
+router.patch('/users/:id/suspend', enforceInstitutionScope, suspendUser);
+
+router.post('/users/:id/deactivate', enforceInstitutionScope, deactivateUser);
+router.put('/users/:id/deactivate', enforceInstitutionScope, deactivateUser);
+router.patch('/users/:id/deactivate', enforceInstitutionScope, deactivateUser);
+
+router.post('/users/:id/reactivate', enforceInstitutionScope, reactivateUser);
+router.put('/users/:id/reactivate', enforceInstitutionScope, reactivateUser);
+router.patch('/users/:id/reactivate', enforceInstitutionScope, reactivateUser);
+
+router.delete('/users/:id/permanent', enforceInstitutionScope, deleteUserPermanently);
+router.delete('/users/:id', enforceInstitutionScope, deleteUserPermanently);
+
+// User Profile & Settings
 router.get('/stats', enforceInstitutionScope, getAdminStats);
 router.get('/users', enforceInstitutionScope, getAllUsers);
 router.post('/users', enforceInstitutionScope, createStaffUser);
@@ -102,7 +122,6 @@ router.patch('/users/:userId/institution', updateUserInstitution);
 router.put('/users/:userId/institution', updateUserInstitution);
 router.patch('/users/:id/institution', updateUserInstitution);
 router.put('/users/:id/institution', updateUserInstitution);
-router.delete('/users/:id', enforceInstitutionScope, deleteUser);
 router.get('/logs', enforceInstitutionScope, getAuditLogs);
 router.get('/departments', enforceInstitutionScope, getDepartments);
 router.put('/my-institution', enforceInstitutionScope, updateMyInstitutionSettings);

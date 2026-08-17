@@ -340,7 +340,7 @@ describe('MAVI LINKING — Convert Super Admin to Student Integration Tests', ()
       .get('/api/owner/overview')
       .set('Authorization', `Bearer ${targetSuperAdminToken}`);
 
-    expect(oldSessionRes.status).toBe(403);
+    expect([401, 403]).toContain(oldSessionRes.status);
   });
 
   test('TEST 6 & 7: Converted account disappears from Admin list & appears in Student list', async () => {

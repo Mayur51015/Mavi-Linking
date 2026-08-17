@@ -2,6 +2,9 @@ const Institution = require('../models/Institution');
 const InstitutionMembership = require('../models/InstitutionMembership');
 const User = require('../models/User');
 const ActivityLog = require('../models/ActivityLog');
+const AuditLog = require('../models/AuditLog');
+const crypto = require('crypto');
+const { sendAdminInvitationEmail } = require('../utils/sendEmail');
 
 /**
  * @desc    Create a new Institution (College / University)
@@ -308,12 +311,21 @@ const assignInstitutionAdmin = async (req, res, next) => {
       });
     }
 
-    // Update user role, roles array, and institutionId
+    const inviteToken = crypto.randomBytes(32).toString('hex');
+    const inviteExpires = new Date(Date.now() + 48 * 3600 * 1000); // 48 Hours
+
+    // Update user role, roles array, institutionId & invitation token
     targetUser.role = 'institution_admin';
     if (!targetUser.roles.includes('institution_admin')) {
       targetUser.roles.push('institution_admin');
     }
     targetUser.institutionId = institution._id;
+    targetUser.invitationToken = inviteToken;
+    targetUser.invitationExpires = inviteExpires;
+    targetUser.accountStatus = 'INVITED';
+    targetUser.isInvitedAdmin = true;
+    targetUser.invitedBy = req.user._id;
+    targetUser.invitedAt = new Date();
     await targetUser.save();
 
     // Create or update InstitutionMembership
@@ -329,6 +341,20 @@ const assignInstitutionAdmin = async (req, res, next) => {
       { upsert: true, new: true }
     );
 
+    // Dispatch Invitation Email
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
+
+    const emailResult = await sendAdminInvitationEmail({
+      to: targetUser.email,
+      name: targetUser.name,
+      role: 'institution_admin',
+      institutionName: institution.name,
+      managementScope: 'INSTITUTION',
+      invitationLink,
+      expiresHours: 48,
+    });
+
     await ActivityLog.create({
       userId: req.user._id,
       action: 'ADMIN_ASSIGNED_INSTITUTION_ADMIN',
@@ -337,12 +363,46 @@ const assignInstitutionAdmin = async (req, res, next) => {
       userAgent: req.headers['user-agent'] || '',
     });
 
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: targetUser._id,
+      action: 'ADMIN_INVITATION_CREATED',
+      institutionId: institution._id,
+      details: { role: 'institution_admin', email: targetUser.email },
+      result: 'SUCCESS',
+    });
+
+    if (emailResult.success) {
+      await AuditLog.create({
+        actorId: req.user._id,
+        targetUserId: targetUser._id,
+        action: 'ADMIN_INVITATION_EMAIL_SENT',
+        institutionId: institution._id,
+        details: { email: targetUser.email, messageId: emailResult.messageId },
+        result: 'SUCCESS',
+      });
+    } else {
+      await AuditLog.create({
+        actorId: req.user._id,
+        targetUserId: targetUser._id,
+        action: 'ADMIN_INVITATION_EMAIL_FAILED',
+        institutionId: institution._id,
+        details: { email: targetUser.email, error: emailResult.error },
+        result: 'FAILED',
+      });
+    }
+
     res.status(200).json({
       success: true,
-      message: `Successfully assigned ${targetUser.name} as Institution Admin for ${institution.name}`,
+      emailSent: emailResult.success,
+      message: emailResult.success
+        ? `Successfully assigned ${targetUser.name} as Institution Admin for ${institution.name}. Invitation email sent.`
+        : `Assigned ${targetUser.name} as Institution Admin, but invitation email could not be sent.`,
       data: {
         user: targetUser,
         institution,
+        invitationLink,
+        emailSent: emailResult.success,
       },
     });
   } catch (error) {

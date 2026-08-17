@@ -6,11 +6,22 @@ const nodemailer = require('nodemailer');
  * Supports SMTP (Gmail, SendGrid, Mailgun, Amazon SES) via environment variables.
  * Falls back to test Ethereal transport in development if no SMTP pass is provided.
  */
-const sendEmail = async ({ to, subject, html, text }) => {
+const sendEmail = async ({ to, subject, html, text, templateName }) => {
   if (process.env.NODE_ENV === 'test') {
     return { success: true, messageId: 'test_mock_message_id' };
   }
   try {
+    console.log(`[EMAIL] Preparing email dispatch`);
+    console.log(`[EMAIL] Recipient: ${to || 'UNKNOWN'}`);
+    if (templateName) console.log(`[EMAIL] Template: ${templateName}`);
+    console.log(`[EMAIL] Subject: ${subject || 'No Subject'}`);
+    console.log(`[EMAIL] Sending...`);
+
+    if (!to || typeof to !== 'string' || !to.includes('@')) {
+      console.error(`[EMAIL ERROR] Invalid or missing recipient email address: ${to}`);
+      return { success: false, error: 'INVALID_RECIPIENT_EMAIL' };
+    }
+
     let transporter;
 
     const emailHost = (process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
@@ -19,7 +30,7 @@ const sendEmail = async ({ to, subject, html, text }) => {
     const emailPass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').trim();
 
     if (emailUser && emailPass) {
-      // Production SMTP Transporter
+      // Production / Development Gmail SMTP Transporter
       transporter = nodemailer.createTransport({
         host: emailHost,
         port: emailPort,
@@ -67,7 +78,7 @@ const sendEmail = async ({ to, subject, html, text }) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL DISPATCHED] MessageID: ${info.messageId} | Target: ${to}`);
+    console.log(`[EMAIL] Sent successfully (MessageID: ${info.messageId} | Target: ${to})`);
 
     const previewUrl = nodemailer.getTestMessageUrl(info);
     if (previewUrl) {
@@ -80,10 +91,10 @@ const sendEmail = async ({ to, subject, html, text }) => {
       previewUrl: previewUrl || null,
     };
   } catch (error) {
-    console.error('[EMAIL DISPATCH ERROR]', error);
+    console.error(`[EMAIL ERROR] Delivery failed for ${to}:`, error.message || error);
     return {
       success: false,
-      error: error.message,
+      error: error.message || 'EMAIL_DELIVERY_FAILED',
     };
   }
 };
@@ -434,8 +445,261 @@ const generateInstitutionAdminStudentVerificationEmailHtml = ({
   `;
 };
 
+/**
+ * Generate Dark Theme HTML Email for Promoted Administrator Invitation
+ */
+const generateAdminInvitationEmailHtml = ({
+  name,
+  role = 'institution_admin',
+  institutionName,
+  departmentName,
+  managementScope = 'INSTITUTION',
+  invitationLink,
+  expiresHours = 48,
+}) => {
+  const formatRoleTitle = (r) => {
+    if (!r) return 'Administrator';
+    const mapping = {
+      super_admin: 'Platform Super Administrator',
+      platform_owner: 'Platform Owner',
+      institution_admin: 'Institution Administrator',
+      department_admin: 'Department Administrator',
+      placement_admin: 'Placement Administrator',
+      academic_admin: 'Academic Administrator',
+      admin: 'Administrator',
+    };
+    return mapping[r] || r.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const roleTitle = formatRoleTitle(role);
+  const scopeTitle = (managementScope || (departmentName ? 'DEPARTMENT' : institutionName ? 'INSTITUTION' : 'PLATFORM')).toUpperCase();
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>MAVI Linking — Administrator Invitation</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
+        .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .header { text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 24px; }
+        .brand { font-size: 24px; font-weight: 800; color: #a855f7; letter-spacing: 0.05em; text-transform: uppercase; }
+        .title { font-size: 20px; font-weight: 700; color: #ffffff; margin-top: 10px; }
+        .content { font-size: 15px; line-height: 1.6; color: #a1a1aa; }
+        .info-card { background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 10px; padding: 20px; margin: 20px 0; }
+        .info-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .info-row:last-child { border-bottom: none; }
+        .btn-link { display: inline-block; background: linear-gradient(135deg, #a855f7, #6366f1); color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 15px; margin: 20px 0; }
+        .footer { font-size: 12px; color: #71717a; text-align: center; border-top: 1px solid #27272a; padding-top: 20px; margin-top: 32px; }
+        .warning { background: rgba(234, 179, 8, 0.1); border-left: 4px solid #eab308; color: #fde047; padding: 12px 16px; border-radius: 4px; font-size: 13px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="brand">MAVI Linking</div>
+          <div class="title">Administrative Invitation & Account Setup</div>
+        </div>
+        <div class="content">
+          <p>Hello ${name || 'Administrator'},</p>
+          <p>You have been officially invited to join and administer the <strong>MAVI Linking</strong> platform as a <strong>${roleTitle}</strong>.</p>
+          
+          <div class="info-card">
+            <table width="100%" style="border-collapse: collapse;">
+              <tr>
+                <td style="padding: 6px 0; color: #a1a1aa;">Assigned Role:</td>
+                <td style="padding: 6px 0; color: #c084fc; font-weight: 700; text-align: right;">${roleTitle}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #a1a1aa;">Management Scope:</td>
+                <td style="padding: 6px 0; color: #ffffff; font-weight: 700; text-align: right;">${scopeTitle}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #a1a1aa;">Institution:</td>
+                <td style="padding: 6px 0; color: #ffffff; font-weight: 700; text-align: right;">${institutionName || 'Platform Wide'}</td>
+              </tr>
+              ${departmentName ? `
+              <tr>
+                <td style="padding: 6px 0; color: #a1a1aa;">Department:</td>
+                <td style="padding: 6px 0; color: #ffffff; font-weight: 700; text-align: right;">${departmentName}</td>
+              </tr>` : ''}
+              <tr>
+                <td style="padding: 6px 0; color: #a1a1aa;">Link Expiration:</td>
+                <td style="padding: 6px 0; color: #e4e4e7; text-align: right;">${expiresHours} Hours</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin: 24px 0;">
+            <p style="font-size: 14px; color: #e4e4e7;">Click the secure link below to accept your invitation and set up your permanent administrative password:</p>
+            <a href="${invitationLink}" class="btn-link" target="_blank">Accept Invitation & Activate Admin Account</a>
+          </div>
+
+          <div class="warning">
+            <strong>Security Notice:</strong> No plain-text passwords are ever sent via email. You will securely configure your credentials upon accepting the invitation. This single-use link is valid for <strong>${expiresHours} hours</strong>.
+          </div>
+        </div>
+        <div class="footer">
+          &copy; ${new Date().getFullYear()} MAVI Linking Identity & Security Platform. All rights reserved.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Shared service helper to dispatch Admin Invitation Emails safely with error diagnostics
+ */
+const sendAdminInvitationEmail = async ({
+  to,
+  name,
+  role,
+  institutionName,
+  departmentName,
+  managementScope,
+  invitationLink,
+  expiresHours = 48,
+}) => {
+  if (!to || typeof to !== 'string' || !to.includes('@')) {
+    console.error(`[EMAIL ERROR] Recipient email is missing or invalid: ${to}`);
+    return { success: false, error: 'ADMIN_EMAIL_REQUIRED' };
+  }
+
+  const roleTitle = role ? role.replace(/_/g, ' ') : 'Administrator';
+  const html = generateAdminInvitationEmailHtml({
+    name,
+    role,
+    institutionName,
+    departmentName,
+    managementScope,
+    invitationLink,
+    expiresHours,
+  });
+
+  return await sendEmail({
+    to: to.toLowerCase().trim(),
+    subject: `You've been invited to become a MAVI Linking Administrator`,
+    html,
+    templateName: 'admin-invitation',
+  });
+};
+
+/**
+ * Generate responsive HTML for user lifecycle events (Suspension, Deactivation, Reactivation)
+ */
+const generateAccountLifecycleEmailHtml = ({ type, name, maviId, role, reason, expiresDate }) => {
+  const isSuspension = type === 'SUSPENDED';
+  const isDeactivation = type === 'DEACTIVATED';
+  const isReactivation = type === 'REACTIVATED';
+
+  const badgeColor = isReactivation ? '#10b981' : isSuspension ? '#f59e0b' : '#ef4444';
+  const title = isReactivation
+    ? 'Account Access Restored'
+    : isSuspension
+    ? 'Account Temporarily Suspended'
+    : 'Account Deactivated';
+
+  const message = isReactivation
+    ? 'Your MAVI Linking account has been reactivated. You may now log in to the portal with your credentials.'
+    : isSuspension
+    ? 'Your MAVI Linking account has been temporarily suspended by an administrator.'
+    : 'Your MAVI Linking account has been deactivated by an administrator.';
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0d1117; margin: 0; padding: 40px 10px; color: #e6edf3;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background: #161b22; border-radius: 12px; border: 1px solid #30363d; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);">
+    <tr>
+      <td style="padding: 30px; text-align: center; border-bottom: 1px solid #21262d; background: linear-gradient(135deg, rgba(88, 28, 135, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">MAVI LINKING</h1>
+        <p style="margin: 5px 0 0 0; font-size: 13px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px;">Security & Account Governance</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 35px 30px;">
+        <div style="display: inline-block; padding: 4px 12px; background: rgba(255,255,255,0.05); border: 1px solid ${badgeColor}; border-radius: 20px; font-size: 12px; font-weight: 600; color: ${badgeColor}; margin-bottom: 16px;">
+          ${type}
+        </div>
+        <h2 style="margin: 0 0 15px 0; font-size: 20px; font-weight: 600; color: #f0f6fc;">${title}</h2>
+        <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #8b949e;">
+          Hello <strong style="color: #ffffff;">${name || 'User'}</strong>,
+        </p>
+        <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #c9d1d9;">
+          ${message}
+        </p>
+        
+        <table width="100%" style="background: #0d1117; border: 1px solid #30363d; border-radius: 8px; margin: 20px 0; padding: 15px;">
+          ${maviId ? `<tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px; width: 140px;">MAVI ID:</td><td style="padding: 6px 12px; color: #ffffff; font-family: monospace; font-size: 13px; font-weight: 600;">${maviId}</td></tr>` : ''}
+          ${role ? `<tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px;">Role:</td><td style="padding: 6px 12px; color: #ffffff; font-size: 13px;">${role}</td></tr>` : ''}
+          ${reason ? `<tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px;">Reason:</td><td style="padding: 6px 12px; color: #f87171; font-size: 13px;">${reason}</td></tr>` : ''}
+          ${expiresDate ? `<tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px;">Suspended Until:</td><td style="padding: 6px 12px; color: #fbbf24; font-size: 13px;">${new Date(expiresDate).toUTCString()}</td></tr>` : ''}
+        </table>
+
+        ${
+          isReactivation
+            ? `<div style="text-align: center; margin: 30px 0 10px 0;">
+                <a href="${process.env.CLIENT_URL || 'https://mavilinking.com'}/login" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">Sign In to Portal</a>
+               </div>`
+            : `<p style="margin: 20px 0 0 0; font-size: 13px; line-height: 1.5; color: #8b949e;">If you believe this was done in error or require further assistance, please contact your institution administration or platform support team.</p>`
+        }
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 20px 30px; background: #0d1117; border-top: 1px solid #21262d; text-align: center;">
+        <p style="margin: 0; font-size: 12px; color: #484f58;">&copy; ${new Date().getFullYear()} MAVI Linking System. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+};
+
+/**
+ * Dispatch Account Lifecycle Notification Email
+ */
+const sendAccountLifecycleEmail = async ({ to, name, maviId, role, type, reason, expiresDate }) => {
+  if (!to || typeof to !== 'string' || !to.includes('@')) {
+    return { success: false, error: 'INVALID_EMAIL' };
+  }
+
+  const subjectMap = {
+    SUSPENDED: 'MAVI Linking — Account Temporarily Suspended',
+    DEACTIVATED: 'MAVI Linking — Account Deactivated',
+    REACTIVATED: 'MAVI Linking — Account Access Restored',
+  };
+
+  const html = generateAccountLifecycleEmailHtml({
+    type,
+    name,
+    maviId,
+    role,
+    reason,
+    expiresDate,
+  });
+
+  return await sendEmail({
+    to: to.toLowerCase().trim(),
+    subject: subjectMap[type] || `MAVI Linking — Account Status Update (${type})`,
+    html,
+    templateName: `account-lifecycle-${type.toLowerCase()}`,
+  });
+};
+
 module.exports = {
   sendEmail,
+  sendAdminInvitationEmail,
+  sendAccountLifecycleEmail,
+  generateAccountLifecycleEmailHtml,
+  generateAdminInvitationEmailHtml,
   generatePasswordResetEmailHtml,
   generateAccountInvitationEmailHtml,
   generateEmailChangeOtpEmailHtml,
@@ -443,4 +707,5 @@ module.exports = {
   generateStudentVerificationEmailHtml,
   generateInstitutionAdminStudentVerificationEmailHtml,
 };
+
 

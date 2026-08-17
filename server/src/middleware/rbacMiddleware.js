@@ -67,15 +67,10 @@ const requireOwner = (req, res, next) => {
   const isSuper =
     isOwner ||
     userRoles.includes('super_admin') ||
-    userRoles.includes('institution_admin') ||
-    userRoles.includes('admin') ||
-    req.user.role === 'super_admin' ||
-    req.user.role === 'institution_admin' ||
-    req.user.role === 'admin';
+    req.user.role === 'super_admin';
 
   const hasAdminManagePerm =
     (req.user.permissions || []).includes('PLATFORM_ADMIN_MANAGE') ||
-    (req.user.permissions || []).includes('INSTITUTION_ADMIN_MANAGE') ||
     (req.user.permissions || []).includes('ADMIN_CREATE');
 
   if (!isSuper && !hasAdminManagePerm) {

@@ -421,12 +421,43 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Check account status
-    if (user.status === 'suspended') {
+    // Check account status: 1. DEACTIVATED (indefinite block)
+    if (user.accountStatus === 'DEACTIVATED' || user.status === 'deactivated') {
       return res.status(403).json({
         success: false,
-        message: 'Account suspended. Please contact platform administration.',
+        code: 'ACCOUNT_DEACTIVATED',
+        message: 'Your account has been deactivated. Please contact an authorized administrator to reactivate your account.',
+        data: {
+          accountStatus: 'DEACTIVATED',
+          deactivatedAt: user.deactivatedAt,
+          reason: user.deactivationReason || 'Account deactivated',
+        },
       });
+    }
+
+    // Check account status: 2. SUSPENDED (temporary hold with optional auto-reactivation)
+    if (user.accountStatus === 'SUSPENDED' || user.status === 'suspended') {
+      if (user.suspendedUntil && new Date(user.suspendedUntil).getTime() <= Date.now()) {
+        user.accountStatus = 'ACTIVE';
+        user.status = 'active';
+        user.suspendedAt = null;
+        user.suspendedBy = null;
+        user.suspendedUntil = null;
+        user.suspensionReason = '';
+        await user.save();
+      } else {
+        return res.status(403).json({
+          success: false,
+          code: 'ACCOUNT_SUSPENDED',
+          message: 'Your account has been temporarily suspended by an administrator.',
+          data: {
+            accountStatus: 'SUSPENDED',
+            suspendedAt: user.suspendedAt,
+            suspendedUntil: user.suspendedUntil,
+            reason: user.suspensionReason || 'Policy review',
+          },
+        });
+      }
     }
 
     // Compare passwords
@@ -482,7 +513,7 @@ const login = async (req, res, next) => {
         });
       }
 
-      if (user.accountStatus === 'DISABLED' || user.accountStatus === 'SUSPENDED') {
+      if (user.accountStatus === 'DISABLED') {
         return res.status(403).json({
           success: false,
           code: 'ACCOUNT_INACTIVE',
@@ -499,6 +530,7 @@ const login = async (req, res, next) => {
     const token = user.generateAuthToken();
     const refreshToken = crypto.randomBytes(40).toString('hex');
     user.refreshToken = refreshToken;
+    user.lastLogin = new Date();
     await user.save();
 
     // Log Security Audit Activity
@@ -673,6 +705,33 @@ const refreshToken = async (req, res, next) => {
     const user = await User.findOne({ refreshToken: token }).select('+refreshToken');
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid refresh token' });
+    }
+
+    // Block refreshToken for suspended or deactivated accounts
+    if (user.accountStatus === 'SUSPENDED' || user.status === 'suspended') {
+      if (user.suspendedUntil && new Date(user.suspendedUntil).getTime() <= Date.now()) {
+        user.accountStatus = 'ACTIVE';
+        user.status = 'active';
+        user.suspendedAt = null;
+        user.suspendedBy = null;
+        user.suspendedUntil = null;
+        user.suspensionReason = '';
+        await user.save();
+      } else {
+        return res.status(403).json({
+          success: false,
+          code: 'ACCOUNT_SUSPENDED',
+          message: 'Account is suspended. Token refresh denied.',
+        });
+      }
+    }
+
+    if (user.accountStatus === 'DEACTIVATED' || user.status === 'deactivated') {
+      return res.status(403).json({
+        success: false,
+        code: 'ACCOUNT_DEACTIVATED',
+        message: 'Account is deactivated. Token refresh denied.',
+      });
     }
 
     const newAccessToken = user.generateAuthToken();

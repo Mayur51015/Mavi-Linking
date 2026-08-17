@@ -35,6 +35,7 @@ import SuperAdminLayout from '../../layouts/SuperAdminLayout';
 import api from '../../api/axios';
 import VoluntaryChangePasswordForm from '../../components/VoluntaryChangePasswordForm';
 import PasswordInput from '../../components/ui/PasswordInput';
+import UserLifecycleTable from '../../components/admin/UserLifecycleTable';
 import { AuthContext } from '../../context/AuthContext';
 
 const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
@@ -576,78 +577,36 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
                     <option value="user">Student</option>
                     <option value="teacher">Teacher</option>
                     <option value="recruiter">Recruiter</option>
+                    <option value="department_admin">Dept Admin</option>
                     <option value="institution_admin">Inst Admin</option>
                     <option value="super_admin">Super Admin</option>
                   </select>
                   <select className="input-field" style={{ width: '180px', marginBottom: 0 }} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
                     <option value="">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="suspended">Suspended</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="SUSPENDED">Suspended</option>
+                    <option value="DEACTIVATED">Deactivated</option>
+                    <option value="PENDING_VERIFICATION">Pending Verification</option>
                   </select>
                 </div>
 
-                <div className="glass-card-static" style={{ overflowX: 'auto' }}>
-                  {users.length === 0 ? (
-                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      <Users size={36} style={{ marginBottom: '0.5rem' }} />
-                      <p>No user accounts found matching your query.</p>
-                    </div>
-                  ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                          <th style={{ padding: '1rem' }}>User Profile</th>
-                          <th style={{ padding: '1rem' }}>MAVI ID</th>
-                          <th style={{ padding: '1rem' }}>Role</th>
-                          <th style={{ padding: '1rem' }}>Institution Scope</th>
-                          <th style={{ padding: '1rem' }}>Status</th>
-                          <th style={{ padding: '1rem' }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {users.map((u) => (
-                          <tr key={u._id} style={{ borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'middle' }}>
-                            <td style={{ padding: '1rem' }}>
-                              <div style={{ fontWeight: '600' }}>{u.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{u.email}</div>
-                            </td>
-                            <td style={{ padding: '1rem', fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-purple)' }}>
-                              {u.maviId || '—'}
-                            </td>
-                            <td style={{ padding: '1rem' }}>
-                              <span className="badge badge-outline" style={{ textTransform: 'capitalize' }}>
-                                {u.role === 'user' ? 'Student' : u.role}
-                              </span>
-                            </td>
-                            <td style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                              {u.institutionId?.name || u.university?.name || 'Global Scope'}
-                            </td>
-                            <td style={{ padding: '1rem' }}>
-                              <span className={`badge ${u.status === 'suspended' ? 'badge-outline' : 'badge-primary'}`} style={{ color: u.status === 'suspended' ? '#ef4444' : undefined }}>
-                                {u.status === 'suspended' ? 'Suspended' : 'Active'}
-                              </span>
-                            </td>
-                            <td style={{ padding: '1rem' }}>
-                              <button onClick={() => setSuspendingUser(u)} className="btn btn-outline" style={{ borderColor: u.status === 'suspended' ? 'var(--accent-emerald)' : '#eab308', color: u.status === 'suspended' ? 'var(--accent-emerald)' : '#eab308', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}>
-                                {u.status === 'suspended' ? 'Reactivate' : 'Suspend'}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
+                <UserLifecycleTable
+                  users={users}
+                  institutions={institutions}
+                  onRefresh={loadTabData}
+                  loading={loading}
+                  currentUserRole="super_admin"
+                />
 
-                  {pagination.pages > 1 && (
-                    <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Page {pagination.page} of {pagination.pages} ({pagination.total} records)</span>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Prev</button>
-                        <button disabled={page >= pagination.pages} onClick={() => setPage(page + 1)} className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Next</button>
-                      </div>
+                {pagination.pages > 1 && (
+                  <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Page {pagination.page} of {pagination.pages} ({pagination.total} records)</span>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Prev</button>
+                      <button disabled={page >= pagination.pages} onClick={() => setPage(page + 1)} className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Next</button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 

@@ -77,8 +77,31 @@ const userSchema = new mongoose.Schema(
     },
     accountStatus: {
       type: String,
-      enum: ['INVITED', 'PENDING_EMAIL_VERIFICATION', 'PENDING_VERIFICATION', 'EMAIL_VERIFICATION_PENDING', 'PENDING_ADMIN_APPROVAL', 'PASSWORD_SETUP_REQUIRED', 'ACTIVE', 'REJECTED', 'SUSPENDED', 'DISABLED', 'INVITATION_EXPIRED'],
+      enum: [
+        'INVITED',
+        'PENDING_EMAIL_VERIFICATION',
+        'PENDING_VERIFICATION',
+        'EMAIL_VERIFICATION_PENDING',
+        'PENDING_ADMIN_APPROVAL',
+        'PASSWORD_SETUP_REQUIRED',
+        'ACTIVE',
+        'REJECTED',
+        'SUSPENDED',
+        'DEACTIVATED',
+        'DISABLED',
+        'INVITATION_EXPIRED',
+        'INVITATION_REVOKED',
+        'DELETED',
+      ],
       default: 'PENDING_EMAIL_VERIFICATION',
+    },
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
+    lastLogin: {
+      type: Date,
+      default: null,
     },
     institutionalIdentifier: {
       identifierType: {
@@ -156,6 +179,23 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
     suspensionReason: {
+      type: String,
+      default: '',
+    },
+    suspendedUntil: {
+      type: Date,
+      default: null,
+    },
+    deactivatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    deactivatedAt: {
+      type: Date,
+      default: null,
+    },
+    deactivationReason: {
       type: String,
       default: '',
     },
@@ -536,7 +576,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 // ─── Instance method: Generate signed JWT ───────────────────────────────────
 userSchema.methods.generateAuthToken = function () {
   return jwt.sign(
-    { id: this._id, email: this.email, role: this.role },
+    { id: this._id, email: this.email, role: this.role, tokenVersion: this.tokenVersion || 0 },
     process.env.JWT_SECRET || 'default_mavi_secret_key_2026',
     { expiresIn: process.env.JWT_EXPIRE || '7d' }
   );

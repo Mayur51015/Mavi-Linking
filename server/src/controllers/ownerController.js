@@ -5,7 +5,7 @@ const Department = require('../models/Department');
 const Role = require('../models/Role');
 const ActivityLog = require('../models/ActivityLog');
 const AuditLog = require('../models/AuditLog');
-const { sendEmail } = require('../utils/sendEmail');
+const { sendEmail, sendAdminInvitationEmail } = require('../utils/sendEmail');
 const { ALL_PERMISSIONS, SYSTEM_ROLE_PERMISSIONS, checkPermissionDelegation } = require('../utils/permissions');
 
 // Default in-memory platform system configuration fallback
@@ -553,6 +553,7 @@ const inviteAdmin = async (req, res, next) => {
       existingUser.invitedBy = req.user._id;
       existingUser.invitedAt = new Date();
       existingUser.accountStatus = 'INVITED';
+      existingUser.isInvitedAdmin = true;
       await existingUser.save();
     } else {
       existingUser = await User.create({
@@ -575,6 +576,7 @@ const inviteAdmin = async (req, res, next) => {
         designation: designation || 'Administrator',
         permissions,
         mustChangePassword: true,
+        isInvitedAdmin: true,
         invitationToken: inviteToken,
         invitationExpires: inviteExpires,
         invitedBy: req.user._id,
@@ -588,48 +590,60 @@ const inviteAdmin = async (req, res, next) => {
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
-    try {
-      await sendEmail({
-        to: lowerEmail,
-        subject: `You've been invited to administer MAVI Linking`,
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #6366f1;">MAVI Linking — Administrative Invitation</h2>
-            <p>Hello <strong>${existingUser.name}</strong>,</p>
-            <p>You have been invited to join <strong>MAVI Linking</strong> as an administrator.</p>
-            <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 15px 0;">
-              <p><strong>Role:</strong> ${role.replace(/_/g, ' ').toUpperCase()}</p>
-              <p><strong>Management Scope:</strong> ${scope}</p>
-              <p><strong>Institution:</strong> ${targetInst ? targetInst.name : 'Platform Wide'}</p>
-              ${targetDept ? `<p><strong>Department:</strong> ${targetDept.name}</p>` : ''}
-            </div>
-            <p>Please click the button below to accept your invitation and create your password:</p>
-            <a href="${invitationLink}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Accept Invitation</a>
-            <p style="margin-top: 20px; font-size: 0.85em; color: #666;">This invitation link is valid for 48 hours.</p>
-          </div>
-        `,
-      });
-    } catch (emailErr) {
-      console.error('[INVITATION EMAIL DISPATCH NON-FATAL ERROR]', emailErr.message);
-    }
+    const emailResult = await sendAdminInvitationEmail({
+      to: lowerEmail,
+      name: existingUser.name,
+      role,
+      institutionName: targetInst ? targetInst.name : 'Platform Wide',
+      departmentName: targetDept ? targetDept.name : null,
+      managementScope: scope,
+      invitationLink,
+      expiresHours: 48,
+    });
 
     // Audit Logging
     await AuditLog.create({
       actorId: req.user._id,
       targetUserId: existingUser._id,
-      action: 'ADMIN_INVITATION_SENT',
+      action: 'ADMIN_INVITATION_CREATED',
       institutionId: targetInst ? targetInst._id : null,
       departmentId: targetDept ? targetDept._id : null,
       details: { role, scope, permissions },
       result: 'SUCCESS',
     });
 
+    if (emailResult.success) {
+      await AuditLog.create({
+        actorId: req.user._id,
+        targetUserId: existingUser._id,
+        action: 'ADMIN_INVITATION_EMAIL_SENT',
+        institutionId: targetInst ? targetInst._id : null,
+        departmentId: targetDept ? targetDept._id : null,
+        details: { email: lowerEmail, messageId: emailResult.messageId },
+        result: 'SUCCESS',
+      });
+    } else {
+      await AuditLog.create({
+        actorId: req.user._id,
+        targetUserId: existingUser._id,
+        action: 'ADMIN_INVITATION_EMAIL_FAILED',
+        institutionId: targetInst ? targetInst._id : null,
+        departmentId: targetDept ? targetDept._id : null,
+        details: { email: lowerEmail, error: emailResult.error },
+        result: 'FAILED',
+      });
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Administrator invitation created and email dispatched successfully.',
+      emailSent: emailResult.success,
+      message: emailResult.success
+        ? 'Administrator invitation created and email dispatched successfully.'
+        : 'Administrator created, but invitation email could not be sent.',
       data: {
         admin: existingUser,
         invitationLink,
+        emailSent: emailResult.success,
       },
     });
   } catch (error) {
@@ -706,18 +720,21 @@ const updateAdmin = async (req, res, next) => {
  */
 const suspendAdmin = async (req, res, next) => {
   try {
-    const { reason = 'Account suspended by administrator.' } = req.body;
+    const { reason = 'Account suspended by administrator.', suspendedUntil } = req.body;
     const adminUser = await User.findById(req.params.id);
 
     if (!adminUser) {
       return res.status(404).json({ success: false, message: 'Admin account not found.' });
     }
 
+    const expiryDate = suspendedUntil ? new Date(suspendedUntil) : null;
     adminUser.accountStatus = 'SUSPENDED';
     adminUser.status = 'suspended';
     adminUser.suspendedBy = req.user._id;
     adminUser.suspendedAt = new Date();
     adminUser.suspensionReason = reason.trim();
+    adminUser.suspendedUntil = expiryDate;
+    adminUser.tokenVersion = (adminUser.tokenVersion || 0) + 1;
     await adminUser.save();
 
     await AuditLog.create({
@@ -725,7 +742,7 @@ const suspendAdmin = async (req, res, next) => {
       targetUserId: adminUser._id,
       action: 'ADMIN_SUSPENDED',
       institutionId: adminUser.institutionId,
-      details: { reason },
+      details: { reason, suspendedUntil: expiryDate },
       result: 'SUCCESS',
     });
 
@@ -757,6 +774,11 @@ const reactivateAdmin = async (req, res, next) => {
     adminUser.suspendedBy = null;
     adminUser.suspendedAt = null;
     adminUser.suspensionReason = '';
+    adminUser.suspendedUntil = null;
+    adminUser.deactivatedBy = null;
+    adminUser.deactivatedAt = null;
+    adminUser.deactivationReason = '';
+    adminUser.tokenVersion = (adminUser.tokenVersion || 0) + 1;
     await adminUser.save();
 
     await AuditLog.create({
@@ -784,38 +806,62 @@ const reactivateAdmin = async (req, res, next) => {
  */
 const resendAdminInvite = async (req, res, next) => {
   try {
-    const adminUser = await User.findById(req.params.id).populate('institutionId', 'name');
+    const adminUser = await User.findById(req.params.id)
+      .populate('institutionId', 'name')
+      .populate('departmentId', 'name');
 
     if (!adminUser) {
       return res.status(404).json({ success: false, message: 'Admin account not found.' });
+    }
+
+    // Rate Limit: Minimum 60s resend interval
+    if (adminUser.invitedAt && Date.now() - new Date(adminUser.invitedAt).getTime() < 60000) {
+      const remainingSecs = Math.ceil((60000 - (Date.now() - new Date(adminUser.invitedAt).getTime())) / 1000);
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMITED',
+        message: `Please wait ${remainingSecs} seconds before resending another invitation email.`,
+      });
     }
 
     const inviteToken = crypto.randomBytes(32).toString('hex');
     adminUser.invitationToken = inviteToken;
     adminUser.invitationExpires = new Date(Date.now() + 48 * 3600 * 1000);
     adminUser.accountStatus = 'INVITED';
+    adminUser.invitedAt = new Date();
     await adminUser.save();
 
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
-    await sendEmail({
-      email: adminUser.email,
-      subject: `MAVI Linking — Resent Administrative Invitation`,
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-          <h2 style="color: #6366f1;">MAVI Linking — Administrative Invitation</h2>
-          <p>Hello <strong>${adminUser.name}</strong>,</p>
-          <p>Your administrative invitation for MAVI Linking has been resent.</p>
-          <a href="${invitationLink}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Accept Invitation</a>
-        </div>
-      `,
-    }).catch((err) => console.error('[RESEND EMAIL ERROR]', err.message));
+    const emailResult = await sendAdminInvitationEmail({
+      to: adminUser.email,
+      name: adminUser.name,
+      role: adminUser.role,
+      institutionName: adminUser.institutionId?.name || 'Platform Wide',
+      departmentName: adminUser.departmentId?.name || null,
+      managementScope: adminUser.adminScope || (adminUser.departmentId ? 'DEPARTMENT' : adminUser.institutionId ? 'INSTITUTION' : 'PLATFORM'),
+      invitationLink,
+      expiresHours: 48,
+    });
+
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: adminUser._id,
+      action: 'ADMIN_INVITATION_RESENT',
+      institutionId: adminUser.institutionId?._id || adminUser.institutionId || null,
+      departmentId: adminUser.departmentId?._id || adminUser.departmentId || null,
+      details: { email: adminUser.email, emailSent: emailResult.success },
+      result: emailResult.success ? 'SUCCESS' : 'FAILED',
+    });
 
     res.status(200).json({
       success: true,
-      message: 'Invitation resent successfully.',
-      data: { invitationLink },
+      emailSent: emailResult.success,
+      message: emailResult.success
+        ? 'Invitation resent successfully.'
+        : 'Invitation updated, but email could not be sent.',
+      data: { invitationLink, emailSent: emailResult.success },
     });
   } catch (error) {
     next(error);

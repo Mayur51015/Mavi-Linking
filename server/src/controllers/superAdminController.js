@@ -2,8 +2,10 @@ const User = require('../models/User');
 const Institution = require('../models/Institution');
 const InstitutionMembership = require('../models/InstitutionMembership');
 const ActivityLog = require('../models/ActivityLog');
+const AuditLog = require('../models/AuditLog');
 const RecruitmentNotification = require('../models/RecruitmentNotification');
 const crypto = require('crypto');
+const { sendAdminInvitationEmail } = require('../utils/sendEmail');
 
 /**
  * @desc    Get Global Super Admin Dashboard Metrics
@@ -166,7 +168,8 @@ const createAdmin = async (req, res, next) => {
       }
     }
 
-    let inviteToken = null;
+    const inviteToken = crypto.randomBytes(32).toString('hex');
+    const inviteExpires = new Date(Date.now() + 48 * 3600 * 1000); // 48 Hours
 
     if (user) {
       // Upgrade existing user to admin
@@ -179,12 +182,16 @@ const createAdmin = async (req, res, next) => {
       user.adminLoginId = finalAdminId;
       if (designation) user.designation = designation;
       if (permissions && Array.isArray(permissions)) user.permissions = permissions;
+      user.invitationToken = inviteToken;
+      user.invitationExpires = inviteExpires;
+      user.accountStatus = 'INVITED';
+      user.isInvitedAdmin = true;
+      user.invitedBy = req.user._id;
+      user.invitedAt = new Date();
       user.status = 'active';
       await user.save();
     } else {
-      // Create new admin (support secure invitation flow if password omitted)
-      const isInvitation = !password;
-      inviteToken = crypto.randomBytes(32).toString('hex');
+      // Create new admin in INVITED state
       const dummyPassword = password || crypto.randomBytes(16).toString('hex');
 
       user = await User.create({
@@ -199,10 +206,14 @@ const createAdmin = async (req, res, next) => {
         adminLoginId: finalAdminId,
         designation: designation || 'Institution Administrator',
         permissions: Array.isArray(permissions) ? permissions : ['students:read', 'students:update', 'teachers:read', 'verification:approve', 'reports:read'],
-        status: isInvitation ? 'pending' : 'active',
-        isInvitedAdmin: isInvitation,
-        invitationToken: isInvitation ? inviteToken : null,
-        invitationExpires: isInvitation ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null,
+        status: 'active',
+        accountStatus: 'INVITED',
+        isInvitedAdmin: true,
+        mustChangePassword: true,
+        invitationToken: inviteToken,
+        invitationExpires: inviteExpires,
+        invitedBy: req.user._id,
+        invitedAt: new Date(),
         emailVerified: true,
       });
     }
@@ -225,6 +236,20 @@ const createAdmin = async (req, res, next) => {
       );
     }
 
+    // Dispatch Invitation Email
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
+
+    const emailResult = await sendAdminInvitationEmail({
+      to: lowerEmail,
+      name: user.name,
+      role: targetRole,
+      institutionName: targetInst?.name || 'Platform Wide',
+      managementScope: targetInst ? 'INSTITUTION' : 'PLATFORM',
+      invitationLink,
+      expiresHours: 48,
+    });
+
     await ActivityLog.create({
       userId: req.user._id,
       action: 'SUPER_ADMIN_CREATED_ADMIN',
@@ -232,6 +257,35 @@ const createAdmin = async (req, res, next) => {
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
+
+    await AuditLog.create({
+      actorId: req.user._id,
+      targetUserId: user._id,
+      action: 'ADMIN_INVITATION_CREATED',
+      institutionId: targetInst ? targetInst._id : null,
+      details: { role: targetRole, adminId: finalAdminId, email: lowerEmail },
+      result: 'SUCCESS',
+    });
+
+    if (emailResult.success) {
+      await AuditLog.create({
+        actorId: req.user._id,
+        targetUserId: user._id,
+        action: 'ADMIN_INVITATION_EMAIL_SENT',
+        institutionId: targetInst ? targetInst._id : null,
+        details: { email: lowerEmail, messageId: emailResult.messageId },
+        result: 'SUCCESS',
+      });
+    } else {
+      await AuditLog.create({
+        actorId: req.user._id,
+        targetUserId: user._id,
+        action: 'ADMIN_INVITATION_EMAIL_FAILED',
+        institutionId: targetInst ? targetInst._id : null,
+        details: { email: lowerEmail, error: emailResult.error },
+        result: 'FAILED',
+      });
+    }
 
     try {
       await RecruitmentNotification.create({
@@ -245,14 +299,16 @@ const createAdmin = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: inviteToken
-        ? `Invitation created for ${user.email}. Share invitation token to activate.`
-        : `Admin account created successfully for ${user.email}`,
+      emailSent: emailResult.success,
+      message: emailResult.success
+        ? `Administrator created successfully. Invitation email sent to ${user.email}.`
+        : `Administrator created, but invitation email could not be sent to ${user.email}.`,
       data: {
         user,
         adminId: finalAdminId,
         invitationToken: inviteToken,
-        invitationLink: inviteToken ? `${process.env.CLIENT_URL || 'https://mavi-linking-mq7d.vercel.app'}/admin/accept-invite?token=${inviteToken}` : null,
+        invitationLink,
+        emailSent: emailResult.success,
       },
     });
   } catch (error) {

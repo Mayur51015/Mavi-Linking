@@ -7,6 +7,9 @@ const DNA = require('../src/models/DNA');
 const Ranking = require('../src/models/Ranking');
 const Project = require('../src/models/Project');
 const Analytics = require('../src/models/Analytics');
+const CareerScore = require('../src/models/CareerScore');
+const CareerInsight = require('../src/models/CareerInsight');
+const LeetCodeAnalytics = require('../src/models/LeetCodeAnalytics');
 const aiAnalyzer = require('../src/services/aiAnalyzer');
 
 describe('Recruiter Report Service', () => {
@@ -60,6 +63,10 @@ describe('Recruiter Report Service', () => {
     jest.spyOn(Analytics, 'findOne').mockReturnValue({
       sort: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(null) }),
     });
+    jest.spyOn(CareerScore, 'findOne').mockReturnValue({ lean: jest.fn().mockResolvedValue(null) });
+    jest.spyOn(CareerInsight, 'findOne').mockReturnValue({ lean: jest.fn().mockResolvedValue(null) });
+    jest.spyOn(LeetCodeAnalytics, 'findOne').mockReturnValue({ lean: jest.fn().mockResolvedValue(null) });
+    jest.spyOn(User, 'countDocuments').mockResolvedValue(0);
   });
 
   afterEach(() => {
@@ -83,6 +90,7 @@ describe('Recruiter Report Service', () => {
       expect(report.qrBuffer).toBeDefined();
       expect(Buffer.isBuffer(report.qrBuffer)).toBe(true);
       expect(report.publicProfile).toContain('/u/janedev');
+      expect(report.aiAvailable).toBe(true);
     });
 
     it('allows admin user to access any candidate profile', async () => {
@@ -102,6 +110,20 @@ describe('Recruiter Report Service', () => {
       await expect(generateRecruiterReport(candidateUser._id.toString(), recruiterUser))
         .rejects.toThrow('Candidate not found or outside your authorized access scope');
     });
+
+    it('falls back to verified profile data when the AI service fails', async () => {
+      jest.spyOn(User, 'findOne').mockReturnValue({
+        lean: jest.fn().mockResolvedValue(candidateUser),
+      });
+      aiAnalyzer.analyzeUser.mockRejectedValueOnce(new Error('AI service unavailable'));
+
+      const report = await generateRecruiterReport(candidateUser._id.toString(), recruiterUser);
+
+      expect(report.candidate.name).toBe('Jane Developer');
+      expect(report.aiAvailable).toBe(false);
+      expect(report.projects).toEqual([]);
+      expect(report.publicProfile).toContain('/u/janedev');
+    });
   });
 
   describe('writeRecruiterReportPdf', () => {
@@ -118,11 +140,14 @@ describe('Recruiter Report Service', () => {
         qrBuffer: validQrBuffer,
       };
 
+      const chunks = [];
       const res = {
         status: jest.fn().mockReturnThis(),
         setHeader: jest.fn(),
-        write: jest.fn(),
-        end: jest.fn(),
+        write: jest.fn((chunk) => chunks.push(Buffer.from(chunk))),
+        end: jest.fn((chunk) => {
+          if (chunk) chunks.push(Buffer.from(chunk));
+        }),
         on: jest.fn(),
         once: jest.fn(),
         emit: jest.fn(),
@@ -133,6 +158,7 @@ describe('Recruiter Report Service', () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
       expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="MAVI-Linking-Recruiter-AI-Report.pdf"');
+      expect(chunks.length).toBeGreaterThan(0);
     });
   });
 });

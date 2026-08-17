@@ -72,7 +72,7 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
     throw error;
   }
 
-  let [insight, dna, ranking, projects, analytics, careerScore, careerInsight, leetcodeData] = await Promise.all([
+  const [insight, dna, ranking, projects, analytics, careerScore, careerInsight, leetcodeData] = await Promise.all([
     Insight.findOne({ userId: user._id }).lean().catch(() => null),
     DNA.findOne({ userId: user._id }).lean().catch(() => null),
     Ranking.findOne({ userId: user._id }).lean().catch(() => null),
@@ -83,7 +83,7 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
     LeetCodeAnalytics.findOne({ user: user._id }).lean().catch(() => null),
   ]);
 
-  // Compute live global rank matching backend source of truth
+  // Compute live global rank matching backend source of truth.
   let globalRank = null;
   if (user.scores && user.scores.overall > 0) {
     const higherScoresCount = await User.countDocuments({
@@ -101,7 +101,13 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
   };
 
   let aiData = user.aiAnalysis || {};
-  let aiAvailable = Boolean(insight || dna || ranking || analytics || careerInsight);
+  // This flag represents the AI service used during this report generation, not
+  // whether older AI-derived data happens to exist in the database.
+  let aiAvailable = false;
+  let reportInsight = insight;
+  let reportDna = dna;
+  let reportRanking = ranking;
+  let reportAnalytics = analytics;
 
   try {
     const analysis = await Promise.race([
@@ -111,10 +117,10 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
 
     if (analysis) {
       aiAvailable = true;
-      insight = analysis.insight || insight;
-      dna = analysis.dna || dna;
-      ranking = analysis.ranking || ranking;
-      analytics = analysis.analytics || analytics;
+      reportInsight = analysis.insight || reportInsight;
+      reportDna = analysis.dna || reportDna;
+      reportRanking = analysis.ranking || reportRanking;
+      reportAnalytics = analysis.analytics || reportAnalytics;
       aiData = {
         ...aiData,
         strengths: analysis.insight?.strengths || aiData.strengths || careerInsight?.strengths || [],
@@ -142,11 +148,11 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
 
   return {
     candidate: user,
-    insight: insight || careerInsight,
-    dna,
+    insight: reportInsight || careerInsight,
+    dna: reportDna,
     ranking: rankingData,
     projects: projects || [],
-    analytics,
+    analytics: reportAnalytics,
     leetcodeData,
     aiData,
     aiAvailable,

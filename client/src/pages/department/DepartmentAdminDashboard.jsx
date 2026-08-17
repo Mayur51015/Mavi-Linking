@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Shield, Users, GraduationCap, FileText, Megaphone, Search, AlertCircle, BarChart3, Trophy, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Shield, Users, GraduationCap, FileText, Megaphone, Search, AlertCircle, BarChart3, Trophy, Download, LogOut } from 'lucide-react';
 import api from '../../api/axios';
 import { AuthContext } from '../../context/AuthContext';
 
 const DepartmentAdminDashboard = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState(null);
   const [students, setStudents] = useState([]);
   const [teachers, setTeachers] = useState([]);
@@ -14,6 +16,11 @@ const DepartmentAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'students' | 'teachers' | 'analytics' | 'leaderboard' | 'reports'
   const [search, setSearch] = useState('');
+
+  const handleSignOut = () => {
+    if (logout) logout();
+    navigate('/admin/login', { replace: true });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,7 +67,7 @@ const DepartmentAdminDashboard = () => {
         <header
           style={{
             display: 'flex',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '2rem',
             flexWrap: 'wrap',
@@ -84,27 +91,61 @@ const DepartmentAdminDashboard = () => {
             </p>
           </div>
 
-          {/* Tab Controls */}
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '0.25rem', flexWrap: 'wrap', gap: '0.25rem' }}>
-            {['overview', 'students', 'teachers', 'analytics', 'leaderboard', 'reports'].map((t) => (
-              <button
-                key={t}
-                onClick={() => setActiveTab(t)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '8px',
-                  fontSize: '0.85rem',
-                  fontWeight: '600',
-                  border: 'none',
-                  background: activeTab === t ? 'var(--accent-purple)' : 'transparent',
-                  color: activeTab === t ? 'white' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  textTransform: 'capitalize',
-                }}
-              >
-                {t}
-              </button>
-            ))}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+            {/* Tab Controls */}
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '0.25rem', flexWrap: 'wrap', gap: '0.25rem' }}>
+              {['overview', 'students', 'teachers', 'analytics', 'leaderboard', 'reports'].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setActiveTab(t)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    border: 'none',
+                    background: activeTab === t ? 'var(--accent-purple)' : 'transparent',
+                    color: activeTab === t ? 'white' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    textTransform: 'capitalize',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+
+            {/* Sign Out Button */}
+            <button
+              onClick={handleSignOut}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.5rem 0.9rem',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+                borderRadius: '8px',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: '#f87171',
+                background: 'rgba(239, 68, 68, 0.1)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
+                e.currentTarget.style.borderColor = '#ef4444';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+              }}
+              title="Sign Out of Department Admin Portal"
+            >
+              <LogOut size={15} />
+              <span>Sign Out</span>
+            </button>
           </div>
         </header>
 

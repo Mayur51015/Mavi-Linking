@@ -56,6 +56,13 @@ router.post('/roles', createCustomRole);
 router.put('/roles/:id', updateCustomRole);
 router.delete('/roles/:id', deleteCustomRole);
 
+const {
+  suspendUser,
+  deactivateUser,
+  reactivateUser,
+  deleteUserPermanently,
+} = require('../controllers/adminController');
+
 // Admin Management & Invitation Lifecycle
 router.get('/admins', getAdmins);
 router.post('/admins/invite', inviteAdmin);
@@ -66,9 +73,16 @@ router.post('/admins/:id/resend-invite', resendAdminInvite);
 router.patch('/admins/:id/revoke-invite', revokeAdminInvite);
 router.put('/admins/:id/status', toggleAdminStatus);
 router.post('/admins/:id/convert-to-student', convertSuperAdminToStudent);
+router.delete('/admins/:id/permanent', deleteUserPermanently);
+router.delete('/admins/:id', deleteUserPermanently);
 
-// Platform Users Management
+// Platform Users Management & Lifecycle
 router.get('/users', getUsers);
+router.post('/users/:id/suspend', suspendUser);
+router.post('/users/:id/deactivate', deactivateUser);
+router.post('/users/:id/reactivate', reactivateUser);
+router.delete('/users/:id/permanent', deleteUserPermanently);
+router.delete('/users/:id', deleteUserPermanently);
 router.put('/users/:id/status', toggleUserStatus);
 
 // Licensing

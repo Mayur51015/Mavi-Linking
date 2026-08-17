@@ -27,11 +27,26 @@ const router = express.Router();
 // ALL Super Admin routes strictly require authentication + Super Admin authorization
 router.use(protect, requireSuperAdmin);
 
+const {
+  suspendUser,
+  deactivateUser,
+  reactivateUser,
+  deleteUserPermanently,
+} = require('../controllers/adminController');
+
 // Super Admin Overview & Admin Management
 router.get('/stats', getSuperAdminStats);
 router.get('/admins', getAllAdmins);
 router.post('/admins', createAdmin);
+router.delete('/admins/:id/permanent', deleteUserPermanently);
 router.delete('/admins/:id', removeAdmin);
+
+// Super Admin User Lifecycle Management
+router.post('/users/:id/suspend', suspendUser);
+router.post('/users/:id/deactivate', deactivateUser);
+router.post('/users/:id/reactivate', reactivateUser);
+router.delete('/users/:id/permanent', deleteUserPermanently);
+router.delete('/users/:id', deleteUserPermanently);
 router.get('/security-events', getSecurityEvents);
 router.get('/licenses', getLicenses);
 router.get('/analytics', getPlatformAnalytics);

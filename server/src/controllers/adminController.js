@@ -118,8 +118,17 @@ const verifyUserManagementScope = async (actor, targetUser, isDelete = false) =>
     return { allowed: false, status: 400, message: 'Invalid actor or target user.' };
   }
 
+  const getRawId = (val) => {
+    if (!val) return '';
+    if (typeof val === 'object' && val._id) return val._id.toString();
+    return val.toString();
+  };
+
+  const actorIdStr = getRawId(actor._id);
+  const targetIdStr = getRawId(targetUser._id);
+
   // 1. Cannot manage self
-  if (actor._id.toString() === targetUser._id.toString()) {
+  if (actorIdStr && targetIdStr && actorIdStr === targetIdStr) {
     return { allowed: false, status: 400, message: 'You cannot perform lifecycle management actions on your own account.' };
   }
 
@@ -164,17 +173,35 @@ const verifyUserManagementScope = async (actor, targetUser, isDelete = false) =>
     }
   }
 
-  // 4. Institution Scoping
-  const actorInstId = (actor.institutionScope?.institutionId || actor.institutionId || '').toString();
+  // 4. Institution Scoping (Only applies to scoped Institution Admins, NOT Super Admins or Platform Owners)
+  const actorInstId = getRawId(actor.institutionScope?.institutionId || actor.institutionId);
   if (actorInstId && !actorIsSuperAdmin) {
-    const targetInstId = (targetUser.institutionId || '').toString();
+    const targetInstId = getRawId(targetUser.institutionId);
     if (!targetInstId || targetInstId !== actorInstId) {
-      return {
-        allowed: false,
-        status: 403,
-        code: 'CROSS_INSTITUTION_ACCESS_DENIED',
-        message: 'Forbidden. User belongs to another institution.',
-      };
+      // Fallback: Check if target user has an active membership in actor's institution
+      try {
+        const InstitutionMembership = require('../models/InstitutionMembership');
+        const membership = await InstitutionMembership.findOne({
+          userId: targetUser._id,
+          institutionId: actorInstId,
+        });
+
+        if (!membership) {
+          return {
+            allowed: false,
+            status: 403,
+            code: 'CROSS_INSTITUTION_ACCESS_DENIED',
+            message: 'Forbidden. User belongs to another institution.',
+          };
+        }
+      } catch (_) {
+        return {
+          allowed: false,
+          status: 403,
+          code: 'CROSS_INSTITUTION_ACCESS_DENIED',
+          message: 'Forbidden. User belongs to another institution.',
+        };
+      }
     }
   }
 
@@ -184,8 +211,8 @@ const verifyUserManagementScope = async (actor, targetUser, isDelete = false) =>
     (Array.isArray(actor.roles) && actor.roles.includes('department_admin') && !actorIsSuperAdmin && actor.role !== 'institution_admin');
 
   if (isDeptAdmin) {
-    const actorDeptId = (actor.departmentId || '').toString();
-    const targetDeptId = (targetUser.departmentId || '').toString();
+    const actorDeptId = getRawId(actor.departmentId);
+    const targetDeptId = getRawId(targetUser.departmentId);
     if (!actorDeptId || !targetDeptId || actorDeptId !== targetDeptId) {
       return {
         allowed: false,

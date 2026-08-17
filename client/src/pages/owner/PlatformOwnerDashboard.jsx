@@ -11,6 +11,8 @@ import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getErrorMessage } from '../../utils/errorMessage';
 import VoluntaryChangePasswordForm from '../../components/VoluntaryChangePasswordForm';
+import UserLifecycleTable from '../../components/admin/UserLifecycleTable';
+import UserLifecycleModal from '../../components/admin/UserLifecycleModal';
 
 const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
   const { user } = useContext(AuthContext);
@@ -73,6 +75,11 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
   const [convertingAdmin, setConvertingAdmin] = useState(null);
   const [convertForm, setConvertForm] = useState({ institutionId: '', departmentId: '', prn: '', reason: '' });
   const [convertDepartments, setConvertDepartments] = useState([]);
+
+  // Administrator Lifecycle State
+  const [selectedAdminForLifecycle, setSelectedAdminForLifecycle] = useState(null);
+  const [adminLifecycleModalType, setAdminLifecycleModalType] = useState(null);
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
 
   useEffect(() => {
     if (convertForm.institutionId) {
@@ -255,6 +262,36 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
       loadData();
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to reactivate admin account.'));
+    }
+  };
+
+  const handleAdminLifecycleSubmit = async (formData) => {
+    if (!selectedAdminForLifecycle || !adminLifecycleModalType) return;
+    setAdminActionLoading(true);
+    try {
+      if (adminLifecycleModalType === 'permanent_delete') {
+        await api.delete(`/admin/users/${selectedAdminForLifecycle._id}/permanent`, { data: formData });
+        toast.success(`Admin account ${selectedAdminForLifecycle.email} permanently deleted.`);
+      } else if (adminLifecycleModalType === 'suspend') {
+        await api.post(`/admin/users/${selectedAdminForLifecycle._id}/suspend`, formData);
+        toast.success(`Admin account ${selectedAdminForLifecycle.email} suspended.`);
+      } else if (adminLifecycleModalType === 'deactivate') {
+        await api.post(`/admin/users/${selectedAdminForLifecycle._id}/deactivate`, formData);
+        toast.success(`Admin account ${selectedAdminForLifecycle.email} deactivated.`);
+      } else if (adminLifecycleModalType === 'reactivate') {
+        await api.post(`/admin/users/${selectedAdminForLifecycle._id}/reactivate`, formData);
+        toast.success(`Admin account ${selectedAdminForLifecycle.email} reactivated.`);
+      } else if (adminLifecycleModalType === 'edit') {
+        await api.put(`/admin/users/${selectedAdminForLifecycle._id}`, formData);
+        toast.success(`Admin profile for ${selectedAdminForLifecycle.email} updated.`);
+      }
+      setSelectedAdminForLifecycle(null);
+      setAdminLifecycleModalType(null);
+      loadData();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Admin lifecycle action failed.'));
+    } finally {
+      setAdminActionLoading(false);
     }
   };
 
@@ -656,7 +693,7 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                               </span>
                             </td>
                             <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                              <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                 {status === 'INVITED' && (
                                   <>
                                     <button onClick={() => handleResendInvite(adm._id)} className="btn btn-sm btn-outline" style={{ fontSize: '0.72rem' }}>
@@ -690,6 +727,16 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                                     Reactivate
                                   </button>
                                 )}
+                                <button
+                                  onClick={() => {
+                                    setSelectedAdminForLifecycle(adm);
+                                    setAdminLifecycleModalType('permanent_delete');
+                                  }}
+                                  className="btn btn-sm btn-outline"
+                                  style={{ fontSize: '0.72rem', borderColor: '#ef4444', color: '#ef4444' }}
+                                >
+                                  Delete Permanently
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -728,56 +775,13 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
               </select>
             </div>
 
-            <div className="glass-card-static" style={{ padding: '1.5rem' }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: '#a1a1aa' }}>
-                      <th style={{ padding: '0.75rem 1rem' }}>MAVI ID / PRN</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>User Name</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Email Address</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Role</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Institution</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Account Status</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.length === 0 ? (
-                      <tr><td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#a1a1aa' }}>No users found matching parameters.</td></tr>
-                    ) : (
-                      filteredUsers.map((u) => (
-                        <tr key={u._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                          <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#67e8f9', fontWeight: 'bold' }}>
-                            {u.prn || u.maviId}
-                          </td>
-                          <td style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>{u.name}</td>
-                          <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{u.email}</td>
-                          <td style={{ padding: '0.75rem 1rem' }}>
-                            <span className="badge badge-outline" style={{ fontSize: '0.7rem' }}>{u.role}</span>
-                          </td>
-                          <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{u.institutionId?.name || 'N/A'}</td>
-                          <td style={{ padding: '0.75rem 1rem' }}>
-                            <span className={`badge ${u.status === 'suspended' ? 'badge-danger' : 'badge-success'}`} style={{ fontSize: '0.7rem' }}>
-                              {u.status || 'active'}
-                            </span>
-                          </td>
-                          <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                            <button
-                              onClick={() => handleToggleUserStatus(u._id, u.status)}
-                              className={`btn btn-sm ${u.status === 'suspended' ? 'btn-success' : 'btn-outline'}`}
-                              style={{ fontSize: '0.75rem' }}
-                            >
-                              {u.status === 'suspended' ? 'Activate' : 'Suspend'}
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <UserLifecycleTable
+              users={filteredUsers}
+              institutions={institutions}
+              onRefresh={loadData}
+              loading={loading}
+              currentUserRole="platform_owner"
+            />
           </div>
         )}
 
@@ -1448,6 +1452,21 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
               </div>
             </form>
           </div>
+        )}
+
+        {/* Admin Lifecycle Modal */}
+        {adminLifecycleModalType && selectedAdminForLifecycle && (
+          <UserLifecycleModal
+            modalType={adminLifecycleModalType}
+            user={selectedAdminForLifecycle}
+            onClose={() => {
+              setSelectedAdminForLifecycle(null);
+              setAdminLifecycleModalType(null);
+            }}
+            onSubmit={handleAdminLifecycleSubmit}
+            loading={adminActionLoading}
+            institutions={institutions}
+          />
         )}
 
       </div>

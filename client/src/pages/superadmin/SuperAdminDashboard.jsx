@@ -36,6 +36,7 @@ import api from '../../api/axios';
 import VoluntaryChangePasswordForm from '../../components/VoluntaryChangePasswordForm';
 import PasswordInput from '../../components/ui/PasswordInput';
 import UserLifecycleTable from '../../components/admin/UserLifecycleTable';
+import UserLifecycleModal from '../../components/admin/UserLifecycleModal';
 import { AuthContext } from '../../context/AuthContext';
 
 const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
@@ -97,6 +98,38 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
   const [errorInstitutions, setErrorInstitutions] = useState('');
   const [superAdminBilling, setSuperAdminBilling] = useState(null);
   const [assigningPlan, setAssigningPlan] = useState(false);
+
+  // Administrator Lifecycle State
+  const [selectedAdminForLifecycle, setSelectedAdminForLifecycle] = useState(null);
+  const [adminLifecycleModalType, setAdminLifecycleModalType] = useState(null);
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
+
+  const handleAdminLifecycleSubmit = async (formData) => {
+    if (!selectedAdminForLifecycle || !adminLifecycleModalType) return;
+    setAdminActionLoading(true);
+    try {
+      if (adminLifecycleModalType === 'permanent_delete') {
+        await api.delete(`/admin/users/${selectedAdminForLifecycle._id}/permanent`, { data: formData });
+        alert(`Admin account ${selectedAdminForLifecycle.email} permanently deleted.`);
+      } else if (adminLifecycleModalType === 'suspend') {
+        await api.post(`/admin/users/${selectedAdminForLifecycle._id}/suspend`, formData);
+        alert(`Admin account ${selectedAdminForLifecycle.email} suspended.`);
+      } else if (adminLifecycleModalType === 'deactivate') {
+        await api.post(`/admin/users/${selectedAdminForLifecycle._id}/deactivate`, formData);
+        alert(`Admin account ${selectedAdminForLifecycle.email} deactivated.`);
+      } else if (adminLifecycleModalType === 'reactivate') {
+        await api.post(`/admin/users/${selectedAdminForLifecycle._id}/reactivate`, formData);
+        alert(`Admin account ${selectedAdminForLifecycle.email} reactivated.`);
+      }
+      setSelectedAdminForLifecycle(null);
+      setAdminLifecycleModalType(null);
+      loadTabData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Admin lifecycle action failed.');
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
 
   const handleAssignPlan = async (targetInstitutionId, planCode) => {
     setAssigningPlan(true);
@@ -543,9 +576,21 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
                             </td>
                             <td style={{ padding: '1rem' }}>
                               {adm._id !== currentUser._id && (
-                                <button onClick={() => handleRevokeAdmin(adm._id)} className="btn btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}>
-                                  Revoke Privileges
-                                </button>
+                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                  <button onClick={() => handleRevokeAdmin(adm._id)} className="btn btn-outline" style={{ borderColor: '#f59e0b', color: '#f59e0b', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}>
+                                    Revoke Privileges
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedAdminForLifecycle(adm);
+                                      setAdminLifecycleModalType('permanent_delete');
+                                    }}
+                                    className="btn btn-outline"
+                                    style={{ borderColor: '#ef4444', color: '#ef4444', padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                                  >
+                                    Delete Permanently
+                                  </button>
+                                </div>
                               )}
                             </td>
                           </tr>
@@ -1042,6 +1087,20 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
               </div>
             </form>
           </div>
+        )}
+        {/* Admin Lifecycle Modal */}
+        {adminLifecycleModalType && selectedAdminForLifecycle && (
+          <UserLifecycleModal
+            modalType={adminLifecycleModalType}
+            user={selectedAdminForLifecycle}
+            onClose={() => {
+              setSelectedAdminForLifecycle(null);
+              setAdminLifecycleModalType(null);
+            }}
+            onSubmit={handleAdminLifecycleSubmit}
+            loading={adminActionLoading}
+            institutions={institutions}
+          />
         )}
       </div>
     </SuperAdminLayout>

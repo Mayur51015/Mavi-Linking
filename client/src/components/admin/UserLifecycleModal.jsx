@@ -65,11 +65,11 @@ export default function UserLifecycleModal({
     } else if (modalType === 'reactivate') {
       onSubmit({});
     } else if (modalType === 'permanent_delete') {
-      if (!confirmCheckbox || confirmText !== 'DELETE') {
-        alert('Please complete the confirmation checks before proceeding.');
+      if (!confirmCheckbox || confirmText.trim().toUpperCase() !== 'DELETE') {
+        alert('Please complete the confirmation checks and type DELETE before proceeding.');
         return;
       }
-      onSubmit({ confirmationText: confirmText, reason: reason.trim() || 'Administrative permanent deletion' });
+      onSubmit({ confirmationText: confirmText.trim(), reason: reason.trim() || 'Administrative permanent deletion' });
     } else if (modalType === 'edit') {
       onSubmit(editForm);
     }
@@ -375,13 +375,13 @@ export default function UserLifecycleModal({
                 <button
                   type="submit"
                   className="btn"
-                  disabled={loading || !confirmCheckbox || confirmText !== 'DELETE'}
+                  disabled={loading || !confirmCheckbox || confirmText.trim().toUpperCase() !== 'DELETE'}
                   style={{
-                    background: confirmCheckbox && confirmText === 'DELETE' ? '#ef4444' : '#475569',
+                    background: confirmCheckbox && confirmText.trim().toUpperCase() === 'DELETE' ? '#ef4444' : '#475569',
                     color: '#ffffff',
                     fontWeight: '700',
                     border: 'none',
-                    cursor: confirmCheckbox && confirmText === 'DELETE' ? 'pointer' : 'not-allowed',
+                    cursor: confirmCheckbox && confirmText.trim().toUpperCase() === 'DELETE' ? 'pointer' : 'not-allowed',
                   }}
                 >
                   <Trash2 size={16} style={{ marginRight: '0.4rem' }} />

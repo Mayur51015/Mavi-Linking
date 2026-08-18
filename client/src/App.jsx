@@ -111,6 +111,7 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/verify-account" element={<VerifyAccount />} />
             <Route path="/verify-email" element={<VerifyAccount />} />
+            <Route path="/verify/:maviId" element={<VerifyAccount />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
             <Route path="/activate-account" element={<ActivateAccount />} />
             <Route path="/change-password" element={<RequirePasswordChange><ChangePassword /></RequirePasswordChange>} />

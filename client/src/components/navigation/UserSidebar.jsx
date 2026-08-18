@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Terminal, X, BadgeCheck } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { userNavItems, userQuickActions } from '../../navigation/userNavigation.jsx';
@@ -7,6 +7,7 @@ import { userNavItems, userQuickActions } from '../../navigation/userNavigation.
 const UserSidebar = ({ sidebarOpen, setSidebarOpen, onOpenVerify }) => {
   const { user } = useContext(AuthContext);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const publicUsername = user?.username || user?.platforms?.github?.username;
   const maviIdDisplay = user?.maviId || (user?._id ? `MAVI-${user._id.slice(-8).toUpperCase()}` : '');
@@ -87,9 +88,9 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen, onOpenVerify }) => {
           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem', paddingLeft: '1rem' }}>
             Quick Actions
           </div>
-          {!user?.isVerified && onOpenVerify && (
+          {!user?.isVerified && (
             <button
-              onClick={() => { setSidebarOpen(false); onOpenVerify(); }}
+              onClick={() => { setSidebarOpen(false); navigate(`/verify/${user?.maviId || 'account'}`); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.75rem',
                 padding: '0.625rem 1rem', borderRadius: '10px',

@@ -275,7 +275,7 @@ const register = async (req, res, next) => {
 
     // Dispatch Verification Email
     const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
-    const verificationLink = `${clientUrl}/verify-account?token=${rawVerificationToken}`;
+    const verificationLink = `${clientUrl}/verify/${user.maviId}?t=${rawVerificationToken}`;
 
     const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
     const emailHtml = generateStudentVerificationEmailHtml({
@@ -755,13 +755,14 @@ const refreshToken = async (req, res, next) => {
 };
 
 /**
- * @desc    Verify email address using token
+ * @desc    Verify email address using token (supports MAVI ID-based route and legacy token-only)
  * @route   POST /api/auth/verify-email
+ * @route   GET  /api/auth/verify-email/:maviId
  * @access  Public
  */
 const verifyEmail = async (req, res, next) => {
   try {
-    const rawToken = req.body.token || req.query.token;
+    const rawToken = req.body.token || req.query.token || req.query.t;
     if (!rawToken) {
       return res.status(400).json({
         success: false,
@@ -772,13 +773,26 @@ const verifyEmail = async (req, res, next) => {
 
     const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
-    // Search for user matching hashed token (or legacy unhashed token)
-    const user = await User.findOne({
-      $or: [
-        { verificationToken: hashedToken },
-        { verificationToken: rawToken },
-      ],
-    }).select('+verificationToken +verificationTokenExpires +refreshToken');
+    // Extract MAVI ID from body, query params, or route params
+    const maviId = (req.body.maviId || req.query.maviId || req.params.maviId || '').toUpperCase().trim();
+
+    let user;
+    if (maviId && maviId.startsWith('MAVI-')) {
+      // MAVI ID-based lookup: find user by maviId, then validate token matches
+      user = await User.findOne({ maviId })
+        .select('+verificationToken +verificationTokenExpires +refreshToken');
+      if (user && user.verificationToken !== hashedToken && user.verificationToken !== rawToken) {
+        user = null; // Token doesn't match this user — reject
+      }
+    } else {
+      // Legacy fallback: scan by token (for old /verify-account?token= links)
+      user = await User.findOne({
+        $or: [
+          { verificationToken: hashedToken },
+          { verificationToken: rawToken },
+        ],
+      }).select('+verificationToken +verificationTokenExpires +refreshToken');
+    }
 
     if (!user) {
       try {
@@ -973,7 +987,7 @@ const resendVerification = async (req, res, next) => {
     await user.save();
 
     const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
-    const verificationLink = `${clientUrl}/verify-account?token=${rawVerificationToken}`;
+    const verificationLink = `${clientUrl}/verify/${user.maviId}?t=${rawVerificationToken}`;
 
     const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
     const emailHtml = generateStudentVerificationEmailHtml({
@@ -1095,7 +1109,7 @@ const changeEmailPending = async (req, res, next) => {
     await user.save();
 
     const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
-    const verificationLink = `${clientUrl}/verify-account?token=${rawVerificationToken}`;
+    const verificationLink = `${clientUrl}/verify/${user.maviId}?t=${rawVerificationToken}`;
 
     const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
     const emailHtml = generateStudentVerificationEmailHtml({

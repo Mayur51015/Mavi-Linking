@@ -197,4 +197,83 @@ describe('Student Account Activation & Security Tests', () => {
     expect(res.body.data.token).toBeDefined();
     expect(res.body.data.user.accountStatus).toBe('ACTIVE');
   });
+
+  // ─── MAVI ID-Based Verification Security Tests ────────────────────────────
+
+  test('TEST 11: MAVI ID + valid token verifies account via new route', async () => {
+    // Reset account to unverified state with a fresh token
+    const freshToken = crypto.randomBytes(32).toString('hex');
+    const hashedFreshToken = crypto.createHash('sha256').update(freshToken).digest('hex');
+
+    await User.updateOne(
+      { _id: studentUserId },
+      {
+        $set: {
+          verificationToken: hashedFreshToken,
+          verificationTokenExpires: new Date(Date.now() + 30 * 60 * 1000),
+          emailVerified: false,
+          accountStatus: 'PENDING_VERIFICATION',
+        },
+      }
+    );
+
+    const student = await User.findById(studentUserId);
+    expect(student.maviId).toMatch(/^MAVI-/);
+
+    const res = await request(app)
+      .post('/api/auth/verify-email')
+      .send({ token: freshToken, maviId: student.maviId });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.accountStatus).toBe('ACTIVE');
+    expect(res.body.data.emailVerified).toBe(true);
+  });
+
+  test('TEST 12: MAVI ID alone without token is rejected (MAVI ID is not a secret)', async () => {
+    const student = await User.findById(studentUserId);
+
+    const res = await request(app)
+      .post('/api/auth/verify-email')
+      .send({ maviId: student.maviId });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.code).toBe('MISSING_VERIFICATION_TOKEN');
+  });
+
+  test('TEST 13: Wrong MAVI ID + valid token fails verification', async () => {
+    // Reset to unverified with fresh token
+    const freshToken2 = crypto.randomBytes(32).toString('hex');
+    const hashedFreshToken2 = crypto.createHash('sha256').update(freshToken2).digest('hex');
+
+    await User.updateOne(
+      { _id: studentUserId },
+      {
+        $set: {
+          verificationToken: hashedFreshToken2,
+          verificationTokenExpires: new Date(Date.now() + 30 * 60 * 1000),
+          emailVerified: false,
+          accountStatus: 'PENDING_VERIFICATION',
+        },
+      }
+    );
+
+    const res = await request(app)
+      .post('/api/auth/verify-email')
+      .send({ token: freshToken2, maviId: 'MAVI-FFFFFFFF' });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.code).toBe('VERIFICATION_TOKEN_ALREADY_USED');
+  });
+
+  test('TEST 14: Correct MAVI ID + wrong token fails verification', async () => {
+    const student = await User.findById(studentUserId);
+
+    const res = await request(app)
+      .post('/api/auth/verify-email')
+      .send({ token: 'deadbeef1234567890abcdef1234567890abcdef1234567890abcdef12345678', maviId: student.maviId });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.code).toBe('VERIFICATION_TOKEN_ALREADY_USED');
+  });
 });

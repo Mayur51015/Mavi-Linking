@@ -79,7 +79,7 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
   const isStudentRole = normalizedUserRoles.includes('user') && !isSuperAdmin && !isInstAdmin && !normalizedUserRoles.includes('teacher') && !normalizedUserRoles.includes('recruiter') && !normalizedUserRoles.includes('department_admin');
   if (isStudentRole) {
     if (!user.emailVerified) {
-      return <Navigate to="/verify-account" replace />;
+      return <Navigate to={`/verify/${user.maviId || 'account'}`} replace />;
     }
     if (user.accountStatus === 'REJECTED') {
       return <Navigate to="/pending-approval" replace />;

@@ -111,6 +111,7 @@ router.post('/activate-account', authLimiter, activateAccount);
 router.post('/refresh', authLimiter, refreshToken);
 router.post('/verify-email', authLimiter, verifyEmail);
 router.get('/verify-email', authLimiter, verifyEmail);
+router.get('/verify-email/:maviId', authLimiter, verifyEmail);
 router.post('/resend-verification', authLimiter, resendVerification);
 router.post('/change-email-pending', authLimiter, changeEmailPending);
 router.post('/forgot-password', authLimiter, forgotPassword);

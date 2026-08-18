@@ -182,10 +182,10 @@ const Register = () => {
 
       if (res?.code === 'EMAIL_VERIFICATION_REQUIRED') {
         toast.success(`🎉 Account created! Please check ${registeredEmail} to verify your address.`);
-        navigate('/verify-account', { state: { email: registeredEmail } });
+        navigate(`/verify/${res?.user?.maviId || 'account'}`, { state: { email: registeredEmail } });
       } else {
         toast.success('Account created successfully!');
-        navigate('/verify-account', { state: { email: registeredEmail } });
+        navigate(`/verify/${res?.user?.maviId || 'account'}`, { state: { email: registeredEmail } });
       }
     } catch (err) {
       setError(getErrorMessage(err, 'Account registration failed. Please try again.'));

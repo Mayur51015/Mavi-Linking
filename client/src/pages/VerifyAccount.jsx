@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useSearchParams, useLocation, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Mail,
@@ -29,9 +29,11 @@ const maskEmail = (email) => {
 };
 
 const VerifyAccount = () => {
+  const { maviId: maviIdFromParams } = useParams();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const tokenFromUrl = searchParams.get('token') || searchParams.get('code');
+  const tokenFromUrl = searchParams.get('t') || searchParams.get('token') || searchParams.get('code');
+  const maviIdFromUrl = (maviIdFromParams || searchParams.get('maviId') || '').toUpperCase().trim();
   const navigate = useNavigate();
   const toast = useToast();
   const { user, setUser, logout } = useContext(AuthContext) || {};
@@ -52,7 +54,7 @@ const VerifyAccount = () => {
       setVerifying(true);
       setVerificationError('');
       try {
-        const res = await api.post('/auth/verify-email', { token: tokenFromUrl });
+        const res = await api.post('/auth/verify-email', { token: tokenFromUrl, maviId: maviIdFromUrl || undefined });
         if (res.data?.success) {
           setVerificationSuccess(true);
           if (res.data.data?.token) {

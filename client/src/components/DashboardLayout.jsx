@@ -95,7 +95,7 @@ const DashboardLayout = ({ children }) => {
             </div>
             {!user?.isVerified && (
               <button
-                onClick={() => setShowVerify(true)}
+                onClick={() => navigate(`/verify/${user?.maviId || 'account'}`)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.75rem',
                   padding: '0.625rem 1rem', borderRadius: '10px',

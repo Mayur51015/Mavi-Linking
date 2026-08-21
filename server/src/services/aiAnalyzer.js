@@ -1,4 +1,4 @@
-const { OpenAI } = require('openai');
+const LLMFactory = require('./llm/LLMFactory');
 const Insight = require('../models/Insight');
 const DNA = require('../models/DNA');
 const Ranking = require('../models/Ranking');
@@ -78,19 +78,14 @@ const buildProfileSummary = (user, projects = []) => {
 };
 
 const analyzeUser = async (user) => {
-  const geminiApiKey = process.env.GEMINI_API_KEY;
-  const groqApiKey = process.env.GROQ_API_KEY;
-  const grokApiKey = process.env.GROK_API_KEY;
-  const openaiApiKey = process.env.OPENAI_INSIGHTS_API_KEY || process.env.OPENAI_API_KEY;
-
-  const apiKey = geminiApiKey || groqApiKey || grokApiKey || openaiApiKey;
+  const provider = LLMFactory.getProvider();
 
   // Retrieve actual student projects from database
   const projects = await Project.find({ user: user._id });
 
   let result;
 
-  if (!apiKey) {
+  if (!provider) {
     // Generate clean mock result based on user details and actual projects
     const userSkills = user.skillsList ? user.skillsList.map(s => s.name) : [];
     const projectTechs = projects.flatMap(p => p.technologies || []);
@@ -165,18 +160,6 @@ const analyzeUser = async (user) => {
       }
     };
   } else {
-    const baseURL = geminiApiKey ? 'https://generativelanguage.googleapis.com/v1beta/openai/'
-                  : groqApiKey ? 'https://api.groq.com/openai/v1' 
-                  : grokApiKey ? 'https://api.x.ai/v1' 
-                  : undefined;
-
-    const openai = new OpenAI({ apiKey, baseURL });
-    
-    const modelName = geminiApiKey ? 'gemini-2.5-flash'
-                    : groqApiKey ? 'llama-3.1-8b-instant' 
-                    : grokApiKey ? 'grok-2-latest' 
-                    : 'gpt-4o-mini';
-    
     // Build enriched profile summary
     const profileSummary = JSON.stringify(buildProfileSummary(user, projects));
 
@@ -227,17 +210,8 @@ Format exactly as valid JSON:
   }
 }`;
 
-    const response = await openai.chat.completions.create({
-      model: modelName,
-      messages: [
-        { role: 'system', content: 'You are an AI Developer Intelligence System that analyzes developer profiles across GitHub, LeetCode, Codeforces, and StackOverflow to generate deep technical insights, personality profiles, and career recommendations.' },
-        { role: 'user', content: prompt },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.7,
-    });
-
-    result = JSON.parse(response.choices[0].message.content);
+    const systemPrompt = 'You are an AI Developer Intelligence System that analyzes developer profiles across GitHub, LeetCode, Codeforces, and StackOverflow to generate deep technical insights, personality profiles, and career recommendations.';
+    result = await provider.generateCompletion(systemPrompt, prompt);
   }
 
   // Calculate dynamic ranking score based on user.scores + some variance

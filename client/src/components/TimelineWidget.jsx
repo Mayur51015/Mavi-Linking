@@ -33,6 +33,11 @@ const TimelineWidget = ({ userId }) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,13 +46,23 @@ const TimelineWidget = ({ userId }) => {
       try {
         setLoading(true);
         setError(null);
+        setPage(1);
 
-        const config = userId ? { params: { userId } } : {};
-        const response = await api.get('/career/timeline', config);
+        const params = {
+          page: 1,
+          limit: 20,
+          type: typeFilter,
+          range: dateFilter,
+        };
+
+        if (userId) params.userId = userId;
+
+        const response = await api.get('/career/timeline', { params });
 
         if (!cancelled) {
           const data = response.data?.data || [];
           setEvents(Array.isArray(data) ? data : []);
+          setHasMore(response.data?.pagination?.hasMore || false);
         }
       } catch (err) {
         console.error('Failed to fetch developer timeline:', err);
@@ -59,9 +74,7 @@ const TimelineWidget = ({ userId }) => {
           );
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     };
 
@@ -70,7 +83,7 @@ const TimelineWidget = ({ userId }) => {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, typeFilter, dateFilter]);
 
   if (loading) {
     return (
@@ -168,6 +181,52 @@ const TimelineWidget = ({ userId }) => {
         <Calendar size={24} color="var(--accent-blue)" />
         Developer Activity
       </h3>
+
+      <div
+        style={{
+          display: 'flex',
+          gap: '0.75rem',
+          flexWrap: 'wrap',
+          marginBottom: '1.5rem',
+        }}
+      >
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          style={{
+            padding: '0.5rem 0.75rem',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-dark)',
+            color: 'var(--text-primary)',
+          }}
+        >
+          <option value="all">All Activities</option>
+          <option value="commits">Commits</option>
+          <option value="pull_requests">Pull Requests</option>
+          <option value="issues">Issues</option>
+          <option value="repositories">Repositories</option>
+          <option value="releases">Releases</option>
+        </select>
+
+        <select
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          style={{
+            padding: '0.5rem 0.75rem',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-dark)',
+            color: 'var(--text-primary)',
+          }}
+        >
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="3months">Last 3 Months</option>
+        </select>
+      </div>
 
       <div style={{ position: 'relative', paddingLeft: '1.5rem' }}>
         <div
@@ -346,6 +405,53 @@ const TimelineWidget = ({ userId }) => {
           })}
         </div>
       </div>
+
+      {hasMore && (
+        <button
+          onClick={async () => {
+            try {
+              setLoadingMore(true);
+
+              const nextPage = page + 1;
+              const params = {
+                page: nextPage,
+                limit: 20,
+                type: typeFilter,
+                range: dateFilter,
+              };
+
+              if (userId) params.userId = userId;
+
+              const response = await api.get('/career/timeline', { params });
+              const data = response.data?.data || [];
+
+              setEvents((prev) => [...prev, ...data]);
+              setPage(nextPage);
+              setHasMore(response.data?.pagination?.hasMore || false);
+            } catch (err) {
+              setError(
+                err.response?.data?.message ||
+                  'Unable to load more activity.'
+              );
+            } finally {
+              setLoadingMore(false);
+            }
+          }}
+          disabled={loadingMore}
+          style={{
+            display: 'block',
+            margin: '1.5rem auto 0',
+            padding: '0.6rem 1.5rem',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-dark)',
+            color: 'var(--text-primary)',
+            cursor: loadingMore ? 'wait' : 'pointer',
+          }}
+        >
+          {loadingMore ? 'Loading...' : 'Load More'}
+        </button>
+      )}
     </div>
   );
 };

@@ -57,7 +57,7 @@ const mapGitHubEvent = (event, userId) => {
     }
 
     case 'IssuesEvent': {
-      type = 'Other';
+      type = 'Issue';
       const action = event.payload?.action || 'updated';
       title = `${action.charAt(0).toUpperCase() + action.slice(1)} issue`;
       description = event.payload?.issue?.title
@@ -67,7 +67,7 @@ const mapGitHubEvent = (event, userId) => {
     }
 
     case 'ReleaseEvent': {
-      type = 'Milestone';
+      type = 'Release';
       title = 'Published release';
       description = event.payload?.release?.name
         ? `${event.payload.release.name} in ${repoName}`

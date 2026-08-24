@@ -1,27 +1,18 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const { createOriginChecker } = require('./allowedOrigins');
 
 let io;
 
 module.exports = {
   init: (httpServer) => {
-    const allowedOrigins = [
-      'http://localhost:5173',
-      process.env.CLIENT_URL,
-    ].filter(Boolean);
-
+    // Shared with the Express CORS middleware in server.js. This file used to
+    // keep its own list, missing 127.0.0.1:5173 and the deployed Vercel origin,
+    // so in production the handshake was rejected while every REST call from
+    // the same page succeeded.
     io = new Server(httpServer, {
       cors: {
-        origin: (origin, callback) => {
-          if (!origin) return callback(null, true);
-          const cleanOrigins = allowedOrigins.map(o => o.replace(/\/+$/, ''));
-          const cleanOrigin = origin.replace(/\/+$/, '');
-          if (cleanOrigins.includes(cleanOrigin)) {
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'));
-          }
-        },
+        origin: createOriginChecker(),
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
         credentials: true
       }

@@ -17,6 +17,17 @@ const apiBaseUrl = rawApiUrl
     })()
   : (isProd ? DEFAULT_PROD_API : DEFAULT_DEV_API);
 
+/**
+ * The API origin with the `/api` suffix removed — the host Socket.IO connects
+ * to.
+ *
+ * Exported so AuthContext derives the socket URL from this one value instead of
+ * keeping its own copy of the production host. Two hardcoded copies of the same
+ * host are two things that have to be changed together, and the equivalent pair
+ * on the server had already drifted.
+ */
+export const socketOriginFromApiBaseUrl = () => apiBaseUrl.replace(/\/api\/?$/u, '');
+
 const api = axios.create({
   baseURL: apiBaseUrl,
   headers: {

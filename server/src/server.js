@@ -8,6 +8,7 @@ dotenv.config({
 
 const express = require('express');
 const cors = require('cors');
+const { createOriginChecker } = require('./config/allowedOrigins');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const apiLimiter = require('./middleware/apiLimiter');
@@ -53,23 +54,15 @@ app.set('trust proxy', 1);
 // ─── Security Middleware ────────────────────────────────────────────────────
 app.use(helmet()); // Security headers
 
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'https://mavi-linking-mq7d.vercel.app',
-  process.env.CLIENT_URL,
-].filter(Boolean);
+// The same checker instance backs the Socket.IO handshake in config/socket.js.
+// Keeping one list is the whole point: the two used to be separate literals
+// that had drifted, so the API accepted the deployed frontend and the WebSocket
+// layer didn't.
+const originChecker = createOriginChecker();
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS'));
-    },
+    origin: originChecker,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -310,7 +303,10 @@ const startServer = async () => {
       console.log(`\n🚀 MaVi Linking API Server`);
       console.log(`   Environment: ${process.env.NODE_ENV}`);
       console.log(`   Port:        ${PORT}`);
-      console.log(`   Health:      http://localhost:${PORT}/api/health\n`);
+      console.log(`   Health:      http://localhost:${PORT}/api/health`);
+      // Printed because a wrong allowlist is otherwise invisible from the
+      // server side — it only shows up as a handshake the browser rejects.
+      console.log(`   Origins:     ${originChecker.allowedOrigins.join(', ') || '(none configured)'}\n`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error.message);

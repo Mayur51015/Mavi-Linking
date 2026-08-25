@@ -1,6 +1,6 @@
 const path = require('path');
 const dotenv = require('dotenv');
-const { OpenAI } = require('openai');
+const LLMFactory = require('./llm/LLMFactory');
 
 // Ensure env is loaded even when this module is required directly (e.g., node scripts)
 dotenv.config({
@@ -8,28 +8,10 @@ dotenv.config({
 });
 
 const generateInsights = async (user) => {
-  const geminiApiKey = process.env.GEMINI_API_KEY;
-  const groqApiKey = process.env.GROQ_API_KEY;
-  const grokApiKey = process.env.GROK_API_KEY;
-  const openaiApiKey = process.env.OPENAI_INSIGHTS_API_KEY || process.env.OPENAI_API_KEY;
-
-  const apiKey = geminiApiKey || groqApiKey || grokApiKey || openaiApiKey;
-
-  if (!apiKey) {
-    throw new Error('API key is missing. Set GEMINI_API_KEY, GROQ_API_KEY, GROK_API_KEY, or OPENAI_API_KEY in server/.env');
+  const provider = LLMFactory.getProvider();
+  if (!provider) {
+    throw new Error('API key is missing. Set GEMINI_API_KEY, GROQ_API_KEY, GROK_API_KEY, ANTHROPIC_API_KEY or OPENAI_API_KEY in server/.env');
   }
-
-  const baseURL = geminiApiKey ? 'https://generativelanguage.googleapis.com/v1beta/openai/'
-                : groqApiKey ? 'https://api.groq.com/openai/v1' 
-                : grokApiKey ? 'https://api.x.ai/v1' 
-                : undefined;
-
-  const openai = new OpenAI({ apiKey, baseURL });
-  
-  const modelName = geminiApiKey ? 'gemini-2.5-flash'
-                  : groqApiKey ? 'llama-3.1-8b-instant' 
-                  : grokApiKey ? 'grok-2-latest' 
-                  : 'gpt-4o-mini';
 
 
 
@@ -87,17 +69,13 @@ Provide personalized, actionable AI-driven insights. Focus on:
 Format the response in clean, concise Markdown. Do NOT use overly verbose language. Keep it to 3-4 paragraphs.`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: modelName,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: developerProfile },
-      ],
-      max_tokens: 500,
-      temperature: 0.7,
-    });
-
-    return response.choices[0].message.content;
+    // Overriding the default JSON response since insightService expects text/Markdown
+    // Note: Our LLMProvider is currently built to return JSON. Let's fix the provider OR handle string return.
+    // Wait, the AnthropicStrategy and OpenAIStrategy are returning parsed JSON if we use `response_format: { type: "json_object" }`.
+    // But insightService expects markdown! 
+    // I need to add `responseFormat` parameter to `generateCompletion`!
+    const response = await provider.generateCompletion(systemPrompt, developerProfile, 'text');
+    return response;
   } catch (error) {
     console.error('Error generating AI insights:', error);
     throw new Error('Failed to generate AI insights from OpenAI.');

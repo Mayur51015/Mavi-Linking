@@ -51,7 +51,23 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
 
 // ─── Security Middleware ────────────────────────────────────────────────────
-app.use(helmet()); // Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      connectSrc: [
+        "'self'", 
+        "https://api.openai.com", 
+        "https://api.groq.com", 
+        "https://api.x.ai", 
+        "https://generativelanguage.googleapis.com"
+      ],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+    },
+  },
+})); // Security headers
 
 const allowedOrigins = [
   'http://localhost:5173',
@@ -63,8 +79,13 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
+      // Allow requests with no origin (mobile apps, Postman, etc.) only in development
+      if (!origin) {
+        if (process.env.NODE_ENV === 'production') {
+          return callback(new Error('Not allowed by CORS'));
+        }
+        return callback(null, true);
+      }
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }

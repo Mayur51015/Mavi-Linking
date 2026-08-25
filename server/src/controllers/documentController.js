@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const SharedDocument = require('../models/SharedDocument');
+const { ingestionQueue } = require('../workers/queue');
 
 // Multer Memory Storage Configuration (stores file in memory buffer, avoiding local disk writes)
 const storage = multer.memoryStorage();
@@ -71,7 +72,10 @@ const uploadDocument = async (req, res, next) => {
       department: targetDept,
     });
 
-    res.status(201).json({ success: true, data: doc });
+    // Enqueue document for background vector embedding generation
+    await ingestionQueue.add('vector-ingestion', { documentId: doc._id });
+
+    res.status(202).json({ success: true, data: doc, message: 'Document uploaded and queued for processing.' });
   } catch (error) {
     // If multer threw an error or database insertion failed, cleanup file
     if (req.file && fs.existsSync(req.file.path)) {

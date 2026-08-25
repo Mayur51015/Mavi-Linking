@@ -19,8 +19,13 @@ const scoreRoutes = require('./routes/scoreRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const aiRoutes = require('./routes/aiRoutes'); // new AI routes
-const publicRoutes = require('./routes/publicRoutes');
+const ownerRoutes = require('./routes/ownerRoutes');
 const redirectRoutes = require('./routes/redirectRoutes');
+
+// Initialize background workers
+require('./workers/worker');
+
+const publicRoutes = require('./routes/publicRoutes');
 const verificationRoutes = require('./routes/verificationRoutes');
 const recruiterRoutes = require('./routes/recruiterRoutes');
 const educationRoutes = require('./routes/educationRoutes');

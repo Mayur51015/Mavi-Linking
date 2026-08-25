@@ -10,6 +10,7 @@ const Insight = require('../models/Insight');
 const CareerAnalytics = require('../models/CareerAnalytics');
 const CareerSkillAnalysis = require('../models/CareerSkillAnalysis');
 const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+const { syncGitHubActivities } = require('../services/githubActivityService');
 
 // Helper to resolve target user ID
 const getTargetUserId = (req) => {
@@ -135,18 +136,27 @@ exports.getTimeline = async (req, res, next) => {
   try {
     const targetUserId = getTargetUserId(req);
 
+    const {
+      type = 'all',
+      range = 'all',
+      page = 1,
+      limit = 20
+    } = req.query;
+
+    // Sync latest GitHub activity without breaking the timeline
+    // when GitHub is unavailable or rate-limited.
+    try {
+      await syncGitHubActivities(targetUserId);
+    } catch (githubError) {
+      console.warn('GitHub activity sync failed:', githubError.message);
+    }
+
     const [careerEvents, activities] = await Promise.all([
-      CareerTimeline.find({ user: targetUserId })
-        .sort({ timestamp: -1 })
-        .limit(100)
-        .lean(),
-      Activity.find({ userId: targetUserId })
-        .sort({ date: -1 })
-        .limit(100)
-        .lean()
+      CareerTimeline.find({ user: targetUserId }).lean(),
+      Activity.find({ userId: targetUserId }).lean()
     ]);
 
-    const timeline = [
+    let timeline = [
       ...careerEvents.map((event) => ({
         _id: event._id,
         type: event.type,
@@ -158,26 +168,79 @@ exports.getTimeline = async (req, res, next) => {
       })),
       ...activities.map((activity) => ({
         _id: activity._id,
-        type:
-          activity.type?.toUpperCase() ||
-          (activity.platform === 'github'
-            ? 'GITHUB'
-            : activity.platform === 'leetcode'
-              ? 'LEETCODE'
-              : 'ACTIVITY'),
+        type: activity.type?.toUpperCase() || 'ACTIVITY',
         title: activity.title,
         description: activity.description,
         timestamp: activity.date,
         url: activity.url || null,
+        repository: activity.url
+          ? activity.url.replace('https://github.com/', '')
+          : null,
         source: activity.platform || 'system'
       }))
-    ]
+    ];
+
+    if (type !== 'all') {
+      const normalizedType = type.toLowerCase();
+
+      timeline = timeline.filter((event) => {
+        const eventType = event.type.toLowerCase();
+
+        if (normalizedType === 'commits') return eventType === 'commit';
+        if (normalizedType === 'pull_requests') {
+          return eventType === 'pull request';
+        }
+        if (normalizedType === 'issues') return eventType === 'issue';
+        if (normalizedType === 'repositories') return eventType === 'repository';
+        if (normalizedType === 'releases') return eventType === 'release';
+
+        return true;
+      });
+    }
+
+    if (range !== 'all') {
+      const now = new Date();
+      const start = new Date(now);
+
+      if (range === 'today') {
+        start.setHours(0, 0, 0, 0);
+      } else if (range === 'week') {
+        start.setDate(now.getDate() - 7);
+      } else if (range === 'month') {
+        start.setMonth(now.getMonth() - 1);
+      } else if (range === '3months') {
+        start.setMonth(now.getMonth() - 3);
+      }
+
+      timeline = timeline.filter(
+        (event) => new Date(event.timestamp) >= start
+      );
+    }
+
+    timeline = timeline
       .filter((event) => event.timestamp)
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
+    const pageNumber = Math.max(Number(page), 1);
+    const pageSize = Math.min(Math.max(Number(limit), 1), 100);
+    const total = timeline.length;
+    const startIndex = (pageNumber - 1) * pageSize;
+
+    const paginatedTimeline = timeline.slice(
+      startIndex,
+      startIndex + pageSize
+    );
+
     res.status(200).json({
       success: true,
-      data: timeline
+      data: paginatedTimeline,
+      pagination: {
+        page: pageNumber,
+        limit: pageSize,
+        total,
+        pages: Math.ceil(total / pageSize),
+        hasMore: startIndex + pageSize < total
+      }
     });
   } catch (error) {
     next(error);

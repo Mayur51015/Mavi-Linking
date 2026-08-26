@@ -42,6 +42,8 @@ const announcementRoutes = require('./routes/announcementRoutes');
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const billingRoutes = require('./routes/billingRoutes');
+const careerRoutes = require('./routes/careerRoutes');
+const departmentAdminRoutes = require('./routes/departmentAdminRoutes');
 const { init } = require('./config/socket'); // socket.io
 const http = require('http');
 
@@ -129,10 +131,6 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
-
-const careerRoutes = require('./routes/careerRoutes');
-const ownerRoutes = require('./routes/ownerRoutes');
-const departmentAdminRoutes = require('./routes/departmentAdminRoutes');
 
 // ─── API Routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);

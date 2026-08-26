@@ -1,13 +1,23 @@
-const { Queue } = require('bullmq');
-const Redis = require('ioredis');
+let ingestionQueue = {
+  add: async () => {
+    // console.log('[Queue] BullMQ not active, skipped queue job');
+  }
+};
+let connection = null;
 
-// Default to a local Redis instance if REDIS_URL is not set
-const connection = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', {
-  maxRetriesPerRequest: null,
-});
+try {
+  const { Queue } = require('bullmq');
+  const Redis = require('ioredis');
 
-// Create the ingestion queue
-const ingestionQueue = new Queue('ingestion-queue', { connection });
+  connection = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', {
+    maxRetriesPerRequest: null,
+    lazyConnect: true,
+  });
+
+  ingestionQueue = new Queue('ingestion-queue', { connection });
+} catch (err) {
+  // console.warn('[Queue] BullMQ/ioredis optional package not loaded');
+}
 
 module.exports = {
   ingestionQueue,

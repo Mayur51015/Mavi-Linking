@@ -31,10 +31,14 @@ router.post('/sync-coding-profiles', careerController.syncProfiles);
 
 // MAVI Career Roadmap Endpoints
 router.get('/roadmap', careerController.getRoadmap);
+router.get('/career-roadmap', careerController.getRoadmap);
 router.post('/roadmap/generate', careerController.generateRoadmap);
+router.post('/career-roadmap/generate', careerController.generateRoadmap);
 router.put('/roadmap/progress', careerController.updateProgress);
+router.put('/career-roadmap/progress', careerController.updateProgress);
 router.put('/target-role', careerController.updateTargetGoal);
 router.put('/goal', careerController.updateTargetGoal);
+router.put('/career-goal', careerController.updateTargetGoal);
 router.get('/skill-gap', careerController.getSkillGaps);
 
 module.exports = router;

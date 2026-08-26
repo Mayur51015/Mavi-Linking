@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import api from '../api/axios';
-import ActivityFeed from '../components/ActivityFeed';
+import LearningGrowthCard from '../components/LearningGrowthCard';
 import BadgeShowcase from '../components/BadgeShowcase';
 import DNACard from '../components/DNACard';
 import GrowthChart from '../components/GrowthChart';
@@ -885,7 +885,7 @@ const Dashboard = () => {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                <ActivityFeed />
+                <LearningGrowthCard />
                 <CareerRoadmapCard />
               </div>
 

@@ -1,5 +1,7 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 
 // Multer Memory Storage config (stores file in memory buffer, avoiding local disk writes)
@@ -690,45 +692,52 @@ const getPortfolioDocFile = async (req, res, next) => {
     const { id } = req.params;
     const { download } = req.query;
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, code: 'INVALID_DOCUMENT_ID', message: 'Invalid document ID format.' });
+    }
+
     let targetUserId = req.user.id;
     if (req.query.userId && req.user.role !== 'user') {
       targetUserId = req.query.userId;
     }
 
     const user = await User.findById(targetUserId);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+    if (!user) {
+      return res.status(404).json({ success: false, code: 'USER_NOT_FOUND', message: 'User not found.' });
+    }
 
     if (req.user.role === 'user' && targetUserId !== req.user.id) {
-      return res.status(403).json({ success: false, message: 'Access denied.' });
+      return res.status(403).json({ success: false, code: 'DOCUMENT_ACCESS_DENIED', message: 'You are not authorized to access this document.' });
     }
 
     if (req.user.role !== 'admin' && req.user.id !== targetUserId) {
       if (req.user.university?.name && user.university?.name !== req.user.university.name) {
-        return res.status(403).json({ success: false, message: 'Access denied.' });
+        return res.status(403).json({ success: false, code: 'DOCUMENT_ACCESS_DENIED', message: 'You are not authorized to access this document.' });
       }
     }
 
     // 1. Search in portfolioDocs
-    let doc = (user.portfolioDocs || []).find(d => d._id.toString() === id);
+    let doc = (user.portfolioDocs || []).find(d => d._id && d._id.toString() === id);
 
     // 2. Fallback search in certificates
     if (!doc && user.certificates) {
-      const cert = user.certificates.find(c => c._id.toString() === id);
+      const cert = user.certificates.find(c => c._id && c._id.toString() === id);
       if (cert) {
-        doc = { title: cert.title, fileUrl: cert.fileUrl };
+        doc = { title: cert.title, fileUrl: cert.fileUrl, originalName: cert.title };
       }
     }
 
     // 3. Fallback search in documents.list
     if (!doc && user.documents?.list) {
-      const dList = user.documents.list.find(d => d._id.toString() === id);
+      const dList = user.documents.list.find(d => d._id && d._id.toString() === id);
       if (dList) {
-        doc = { title: dList.title, fileUrl: dList.fileUrl };
+        doc = { title: dList.title, fileUrl: dList.fileUrl, originalName: dList.title };
       }
     }
 
     if (!doc || !doc.fileUrl) {
-      return res.status(404).json({ success: false, message: 'Document record or file URL not found in user profile.' });
+      console.error(`[DOCUMENT DEBUG] Document ID ${id} not found in user ${targetUserId} arrays. portfolioDocs len: ${user.portfolioDocs?.length}, certs len: ${user.certificates?.length}`);
+      return res.status(404).json({ success: false, code: 'DOCUMENT_NOT_FOUND', message: 'Document not found.' });
     }
 
     // Multi-path file resolution strategy for local and production environments
@@ -752,18 +761,46 @@ const getPortfolioDocFile = async (req, res, next) => {
       console.error(`[DOCUMENT 404] Physical file missing for doc ID '${id}'. DB FileUrl: '${rawFileUrl}'. Tested paths:`, candidatePaths);
       return res.status(404).json({
         success: false,
-        message: `Physical file '${basename}' is missing from server storage. Please re-upload this document.`,
+        code: 'FILE_NOT_FOUND',
+        message: 'The document file is no longer available.',
       });
     }
 
+    const ext = path.extname(filepath).toLowerCase();
+    const contentType = ext === '.pdf' ? 'application/pdf' :
+                        ext === '.png' ? 'image/png' :
+                        (ext === '.jpg' || ext === '.jpeg') ? 'image/jpeg' :
+                        'application/octet-stream';
+
+    const safeName = (doc.title || doc.originalName || 'document').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${safeName}${ext}`;
+
+    res.setHeader('Content-Type', contentType);
+
     if (download === 'true') {
-      const safeName = (doc.title || 'document').replace(/[^a-zA-Z0-9_-]/g, '_');
-      res.download(filepath, `${safeName}${path.extname(filepath)}`);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.download(filepath, filename, (err) => {
+        if (err && !res.headersSent) {
+          next(err);
+        }
+      });
     } else {
-      res.sendFile(filepath);
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+      res.sendFile(filepath, (err) => {
+        if (err && !res.headersSent) {
+          next(err);
+        }
+      });
     }
   } catch (error) {
-    next(error);
+    console.error('[DOCUMENT] Server error reading document:', error);
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        code: 'DOCUMENT_READ_FAILED',
+        message: 'Unable to retrieve the document.',
+      });
+    }
   }
 };
 

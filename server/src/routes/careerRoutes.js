@@ -29,4 +29,13 @@ router.get('/analytics/:userId', careerController.getAnalytics);
 router.get('/analysis/:userId', careerController.getAnalysis);
 router.post('/sync-coding-profiles', careerController.syncProfiles);
 
+// MAVI Career Roadmap Endpoints
+router.get('/roadmap', careerController.getRoadmap);
+router.post('/roadmap/generate', careerController.generateRoadmap);
+router.put('/roadmap/progress', careerController.updateProgress);
+router.put('/target-role', careerController.updateTargetGoal);
+router.put('/goal', careerController.updateTargetGoal);
+router.get('/skill-gap', careerController.getSkillGaps);
+
 module.exports = router;
+

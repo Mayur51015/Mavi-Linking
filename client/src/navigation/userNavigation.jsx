@@ -9,10 +9,12 @@ import {
   Megaphone,
   FolderOpen,
   QrCode,
+  Compass,
 } from 'lucide-react';
 
 export const userNavItems = [
   { name: 'Overview', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
+  { name: 'Career Roadmap', path: '/student/career-roadmap', icon: <Compass size={20} /> },
   { name: 'Projects', path: '/dashboard/projects', icon: <Briefcase size={20} /> },
   { name: 'Availability', path: '/dashboard/availability', icon: <User size={20} /> },
   { name: 'Link Accounts', path: '/dashboard/link', icon: <LinkIcon size={20} /> },

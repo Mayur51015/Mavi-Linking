@@ -27,7 +27,7 @@ import BadgeShowcase from '../components/BadgeShowcase';
 import DNACard from '../components/DNACard';
 import GrowthChart from '../components/GrowthChart';
 import LeaderboardWidget from '../components/LeaderboardWidget';
-import ReportGenerator from '../components/ReportGenerator';
+import CareerRoadmapCard from '../components/CareerRoadmapCard';
 import SkillRadar from '../components/SkillRadar';
 import TimelineWidget from '../components/TimelineWidget';
 import LeetCodeSection from '../components/leetcode/LeetCodeSection';
@@ -602,19 +602,49 @@ const Dashboard = () => {
   };
 
   const parseBlobError = async (err, defaultMsg) => {
+    let errorCode = null;
+    let errorMsg = null;
+
+    if (!err.response) {
+      return "Unable to connect to the server.";
+    }
+
     if (err.response?.data instanceof Blob) {
       try {
         const text = await err.response.data.text();
         const json = JSON.parse(text);
-        if (json.message) return json.message;
+        errorCode = json.code;
+        errorMsg = json.message;
       } catch (_) {}
+    } else {
+      errorCode = err.response?.data?.code;
+      errorMsg = err.response?.data?.message;
     }
-    return err.response?.data?.message || defaultMsg;
+
+    switch (errorCode) {
+      case 'DOCUMENT_NOT_FOUND': return "Document not found.";
+      case 'FILE_NOT_FOUND': return "The document file is no longer available.";
+      case 'DOCUMENT_ACCESS_DENIED': return "You are not authorized to access this document.";
+      case 'DOCUMENT_READ_FAILED': return "Unable to load the document. Please try again.";
+      default: return errorMsg || defaultMsg;
+    }
+  };
+
+  const fetchWithRetry = async (url, options = {}, retries = 2) => {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        return await api.get(url, options);
+      } catch (err) {
+        const isTransient = !err.response || err.response.status >= 500 || err.response.status === 429;
+        if (!isTransient || i === retries) throw err;
+        await new Promise(res => setTimeout(res, 1000 * (i + 1))); // exponential backoff
+      }
+    }
   };
 
   const handlePreviewPortfolioDoc = async (id) => {
     try {
-      const res = await api.get(`/auth/portfolio-doc/${id}/file`, { responseType: 'blob' });
+      const res = await fetchWithRetry(`/auth/portfolio-doc/${id}/file`, { responseType: 'blob' });
       const blob = new Blob([res.data], { type: res.headers['content-type'] });
       window.open(window.URL.createObjectURL(blob), '_blank');
     } catch (err) {
@@ -626,7 +656,7 @@ const Dashboard = () => {
 
   const handleDownloadPortfolioDoc = async (doc) => {
     try {
-      const res = await api.get(`/auth/portfolio-doc/${doc._id}/file?download=true`, { responseType: 'blob' });
+      const res = await fetchWithRetry(`/auth/portfolio-doc/${doc._id}/file?download=true`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -856,7 +886,7 @@ const Dashboard = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
                 <ActivityFeed />
-                <ReportGenerator candidateId={user?._id} candidate={user} />
+                <CareerRoadmapCard />
               </div>
 
               <LeetCodeSection />

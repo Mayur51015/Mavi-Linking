@@ -506,3 +506,150 @@ exports.analyze = async (req, res, next) => {
 
 // Legacy alias mapping for older frontend calls
 exports.syncProfiles = exports.recalculate;
+
+/**
+ * @desc    Get student's active MAVI Career Roadmap
+ * @route   GET /api/career/roadmap (and /api/student/career-roadmap)
+ * @access  Private (Authenticated student)
+ */
+exports.getRoadmap = async (req, res, next) => {
+  try {
+    const { getStudentRoadmap } = require('../services/careerRoadmapService');
+    const result = await getStudentRoadmap(req.user.id);
+
+    res.status(200).json({
+      success: true,
+      data: result.roadmap,
+      profileStrength: result.profileStrength,
+      missingProfileItems: result.missingProfileItems,
+      profileChangedSinceGeneration: result.profileChangedSinceGeneration,
+    });
+  } catch (error) {
+    console.error('Error fetching Career Roadmap:', error.message);
+    res.status(error.message === 'Student profile not found' ? 404 : 500).json({
+      success: false,
+      message: error.message || 'Failed to retrieve your career roadmap.',
+    });
+  }
+};
+
+/**
+ * @desc    Generate or regenerate student's MAVI Career Roadmap
+ * @route   POST /api/career/roadmap/generate (and /api/student/career-roadmap/generate)
+ * @access  Private (Authenticated student)
+ */
+exports.generateRoadmap = async (req, res, next) => {
+  try {
+    const { generateCareerRoadmap, calculateProfileStrength } = require('../services/careerRoadmapService');
+    const { targetRole } = req.body || {};
+
+    const roadmap = await generateCareerRoadmap(req.user.id, targetRole);
+
+    res.status(200).json({
+      success: true,
+      message: 'Your personalized MAVI Career Roadmap has been generated.',
+      data: roadmap,
+    });
+  } catch (error) {
+    console.error('Error generating Career Roadmap:', error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate your career roadmap. Please try again.',
+    });
+  }
+};
+
+/**
+ * @desc    Update progress of a milestone item on student roadmap
+ * @route   PUT /api/career/roadmap/progress (and /api/student/career-roadmap/progress)
+ * @access  Private (Authenticated student)
+ */
+exports.updateProgress = async (req, res, next) => {
+  try {
+    const { updateRoadmapProgress } = require('../services/careerRoadmapService');
+    const { itemId, status } = req.body || {};
+
+    if (!itemId || !status) {
+      return res.status(400).json({
+        success: false,
+        message: 'itemId and status ("Not Started", "In Progress", "Completed") are required.',
+      });
+    }
+
+    const roadmap = await updateRoadmapProgress(req.user.id, itemId, status);
+
+    res.status(200).json({
+      success: true,
+      message: 'Milestone progress updated.',
+      data: roadmap,
+    });
+  } catch (error) {
+    console.error('Error updating roadmap progress:', error.message);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to update progress.',
+    });
+  }
+};
+
+/**
+ * @desc    Update student's target career role and regenerate roadmap
+ * @route   PUT /api/career/target-role (and /api/student/career-goal)
+ * @access  Private (Authenticated student)
+ */
+exports.updateTargetGoal = async (req, res, next) => {
+  try {
+    const { updateTargetCareerGoal } = require('../services/careerRoadmapService');
+    const { targetRole } = req.body || {};
+
+    if (!targetRole || !targetRole.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Target role is required.',
+      });
+    }
+
+    const roadmap = await updateTargetCareerGoal(req.user.id, targetRole.trim());
+
+    res.status(200).json({
+      success: true,
+      message: 'Target career updated and roadmap recalculated.',
+      data: roadmap,
+    });
+  } catch (error) {
+    console.error('Error updating target career goal:', error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update career goal.',
+    });
+  }
+};
+
+/**
+ * @desc    Get student skill gap breakdown
+ * @route   GET /api/career/skill-gap (and /api/student/skill-gap)
+ * @access  Private (Authenticated student)
+ */
+exports.getSkillGaps = async (req, res, next) => {
+  try {
+    const { getStudentRoadmap } = require('../services/careerRoadmapService');
+    const result = await getStudentRoadmap(req.user.id);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        targetRole: result.roadmap?.targetRole,
+        currentLevel: result.roadmap?.currentLevel,
+        skillGaps: result.roadmap?.skillGaps || [],
+        existingStrengths: result.roadmap?.existingStrengths || [],
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching skill gaps:', error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to retrieve skill gaps.',
+    });
+  }
+};
+

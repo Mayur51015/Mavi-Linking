@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   LogOut, LayoutDashboard, Link as LinkIcon, BarChart3,
-  Terminal, Briefcase, Search, GraduationCap, Heart, BadgeCheck, QrCode,
+  Terminal, Briefcase, Search, GraduationCap, Heart, BadgeCheck, QrCode, Compass,
 } from 'lucide-react';
 import VerificationModal from './VerificationModal';
 
@@ -20,6 +20,7 @@ const DashboardLayout = ({ children }) => {
 
   const navItems = [
     { name: 'Overview', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
+    { name: 'Career Roadmap', path: '/student/career-roadmap', icon: <Compass size={20} /> },
     { name: 'Projects', path: '/dashboard/projects', icon: <Briefcase size={20} /> },
     { name: 'Link Accounts', path: '/dashboard/link', icon: <LinkIcon size={20} /> },
     { name: 'AI Insights', path: '/dashboard/insights', icon: <BarChart3 size={20} /> },

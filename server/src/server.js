@@ -165,6 +165,7 @@ const { createOrderDirect, verifyPaymentDirect } = require('./controllers/billin
 app.post('/api/create-order', createOrderDirect);
 app.post('/api/verify-payment', verifyPaymentDirect);
 app.use('/api/career', careerRoutes);
+app.use('/api/student', careerRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', redirectRoutes);
 

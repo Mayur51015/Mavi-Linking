@@ -4,7 +4,9 @@ import api from '../api/axios';
 import { GitBranch, Code2, Database, Trash2, Link as LinkIcon } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
-const PlatformCard = ({ platform, info, onLink, onUnlink }) => {
+import GitHubIntelligenceModal from '../components/GitHubIntelligenceModal';
+
+const PlatformCard = ({ platform, info, onLink, onUnlink, onOpenIntelligence }) => {
   const [username, setUsername] = useState('');
 
   const icons = {
@@ -36,9 +38,20 @@ const PlatformCard = ({ platform, info, onLink, onUnlink }) => {
       {info.linked ? (
         <div>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>Linked as: <strong>{info.username}</strong></p>
-          <button onClick={() => onUnlink(platform)} className="btn btn-outline" style={{ width: '100%', borderColor: '#ef4444', color: '#fca5a5' }}>
-            <Trash2 size={16} /> Unlink
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {platform === 'github' && (
+              <button
+                onClick={onOpenIntelligence}
+                className="btn btn-primary"
+                style={{ width: '100%', fontSize: '0.85rem' }}
+              >
+                <GitBranch size={15} /> View GitHub Intelligence
+              </button>
+            )}
+            <button onClick={() => onUnlink(platform)} className="btn btn-outline" style={{ width: '100%', borderColor: '#ef4444', color: '#fca5a5' }}>
+              <Trash2 size={16} /> Unlink
+            </button>
+          </div>
         </div>
       ) : (
         <form 
@@ -65,6 +78,7 @@ const PlatformCard = ({ platform, info, onLink, onUnlink }) => {
 const AccountLinking = () => {
   const [platforms, setPlatforms] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [intelModalOpen, setIntelModalOpen] = useState(false);
   const toast = useToast();
 
   const fetchPlatforms = async () => {
@@ -119,10 +133,17 @@ const AccountLinking = () => {
               info={platforms[key]} 
               onLink={handleLink}
               onUnlink={handleUnlink}
+              onOpenIntelligence={() => setIntelModalOpen(true)}
             />
           ))}
         </div>
       )}
+
+      <GitHubIntelligenceModal
+        isOpen={intelModalOpen}
+        onClose={() => setIntelModalOpen(false)}
+        username={platforms?.github?.username}
+      />
     </UserLayout>
   );
 };

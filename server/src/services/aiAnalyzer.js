@@ -29,17 +29,32 @@ const buildProfileSummary = (user, projects = []) => {
   };
 
   if (pd.github) {
+    const gh = pd.github;
+    const ghProfile = gh.profile || gh;
     summary.github = {
-      publicRepos: pd.github.publicRepos,
-      followers: pd.github.followers,
-      following: pd.github.following,
-      bio: pd.github.bio,
-      company: pd.github.company,
-      location: pd.github.location,
-      accountAge: pd.github.createdAt
-        ? `${Math.round((Date.now() - new Date(pd.github.createdAt)) / (365.25 * 86400000))} years`
-        : null,
-      repos: pd.github.repos || [],
+      profile: {
+        publicRepos: ghProfile.publicRepos,
+        followers: ghProfile.followers,
+        following: ghProfile.following,
+        bio: ghProfile.bio,
+        company: ghProfile.company,
+        location: ghProfile.location,
+        accountAge: ghProfile.accountAgeYears ? `${ghProfile.accountAgeYears} years` : (ghProfile.createdAt ? `${Math.round((Date.now() - new Date(ghProfile.createdAt)) / (365.25 * 86400000))} years` : null),
+      },
+      repositories: (gh.repositories || gh.repos || []).map(r => ({
+        name: r.name,
+        description: r.description,
+        language: r.language,
+        stars: r.stars,
+        forks: r.forks,
+        updatedAt: r.updatedAt,
+      })),
+      languages: gh.languages || { distribution: {} },
+      commits: gh.commits || { recentCount30Days: 0 },
+      pullRequests: gh.pullRequests || { merged: 0, mergeRate: 'Insufficient data' },
+      openSource: gh.openSource || { externalReposContributed: 0 },
+      releases: gh.releases || { count: 0 },
+      scoreBreakdown: user.scores?.developmentBreakdown || gh.scoreBreakdown || null,
     };
   }
 

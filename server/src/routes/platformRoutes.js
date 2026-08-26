@@ -4,7 +4,8 @@ const { protect } = require('../middleware/auth');
 const validate = require('../middleware/validate');
 const {
   getLinkedPlatforms,  getAllPlatformData,
-  getPlatformData,  linkPlatform,
+  getPlatformData,  getGitHubIntelligence,
+  syncGitHubIntelligence,  linkPlatform,
   unlinkPlatform,
   linkMultiplePlatforms,
 } = require('../controllers/platformController');
@@ -34,6 +35,12 @@ const bulkPlatformValidation = [
 
 // ─── All platform routes are protected ──────────────────────────────────────
 router.use(protect);
+
+// GET  /api/platforms/github/intelligence → Get structured GitHub Intelligence & score breakdown
+router.get('/github/intelligence', getGitHubIntelligence);
+
+// POST /api/platforms/github/sync         → Explicit GitHub Intelligence synchronization
+router.post('/github/sync', syncGitHubIntelligence);
 
 // GET  /api/platforms          → Get all linked platform statuses
 // PUT  /api/platforms          → Bulk link multiple platforms at once

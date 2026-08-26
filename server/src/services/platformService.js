@@ -26,76 +26,32 @@ const fetchPlatformProfile = async (platform, username) => {
   }
 };
 
+const { fetchUserProfile, fetchUserRepositories, fetchUserEvents } = require('./githubService');
+const { normalizeGitHubIntelligence } = require('./githubIntelligenceService');
+
 const fetchGitHubProfile = async (username) => {
-  const url = `https://api.github.com/users/${encodeURIComponent(username)}`;
-  const headers = {
-    Accept: 'application/vnd.github+json',
-    'User-Agent': 'MaVi-Linking-App',
-  };
+  const profilePayload = await fetchUserProfile(username);
+  const reposPayload = await fetchUserRepositories(username, 30);
+  const eventsPayload = await fetchUserEvents(username, 50);
 
-  if (GITHUB_TOKEN) {
-    headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
-  }
+  const intelligence = normalizeGitHubIntelligence(profilePayload, reposPayload, eventsPayload, username);
 
-  let response = await fetch(url, { headers });
-  let payload = await response.json();
-
-  // If token was invalid, expired, or rejected (401 Bad credentials), fallback to unauthenticated request
-  if (!response.ok && (response.status === 401 || (payload.message && payload.message.toLowerCase().includes('bad credentials')))) {
-    console.warn(`GitHub Token authentication failed for "${username}". Falling back to unauthenticated public GitHub API...`);
-    delete headers.Authorization;
-    response = await fetch(url, { headers });
-    payload = await response.json();
-  }
-
-  if (!response.ok) {
-    const message = response.status === 404
-      ? `GitHub user "${username}" was not found.`
-      : payload.message || 'Unable to fetch GitHub profile';
-    throw new Error(message);
-  }
-
-  // Also fetch user public repositories for richer AI analysis
-  let reposList = [];
-  try {
-    const reposUrl = `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=10&sort=updated`;
-    let reposResponse = await fetch(reposUrl, { headers });
-    if (!reposResponse.ok && headers.Authorization) {
-      const reposHeaders = { ...headers };
-      delete reposHeaders.Authorization;
-      reposResponse = await fetch(reposUrl, { headers: reposHeaders });
-    }
-    if (reposResponse.ok) {
-      const reposPayload = await reposResponse.json();
-      if (Array.isArray(reposPayload)) {
-        reposList = reposPayload.map(r => ({
-          name: r.name,
-          description: r.description || '',
-          language: r.language || '',
-          stars: r.stargazers_count || 0,
-          forks: r.forks_count || 0,
-          updatedAt: r.updated_at
-        }));
-      }
-    }
-  } catch (err) {
-    console.warn('Unable to fetch GitHub repositories list:', err.message);
-  }
-
+  // Return intelligence structure with top-level backwards compatibility aliases
   return {
-    username: payload.login,
-    displayName: payload.name || null,
-    avatarUrl: payload.avatar_url || null,
-    profileUrl: payload.html_url || null,
-    bio: payload.bio || null,
-    company: payload.company || null,
-    location: payload.location || null,
-    publicRepos: payload.public_repos || 0,
-    followers: payload.followers || 0,
-    following: payload.following || 0,
-    createdAt: payload.created_at || null,
-    fetchedAt: new Date(),
-    repos: reposList
+    ...intelligence,
+    username: intelligence.profile.username,
+    displayName: intelligence.profile.name,
+    avatarUrl: intelligence.profile.avatarUrl,
+    profileUrl: intelligence.profile.profileUrl,
+    bio: intelligence.profile.bio,
+    company: intelligence.profile.company,
+    location: intelligence.profile.location,
+    publicRepos: intelligence.profile.publicRepos,
+    followers: intelligence.profile.followers,
+    following: intelligence.profile.following,
+    createdAt: intelligence.profile.accountCreatedAt,
+    fetchedAt: intelligence.sync.lastSyncedAt,
+    repos: intelligence.repositories,
   };
 };
 

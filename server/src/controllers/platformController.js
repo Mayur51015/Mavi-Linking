@@ -494,10 +494,87 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+/**
+ * @desc    Get structured GitHub Intelligence and score breakdown
+ * @route   GET /api/platforms/github/intelligence
+ * @access  Private
+ */
+const getGitHubIntelligence = async (req, res, next) => {
+  try {
+    const Project = require('../models/Project');
+    const Activity = require('../models/Activity');
+    const { calculateDevelopmentScore } = require('../services/scoreService');
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const githubUsername = user.platforms?.github?.username || user.githubUsername;
+    if (!githubUsername) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          linked: false,
+          intelligence: null,
+          scores: user.scores || {},
+          breakdown: null,
+          isVerified: Boolean(user.isVerified),
+        },
+      });
+    }
+
+    const projects = await Project.find({ user: req.user.id });
+    const activities = await Activity.find({ userId: req.user.id, platform: 'github' }).sort({ date: -1 }).limit(50);
+
+    const githubData = user.platformData?.github || null;
+    const scoreResult = calculateDevelopmentScore(githubData, projects, activities);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        linked: true,
+        username: githubUsername,
+        intelligence: githubData,
+        scores: user.scores || {},
+        breakdown: scoreResult.breakdown,
+        totalScore: scoreResult.totalScore,
+        isVerified: Boolean(user.isVerified),
+        lastSyncedAt: user.lastSyncedAt || githubData?.sync?.lastSyncedAt || null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Sync GitHub Intelligence explicitly
+ * @route   POST /api/platforms/github/sync
+ * @access  Private
+ */
+const syncGitHubIntelligence = async (req, res, next) => {
+  try {
+    const { syncGitHubAccount } = require('../services/githubSyncService');
+    const result = await syncGitHubAccount(req.user.id);
+
+    res.status(200).json({
+      success: true,
+      message: result.message || 'GitHub intelligence synchronized successfully',
+      data: result.data,
+      user: result.user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getLinkedPlatforms,
   getAllPlatformData,
   getPlatformData,
+  getGitHubIntelligence,
+  syncGitHubIntelligence,
   linkPlatform,
   unlinkPlatform,
   linkMultiplePlatforms,

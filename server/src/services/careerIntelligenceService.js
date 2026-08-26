@@ -9,104 +9,27 @@ const CareerInsight = require('../models/CareerInsight');
 const CareerAnalytics = require('../models/CareerAnalytics');
 const { getIO } = require('../config/socket');
 
+const { calculateUnifiedOverallScore } = require('./scoreService');
+
 /**
- * Calculates a comprehensive 1000-point performance score and individual category scores.
+ * Calculates a comprehensive 1000-point performance score and individual category scores
+ * using the canonical unified scoring engine from scoreService.js.
  */
 const calculatePerformanceScore = async (user, projects) => {
-  // 1. Category 1: Development Score (Max 1000)
-  let devScore = 0;
-  const pd = user.platformData || {};
-  if (pd.github) {
-    devScore += Math.min((pd.github.publicRepos || 0) * 15, 300);
-    devScore += Math.min((pd.github.followers || 0) * 10, 200);
-  }
-  devScore += Math.min(projects.length * 60, 300);
-  projects.forEach(p => {
-    if (p.liveUrl) devScore += 20;
-    if (p.githubUrl) devScore += 10;
-  });
-  devScore = Math.min(devScore, 1000);
-
-  // 2. Category 2: Problem Solving Score (Max 1000)
-  let psScore = 0;
-  if (pd.leetcode) {
-    let lcPoints = 0;
-    lcPoints += (pd.leetcode.solvedEasy || 0) * 1.5;
-    lcPoints += (pd.leetcode.solvedMedium || 0) * 3.5;
-    lcPoints += (pd.leetcode.solvedHard || 0) * 6;
-    if (lcPoints === 0 && pd.leetcode.solved) {
-      lcPoints = pd.leetcode.solved * 3;
-    }
-    psScore += Math.min(lcPoints, 600);
-  }
-  if (pd.codeforces && pd.codeforces.rating) {
-    psScore += Math.min(Math.floor(pd.codeforces.rating * 0.45), 400);
-  }
-  psScore = Math.min(psScore, 1000);
-
-  // 3. Category 3: Community/Knowledge Score (Max 1000)
-  let commScore = 0;
-  if (pd.stackoverflow) {
-    commScore += Math.min(Math.floor((pd.stackoverflow.reputation || 0) * 0.25), 400);
-    commScore += Math.min((pd.stackoverflow.goldBadges || 0) * 40, 200);
-    commScore += Math.min((pd.stackoverflow.silverBadges || 0) * 20, 200);
-  }
-  if (user.skillsList) {
-    commScore += Math.min(user.skillsList.length * 15, 200);
-  }
-  commScore = Math.min(commScore, 1000);
-
-  // 4. Overall score breakdown out of 1000
-  let academicScore = 0;
-  if (user.cgpa) {
-    academicScore = Math.min(user.cgpa * 15, 150); // e.g. 10 CGPA = 150 pts
-  } else if (user.degree || user.university?.name) {
-    academicScore = 80;
-  }
-
-  let profileCompPoints = Math.min((user.profileCompletion || 0) * 1.0, 100);
-
-  const hasResume = user.portfolioDocs?.some(doc => doc.category === 'Resume');
-  let resumePoints = hasResume ? 100 : 0;
-
-  let projectPoints = Math.min(projects.length * 20, 100);
-
-  let certPoints = Math.min((user.certificates?.length || 0) * 10, 50);
-
-  let platformLinkPoints = 0;
-  const ghUser = user.githubUsername || user.platforms?.github?.username;
-  const lcUser = user.platforms?.leetcode?.username;
-  const cfUser = user.platforms?.codeforces?.username;
-  if (ghUser) platformLinkPoints += 50;
-  if (lcUser) platformLinkPoints += 50;
-  if (cfUser) platformLinkPoints += 50;
-
-  const hasInternship = user.portfolioDocs?.some(doc => doc.category === 'Internship');
-  let internshipPoints = hasInternship ? 100 : 0;
-
-  const hasHackathon = user.achievements?.some(a => a.category === 'Hackathon') || user.portfolioDocs?.some(d => d.category === 'Achievement');
-  let hackathonPoints = hasHackathon ? 100 : 0;
-
-  const hasResearchPaper = user.portfolioDocs?.some(doc => doc.category === 'Research Paper');
-  let researchPaperPoints = hasResearchPaper ? 50 : 0;
-
-  let skillPoints = Math.min((user.skillsList?.length || 0) * 10, 100);
-
-  let overallScore = academicScore + profileCompPoints + resumePoints + projectPoints + certPoints + platformLinkPoints + internshipPoints + hackathonPoints + researchPaperPoints + skillPoints;
-  overallScore = Math.min(Math.round(overallScore), 1000);
-
+  const unifiedScores = calculateUnifiedOverallScore(user, projects);
   return {
-    overall: overallScore,
-    development: devScore,
-    problemSolving: psScore,
-    community: commScore,
+    overall: unifiedScores.overall,
+    development: unifiedScores.development,
+    problemSolving: unifiedScores.problemSolving,
+    community: unifiedScores.community,
+    developmentBreakdown: unifiedScores.developmentBreakdown,
     breakdown: {
-      academics: Math.round(academicScore),
-      profileCompletion: Math.round(profileCompPoints),
-      resume: Math.round(resumePoints),
-      projects: Math.round(projectPoints),
-      certificates: Math.round(certPoints),
-      platforms: Math.round(platformLinkPoints)
+      academics: user.cgpa ? Math.min(Math.round(user.cgpa * 15), 150) : 80,
+      profileCompletion: Math.min(Math.round((user.profileCompletion || 0)), 100),
+      resume: user.portfolioDocs?.some(doc => doc.category === 'Resume') ? 100 : 0,
+      projects: Math.min(projects.length * 20, 100),
+      certificates: Math.min((user.certificates?.length || 0) * 10, 50),
+      platforms: (user.platforms?.github?.username ? 50 : 0) + (user.platforms?.leetcode?.username ? 50 : 0) + (user.platforms?.codeforces?.username ? 50 : 0),
     }
   };
 };

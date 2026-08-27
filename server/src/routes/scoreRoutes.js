@@ -18,3 +18,23 @@ router.get('/me', protect, getMyScores);
 router.get('/insights', protect, getInsights);
 
 module.exports = router;
+router.post(
+  '/leaderboard/rebuild',
+  auth,
+  requireAdmin,
+  async (req, res, next) => {
+    try {
+      const { rebuildRankings } = require('../services/incrementalLeaderboardService');
+
+      const result = await rebuildRankings();
+
+      res.status(200).json({
+        success: true,
+        message: 'Leaderboard rankings rebuilt successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);

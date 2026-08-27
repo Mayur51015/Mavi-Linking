@@ -156,7 +156,8 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
     const previousGithubData = user.platformData?.github || null;
 
     // 4. Update Canonical User Document
-    user.platforms = user.platforms || {};    user.platforms.github = user.platforms.github || {};
+    user.platforms = user.platforms || {};
+    user.platforms.github = user.platforms.github || {};
     user.platforms.github.username = username;
     user.platforms.github.linkedAt = user.platforms.github.linkedAt || new Date();
     user.githubUsername = username; // Legacy mirror for backwards compatibility
@@ -166,7 +167,6 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
     user.lastSyncedAt = new Date();
 
     await user.save();
-
     // 4.5 Record immutable activity events for this sync (idempotent per syncVersion)
     const { recordEvent } = require('./activityEventService');
     const syncVersion = user.lastSyncedAt.toISOString();
@@ -194,7 +194,10 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
         syncVersion,
       });
     }
-
+const {
+  recordSyncSuccess,
+  recordSyncFailure,
+} = require('./syncConsistencyService');
     // 5. Trigger Canonical Intelligence & Scoring Evaluation    const { evaluateUserIntelligence } = require('./careerIntelligenceService');
     const updatedUser = await evaluateUserIntelligence(user._id);
 
@@ -204,10 +207,21 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
       user: updatedUser,
       message: 'GitHub intelligence synchronized successfully.',
     };
+  } catch (error) {
+    try {
+      const failedUser = await User.findById(userId);
+      if (failedUser) {
+        recordSyncFailure(failedUser, 'github', error);
+        await failedUser.save();
+      }
+    } catch (metadataError) {
+      console.error('[GitHub Sync] Failed to record sync metadata:', metadataError.message);
+    }
+
+    throw error;
   } finally {
     syncLocks.delete(userId.toString());
-  }
-};
+  }};
 
 module.exports = {
   syncGitHubAccount,

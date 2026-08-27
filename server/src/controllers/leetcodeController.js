@@ -1,8 +1,12 @@
 const LeetCodeAnalytics = require('../models/LeetCodeAnalytics');
 const User = require('../models/User');
 const { fetchLeetCodeData } = require('../services/leetcodeService');
-
-const syncLeetCode = async (req, res, next) => {
+const {
+  recordSyncSuccess,
+  recordSyncFailure,
+  getPlatformFreshness,
+  getProfileFreshness,
+} = require('../services/syncConsistencyService');const syncLeetCode = async (req, res, next) => {
   try {
     const { username } = req.body;
     if (!username || !String(username).trim()) {
@@ -18,19 +22,23 @@ const syncLeetCode = async (req, res, next) => {
     // Capture previous analytics snapshot for event sourcing (pre-overwrite)
     const previousAnalytics = await LeetCodeAnalytics.findOne({ user: userId });
 
-    // Update User schema    await User.findByIdAndUpdate(userId, {
-      'platforms.leetcode.username': cleanUsername,
-      'platforms.leetcode.linkedAt': new Date(),
-      'platformData.leetcode': {
-        solved: data.totalSolved,
-        solvedEasy: data.easySolved,
-        solvedMedium: data.mediumSolved,
-        solvedHard: data.hardSolved,
-        ranking: data.ranking
-      }
-    });
+    // Update User schema and synchronization metadata
+    const user = await User.findById(userId);
 
-    // Update or Create Analytics
+    user.platforms.leetcode.username = cleanUsername;
+    user.platforms.leetcode.linkedAt =
+      user.platforms.leetcode.linkedAt || new Date();
+
+    const platformData = {
+      solved: data.totalSolved,
+      solvedEasy: data.easySolved,
+      solvedMedium: data.mediumSolved,
+      solvedHard: data.hardSolved,
+      ranking: data.ranking
+    };
+
+    recordSyncSuccess(user, 'leetcode', platformData);
+    await user.save();    // Update or Create Analytics
     const analyticsData = {
       user: userId,
       username,
@@ -98,8 +106,18 @@ const syncLeetCode = async (req, res, next) => {
     res.status(200).json({ success: true, data: analytics });
   } catch (error) {
     console.error(`LeetCode sync failed for user ${req.user?.id}:`, error.message);
-    const msg = error.message || 'LeetCode synchronization failed.';
-    const isUpstream = msg.includes('temporarily unavailable') || msg.includes('API failed');
+
+    try {
+      const failedUser = await User.findById(req.user?.id);
+      if (failedUser) {
+        recordSyncFailure(failedUser, 'leetcode', error);
+        await failedUser.save();
+      }
+    } catch (metadataError) {
+      console.error('LeetCode sync metadata update failed:', metadataError.message);
+    }
+
+    const msg = error.message || 'LeetCode synchronization failed.';    const isUpstream = msg.includes('temporarily unavailable') || msg.includes('API failed');
     return res.status(isUpstream ? 502 : 400).json({ success: false, message: msg });
   }
 };
@@ -113,9 +131,15 @@ const getMyLeetCode = async (req, res, next) => {
       return res.status(200).json({ success: true, data: null, synced: false, message: 'LeetCode profile not synced yet.' });
     }
 
-    res.status(200).json({ success: true, data: analytics, synced: true });
-  } catch (error) {
-    next(error);
+    const user = await User.findById(userId);
+
+    res.status(200).json({
+      success: true,
+      data: analytics,
+      synced: true,
+      sync: getPlatformFreshness(user, 'leetcode'),
+      freshness: getProfileFreshness(user),
+    });    next(error);
   }
 };
 

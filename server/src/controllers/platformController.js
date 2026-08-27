@@ -1,7 +1,12 @@
 const User = require('../models/User');
 const { fetchPlatformProfile } = require('../services/platformService');
 const { calculateAggregatedScores } = require('../services/scoreService');
-
+const {
+  getProfileFreshness,
+  getPlatformFreshness,
+  recordSyncSuccess,
+  recordSyncFailure,
+} = require('../services/syncConsistencyService');
 // Allowed platforms — used for validation throughout the system
 const VALID_PLATFORMS = ['github', 'codeforces', 'leetcode', 'stackoverflow'];
 
@@ -22,16 +27,17 @@ const getLinkedPlatforms = async (req, res, next) => {
         linked: !!data.username,
         username: data.username || null,
         linkedAt: data.linkedAt || null,
+        sync: getPlatformFreshness(user, platform),
       };
     }
 
-    res.status(200).json({
+    const freshness = getProfileFreshness(user);    res.status(200).json({
       success: true,
       data: {
         platforms: platformStatus,
         linkedCount: Object.values(platformStatus).filter((p) => p.linked).length,
         totalPlatforms: VALID_PLATFORMS.length,
-      },
+        freshness,      },
     });
   } catch (error) {
     next(error);
@@ -92,26 +98,25 @@ const linkPlatform = async (req, res, next) => {
     try {
       platformData = await fetchPlatformProfile(platform, sanitized.username);
     } catch (fetchError) {
+      const failedUser = await User.findById(req.user.id);
+      recordSyncFailure(failedUser, platform, fetchError);
+      await failedUser.save();
+
       return res.status(400).json({
         success: false,
         message: fetchError.message || `Unable to fetch ${capitalize(platform)} profile for "${sanitized.username}". Please check the username and try again.`,
       });
     }
-
     // Update the specific platform fields
-    const updateQuery = {
-      [`platforms.${platform}.username`]: sanitized.username,
-      [`platforms.${platform}.linkedAt`]: new Date(),
-      [`platformData.${platform}`]: platformData,
-      lastSyncedAt: new Date(),
-    };
+    const userForSync = await User.findById(req.user.id);
 
-    let user = await User.findByIdAndUpdate(
-      req.user.id,
-      { $set: updateQuery },
-      { new: true, runValidators: true }
-    );
+    userForSync.platforms[platform].username = sanitized.username;
+    userForSync.platforms[platform].linkedAt = new Date();
 
+    recordSyncSuccess(userForSync, platform, platformData);
+
+    await userForSync.save();
+    let user = userForSync;
     // Auto-recalculate scores after linking
     const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
     const { logTimelineEvent } = require('../utils/timelineLogger');
@@ -326,21 +331,22 @@ const getAllPlatformData = async (req, res, next) => {
       if (username && (refresh || !platformData)) {
         try {
           platformData = await fetchPlatformProfile(platform, username);
-          user.platformData[platform] = platformData;
-          shouldSave = true;
+          const syncResult = recordSyncSuccess(user, platform, platformData);
+          shouldSave = shouldSave || syncResult.dataChanged;        } catch (fetchError) {
         } catch (fetchError) {
+          recordSyncFailure(user, platform, fetchError);
+          shouldSave = true;
           fetchErrors.push({ platform, message: fetchError.message });
           platformData = user.platformData[platform] || null;
-        }
-      }
+        }      }
 
       platformResults[platform] = {
         linked: !!username,
         username: username || null,
         linkedAt: linkedAt || null,
         platformData: platformData || null,
-      };
-    }
+        sync: getPlatformFreshness(user, platform),
+      };    }
 
     if (shouldSave) {
       user.lastSyncedAt = new Date();
@@ -355,7 +361,7 @@ const getAllPlatformData = async (req, res, next) => {
         linkedCount: Object.values(platformResults).filter((p) => p.linked).length,
         totalPlatforms: VALID_PLATFORMS.length,
         errors: fetchErrors,
-      },
+        freshness: getProfileFreshness(user),      },
     });
   } catch (error) {
     next(error);
@@ -394,15 +400,13 @@ const getPlatformData = async (req, res, next) => {
     if (refresh || !platformData) {
       try {
         platformData = await fetchPlatformProfile(platform, username);
-        user.platformData[platform] = platformData;
-        user.lastSyncedAt = new Date();
+        recordSyncSuccess(user, platform, platformData);
         user.scores = calculateAggregatedScores(user.platformData);
+        await user.save();           } catch (fetchError) {
+        recordSyncFailure(user, platform, fetchError);
         await user.save();
-      } catch (fetchError) {
-        return res.status(404).json({
-          success: false,
-          message: fetchError.message || `Unable to fetch ${platform} profile`,
-        });
+
+        platformData = user.platformData[platform] || null;
       }
     }
 
@@ -413,7 +417,8 @@ const getPlatformData = async (req, res, next) => {
         username,
         linkedAt,
         platformData,
-      },
+        sync: getPlatformFreshness(user, platform),
+        freshness: getProfileFreshness(user),      },
     });
   } catch (error) {
     next(error);

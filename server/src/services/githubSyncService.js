@@ -152,9 +152,11 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
       }
     }
 
+    // 3.5 Capture previous platform snapshot for event sourcing (pre-overwrite)
+    const previousGithubData = user.platformData?.github || null;
+
     // 4. Update Canonical User Document
-    user.platforms = user.platforms || {};
-    user.platforms.github = user.platforms.github || {};
+    user.platforms = user.platforms || {};    user.platforms.github = user.platforms.github || {};
     user.platforms.github.username = username;
     user.platforms.github.linkedAt = user.platforms.github.linkedAt || new Date();
     user.githubUsername = username; // Legacy mirror for backwards compatibility
@@ -165,8 +167,35 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
 
     await user.save();
 
-    // 5. Trigger Canonical Intelligence & Scoring Evaluation
-    const { evaluateUserIntelligence } = require('./careerIntelligenceService');
+    // 4.5 Record immutable activity events for this sync (idempotent per syncVersion)
+    const { recordEvent } = require('./activityEventService');
+    const syncVersion = user.lastSyncedAt.toISOString();
+    const newRepoCount = githubData?.profile?.publicRepos ?? 0;
+    const prevRepoCount = previousGithubData?.profile?.publicRepos ?? null;
+    if (prevRepoCount === null || prevRepoCount !== newRepoCount) {
+      await recordEvent({
+        userId: user._id,
+        platform: 'github',
+        eventType: 'REPOSITORY_CHANGE',
+        previousValue: { publicRepos: prevRepoCount },
+        newValue: { publicRepos: newRepoCount },
+        syncVersion,
+      });
+    }
+    const newContributions = githubData?.contributions?.totalRecentEvents ?? 0;
+    const prevContributions = previousGithubData?.contributions?.totalRecentEvents ?? null;
+    if (prevContributions === null || prevContributions !== newContributions) {
+      await recordEvent({
+        userId: user._id,
+        platform: 'github',
+        eventType: 'CONTRIBUTION_CHANGE',
+        previousValue: { totalRecentEvents: prevContributions },
+        newValue: { totalRecentEvents: newContributions },
+        syncVersion,
+      });
+    }
+
+    // 5. Trigger Canonical Intelligence & Scoring Evaluation    const { evaluateUserIntelligence } = require('./careerIntelligenceService');
     const updatedUser = await evaluateUserIntelligence(user._id);
 
     return {

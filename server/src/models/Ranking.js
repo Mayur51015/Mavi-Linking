@@ -13,6 +13,11 @@ const rankingSchema = new mongoose.Schema(
       enum: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Elite Developer'],
       default: 'Bronze' 
     },
+        evidenceStatus: {
+      type: String,
+      enum: ['supported', 'uncertain'],
+      default: 'uncertain',
+    },
     globalRank: { type: Number, default: 0 },
     score: { type: Number, default: 0 },
     // Category-specific ranks

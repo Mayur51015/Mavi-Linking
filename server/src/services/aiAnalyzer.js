@@ -5,7 +5,11 @@ const Ranking = require('../models/Ranking');
 const Analytics = require('../models/Analytics');
 const Project = require('../models/Project');
 const CareerSkillAnalysis = require('../models/CareerSkillAnalysis');
-const { recordEvent } = require('./activityEventService');
+const {
+  buildEvidenceContext,
+  validateAndNormalizeAIResult,
+  buildProvenance,
+} = require('./aiProvenanceService');const { recordEvent } = require('./activityEventService');
 const { getProfileFreshness } = require('./syncConsistencyService');
 /**
  * Build a rich developer profile summary for AI analysis.
@@ -101,8 +105,10 @@ const analyzeUser = async (user) => {
   // Retrieve actual student projects from database
   const projects = await Project.find({ user: user._id });
 
-  let result;
+  const evidenceContext = buildEvidenceContext(user);
+  const evidence = evidenceContext.evidence;
 
+  let result;
   if (!provider) {
     // Generate clean mock result based on user details and actual projects
     const userSkills = user.skillsList ? user.skillsList.map(s => s.name) : [];
@@ -136,22 +142,37 @@ const analyzeUser = async (user) => {
         techStack: selectedTechs,
         confidenceScores,
         radar,
-        confidence,
-        strengths: [
-          `Competent in building dynamic profiles and projects using ${selectedTechs.slice(0, 2).join(', ')}`,
-          projects.length >= 3 ? "Demonstrates consistency through multiple repository implementations" : "Shows clear understanding of technical layouts",
-          user.githubUsername ? "Verified GitHub profile connection active" : "Maintains clear coding standards"
-        ],
+        confidence: evidence.length > 0 ? confidence : 0,
+        strengths: evidence.length > 0
+          ? [
+              `Competent in building dynamic profiles and projects using ${selectedTechs.slice(0, 2).join(', ')}`,
+              projects.length >= 3
+                ? "Demonstrates consistency through multiple repository implementations"
+                : "Shows clear understanding of technical layouts",
+            ]
+          : [],
         improvements: [
-          !user.portfolioDocs?.some(d => d.category === 'Resume') ? "Upload a complete Resume to attract recruiters" : "Explore deployment strategies for system infrastructure",
-          selectedTechs.length < 5 ? "Expand tech stack representation to showcase wider diversity" : "Incorporate unit test frameworks to increase code coverage metrics"
+          !user.portfolioDocs?.some(d => d.category === 'Resume')
+            ? "Upload a complete Resume to attract recruiters"
+            : "Explore deployment strategies for system infrastructure",
         ],
-        careerRecommendations: [
-          `Junior/Associate ${specialization}`,
-          "Software Development Engineer"
-        ]
-      },
-      dna: {
+        careerRecommendations: evidence.length > 0
+          ? [
+              `Junior/Associate ${specialization}`,
+              "Software Development Engineer",
+            ]
+          : [],
+        claims: [],
+        uncertainty: evidence.length > 0
+          ? {
+              state: 'supported',
+              reason: null,
+            }
+          : {
+              state: 'uncertain',
+              reason: 'Insufficient verified platform evidence.',
+            },
+      },      dna: {
         personalityType: "Project Builder",
         workingStyle: "Collaborative",
         scores: {
@@ -178,13 +199,22 @@ const analyzeUser = async (user) => {
       }
     };
   } else {
-    // Build enriched profile summary
+    // Build enriched profile summary and verified evidence payload
     const profileSummary = JSON.stringify(buildProfileSummary(user, projects));
+    const structuredEvidence = JSON.stringify(evidenceContext);
 
-    const prompt = `You are an expert AI Developer Intelligence System. Analyze the developer data and provide a comprehensive JSON profile with deep technical insights.
+    const prompt = `You are an expert AI Developer Intelligence System.
 
-The developer data: ${profileSummary}
+Use ONLY the verified evidence items supplied below when making factual claims.
+Do not invent metrics, platform activity, rankings, skills, or performance levels.
+Every factual claim must reference one or more evidence IDs.
+If evidence is missing or conflicting, mark the insight as uncertain instead of making a strong conclusion.
 
+Developer profile context:
+${profileSummary}
+
+Verified evidence:
+${structuredEvidence}
 Analyze deeply:
 - Synchronization freshness and incomplete platform data; do not treat stale or unavailable platform data as current
 - Repository patterns and project complexity
@@ -211,9 +241,18 @@ Format exactly as valid JSON:
     "confidence": 94,
     "strengths": ["Strong problem-solving with X hard problems solved", "Active open-source contributor", "..."],
     "improvements": ["Could improve system design skills", "Should explore cloud technologies", "..."],
-    "careerRecommendations": ["Senior Full Stack Developer at a startup", "..."]
-  },
-  "dna": {
+    "careerRecommendations": ["Senior Full Stack Developer at a startup", "..."],
+    "claims": [
+      {
+        "text": "The developer has strong problem-solving activity.",
+        "evidenceIds": ["evidence_123456789abc"]
+      }
+    ],
+    "uncertainty": {
+      "state": "supported",
+      "reason": null
+    }
+  },  "dna": {
     "personalityType": "Problem Solver | Project Builder | Open Source Contributor | Startup Engineer | Scale Architect | Research Engineer | Product Builder | Performance Optimizer | Full Stack Generalist | DevOps Engineer | AI/ML Specialist",
     "workingStyle": "Independent | Collaborative | Hybrid | Mentorship-Driven | Sprint-Based",
     "scores": {"collaboration": 80, "innovation": 90, "learningAdaptability": 85, "consistency": 70},
@@ -231,8 +270,13 @@ Format exactly as valid JSON:
 
     const systemPrompt = 'You are an AI Developer Intelligence System that analyzes developer profiles across GitHub, LeetCode, Codeforces, and StackOverflow to generate deep technical insights, personality profiles, and career recommendations.';
     result = await provider.generateCompletion(systemPrompt, prompt);
+
+    result = validateAndNormalizeAIResult(result, evidence);
   }
 
+  if (!result.insight) {
+    throw new Error('AI response could not be normalized into the required insight schema');
+  }
   // Calculate dynamic ranking score based on user.scores + some variance
   const rawScore = (user.scores?.overall || 0);
   let tier = 'Bronze';
@@ -258,17 +302,27 @@ Format exactly as valid JSON:
       sanitizedScores[key.replace(/\./g, '_')] = value;
     }
   }
-
+  const provenance = buildProvenance(
+    user,
+    provider,
+    evidence,
+    result
+  );
   // Save to DB
   const insight = await Insight.findOneAndUpdate(
     { userId: user._id },
     {
       ...result.insight,
       confidenceScores: sanitizedScores,
+      claims: result.insight.claims || [],
+      uncertainty: result.insight.uncertainty || {
+        state: 'uncertain',
+        reason: 'No verified evidence was available.',
+      },
+      provenance,
       userId: user._id,
       lastUpdated: new Date()
-    },
-    { new: true, upsert: true }
+    },    { new: true, upsert: true }
   );
 
   // Save to career_skill_analysis collection
@@ -277,8 +331,7 @@ Format exactly as valid JSON:
     {
       specialization: result.insight.specialization || "Software Developer",
       topSkills: result.insight.topSkills || [],
-      confidence: result.insight.confidence || 85,
-      radar: result.insight.radar || [],
+      confidence: result.insight.confidence || provenance.evidenceCoverage || 0,      radar: result.insight.radar || [],
       generatedAt: new Date(),
       analysisVersion: "1.0.0"
     },
@@ -350,8 +403,8 @@ Format exactly as valid JSON:
       tier,
       userId: user._id,
       lastUpdated: new Date(),
-      categoryRanks: {
-        codeQuality: result.dna?.extendedScores?.codeQuality || 0,
+      evidenceStatus: provenance.uncertainty.state,
+      categoryRanks: {        codeQuality: result.dna?.extendedScores?.codeQuality || 0,
         projectComplexity: result.dna?.extendedScores?.engineeringMaturity || 0,
         openSourceInfluence: Math.min((user.platformData?.github?.followers || 0) * 2, 100),
         consistencyScore: result.dna?.scores?.consistency || 0,

@@ -6,14 +6,17 @@ const Analytics = require('../models/Analytics');
 const Project = require('../models/Project');
 const CareerSkillAnalysis = require('../models/CareerSkillAnalysis');
 const { recordEvent } = require('./activityEventService');
+const { getProfileFreshness } = require('./syncConsistencyService');
 /**
  * Build a rich developer profile summary for AI analysis.
  */
 const buildProfileSummary = (user, projects = []) => {
   const pd = user.platformData || {};
+    const freshness = getProfileFreshness(user);
   const summary = {
     name: user.name,
     scores: user.scores,
+        freshness,
     skills: user.skillsList ? user.skillsList.map(s => s.name) : [],
     preferredDomain: user.preferredDomain || null,
     projects: projects.map(p => ({
@@ -183,6 +186,7 @@ const analyzeUser = async (user) => {
 The developer data: ${profileSummary}
 
 Analyze deeply:
+- Synchronization freshness and incomplete platform data; do not treat stale or unavailable platform data as current
 - Repository patterns and project complexity
 - Problem-solving depth (LeetCode/Codeforces difficulty distribution)
 - Engineering maturity based on account age and activity

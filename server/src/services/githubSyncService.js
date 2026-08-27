@@ -2,7 +2,7 @@ const User = require('../models/User');
 const Activity = require('../models/Activity');
 const { fetchUserProfile, fetchUserRepositories, fetchUserEvents } = require('./githubService');
 const { normalizeGitHubIntelligence } = require('./githubIntelligenceService');
-
+const ExternalIdentity = require('../models/ExternalIdentity');
 // In-memory sync lock map to prevent overlapping sync operations
 const syncLocks = new Map();
 
@@ -163,8 +163,18 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
     user.githubUsername = username; // Legacy mirror for backwards compatibility
 
     user.platformData = user.platformData || {};
-    user.platformData.github = githubData;
-    user.lastSyncedAt = new Date();
+await ExternalIdentity.findOneAndUpdate(
+  {
+    userId: user._id,
+    platform: 'github',
+    verificationStatus: 'verified',
+  },
+  {
+    $set: {
+      lastSuccessfulSync: new Date(),
+    },
+  }
+);    user.lastSyncedAt = new Date();
 
     await user.save();
     // 4.5 Record immutable activity events for this sync (idempotent per syncVersion)

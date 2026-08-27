@@ -2,6 +2,10 @@ const User = require('../models/User');
 const { fetchPlatformProfile } = require('../services/platformService');
 const { calculateAggregatedScores } = require('../services/scoreService');
 const {
+  verifyAndLinkIdentity,
+  unlinkIdentity,
+} = require('../services/identityLinkingService');
+const {
   updateUserRanking,
 } = require('../services/incrementalLeaderboardService');
 const {
@@ -26,13 +30,23 @@ const getLinkedPlatforms = async (req, res, next) => {
     const platformStatus = {};
     for (const platform of VALID_PLATFORMS) {
       const data = user.platforms[platform];
-      platformStatus[platform] = {
-        linked: !!data.username,
-        username: data.username || null,
-        linkedAt: data.linkedAt || null,
-        sync: getPlatformFreshness(user, platform),
-      };
-    }
+const { getVerifiedIdentity } = require('../services/identityLinkingService');
+
+const identity = await getVerifiedIdentity({
+  userId: req.user.id,
+  platform,
+});
+
+platformStatus[platform] = {
+  linked: !!data.username,
+  username: data.username || null,
+  linkedAt: data.linkedAt || null,
+          sync: getPlatformFreshness(user, platform),
+
+  verificationStatus: identity?.verificationStatus || 'pending',
+  verifiedAt: identity?.verifiedAt || null,
+  lastSuccessfulSync: identity?.lastSuccessfulSync || null,
+};    }
 
     const freshness = getProfileFreshness(user);    res.status(200).json({
       success: true,
@@ -82,20 +96,7 @@ const linkPlatform = async (req, res, next) => {
       });
     }
 
-    // Check if another user has already linked this platform username
-    const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const existingUser = await User.findOne({
-      _id: { $ne: req.user.id },
-      [`platforms.${platform}.username`]: { $regex: new RegExp(`^${escapeRegex(sanitized.username)}$`, 'i') },
-    });
-
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: `This ${capitalize(platform)} account (@${sanitized.username}) is already linked to another MAVI Linking user.`,
-      });
-    }
-
+// Identity ownership is checked after resolving the real external account.
     // Fetch external platform profile and cache it
     let platformData;
     try {
@@ -110,6 +111,19 @@ const linkPlatform = async (req, res, next) => {
         message: fetchError.message || `Unable to fetch ${capitalize(platform)} profile for "${sanitized.username}". Please check the username and try again.`,
       });
     }
+    try {
+  await verifyAndLinkIdentity({
+    userId: req.user.id,
+    platform,
+    username: sanitized.username,
+    platformData,
+  });
+} catch (identityError) {
+  return res.status(identityError.statusCode || 409).json({
+    success: false,
+    message: identityError.message || 'Unable to verify external account ownership.',
+  });
+}
     // Update the specific platform fields
     const userForSync = await User.findById(req.user.id);
 
@@ -194,8 +208,16 @@ const unlinkPlatform = async (req, res, next) => {
       [`platformData.${platform}`]: null,
     };
 
-    let userToUpdate = await User.findByIdAndUpdate(req.user.id, { $set: updateQuery }, { new: true });
-    
+let userToUpdate = await User.findByIdAndUpdate(
+  req.user.id,
+  { $set: updateQuery },
+  { new: true }
+);
+
+await unlinkIdentity({
+  userId: req.user.id,
+  platform,
+});    
     // Auto-recalculate scores after unlinking
     const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
     const { logTimelineEvent } = require('../utils/timelineLogger');
@@ -264,9 +286,19 @@ const linkMultiplePlatforms = async (req, res, next) => {
 
       // Fetch external profile data for the platform
       try {
-        const platformData = await fetchPlatformProfile(platform, sanitized.username);
-        updateQuery[`platforms.${platform}.username`] = sanitized.username;
-        updateQuery[`platforms.${platform}.linkedAt`] = new Date();
+const platformData = await fetchPlatformProfile(
+  platform,
+  sanitized.username
+);
+
+await verifyAndLinkIdentity({
+  userId: req.user.id,
+  platform,
+  username: sanitized.username,
+  platformData,
+});
+
+updateQuery[`platforms.${platform}.username`] = sanitized.username;        updateQuery[`platforms.${platform}.linkedAt`] = new Date();
         updateQuery[`platformData.${platform}`] = platformData;
         results.linked.push({ platform, username: sanitized.username, platformData });
       } catch (fetchError) {

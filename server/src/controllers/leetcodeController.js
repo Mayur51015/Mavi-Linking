@@ -2,6 +2,9 @@ const LeetCodeAnalytics = require('../models/LeetCodeAnalytics');
 const User = require('../models/User');
 const { fetchLeetCodeData } = require('../services/leetcodeService');
 const {
+  verifyAndLinkIdentity,
+} = require('../services/identityLinkingService');
+const {
   recordSyncSuccess,
   recordSyncFailure,
   getPlatformFreshness,
@@ -17,8 +20,15 @@ const {
     const userId = req.user.id;
     
     // Fetch from API
-    const data = await fetchLeetCodeData(cleanUsername);
-
+await verifyAndLinkIdentity({
+  userId,
+  platform: 'leetcode',
+  username: cleanUsername,
+  platformData: {
+    username: cleanUsername,
+    ranking: data.ranking,
+  },
+});
     // Capture previous analytics snapshot for event sourcing (pre-overwrite)
     const previousAnalytics = await LeetCodeAnalytics.findOne({ user: userId });
 

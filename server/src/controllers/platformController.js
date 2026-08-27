@@ -2,6 +2,9 @@ const User = require('../models/User');
 const { fetchPlatformProfile } = require('../services/platformService');
 const { calculateAggregatedScores } = require('../services/scoreService');
 const {
+  updateUserRanking,
+} = require('../services/incrementalLeaderboardService');
+const {
   getProfileFreshness,
   getPlatformFreshness,
   recordSyncSuccess,
@@ -350,9 +353,10 @@ const getAllPlatformData = async (req, res, next) => {
 
     if (shouldSave) {
       user.lastSyncedAt = new Date();
-      user.scores = calculateAggregatedScores(user.platformData);
-      await user.save();
-    }
+user.scores = calculateAggregatedScores(user.platformData);
+await user.save();
+
+await updateUserRanking(user);    }
 
     res.status(200).json({
       success: true,
@@ -401,9 +405,10 @@ const getPlatformData = async (req, res, next) => {
       try {
         platformData = await fetchPlatformProfile(platform, username);
         recordSyncSuccess(user, platform, platformData);
-        user.scores = calculateAggregatedScores(user.platformData);
-        await user.save();           } catch (fetchError) {
-        recordSyncFailure(user, platform, fetchError);
+user.scores = calculateAggregatedScores(user.platformData);
+await user.save();
+
+await updateUserRanking(user);        recordSyncFailure(user, platform, fetchError);
         await user.save();
 
         platformData = user.platformData[platform] || null;

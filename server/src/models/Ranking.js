@@ -45,5 +45,7 @@ const rankingSchema = new mongoose.Schema(
 );
 
 rankingSchema.index({ score: -1 });
-
+rankingSchema.index({ globalRank: 1 });
+rankingSchema.index({ departmentRank: 1 });
+rankingSchema.index({ userId: 1 }, { unique: true });
 module.exports = mongoose.model('Ranking', rankingSchema);

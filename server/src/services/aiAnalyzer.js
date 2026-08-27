@@ -6,6 +6,9 @@ const Analytics = require('../models/Analytics');
 const Project = require('../models/Project');
 const CareerSkillAnalysis = require('../models/CareerSkillAnalysis');
 const {
+  updateUserRanking,
+} = require('./incrementalLeaderboardService');
+const {
   buildEvidenceContext,
   validateAndNormalizeAIResult,
   buildProvenance,
@@ -417,12 +420,11 @@ Format exactly as valid JSON:
     rankingUpdate.$push = { history: { $each: [rankingHistoryEntry], $slice: -50 } };
   }
 
-  const ranking = await Ranking.findOneAndUpdate(
-    { userId: user._id },
-    rankingUpdate,
-    { new: true, upsert: true }
-  );
+  await updateUserRanking(user);
 
+  const ranking = await Ranking.findOne({
+    userId: user._id,
+  });
   // Record immutable activity events for this analysis run (idempotent per syncVersion)
   const syncVersion = new Date().toISOString();
   const prevDnaScores = previousDna?.scores ? { ...(previousDna.scores.toObject?.() || previousDna.scores) } : null;

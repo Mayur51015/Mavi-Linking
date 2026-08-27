@@ -15,8 +15,10 @@ const syncLeetCode = async (req, res, next) => {
     // Fetch from API
     const data = await fetchLeetCodeData(cleanUsername);
 
-    // Update User schema
-    await User.findByIdAndUpdate(userId, {
+    // Capture previous analytics snapshot for event sourcing (pre-overwrite)
+    const previousAnalytics = await LeetCodeAnalytics.findOne({ user: userId });
+
+    // Update User schema    await User.findByIdAndUpdate(userId, {
       'platforms.leetcode.username': cleanUsername,
       'platforms.leetcode.linkedAt': new Date(),
       'platformData.leetcode': {
@@ -51,8 +53,33 @@ const syncLeetCode = async (req, res, next) => {
       { new: true, upsert: true }
     );
 
-    // Log activity feed & emit real-time Socket.IO event
-    try {
+    // Record immutable activity events for this sync (idempotent per syncVersion)
+    const { recordEvent } = require('../services/activityEventService');
+    const syncVersion = new Date().toISOString();
+    const prevRating = previousAnalytics?.contestRating ?? null;
+    if (prevRating === null || prevRating !== data.contestRating) {
+      await recordEvent({
+        userId,
+        platform: 'leetcode',
+        eventType: 'RATING_CHANGE',
+        previousValue: { contestRating: prevRating },
+        newValue: { contestRating: data.contestRating },
+        syncVersion,
+      });
+    }
+    const prevSolved = previousAnalytics?.totalSolved ?? null;
+    if (prevSolved === null || prevSolved !== data.totalSolved) {
+      await recordEvent({
+        userId,
+        platform: 'leetcode',
+        eventType: 'PROBLEM_SOLVING_CHANGE',
+        previousValue: { totalSolved: prevSolved },
+        newValue: { totalSolved: data.totalSolved },
+        syncVersion,
+      });
+    }
+
+    // Log activity feed & emit real-time Socket.IO event    try {
       const Activity = require('../models/Activity');
       const { getIO } = require('../config/socket');
       const activity = await Activity.create({

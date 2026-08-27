@@ -5,7 +5,7 @@ const Ranking = require('../models/Ranking');
 const Analytics = require('../models/Analytics');
 const Project = require('../models/Project');
 const CareerSkillAnalysis = require('../models/CareerSkillAnalysis');
-
+const { recordEvent } = require('./activityEventService');
 /**
  * Build a rich developer profile summary for AI analysis.
  */
@@ -366,8 +366,35 @@ Format exactly as valid JSON:
     { new: true, upsert: true }
   );
 
-  // Generate 6-month historical growth trend dataset for analytics chart
-  const currentMonthDate = new Date();
+  // Record immutable activity events for this analysis run (idempotent per syncVersion)
+  const syncVersion = new Date().toISOString();
+  const prevDnaScores = previousDna?.scores ? { ...(previousDna.scores.toObject?.() || previousDna.scores) } : null;
+  if (!prevDnaScores || JSON.stringify(prevDnaScores) !== JSON.stringify(result.dna.scores)) {
+    await recordEvent({
+      userId: user._id,
+      platform: 'system',
+      eventType: 'DNA_SCORE_CHANGE',
+      previousValue: prevDnaScores,
+      newValue: result.dna.scores,
+      syncVersion,
+    });
+  }
+  const prevRankingSnapshot = previousRanking
+    ? { score: previousRanking.score, tier: previousRanking.tier, globalRank: previousRanking.globalRank }
+    : null;
+  const newRankingSnapshot = { score: rawScore, tier, globalRank: ranking.globalRank };
+  if (!prevRankingSnapshot || JSON.stringify(prevRankingSnapshot) !== JSON.stringify(newRankingSnapshot)) {
+    await recordEvent({
+      userId: user._id,
+      platform: 'system',
+      eventType: 'RANKING_CHANGE',
+      previousValue: prevRankingSnapshot,
+      newValue: newRankingSnapshot,
+      syncVersion,
+    });
+  }
+
+  // Generate 6-month historical growth trend dataset for analytics chart  const currentMonthDate = new Date();
   const monthsList = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() - i, 1);

@@ -27,8 +27,51 @@ const insightSchema = new mongoose.Schema(
     ],
     confidence: { type: Number, default: 80 },
     rawAiSummary: { type: String },
-    lastUpdated: { type: Date, default: Date.now },
-  },
+
+    claims: [
+      {
+        text: { type: String, required: true },
+        evidenceIds: [{ type: String }],
+      },
+    ],
+
+    uncertainty: {
+      state: {
+        type: String,
+        enum: ['supported', 'uncertain'],
+        default: 'supported',
+      },
+      reason: { type: String, default: null },
+    },
+
+    provenance: {
+      evidence: [
+        {
+          id: { type: String, required: true },
+          platform: { type: String, required: true },
+          metric: { type: String, required: true },
+          value: { type: mongoose.Schema.Types.Mixed },
+          dataTimestamp: { type: Date, default: null },
+        },
+      ],
+      sourcePlatforms: [String],
+      dataTimestamps: [Date],
+      provider: { type: String },
+      model: { type: String },
+      promptVersion: { type: String },
+      schemaVersion: { type: String },
+      generatedAt: { type: Date },
+      evidenceCoverage: { type: Number, min: 0, max: 100 },
+      uncertainty: {
+        state: {
+          type: String,
+          enum: ['supported', 'uncertain'],
+        },
+        reason: { type: String, default: null },
+      },
+    },
+
+    lastUpdated: { type: Date, default: Date.now },  },
   { timestamps: true }
 );
 

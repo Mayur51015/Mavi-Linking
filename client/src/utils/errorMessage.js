@@ -10,9 +10,12 @@ export function getErrorMessage(error, fallback = 'Something went wrong. Please 
 
   const { status, data } = error.response;
 
-  // express-validator style: { errors: [{ message }] }
-  if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0 && data.errors[0]?.message) {
-    return data.errors[0].message;
+  // express-validator style: { errors: [{ message || msg }] }
+  if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+    const firstErr = data.errors[0];
+    if (firstErr?.message) return firstErr.message;
+    if (firstErr?.msg) return firstErr.msg;
+    if (typeof firstErr === 'string') return firstErr;
   }
 
   // Standard API shape used across this app: { success: false, message }

@@ -4,6 +4,7 @@ const Project = require('../models/Project');
 const TeacherAnnouncement = require('../models/TeacherAnnouncement');
 const AuditLog = require('../models/AuditLog');
 const { PRIVILEGED_ROLES, calculateScoreTier, calculateMedal } = require('../utils/leaderboardHelper');
+const { generateDepartmentReportData, writeDepartmentReportPdf } = require('../services/departmentReportService');
 
 /**
  * Build department & institution scope query from request object
@@ -376,20 +377,26 @@ const getDepartmentAnalytics = async (req, res, next) => {
  */
 const getDepartmentReports = async (req, res, next) => {
   try {
-    const query = buildScopeQuery(req, { role: { $in: ['user', 'student', 'developer'] } });
-    const students = await User.find(query)
-      .select('name email maviId prn scores status skillsList platforms createdAt')
-      .sort({ 'scores.overall': -1 });
+    const reportData = await generateDepartmentReportData(req);
 
     res.status(200).json({
       success: true,
-      data: {
-        generatedAt: new Date().toISOString(),
-        totalRecords: students.length,
-        reportType: 'DEPARTMENT_STUDENT_PERFORMANCE',
-        students,
-      },
+      data: reportData,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Export department-scoped performance report as PDF
+ * @route   GET /api/department-admin/reports/pdf
+ * @access  Private (Department Admin)
+ */
+const exportDepartmentReportPdf = async (req, res, next) => {
+  try {
+    const reportData = await generateDepartmentReportData(req);
+    await writeDepartmentReportPdf(reportData, res);
   } catch (error) {
     next(error);
   }
@@ -456,5 +463,6 @@ module.exports = {
   getDepartmentTeachers,
   getDepartmentAnalytics,
   getDepartmentReports,
+  exportDepartmentReportPdf,
   getDepartmentLeaderboard,
 };

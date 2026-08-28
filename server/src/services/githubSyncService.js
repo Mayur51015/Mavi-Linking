@@ -104,50 +104,92 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
   }
 
   syncLocks.set(userId.toString(), true);
+  const startedAt = new Date();
+  console.log(`[GitHub Sync] Started synchronization for user ${userId} (@${username}) at ${startedAt.toISOString()}`);
 
   try {
+    const previousGithubData = user.platformData?.github || null;
+
     // 1. Fetch from GitHub API with graceful partial handling
     let rawProfile = null;
     let rawRepos = [];
     let rawEvents = [];
-    let fetchError = null;
+    const partialErrors = [];
 
     try {
       rawProfile = await fetchUserProfile(username);
     } catch (err) {
-      fetchError = err.message;
+      console.error(`[GitHub Sync] Failed to fetch profile for @${username}:`, err.message);
+      // If profile fails, preserve existing data and mark failed sync
+      const durationMs = Date.now() - startedAt.getTime();
+      const failedSyncMeta = {
+        status: 'failed',
+        startedAt,
+        completedAt: new Date(),
+        durationMs,
+        error: err.message,
+      };
+      if (previousGithubData) {
+        user.platformData.github.sync = failedSyncMeta;
+        await user.save();
+      }
       throw new Error(`Unable to fetch GitHub profile for "${username}": ${err.message}`);
     }
 
     try {
-      rawRepos = await fetchUserRepositories(username, 30);
+      rawRepos = await fetchUserRepositories(username, 100);
     } catch (err) {
-      console.warn(`[GitHub Sync] Repos fetch warning for ${username}:`, err.message);
+      console.warn(`[GitHub Sync] Repos fetch warning for @${username}:`, err.message);
+      partialErrors.push(`Repositories: ${err.message}`);
     }
 
     try {
-      rawEvents = await fetchUserEvents(username, 50);
+      rawEvents = await fetchUserEvents(username, 100);
     } catch (err) {
-      console.warn(`[GitHub Sync] Events fetch warning for ${username}:`, err.message);
+      console.warn(`[GitHub Sync] Events fetch warning for @${username}:`, err.message);
+      partialErrors.push(`Events: ${err.message}`);
     }
 
-    // 2. Normalize Intelligence Data
-    const githubData = normalizeGitHubIntelligence(rawProfile, rawRepos, rawEvents, username);
+    const completedAt = new Date();
+    const durationMs = completedAt.getTime() - startedAt.getTime();
+    const syncStatus = partialErrors.length > 0 ? 'partial' : 'complete';
+
+    const syncMeta = {
+      status: syncStatus,
+      startedAt,
+      completedAt,
+      durationMs,
+      error: partialErrors.length > 0 ? partialErrors.join(' | ') : null,
+    };
+
+    // 2. Normalize Intelligence Data (merging with previous data if partial)
+    const githubData = normalizeGitHubIntelligence(
+      rawProfile,
+      rawRepos,
+      rawEvents,
+      username,
+      previousGithubData,
+      syncMeta
+    );
 
     // 3. Persist Activities into Activity Collection (deduplicated)
     if (rawEvents.length > 0) {
       for (const event of rawEvents) {
-        const mapped = mapGitHubEventToActivity(event, user._id);
-        const exists = await Activity.findOne({
-          userId: user._id,
-          platform: 'github',
-          date: mapped.date,
-          title: mapped.title,
-          url: mapped.url,
-        });
+        try {
+          const mapped = mapGitHubEventToActivity(event, user._id);
+          const exists = await Activity.findOne({
+            userId: user._id,
+            platform: 'github',
+            date: mapped.date,
+            title: mapped.title,
+            url: mapped.url,
+          });
 
-        if (!exists) {
-          await Activity.create(mapped);
+          if (!exists) {
+            await Activity.create(mapped);
+          }
+        } catch (actErr) {
+          console.warn('[GitHub Sync] Activity record insertion warning:', actErr.message);
         }
       }
     }
@@ -163,59 +205,18 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
     user.githubUsername = username; // Legacy mirror for backwards compatibility
 
     user.platformData = user.platformData || {};
-await ExternalIdentity.findOneAndUpdate(
-  {
-    userId: user._id,
-    platform: 'github',
-    verificationStatus: 'verified',
-  },
-  {
-    $set: {
-      lastSuccessfulSync: new Date(),
-    },
-  }
-);    user.lastSyncedAt = new Date();
 
-    await user.save();
-    // 4.5 Record immutable activity events for this sync (idempotent per syncVersion)
-    const { recordEvent } = require('./activityEventService');
-    const syncVersion = user.lastSyncedAt.toISOString();
-    const newRepoCount = githubData?.profile?.publicRepos ?? 0;
-    const prevRepoCount = previousGithubData?.profile?.publicRepos ?? null;
-    if (prevRepoCount === null || prevRepoCount !== newRepoCount) {
-      await recordEvent({
-        userId: user._id,
-        platform: 'github',
-        eventType: 'REPOSITORY_CHANGE',
-        previousValue: { publicRepos: prevRepoCount },
-        newValue: { publicRepos: newRepoCount },
-        syncVersion,
-      });
-    }
-    const newContributions = githubData?.contributions?.totalRecentEvents ?? 0;
-    const prevContributions = previousGithubData?.contributions?.totalRecentEvents ?? null;
-    if (prevContributions === null || prevContributions !== newContributions) {
-      await recordEvent({
-        userId: user._id,
-        platform: 'github',
-        eventType: 'CONTRIBUTION_CHANGE',
-        previousValue: { totalRecentEvents: prevContributions },
-        newValue: { totalRecentEvents: newContributions },
-        syncVersion,
-      });
-    }
-const {
-  recordSyncSuccess,
-  recordSyncFailure,
-} = require('./syncConsistencyService');
-    // 5. Trigger Canonical Intelligence & Scoring Evaluation    const { evaluateUserIntelligence } = require('./careerIntelligenceService');
     const updatedUser = await evaluateUserIntelligence(user._id);
 
     return {
       success: true,
+      status: syncStatus,
+      durationMs,
       data: githubData,
       user: updatedUser,
-      message: 'GitHub intelligence synchronized successfully.',
+      message: syncStatus === 'partial' 
+        ? 'GitHub synchronized partially (some endpoints unavailable).'
+        : 'GitHub intelligence synchronized successfully.',
     };
   } catch (error) {
     try {

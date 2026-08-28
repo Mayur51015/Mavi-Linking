@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, GraduationCap, FileText, Megaphone, Search, AlertCircle, BarChart3, Trophy, Download, LogOut } from 'lucide-react';
+import { Shield, Users, GraduationCap, FileText, Megaphone, Search, AlertCircle, BarChart3, Trophy, Download, LogOut, Loader2 } from 'lucide-react';
 import api from '../../api/axios';
 import { AuthContext } from '../../context/AuthContext';
+import { notify } from '../../context/ToastContext';
 
 const DepartmentAdminDashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -14,12 +15,49 @@ const DepartmentAdminDashboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [reportsData, setReportsData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'students' | 'teachers' | 'analytics' | 'leaderboard' | 'reports'
   const [search, setSearch] = useState('');
 
   const handleSignOut = () => {
     if (logout) logout();
     navigate('/admin/login', { replace: true });
+  };
+
+  const handleDownloadPdf = async () => {
+    if (generatingPdf) return;
+    setGeneratingPdf(true);
+    try {
+      const response = await api.get('/department-admin/reports/pdf', {
+        responseType: 'blob',
+      });
+
+      let filename = `MAVI_Department_Performance_Report_${(dashboardData?.departmentName || user?.university?.department || 'Department').replace(/[^a-zA-Z0-9_-]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const disposition = response.headers?.['content-disposition'];
+      if (disposition && disposition.includes('filename=')) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, '');
+        }
+      }
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.href = url;
+      downloadAnchor.setAttribute('download', filename);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      window.URL.revokeObjectURL(url);
+
+      notify('success', 'PDF generated successfully.');
+    } catch (err) {
+      console.error('Error generating PDF report:', err);
+      notify('error', 'Unable to generate the PDF report. Please try again.');
+    } finally {
+      setGeneratingPdf(false);
+    }
   };
 
   useEffect(() => {
@@ -386,28 +424,63 @@ const DepartmentAdminDashboard = () => {
             {/* Reports View */}
             {activeTab === 'reports' && (
               <div className="glass-card" style={{ padding: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                   <div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>Department Performance Report</h3>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
                       Generated at: {reportsData?.generatedAt ? new Date(reportsData.generatedAt).toLocaleString() : 'Just now'} | Total Records: {reportsData?.totalRecords || 0}
                     </p>
                   </div>
-                  <button
-                    onClick={() => {
-                      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reportsData, null, 2));
-                      const downloadAnchor = document.createElement('a');
-                      downloadAnchor.setAttribute("href", dataStr);
-                      downloadAnchor.setAttribute("download", `department_report_${new Date().toISOString().split('T')[0]}.json`);
-                      document.body.appendChild(downloadAnchor);
-                      downloadAnchor.click();
-                      downloadAnchor.remove();
-                    }}
-                    className="btn btn-primary"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-                  >
-                    <Download size={16} /> Export JSON Report
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={handleDownloadPdf}
+                      disabled={generatingPdf}
+                      className="btn btn-primary"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        opacity: generatingPdf ? 0.7 : 1,
+                        cursor: generatingPdf ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {generatingPdf ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          <span>Generating PDF...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FileText size={16} />
+                          <span>Download PDF Report</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reportsData, null, 2));
+                        const downloadAnchor = document.createElement('a');
+                        downloadAnchor.setAttribute("href", dataStr);
+                        const cleanDept = (dashboardData?.departmentName || user?.university?.department || 'department').replace(/[^a-zA-Z0-9_-]/g, '_');
+                        downloadAnchor.setAttribute("download", `department_report_${cleanDept}_${new Date().toISOString().split('T')[0]}.json`);
+                        document.body.appendChild(downloadAnchor);
+                        downloadAnchor.click();
+                        downloadAnchor.remove();
+                      }}
+                      className="btn btn-secondary"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: 'white',
+                      }}
+                    >
+                      <Download size={16} /> Export JSON Report
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

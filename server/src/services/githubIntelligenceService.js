@@ -1,47 +1,53 @@
 /**
  * GitHub Developer Intelligence Normalizer & Analytics Engine
  * Converts raw GitHub API data into structured, explainable intelligence metrics.
+ * Provides a canonical single source of truth for developer identity.
  */
 
-const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], username = '') => {
-  const canonicalUsername = rawProfile?.login || username;
+const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], username = '', previousData = null, syncMeta = {}) => {
+  const canonicalUsername = (rawProfile?.login || username || previousData?.profile?.username || '').trim();
 
-  // 1. Profile Intelligence
+  // 1. Profile Intelligence (Validate numeric and string fields)
   const profile = {
     username: canonicalUsername,
-    name: rawProfile?.name || null,
-    avatarUrl: rawProfile?.avatar_url || null,
-    bio: rawProfile?.bio || null,
-    company: rawProfile?.company || null,
-    location: rawProfile?.location || null,
+    name: rawProfile?.name || previousData?.profile?.name || null,
+    avatarUrl: rawProfile?.avatar_url || previousData?.profile?.avatarUrl || null,
+    bio: rawProfile?.bio || previousData?.profile?.bio || null,
+    company: rawProfile?.company || previousData?.profile?.company || null,
+    location: rawProfile?.location || previousData?.profile?.location || null,
     profileUrl: rawProfile?.html_url || `https://github.com/${canonicalUsername}`,
-    followers: rawProfile?.followers || 0,
-    following: rawProfile?.following || 0,
-    publicRepos: rawProfile?.public_repos || rawRepos.length || 0,
-    accountCreatedAt: rawProfile?.created_at || null,
-    accountAgeYears: rawProfile?.created_at
-      ? Math.max(0, Math.round((Date.now() - new Date(rawProfile.created_at).getTime()) / (365.25 * 86400000) * 10) / 10)
+    followers: Math.max(0, typeof rawProfile?.followers === 'number' ? rawProfile.followers : (previousData?.profile?.followers || 0)),
+    following: Math.max(0, typeof rawProfile?.following === 'number' ? rawProfile.following : (previousData?.profile?.following || 0)),
+    publicRepos: Math.max(0, typeof rawProfile?.public_repos === 'number' ? rawProfile.public_repos : (rawRepos.length || previousData?.profile?.publicRepos || 0)),
+    accountCreatedAt: rawProfile?.created_at || previousData?.profile?.accountCreatedAt || null,
+    accountAgeYears: (rawProfile?.created_at || previousData?.profile?.accountCreatedAt)
+      ? Math.max(0, Math.round((Date.now() - new Date(rawProfile?.created_at || previousData?.profile?.accountCreatedAt).getTime()) / (365.25 * 86400000) * 10) / 10)
       : null,
   };
 
-  // 2. Repository Intelligence
-  const repositories = rawRepos.map((r) => ({
-    name: r.name,
-    fullName: r.full_name || `${canonicalUsername}/${r.name}`,
-    description: r.description || '',
-    url: r.html_url || `https://github.com/${canonicalUsername}/${r.name}`,
-    owner: r.owner?.login || canonicalUsername,
-    isFork: Boolean(r.fork),
-    language: r.language || 'Unspecified',
-    topics: Array.isArray(r.topics) ? r.topics : [],
-    stars: r.stargazers_count || 0,
-    forks: r.forks_count || 0,
-    openIssues: r.open_issues_count || 0,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-    isArchived: Boolean(r.archived),
-    defaultBranch: r.default_branch || 'main',
-  }));
+  // 2. Repository Intelligence (Use newly fetched if available, fallback to previous)
+  let repositories = [];
+  if (Array.isArray(rawRepos) && rawRepos.length > 0) {
+    repositories = rawRepos.map((r) => ({
+      name: r.name,
+      fullName: r.full_name || `${canonicalUsername}/${r.name}`,
+      description: r.description || '',
+      url: r.html_url || `https://github.com/${canonicalUsername}/${r.name}`,
+      owner: r.owner?.login || canonicalUsername,
+      isFork: Boolean(r.fork),
+      language: r.language || 'Unspecified',
+      topics: Array.isArray(r.topics) ? r.topics : [],
+      stars: Math.max(0, r.stargazers_count || 0),
+      forks: Math.max(0, r.forks_count || 0),
+      openIssues: Math.max(0, r.open_issues_count || 0),
+      createdAt: r.created_at || null,
+      updatedAt: r.updated_at || null,
+      isArchived: Boolean(r.archived),
+      defaultBranch: r.default_branch || 'main',
+    }));
+  } else if (previousData?.repositories && previousData.repositories.length > 0) {
+    repositories = previousData.repositories;
+  }
 
   // 3. Language Intelligence (Dynamic Repository Language Distribution)
   const languageCounts = {};
@@ -94,7 +100,11 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
   let externalPRCount = 0;
   let externalIssueCount = 0;
 
-  rawEvents.forEach((ev) => {
+  const eventsToProcess = Array.isArray(rawEvents) && rawEvents.length > 0
+    ? rawEvents
+    : [];
+
+  eventsToProcess.forEach((ev) => {
     const eventType = ev.type || 'Other';
     eventCountsByType[eventType] = (eventCountsByType[eventType] || 0) + 1;
 
@@ -104,7 +114,7 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
 
     const repoFullName = ev.repo?.name || '';
     const repoOwner = repoFullName.split('/')[0]?.toLowerCase();
-    const isExternal = repoOwner && repoOwner !== canonicalUsername.toLowerCase();
+    const isExternal = repoOwner && canonicalUsername && repoOwner !== canonicalUsername.toLowerCase();
 
     if (isExternal) {
       externalReposSet.add(repoFullName);
@@ -171,10 +181,11 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
 
   // 5. Commit Intelligence
   const commits = {
+    available: eventsToProcess.length > 0,
     recentCount30Days: recentCommitCount,
     activeRepositoriesCount: Object.keys(commitsByRepo).length,
     commitsByRepo,
-    status: rawEvents.length > 0 ? 'active' : 'no_recent_events',
+    status: eventsToProcess.length > 0 ? 'active' : 'no_recent_events',
   };
 
   // 6. Pull Request Intelligence
@@ -182,16 +193,18 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
   const mergeRate = totalCompletedPRs > 0 ? Math.round((prsMerged / totalCompletedPRs) * 100) : null;
 
   const pullRequests = {
+    available: eventsToProcess.length > 0,
     opened: prsOpened,
     closed: prsClosed,
     merged: prsMerged,
     mergeRate: mergeRate !== null ? `${mergeRate}%` : 'Insufficient data',
     externalPRs: externalPRCount,
-    status: rawEvents.length > 0 ? 'available' : 'insufficient_data',
+    status: eventsToProcess.length > 0 ? 'available' : 'insufficient_data',
   };
 
   // 7. Open Source Intelligence
   const openSource = {
+    available: eventsToProcess.length > 0,
     externalReposContributed: externalReposSet.size,
     externalReposList: Array.from(externalReposSet),
     externalPRs: externalPRCount,
@@ -201,19 +214,23 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
 
   // 8. Reviews & Collaboration
   const reviews = {
+    available: eventsToProcess.length > 0,
     submitted: reviewsSubmitted,
     status: reviewsSubmitted > 0 ? 'active' : 'none_recorded',
   };
 
   // 9. Issues Intelligence
   const issues = {
+    available: eventsToProcess.length > 0,
     created: issuesCreated,
     closed: issuesClosed,
+    externalIssues: externalIssueCount,
     status: (issuesCreated + issuesClosed) > 0 ? 'active' : 'none_recorded',
   };
 
   // 10. Software Delivery & Releases
   const releases = {
+    available: eventsToProcess.length > 0,
     count: releaseCount,
     latestRelease,
     status: releaseCount > 0 ? 'active' : 'none_recorded',
@@ -221,10 +238,11 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
 
   // 11. Contributions Summary
   const contributions = {
-    totalRecentEvents: rawEvents.length,
+    available: eventsToProcess.length > 0,
+    totalRecentEvents: eventsToProcess.length,
     dailyStreak,
     activeDaysRecorded: activeDaysSet.size,
-    status: rawEvents.length > 0 ? 'available' : 'unavailable',
+    status: eventsToProcess.length > 0 ? 'available' : 'unavailable',
   };
 
   return {
@@ -240,13 +258,17 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
     releases,
     activity: {
       eventCountsByType,
-      lastActiveAt: rawEvents[0]?.created_at || null,
+      lastActiveAt: eventsToProcess[0]?.created_at || previousData?.activity?.lastActiveAt || null,
       consistencyScore: Math.min(activeDaysSet.size * 10, 100),
     },
     sync: {
-      lastSyncedAt: new Date(),
-      status: 'complete',
-      error: null,
+      status: syncMeta.status || 'complete',
+      lastSyncedAt: syncMeta.completedAt || new Date(),
+      startedAt: syncMeta.startedAt || new Date(),
+      completedAt: syncMeta.completedAt || new Date(),
+      durationMs: syncMeta.durationMs || 0,
+      error: syncMeta.error || null,
+      source: 'github_rest_api',
     },
   };
 };

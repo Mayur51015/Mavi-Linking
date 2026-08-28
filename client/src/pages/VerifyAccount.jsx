@@ -357,7 +357,7 @@ const VerifyAccount = () => {
             >
               <ShieldCheck size={16} style={{ color: '#c084fc', flexShrink: 0, marginTop: '2px' }} />
               <span>
-                Account activation links expire in <strong>24 hours</strong> for your security. Check your inbox and spam folder.
+                Account activation links expire in <strong>10 minutes</strong> for your security. Check your inbox and spam folder.
               </span>
             </div>
 

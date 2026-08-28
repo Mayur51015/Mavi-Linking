@@ -24,7 +24,7 @@ import {
 import api from '../api/axios';
 import { useToast } from '../context/ToastContext';
 
-const GitHubIntelligenceModal = ({ isOpen, onClose, username }) => {
+const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) => {
   const toast = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +53,12 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username }) => {
       const res = await api.post('/platforms/github/sync');
       if (res.data?.success) {
         toast.success(res.data.message || 'GitHub intelligence updated!');
-        fetchIntelligence();
+        if (res.data.data) {
+          setData(res.data.data);
+        } else {
+          fetchIntelligence();
+        }
+        if (onSyncSuccess) onSyncSuccess();
       }
     } catch (err) {
       console.error('Sync failed:', err);
@@ -193,8 +198,16 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username }) => {
                 </a>
 
                 {data?.lastSyncedAt && (
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                    • Synced {new Date(data.lastSyncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <span
+                    style={{
+                      color: data?.isFresh !== false ? 'var(--text-muted)' : 'var(--accent-amber)',
+                      fontSize: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                  >
+                    • {data.syncStatus === 'partial' ? '⚠ Partial Sync' : 'Synced'} {new Date(data.lastSyncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 )}
               </div>
@@ -212,10 +225,12 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username }) => {
                 alignItems: 'center',
                 gap: '0.4rem',
                 padding: '0.4rem 0.75rem',
+                borderColor: syncing ? 'var(--accent-purple)' : undefined,
               }}
+              aria-label="Synchronize GitHub intelligence data"
             >
               <RotateCcw size={13} className={syncing ? 'animate-spin' : ''} />
-              {syncing ? 'Syncing...' : 'Sync GitHub'}
+              {syncing ? 'Syncing GitHub data...' : 'Sync GitHub'}
             </button>
 
             <button

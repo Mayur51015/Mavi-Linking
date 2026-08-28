@@ -129,19 +129,23 @@ const syncGitHubActivities = async (userId) => {
   const activities = [];
 
   for (const event of payload) {
-    const mapped = mapGitHubEvent(event, userId);
+    try {
+      const mapped = mapGitHubEvent(event, userId);
 
-    const exists = await Activity.findOne({
-      userId,
-      platform: 'github',
-      date: mapped.date,
-      title: mapped.title,
-      url: mapped.url,
-    });
+      const exists = await Activity.findOne({
+        userId,
+        platform: 'github',
+        date: mapped.date,
+        title: mapped.title,
+        url: mapped.url,
+      });
 
-    if (!exists) {
-      const activity = await Activity.create(mapped);
-      activities.push(activity);
+      if (!exists) {
+        const activity = await Activity.create(mapped);
+        activities.push(activity);
+      }
+    } catch (actErr) {
+      console.warn('[GitHub Activity Sync] Activity record insertion warning:', actErr.message);
     }
   }
 

@@ -145,7 +145,7 @@ const generatePasswordResetEmailHtml = ({ name, otp, resetLink }) => {
           </div>
 
           <div class="warning">
-            <strong>Security Notice:</strong> This OTP code and reset link are strictly valid for <strong>15 minutes</strong>. If you did not request this password reset, please ignore this email or contact security.
+            <strong>Security Notice:</strong> This OTP code and reset link are strictly valid for <strong>10 minutes</strong>. If you did not request this password reset, please ignore this email or contact security.
           </div>
         </div>
         <div class="footer">
@@ -160,8 +160,9 @@ const generatePasswordResetEmailHtml = ({ name, otp, resetLink }) => {
 /**
  * Generate Dark Theme HTML Email for Account Activation (Teacher / Recruiter Invitations)
  */
-const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activationLink, expiresHours = 24 }) => {
+const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activationLink, expiresMinutes = 10, expiresHours }) => {
   const roleTitle = role === 'teacher' ? 'Teacher / Faculty' : role === 'recruiter' ? 'Corporate Recruiter' : role === 'department_admin' ? 'Department Administrator' : 'Staff Member';
+  const validityText = '10 minutes';
   return `
     <!DOCTYPE html>
     <html>
@@ -203,7 +204,7 @@ const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activ
           </div>
 
           <div class="warning">
-            <strong>Security Notice:</strong> No default password is sent in plain text. You will create your confidential password directly on the activation portal. This single-use link is valid for <strong>${expiresHours} hours</strong>. Please complete your account setup before the invitation expires.
+            <strong>Security Notice:</strong> No default password is sent in plain text. You will create your confidential password directly on the activation portal. This single-use link is valid for <strong>${validityText}</strong>. Please complete your account setup before the invitation expires.
           </div>
         </div>
         <div class="footer">
@@ -255,7 +256,7 @@ const generateEmailChangeOtpEmailHtml = ({ name, otp, newEmail }) => {
           </div>
 
           <div class="warning">
-            <strong>Security Notice:</strong> This code expires in <strong>15 minutes</strong>. If you did not initiate this email change request, please contact security immediately.
+            <strong>Security Notice:</strong> This code expires in <strong>10 minutes</strong>. If you did not initiate this email change request, please contact security immediately.
           </div>
         </div>
         <div class="footer">
@@ -323,7 +324,7 @@ const generateEmailChangeNotificationOldEmailHtml = ({ name, oldEmail, newEmail,
 /**
  * Generate Dark Theme HTML Email for Student Account Verification
  */
-const generateStudentVerificationEmailHtml = ({ name, verificationLink, expiresHours = 24 }) => {
+const generateStudentVerificationEmailHtml = ({ name, verificationLink, expiresMinutes = 10, expiresHours }) => {
   return `
     <!DOCTYPE html>
     <html>
@@ -357,7 +358,7 @@ const generateStudentVerificationEmailHtml = ({ name, verificationLink, expiresH
           </div>
 
           <div class="warning">
-            <strong>Security Notice:</strong> This verification link is valid for <strong>${expiresHours} hours</strong> and can only be used once. If you did not register for a MAVI Linking account, please disregard this message.
+            <strong>Security Notice:</strong> This verification link is valid for <strong>10 minutes</strong> and can only be used once. If you did not register for a MAVI Linking account, please disregard this message.
           </div>
         </div>
         <div class="footer">
@@ -455,7 +456,8 @@ const generateAdminInvitationEmailHtml = ({
   departmentName,
   managementScope = 'INSTITUTION',
   invitationLink,
-  expiresHours = 24,
+  expiresMinutes = 10,
+  expiresHours,
 }) => {
   const formatRoleTitle = (r) => {
     if (!r) return 'Administrator';
@@ -473,6 +475,7 @@ const generateAdminInvitationEmailHtml = ({
 
   const roleTitle = formatRoleTitle(role);
   const scopeTitle = (managementScope || (departmentName ? 'DEPARTMENT' : institutionName ? 'INSTITUTION' : 'PLATFORM')).toUpperCase();
+  const validityText = '10 minutes';
 
   return `
     <!DOCTYPE html>
@@ -526,13 +529,13 @@ const generateAdminInvitationEmailHtml = ({
               </tr>` : ''}
               <tr>
                 <td style="padding: 6px 0; color: #a1a1aa;">Link Expiration:</td>
-                <td style="padding: 6px 0; color: #e4e4e7; text-align: right;">${expiresHours} Hours</td>
+                <td style="padding: 6px 0; color: #e4e4e7; text-align: right;">${validityText}</td>
               </tr>
             </table>
           </div>
 
           <p style="font-size: 14px; color: #e4e4e7; text-align: center; margin-top: 16px;">
-            Your MAVI Linking administrator invitation is valid for <strong>${expiresHours} hours</strong>. Please complete your account setup before the invitation expires.
+            Your MAVI Linking administrator invitation is valid for <strong>${validityText}</strong>. Please complete your account setup before the invitation expires.
           </p>
 
           <div style="text-align: center; margin: 24px 0;">
@@ -540,7 +543,7 @@ const generateAdminInvitationEmailHtml = ({
           </div>
 
           <div class="warning">
-            <strong>Security Notice:</strong> No plain-text passwords are ever sent via email. You will securely configure your credentials upon accepting the invitation. This single-use link is valid for <strong>${expiresHours} hours</strong>.
+            <strong>Security Notice:</strong> No plain-text passwords are ever sent via email. You will securely configure your credentials upon accepting the invitation. This single-use link is valid for <strong>${validityText}</strong>.
           </div>
         </div>
         <div class="footer">
@@ -563,7 +566,8 @@ const sendAdminInvitationEmail = async ({
   departmentName,
   managementScope,
   invitationLink,
-  expiresHours = 24,
+  expiresMinutes = 10,
+  expiresHours,
 }) => {
   if (!to || typeof to !== 'string' || !to.includes('@')) {
     console.error(`[EMAIL ERROR] Recipient email is missing or invalid: ${to}`);
@@ -578,6 +582,7 @@ const sendAdminInvitationEmail = async ({
     departmentName,
     managementScope,
     invitationLink,
+    expiresMinutes,
     expiresHours,
   });
 

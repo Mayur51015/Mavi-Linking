@@ -9,6 +9,7 @@ const {
   getDepartmentTeachers,
   getDepartmentAnalytics,
   getDepartmentReports,
+  exportDepartmentReportPdf,
   getDepartmentLeaderboard,
 } = require('../controllers/departmentDashboardController');
 
@@ -24,6 +25,7 @@ router.patch('/students/:studentId/profile', updateDepartmentStudentProfile);
 router.get('/teachers', getDepartmentTeachers);
 router.get('/analytics', getDepartmentAnalytics);
 router.get('/reports', getDepartmentReports);
+router.get('/reports/pdf', exportDepartmentReportPdf);
 router.get('/leaderboard', getDepartmentLeaderboard);
 
 module.exports = router;

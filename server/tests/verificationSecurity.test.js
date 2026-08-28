@@ -98,10 +98,10 @@ describe('Student Account Activation & Security Tests', () => {
   });
 
   test('TEST 5: Resend verification email functions & generates new token', async () => {
-    // Reset verificationTokenExpires to 23.9 hours in future so rate limiter allows resend
+    // Reset verificationTokenExpires to 8 minutes in future so rate limiter allows resend (2 minutes elapsed)
     await User.updateOne(
       { _id: studentUserId },
-      { $set: { verificationTokenExpires: new Date(Date.now() + 23.9 * 60 * 60 * 1000) } }
+      { $set: { verificationTokenExpires: new Date(Date.now() + 8 * 60 * 1000) } }
     );
 
     const res = await request(app)

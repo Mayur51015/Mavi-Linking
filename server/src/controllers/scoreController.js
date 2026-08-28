@@ -1,8 +1,10 @@
 const User = require('../models/User');
 const { calculateAggregatedScores } = require('../services/scoreService');
 const { generateInsights } = require('../services/insightService');
-
-/**
+const {
+  updateUserRanking,
+  getLeaderboardPage,
+} = require('../services/incrementalLeaderboardService');const { getProfileFreshness } = require('../services/syncConsistencyService');/**
  * @desc    Calculate and update scores for the authenticated user
  * @route   POST /api/scores/calculate
  * @access  Private
@@ -15,9 +17,10 @@ const calculateMyScores = async (req, res, next) => {
     const newScores = calculateAggregatedScores(user.platformData);
     
     // Update user document
-    user.scores = newScores;
-    await user.save();
-    
+user.scores = newScores;
+await user.save();
+
+await updateUserRanking(user);    
     res.status(200).json({
       success: true,
       message: 'Scores calculated successfully',
@@ -39,6 +42,27 @@ const { PRIVILEGED_ROLES, calculateScoreTier, calculateMedal } = require('../uti
  */
 const getLeaderboard = async (req, res, next) => {
   try {
+    const limit = Math.min(
+      parseInt(req.query.limit, 10) || 10,
+      50
+    );
+
+    const page = parseInt(req.query.page, 10) || 1;
+
+    const result = await getLeaderboardPage({
+      page,
+      limit,
+      departmentId: req.query.departmentId || null,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};  try {
     const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
     const page = parseInt(req.query.page, 10) || 1;
     const skip = (page - 1) * limit;
@@ -51,8 +75,7 @@ const getLeaderboard = async (req, res, next) => {
 
     // Fetch all eligible non-privileged developers sorted with tie-breaker rules
     const allEligibleUsers = await User.find(query)
-      .select('name avatar maviId scores role status platforms.github.username platforms.codeforces.username platforms.leetcode.username platforms.stackoverflow.username')
-      .sort({
+      .select('name avatar maviId scores role status platforms platformSync')      .sort({
         'scores.overall': -1,
         'scores.problemSolving': -1,
         'scores.development': -1,
@@ -74,6 +97,7 @@ const getLeaderboard = async (req, res, next) => {
         medal,
         scoreTier,
         scores: userObj.scores,
+                freshness: getProfileFreshness(userObj),
         user: {
           _id: userObj._id,
           name: userObj.name,
@@ -146,8 +170,8 @@ const getMyScores = async (req, res, next) => {
         scores: user.scores,
         rank,
         medal,
-        scoreTier
-      }
+        scoreTier,
+        freshness: getProfileFreshness(user)      }
     });
   } catch (error) {
     next(error);

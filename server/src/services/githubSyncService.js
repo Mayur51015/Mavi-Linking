@@ -2,7 +2,7 @@ const User = require('../models/User');
 const Activity = require('../models/Activity');
 const { fetchUserProfile, fetchUserRepositories, fetchUserEvents } = require('./githubService');
 const { normalizeGitHubIntelligence } = require('./githubIntelligenceService');
-
+const ExternalIdentity = require('../models/ExternalIdentity');
 // In-memory sync lock map to prevent overlapping sync operations
 const syncLocks = new Map();
 
@@ -194,6 +194,9 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
       }
     }
 
+    // 3.5 Capture previous platform snapshot for event sourcing (pre-overwrite)
+    const previousGithubData = user.platformData?.github || null;
+
     // 4. Update Canonical User Document
     user.platforms = user.platforms || {};
     user.platforms.github = user.platforms.github || {};
@@ -202,15 +205,7 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
     user.githubUsername = username; // Legacy mirror for backwards compatibility
 
     user.platformData = user.platformData || {};
-    user.platformData.github = githubData;
-    user.lastSyncedAt = completedAt;
 
-    await user.save();
-
-    console.log(`[GitHub Sync] Successfully synchronized @${username} in ${durationMs}ms with status: ${syncStatus}`);
-
-    // 5. Trigger Canonical Intelligence & Scoring Evaluation
-    const { evaluateUserIntelligence } = require('./careerIntelligenceService');
     const updatedUser = await evaluateUserIntelligence(user._id);
 
     return {
@@ -223,10 +218,21 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
         ? 'GitHub synchronized partially (some endpoints unavailable).'
         : 'GitHub intelligence synchronized successfully.',
     };
+  } catch (error) {
+    try {
+      const failedUser = await User.findById(userId);
+      if (failedUser) {
+        recordSyncFailure(failedUser, 'github', error);
+        await failedUser.save();
+      }
+    } catch (metadataError) {
+      console.error('[GitHub Sync] Failed to record sync metadata:', metadataError.message);
+    }
+
+    throw error;
   } finally {
     syncLocks.delete(userId.toString());
-  }
-};
+  }};
 
 module.exports = {
   syncGitHubAccount,

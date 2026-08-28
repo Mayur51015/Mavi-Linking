@@ -1,7 +1,19 @@
 const User = require('../models/User');
 const { fetchPlatformProfile } = require('../services/platformService');
 const { calculateAggregatedScores } = require('../services/scoreService');
-
+const {
+  verifyAndLinkIdentity,
+  unlinkIdentity,
+} = require('../services/identityLinkingService');
+const {
+  updateUserRanking,
+} = require('../services/incrementalLeaderboardService');
+const {
+  getProfileFreshness,
+  getPlatformFreshness,
+  recordSyncSuccess,
+  recordSyncFailure,
+} = require('../services/syncConsistencyService');
 // Allowed platforms — used for validation throughout the system
 const VALID_PLATFORMS = ['github', 'codeforces', 'leetcode', 'stackoverflow'];
 
@@ -18,20 +30,31 @@ const getLinkedPlatforms = async (req, res, next) => {
     const platformStatus = {};
     for (const platform of VALID_PLATFORMS) {
       const data = user.platforms[platform];
-      platformStatus[platform] = {
-        linked: !!data.username,
-        username: data.username || null,
-        linkedAt: data.linkedAt || null,
-      };
-    }
+const { getVerifiedIdentity } = require('../services/identityLinkingService');
 
-    res.status(200).json({
+const identity = await getVerifiedIdentity({
+  userId: req.user.id,
+  platform,
+});
+
+platformStatus[platform] = {
+  linked: !!data.username,
+  username: data.username || null,
+  linkedAt: data.linkedAt || null,
+          sync: getPlatformFreshness(user, platform),
+
+  verificationStatus: identity?.verificationStatus || 'pending',
+  verifiedAt: identity?.verifiedAt || null,
+  lastSuccessfulSync: identity?.lastSuccessfulSync || null,
+};    }
+
+    const freshness = getProfileFreshness(user);    res.status(200).json({
       success: true,
       data: {
         platforms: platformStatus,
         linkedCount: Object.values(platformStatus).filter((p) => p.linked).length,
         totalPlatforms: VALID_PLATFORMS.length,
-      },
+        freshness,      },
     });
   } catch (error) {
     next(error);
@@ -73,45 +96,44 @@ const linkPlatform = async (req, res, next) => {
       });
     }
 
-    // Check if another user has already linked this platform username
-    const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const existingUser = await User.findOne({
-      _id: { $ne: req.user.id },
-      [`platforms.${platform}.username`]: { $regex: new RegExp(`^${escapeRegex(sanitized.username)}$`, 'i') },
-    });
-
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: `This ${capitalize(platform)} account (@${sanitized.username}) is already linked to another MAVI Linking user.`,
-      });
-    }
-
+// Identity ownership is checked after resolving the real external account.
     // Fetch external platform profile and cache it
     let platformData;
     try {
       platformData = await fetchPlatformProfile(platform, sanitized.username);
     } catch (fetchError) {
+      const failedUser = await User.findById(req.user.id);
+      recordSyncFailure(failedUser, platform, fetchError);
+      await failedUser.save();
+
       return res.status(400).json({
         success: false,
         message: fetchError.message || `Unable to fetch ${capitalize(platform)} profile for "${sanitized.username}". Please check the username and try again.`,
       });
     }
-
+    try {
+  await verifyAndLinkIdentity({
+    userId: req.user.id,
+    platform,
+    username: sanitized.username,
+    platformData,
+  });
+} catch (identityError) {
+  return res.status(identityError.statusCode || 409).json({
+    success: false,
+    message: identityError.message || 'Unable to verify external account ownership.',
+  });
+}
     // Update the specific platform fields
-    const updateQuery = {
-      [`platforms.${platform}.username`]: sanitized.username,
-      [`platforms.${platform}.linkedAt`]: new Date(),
-      [`platformData.${platform}`]: platformData,
-      lastSyncedAt: new Date(),
-    };
+    const userForSync = await User.findById(req.user.id);
 
-    let user = await User.findByIdAndUpdate(
-      req.user.id,
-      { $set: updateQuery },
-      { new: true, runValidators: true }
-    );
+    userForSync.platforms[platform].username = sanitized.username;
+    userForSync.platforms[platform].linkedAt = new Date();
 
+    recordSyncSuccess(userForSync, platform, platformData);
+
+    await userForSync.save();
+    let user = userForSync;
     // Auto-recalculate scores after linking
     const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
     const { logTimelineEvent } = require('../utils/timelineLogger');
@@ -186,8 +208,16 @@ const unlinkPlatform = async (req, res, next) => {
       [`platformData.${platform}`]: null,
     };
 
-    let userToUpdate = await User.findByIdAndUpdate(req.user.id, { $set: updateQuery }, { new: true });
-    
+let userToUpdate = await User.findByIdAndUpdate(
+  req.user.id,
+  { $set: updateQuery },
+  { new: true }
+);
+
+await unlinkIdentity({
+  userId: req.user.id,
+  platform,
+});    
     // Auto-recalculate scores after unlinking
     const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
     const { logTimelineEvent } = require('../utils/timelineLogger');
@@ -256,9 +286,19 @@ const linkMultiplePlatforms = async (req, res, next) => {
 
       // Fetch external profile data for the platform
       try {
-        const platformData = await fetchPlatformProfile(platform, sanitized.username);
-        updateQuery[`platforms.${platform}.username`] = sanitized.username;
-        updateQuery[`platforms.${platform}.linkedAt`] = new Date();
+const platformData = await fetchPlatformProfile(
+  platform,
+  sanitized.username
+);
+
+await verifyAndLinkIdentity({
+  userId: req.user.id,
+  platform,
+  username: sanitized.username,
+  platformData,
+});
+
+updateQuery[`platforms.${platform}.username`] = sanitized.username;        updateQuery[`platforms.${platform}.linkedAt`] = new Date();
         updateQuery[`platformData.${platform}`] = platformData;
         results.linked.push({ platform, username: sanitized.username, platformData });
       } catch (fetchError) {
@@ -326,27 +366,29 @@ const getAllPlatformData = async (req, res, next) => {
       if (username && (refresh || !platformData)) {
         try {
           platformData = await fetchPlatformProfile(platform, username);
-          user.platformData[platform] = platformData;
-          shouldSave = true;
+          const syncResult = recordSyncSuccess(user, platform, platformData);
+          shouldSave = shouldSave || syncResult.dataChanged;        } catch (fetchError) {
         } catch (fetchError) {
+          recordSyncFailure(user, platform, fetchError);
+          shouldSave = true;
           fetchErrors.push({ platform, message: fetchError.message });
           platformData = user.platformData[platform] || null;
-        }
-      }
+        }      }
 
       platformResults[platform] = {
         linked: !!username,
         username: username || null,
         linkedAt: linkedAt || null,
         platformData: platformData || null,
-      };
-    }
+        sync: getPlatformFreshness(user, platform),
+      };    }
 
     if (shouldSave) {
       user.lastSyncedAt = new Date();
-      user.scores = calculateAggregatedScores(user.platformData);
-      await user.save();
-    }
+user.scores = calculateAggregatedScores(user.platformData);
+await user.save();
+
+await updateUserRanking(user);    }
 
     res.status(200).json({
       success: true,
@@ -355,7 +397,7 @@ const getAllPlatformData = async (req, res, next) => {
         linkedCount: Object.values(platformResults).filter((p) => p.linked).length,
         totalPlatforms: VALID_PLATFORMS.length,
         errors: fetchErrors,
-      },
+        freshness: getProfileFreshness(user),      },
     });
   } catch (error) {
     next(error);
@@ -394,15 +436,14 @@ const getPlatformData = async (req, res, next) => {
     if (refresh || !platformData) {
       try {
         platformData = await fetchPlatformProfile(platform, username);
-        user.platformData[platform] = platformData;
-        user.lastSyncedAt = new Date();
-        user.scores = calculateAggregatedScores(user.platformData);
+        recordSyncSuccess(user, platform, platformData);
+user.scores = calculateAggregatedScores(user.platformData);
+await user.save();
+
+await updateUserRanking(user);        recordSyncFailure(user, platform, fetchError);
         await user.save();
-      } catch (fetchError) {
-        return res.status(404).json({
-          success: false,
-          message: fetchError.message || `Unable to fetch ${platform} profile`,
-        });
+
+        platformData = user.platformData[platform] || null;
       }
     }
 
@@ -413,7 +454,8 @@ const getPlatformData = async (req, res, next) => {
         username,
         linkedAt,
         platformData,
-      },
+        sync: getPlatformFreshness(user, platform),
+        freshness: getProfileFreshness(user),      },
     });
   } catch (error) {
     next(error);

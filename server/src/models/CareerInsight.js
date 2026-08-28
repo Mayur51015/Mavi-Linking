@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const careerInsightSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true, index: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   strengths: [{ type: String }],
   improvements: [{ type: String }],
   recommendedRoles: [{ type: String }],

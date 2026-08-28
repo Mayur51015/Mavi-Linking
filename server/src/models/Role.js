@@ -51,7 +51,6 @@ const roleSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-roleSchema.index({ code: 1 }, { unique: true });
 roleSchema.index({ institutionId: 1 });
 
 module.exports = mongoose.model('Role', roleSchema);

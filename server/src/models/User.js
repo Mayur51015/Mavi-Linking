@@ -516,7 +516,6 @@ userSchema.index({ tenantId: 1 });
 userSchema.index({ adminId: 1 });
 userSchema.index({ adminLoginId: 1 });
 userSchema.index({ roles: 1 });
-userSchema.index({ maviId: 1 }, { unique: true });
 userSchema.index({ prn: 1 });
 userSchema.index({ facultyId: 1 });
 userSchema.index({ prnVerificationStatus: 1 });

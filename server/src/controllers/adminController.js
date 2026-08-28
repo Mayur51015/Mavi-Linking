@@ -7,6 +7,7 @@ const AuditLog = require('../models/AuditLog');
 const RecruitmentNotification = require('../models/RecruitmentNotification');
 const Institution = require('../models/Institution');
 const Department = require('../models/Department');
+const Project = require('../models/Project');
 const crypto = require('crypto');
 const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml, sendAccountLifecycleEmail } = require('../utils/sendEmail');
 const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');

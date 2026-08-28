@@ -11,6 +11,7 @@ const EmailChangeChallenge = require('../models/EmailChangeChallenge');
 const { sendEmail, generateEmailChangeOtpEmailHtml, generateEmailChangeNotificationOldEmailHtml } = require('../utils/sendEmail');
 const { getIO } = require('../config/socket');
 const { getAdminInvitationExpiryHours } = require('../config/invitationConfig');
+const { getSecurityTokenExpiryMinutes, getSecurityTokenExpiresAt, isTokenExpired } = require('../config/securityTokenConfig');
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 const oauth2Client = new OAuth2Client(googleClientId);
@@ -264,7 +265,7 @@ const register = async (req, res, next) => {
     // Generate cryptographic verification token (SHA-256 hashed in DB)
     const rawVerificationToken = crypto.randomBytes(32).toString('hex');
     const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
-    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const tokenExpires = getSecurityTokenExpiresAt(); // 10 minutes
 
     userData.verificationToken = hashedVerificationToken;
     userData.verificationTokenExpires = tokenExpires;
@@ -281,7 +282,7 @@ const register = async (req, res, next) => {
     const emailHtml = generateStudentVerificationEmailHtml({
       name: user.name,
       verificationLink,
-      expiresHours: 24,
+      expiresMinutes: getSecurityTokenExpiryMinutes(),
     });
 
     sendEmail({
@@ -812,8 +813,8 @@ const verifyEmail = async (req, res, next) => {
       });
     }
 
-    // Expiration check
-    if (user.verificationTokenExpires && user.verificationTokenExpires < Date.now()) {
+    // Expiration check (10-minute lifetime enforced server-side)
+    if (isTokenExpired(user.verificationTokenExpires)) {
       try {
         await AuditLog.create({
           actorId: user._id,
@@ -963,10 +964,11 @@ const resendVerification = async (req, res, next) => {
     }
 
     // Rate limit check: 60 seconds minimum between resends
+    const expiryMinutes = getSecurityTokenExpiryMinutes();
     if (user.verificationTokenExpires) {
-      const lastSentTime = new Date(user.verificationTokenExpires.getTime() - 24 * 60 * 60 * 1000);
+      const lastSentTime = new Date(user.verificationTokenExpires.getTime() - expiryMinutes * 60 * 1000);
       const secondsSinceLastSent = (Date.now() - lastSentTime.getTime()) / 1000;
-      if (secondsSinceLastSent < 60) {
+      if (secondsSinceLastSent >= 0 && secondsSinceLastSent < 60) {
         const secondsToWait = Math.ceil(60 - secondsSinceLastSent);
         return res.status(429).json({
           success: false,
@@ -976,13 +978,14 @@ const resendVerification = async (req, res, next) => {
       }
     }
 
-    // Generate new token (24-hour expiry)
+    // Generate new token (10-minute expiry)
     const rawVerificationToken = crypto.randomBytes(32).toString('hex');
     const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
-    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const tokenExpires = getSecurityTokenExpiresAt();
 
     user.verificationToken = hashedVerificationToken;
     user.verificationTokenExpires = tokenExpires;
+    user.verificationTokenPurpose = 'ACCOUNT_EMAIL_VERIFICATION';
     user.accountStatus = 'PENDING_VERIFICATION';
     await user.save();
 
@@ -993,7 +996,7 @@ const resendVerification = async (req, res, next) => {
     const emailHtml = generateStudentVerificationEmailHtml({
       name: user.name,
       verificationLink,
-      expiresHours: 24,
+      expiresMinutes: expiryMinutes,
     });
 
     const emailResult = await sendEmail({
@@ -1098,11 +1101,12 @@ const changeEmailPending = async (req, res, next) => {
     const oldEmail = user.email;
     user.email = normalizedNewEmail;
 
-    // Issue new verification token & invalidate old token
+    // Issue new verification token & invalidate old token (10-minute expiry)
     const rawVerificationToken = crypto.randomBytes(32).toString('hex');
     const hashedVerificationToken = crypto.createHash('sha256').update(rawVerificationToken).digest('hex');
     user.verificationToken = hashedVerificationToken;
-    user.verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    user.verificationTokenExpires = getSecurityTokenExpiresAt();
+    user.verificationTokenPurpose = 'ACCOUNT_EMAIL_VERIFICATION';
     user.emailVerified = false;
     user.accountStatus = 'PENDING_VERIFICATION';
 
@@ -1115,7 +1119,7 @@ const changeEmailPending = async (req, res, next) => {
     const emailHtml = generateStudentVerificationEmailHtml({
       name: user.name,
       verificationLink,
-      expiresHours: 24,
+      expiresMinutes: getSecurityTokenExpiryMinutes(),
     });
 
     const emailResult = await sendEmail({
@@ -1211,7 +1215,7 @@ const forgotPassword = async (req, res, next) => {
 
     user.resetPasswordToken = hashedToken;
     user.resetPasswordOtp = hashedOtp;
-    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+    user.resetPasswordExpires = getSecurityTokenExpiresAt(); // 10 minutes
     await user.save();
 
     // Log recovery request event
@@ -1833,7 +1837,7 @@ const verifyAdminInvite = async (req, res, next) => {
       });
     }
 
-    if (user.invitationExpires && new Date() > new Date(user.invitationExpires)) {
+    if (isTokenExpired(user.invitationExpires)) {
       try {
         await AuditLog.create({
           actorId: user._id,
@@ -1879,7 +1883,7 @@ const verifyAdminInvite = async (req, res, next) => {
         institution: user.institutionId,
         department: user.departmentId,
         expiresAt: user.invitationExpires,
-        validityHours: getAdminInvitationExpiryHours(),
+        validityMinutes: getSecurityTokenExpiryMinutes(),
       },
     });
   } catch (error) {
@@ -1978,7 +1982,7 @@ const acceptAdminInvite = async (req, res, next) => {
       });
     }
 
-    if (user.invitationExpires && new Date() > new Date(user.invitationExpires)) {
+    if (isTokenExpired(user.invitationExpires)) {
       try {
         await AuditLog.create({
           actorId: user._id,
@@ -2267,7 +2271,7 @@ const activateAccount = async (req, res, next) => {
     // Set new password (hashed via pre-save hook)
     user.password = password;
 
-    // Activate Account State
+    // Activate Account State & Invalidate single-use token
     user.emailVerified = true;
     user.accountStatus = 'ACTIVE';
     user.status = 'active';
@@ -2275,6 +2279,8 @@ const activateAccount = async (req, res, next) => {
     user.passwordSetupRequired = false;
     user.mustChangePassword = false;
     user.passwordChangedAt = Date.now();
+    user.invitationToken = null;
+    user.invitationExpires = null;
 
     // Generate JWT and Refresh Token for seamless session setup upon activation
     const authToken = user.generateAuthToken();
@@ -2411,13 +2417,13 @@ const requestEmailChange = async (req, res, next) => {
 
     console.log(`[EMAIL CHANGE OTP DISPATCHED] User: ${user.email} -> New Email: ${canonicalNewEmail} | 6-Digit OTP: ${otp}`);
 
-    // 6. Create EmailChangeChallenge document (valid for 15 minutes)
+    // 6. Create EmailChangeChallenge document (valid for 10 minutes)
     await EmailChangeChallenge.create({
       userId: user._id,
       newEmail: canonicalNewEmail,
       hashedOtp,
       purpose: 'EMAIL_CHANGE',
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      expiresAt: getSecurityTokenExpiresAt(), // 10 minutes
       status: 'PENDING',
       lastResendAt: new Date(),
     });
@@ -2448,10 +2454,10 @@ const requestEmailChange = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: `A 6-digit verification code has been sent to ${canonicalNewEmail}. Please verify within 15 minutes.`,
+      message: `A 6-digit verification code has been sent to ${canonicalNewEmail}. Please verify within 10 minutes.`,
       data: {
         newEmail: canonicalNewEmail,
-        expiresInMinutes: 15,
+        expiresInMinutes: getSecurityTokenExpiryMinutes(),
       },
     });
   } catch (error) {

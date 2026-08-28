@@ -24,7 +24,8 @@ describe('MAVI LINKING — 24-Hour Admin Invitation Validity & Resend Security T
 
   beforeAll(async () => {
     process.env.JWT_SECRET = process.env.JWT_SECRET || 'test_jwt_secret_invite_resend_2026';
-    process.env.ADMIN_INVITATION_EXPIRY_HOURS = '24';
+    delete process.env.ADMIN_INVITATION_EXPIRY_HOURS;
+    process.env.SECURITY_TOKEN_EXPIRY_MINUTES = '10';
 
     if (mongoose.connection.readyState === 0) {
       const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mavi_linking_test';
@@ -186,7 +187,7 @@ describe('MAVI LINKING — 24-Hour Admin Invitation Validity & Resend Security T
     expect(dbUser.invitationExpires).toBeDefined();
 
     const expiryTime = new Date(dbUser.invitationExpires).getTime();
-    const expectedExpiry = beforeCreation + 24 * 3600 * 1000;
+    const expectedExpiry = beforeCreation + 10 * 60 * 1000;
     // Allow 5 seconds tolerance for test execution
     expect(Math.abs(expiryTime - expectedExpiry)).toBeLessThan(5000);
   });
@@ -217,7 +218,7 @@ describe('MAVI LINKING — 24-Hour Admin Invitation Validity & Resend Security T
     expect(verifyRes.body.data.email).toBe(targetEmail);
     expect(verifyRes.body.data.name).toBe('Dr. Immediate Open');
     expect(verifyRes.body.data.expiresAt).toBeDefined();
-    expect(verifyRes.body.data.validityHours).toBe(24);
+    expect(verifyRes.body.data.validityMinutes || verifyRes.body.data.validityHours).toBe(10);
   });
 
   // ─── TEST 3: Set Password and Activate -> Account Becomes ACTIVE ────────────
@@ -330,7 +331,7 @@ describe('MAVI LINKING — 24-Hour Admin Invitation Validity & Resend Security T
     expect(updatedAdmin.invitationToken).toBeDefined();
 
     const expiryTime = new Date(updatedAdmin.invitationExpires).getTime();
-    const expectedExpiry = beforeResend + 24 * 3600 * 1000;
+    const expectedExpiry = beforeResend + 10 * 60 * 1000;
     expect(Math.abs(expiryTime - expectedExpiry)).toBeLessThan(5000);
   });
 
@@ -452,7 +453,7 @@ describe('MAVI LINKING — 24-Hour Admin Invitation Validity & Resend Security T
     const updated = await User.findById(deptAdmin._id).select('+invitationToken +invitationExpires');
     expect(updated.invitationToken).not.toBe(hashedTokenA);
     const expiryTime = new Date(updated.invitationExpires).getTime();
-    expect(Math.abs(expiryTime - (beforeResend + 24 * 3600 * 1000))).toBeLessThan(5000);
+    expect(Math.abs(expiryTime - (beforeResend + 10 * 60 * 1000))).toBeLessThan(5000);
   });
 
   // ─── TEST 12: Rapid Resend Rate Limiting ───────────────────────────────────

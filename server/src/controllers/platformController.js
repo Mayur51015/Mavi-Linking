@@ -124,14 +124,14 @@ const linkPlatform = async (req, res, next) => {
       { platform }
     );
 
-    // Sync GitHub activity after successfully linking a GitHub account.
-    // Activity sync failure should not prevent the account from being linked.
+    // Sync GitHub intelligence and activities after successfully linking a GitHub account.
+    // Sync failure should not prevent the account from being linked.
     if (platform === 'github') {
       try {
-        const { syncGitHubActivities } = require('../services/githubActivityService');
-        await syncGitHubActivities(user._id);
+        const { syncGitHubAccount } = require('../services/githubSyncService');
+        await syncGitHubAccount(user._id, sanitized.username);
       } catch (syncError) {
-        console.error('GitHub activity sync failed:', syncError.message);
+        console.error('Initial GitHub sync warning:', syncError.message);
       }
     }
 
@@ -505,7 +505,7 @@ const getGitHubIntelligence = async (req, res, next) => {
     const Activity = require('../models/Activity');
     const { calculateDevelopmentScore } = require('../services/scoreService');
 
-    const user = await User.findById(req.user.id);
+    let user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -516,19 +516,44 @@ const getGitHubIntelligence = async (req, res, next) => {
         success: true,
         data: {
           linked: false,
+          username: null,
           intelligence: null,
           scores: user.scores || {},
           breakdown: null,
+          totalScore: 0,
           isVerified: Boolean(user.isVerified),
+          lastSyncedAt: null,
+          isFresh: false,
+          freshnessMinutes: null,
         },
       });
+    }
+
+    let githubData = user.platformData?.github || null;
+
+    // Auto-sync if linked but never populated
+    if (!githubData && githubUsername) {
+      try {
+        const { syncGitHubAccount } = require('../services/githubSyncService');
+        const syncResult = await syncGitHubAccount(user._id, githubUsername);
+        if (syncResult.success && syncResult.data) {
+          githubData = syncResult.data;
+          user = await User.findById(req.user.id);
+        }
+      } catch (autoSyncErr) {
+        console.warn(`[GitHub Intelligence] Auto-sync on load warning for ${githubUsername}:`, autoSyncErr.message);
+      }
     }
 
     const projects = await Project.find({ user: req.user.id });
     const activities = await Activity.find({ userId: req.user.id, platform: 'github' }).sort({ date: -1 }).limit(50);
 
-    const githubData = user.platformData?.github || null;
     const scoreResult = calculateDevelopmentScore(githubData, projects, activities);
+
+    const lastSyncedAt = user.lastSyncedAt || githubData?.sync?.lastSyncedAt || null;
+    const now = Date.now();
+    const freshnessMinutes = lastSyncedAt ? Math.floor((now - new Date(lastSyncedAt).getTime()) / 60000) : null;
+    const isFresh = freshnessMinutes !== null ? freshnessMinutes <= 15 : false;
 
     res.status(200).json({
       success: true,
@@ -540,7 +565,10 @@ const getGitHubIntelligence = async (req, res, next) => {
         breakdown: scoreResult.breakdown,
         totalScore: scoreResult.totalScore,
         isVerified: Boolean(user.isVerified),
-        lastSyncedAt: user.lastSyncedAt || githubData?.sync?.lastSyncedAt || null,
+        lastSyncedAt,
+        isFresh,
+        freshnessMinutes,
+        syncStatus: githubData?.sync?.status || (lastSyncedAt ? 'complete' : 'never_synced'),
       },
     });
   } catch (error) {
@@ -555,14 +583,36 @@ const getGitHubIntelligence = async (req, res, next) => {
  */
 const syncGitHubIntelligence = async (req, res, next) => {
   try {
+    const Project = require('../models/Project');
+    const Activity = require('../models/Activity');
+    const { calculateDevelopmentScore } = require('../services/scoreService');
     const { syncGitHubAccount } = require('../services/githubSyncService');
+
     const result = await syncGitHubAccount(req.user.id);
+    const githubData = result.data;
+    const updatedUser = result.user || (await User.findById(req.user.id));
+
+    const projects = await Project.find({ user: req.user.id });
+    const activities = await Activity.find({ userId: req.user.id, platform: 'github' }).sort({ date: -1 }).limit(50);
+    const scoreResult = calculateDevelopmentScore(githubData, projects, activities);
 
     res.status(200).json({
       success: true,
       message: result.message || 'GitHub intelligence synchronized successfully',
-      data: result.data,
-      user: result.user,
+      data: {
+        linked: true,
+        username: updatedUser.platforms?.github?.username || updatedUser.githubUsername,
+        intelligence: githubData,
+        scores: updatedUser.scores || {},
+        breakdown: scoreResult.breakdown,
+        totalScore: scoreResult.totalScore,
+        isVerified: Boolean(updatedUser.isVerified),
+        lastSyncedAt: updatedUser.lastSyncedAt || new Date(),
+        isFresh: true,
+        freshnessMinutes: 0,
+        syncStatus: githubData?.sync?.status || 'complete',
+      },
+      user: updatedUser,
     });
   } catch (error) {
     next(error);

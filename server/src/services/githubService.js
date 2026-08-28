@@ -72,30 +72,30 @@ const fetchUserProfile = async (username) => {
 };
 
 /**
- * Fetch up to 30 most recently updated public repositories.
+ * Fetch up to 100 most recently updated public repositories.
  */
-const fetchUserRepositories = async (username, maxCount = 30) => {
+const fetchUserRepositories = async (username, maxCount = 100) => {
   try {
-    const url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=${maxCount}&sort=updated&type=all`;
+    const url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=${Math.min(maxCount, 100)}&sort=updated&type=all`;
     const { payload } = await safeGitHubFetch(url);
     return Array.isArray(payload) ? payload : [];
   } catch (err) {
     console.warn(`[GitHub API] Failed to fetch repositories for ${username}:`, err.message);
-    return [];
+    throw err;
   }
 };
 
 /**
- * Fetch up to 50 public events (push, PR, issue, release).
+ * Fetch up to 100 public events (push, PR, issue, release).
  */
-const fetchUserEvents = async (username, maxCount = 50) => {
+const fetchUserEvents = async (username, maxCount = 100) => {
   try {
-    const url = `https://api.github.com/users/${encodeURIComponent(username)}/events/public?per_page=${maxCount}`;
+    const url = `https://api.github.com/users/${encodeURIComponent(username)}/events/public?per_page=${Math.min(maxCount, 100)}`;
     const { payload } = await safeGitHubFetch(url);
     return Array.isArray(payload) ? payload : [];
   } catch (err) {
     console.warn(`[GitHub API] Failed to fetch public events for ${username}:`, err.message);
-    return [];
+    throw err;
   }
 };
 

@@ -299,7 +299,7 @@ const userSchema = new mongoose.Schema(
     githubUsername: { type: String, default: '' },
     preferredDomain: {
       type: String,
-      enum: ['', 'Web Development', 'AI/ML', 'Competitive Programming', 'Cybersecurity', 'App Development'],
+      trim: true,
       default: '',
     },
     experienceLevel: {

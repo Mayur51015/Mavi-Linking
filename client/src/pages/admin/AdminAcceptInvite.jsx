@@ -329,7 +329,7 @@ const AdminAcceptInvite = () => {
               )}
 
               <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(168, 85, 247, 0.2)', fontSize: '0.8rem', color: '#c084fc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
-                <span>⏱️ This invitation is valid for 24 hours.</span>
+                <span>⏱️ This invitation is valid for 10 minutes.</span>
                 {inviteData.expiresAt && (
                   <span style={{ color: '#a1a1aa', fontSize: '0.75rem' }}>
                     Expires: {new Date(inviteData.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, {new Date(inviteData.expiresAt).toLocaleDateString()}

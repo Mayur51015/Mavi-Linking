@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const careerScoreSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true, index: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   overall: { type: Number, default: 0 },
   development: { type: Number, default: 0 },
   problemSolving: { type: Number, default: 0 },

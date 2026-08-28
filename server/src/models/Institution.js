@@ -26,7 +26,6 @@ const institutionSchema = new mongoose.Schema(
       sparse: true,
       uppercase: true,
       trim: true,
-      index: true,
     },
     shortName: {
       type: String,
@@ -145,7 +144,6 @@ institutionSchema.pre('validate', function (next) {
   next();
 });
 
-institutionSchema.index({ tenantId: 1 }, { unique: true });
 institutionSchema.index({ name: 1 });
 institutionSchema.index({ domain: 1 });
 institutionSchema.index({ status: 1 });

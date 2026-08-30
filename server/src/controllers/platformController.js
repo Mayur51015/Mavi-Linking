@@ -367,7 +367,7 @@ const getAllPlatformData = async (req, res, next) => {
         try {
           platformData = await fetchPlatformProfile(platform, username);
           const syncResult = recordSyncSuccess(user, platform, platformData);
-          shouldSave = shouldSave || syncResult.dataChanged;        } catch (fetchError) {
+          shouldSave = shouldSave || syncResult.dataChanged;
         } catch (fetchError) {
           recordSyncFailure(user, platform, fetchError);
           shouldSave = true;
@@ -437,12 +437,12 @@ const getPlatformData = async (req, res, next) => {
       try {
         platformData = await fetchPlatformProfile(platform, username);
         recordSyncSuccess(user, platform, platformData);
-user.scores = calculateAggregatedScores(user.platformData);
-await user.save();
-
-await updateUserRanking(user);        recordSyncFailure(user, platform, fetchError);
+        user.scores = calculateAggregatedScores(user.platformData);
         await user.save();
-
+        await updateUserRanking(user);
+      } catch (fetchError) {
+        recordSyncFailure(user, platform, fetchError);
+        await user.save();
         platformData = user.platformData[platform] || null;
       }
     }

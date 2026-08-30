@@ -19,16 +19,18 @@ const {
     const cleanUsername = String(username).trim();
     const userId = req.user.id;
     
+    const data = await fetchLeetCodeData(cleanUsername);
+
     // Fetch from API
-await verifyAndLinkIdentity({
-  userId,
-  platform: 'leetcode',
-  username: cleanUsername,
-  platformData: {
-    username: cleanUsername,
-    ranking: data.ranking,
-  },
-});
+    await verifyAndLinkIdentity({
+      userId,
+      platform: 'leetcode',
+      username: cleanUsername,
+      platformData: {
+        username: cleanUsername,
+        ranking: data.ranking,
+      },
+    });
     // Capture previous analytics snapshot for event sourcing (pre-overwrite)
     const previousAnalytics = await LeetCodeAnalytics.findOne({ user: userId });
 
@@ -96,8 +98,8 @@ await verifyAndLinkIdentity({
         syncVersion,
       });
     }
-
-    // Log activity feed & emit real-time Socket.IO event    try {
+    // Log activity feed & emit real-time Socket.IO event
+    try {
       const Activity = require('../models/Activity');
       const { getIO } = require('../config/socket');
       const activity = await Activity.create({
@@ -149,7 +151,9 @@ const getMyLeetCode = async (req, res, next) => {
       synced: true,
       sync: getPlatformFreshness(user, 'leetcode'),
       freshness: getProfileFreshness(user),
-    });    next(error);
+    });
+  } catch (error) {
+    next(error);
   }
 };
 

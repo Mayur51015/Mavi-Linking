@@ -765,9 +765,11 @@ const updateRoadmapProgress = async (userId, itemId, newStatus) => {
   return roadmap;
 };
 
-/**
- * Update target career goal for student.
- */
+const updateTargetCareerGoal = async (userId, targetRole) => {
+  if (!targetRole || !targetRole.trim()) {
+    throw new Error('Target role is required');
+  }
+
   const { normalizeDomain } = require('../constants/domainOptions');
   const role = targetRole.trim();
   const domain = normalizeDomain(role);

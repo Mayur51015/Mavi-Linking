@@ -1,5 +1,6 @@
 const express = require('express');
 const { protect } = require('../middleware/auth');
+const { requireRole } = require('../middleware/roleMiddleware');
 const {
   calculateMyScores,
   getLeaderboard,
@@ -17,11 +18,10 @@ router.post('/calculate', protect, calculateMyScores);
 router.get('/me', protect, getMyScores);
 router.get('/insights', protect, getInsights);
 
-module.exports = router;
 router.post(
   '/leaderboard/rebuild',
-  auth,
-  requireAdmin,
+  protect,
+  requireRole('admin', 'super_admin'),
   async (req, res, next) => {
     try {
       const { rebuildRankings } = require('../services/incrementalLeaderboardService');
@@ -38,3 +38,5 @@ router.post(
     }
   }
 );
+
+module.exports = router;

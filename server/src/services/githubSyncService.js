@@ -194,9 +194,6 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
       }
     }
 
-    // 3.5 Capture previous platform snapshot for event sourcing (pre-overwrite)
-    const previousGithubData = user.platformData?.github || null;
-
     // 4. Update Canonical User Document
     user.platforms = user.platforms || {};
     user.platforms.github = user.platforms.github || {};

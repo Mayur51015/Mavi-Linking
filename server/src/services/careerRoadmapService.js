@@ -3,63 +3,7 @@ const User = require('../models/User');
 const Project = require('../models/Project');
 const CareerRoadmap = require('../models/CareerRoadmap');
 const CareerInsight = require('../models/CareerInsight');
-
-/**
- * Calculate Profile Strength and identify missing elements
- */
-const calculateProfileStrength = (user, projects = []) => {
-  let score = 0;
-  const missingItems = [];
-
-  // Skills Check (25 pts)
-  const skillsCount = user.skillsList ? user.skillsList.length : 0;
-  if (skillsCount >= 5) {
-    score += 25;
-  } else if (skillsCount >= 2) {
-    score += 15;
-    missingItems.push('Add more skills (at least 5)');
-  } else {
-    missingItems.push('Technical Skills');
-  }
-
-  // Projects Check (25 pts)
-  if (projects.length >= 3) {
-    score += 25;
-  } else if (projects.length >= 1) {
-    score += 15;
-    missingItems.push('Add more detailed projects');
-  } else {
-    missingItems.push('Projects');
-  }
-
-  // Resume / Portfolio Docs (20 pts)
-  const hasResume = user.portfolioDocs?.some(d => d.category === 'Resume') || user.documents?.resume;
-  if (hasResume) {
-    score += 20;
-  } else {
-    missingItems.push('Resume');
-  }
-
-  // Developer Platform Connections (15 pts)
-  const hasGithub = user.githubUsername || user.platforms?.github?.username || user.platformData?.github;
-  const hasLeetcode = user.platforms?.leetcode?.username || user.platformData?.leetcode;
-  if (hasGithub) score += 10;
-  else missingItems.push('GitHub Profile');
-
-  if (hasLeetcode) score += 5;
-
-  // Academic / Degree Info (15 pts)
-  if (user.degree || user.university?.name || user.cgpa) {
-    score += 15;
-  } else {
-    missingItems.push('Academic Information');
-  }
-
-  return {
-    profileStrength: Math.min(score, 100),
-    missingProfileItems: missingItems,
-  };
-};
+const { calculateProfileStrength } = require('./profileStrengthService');
 
 /**
  * Infer current skill level based on profile metrics
@@ -694,10 +638,17 @@ const getStudentRoadmap = async (userId) => {
     roadmap = await generateCareerRoadmap(userId, user.preferredDomain || 'Full-Stack Developer');
   }
 
-  // Check if profile was updated after roadmap generation
-  const profileChangedSinceGeneration = user.updatedAt && roadmap.generatedAt 
-    ? new Date(user.updatedAt).getTime() > new Date(roadmap.generatedAt).getTime() + 60000 
+  // Check if profile was meaningfully updated after roadmap generation
+  const targetDiffers = Boolean(
+    (user.preferredRole && user.preferredRole !== roadmap.targetRole) ||
+    (user.preferredDomain && user.preferredDomain !== roadmap.targetRole && !user.preferredRole)
+  );
+  const strengthDiffers = Math.abs(profileStrength - (roadmap.profileStrength || 0)) >= 10;
+  const timeDiffers = user.updatedAt && roadmap.generatedAt 
+    ? new Date(user.updatedAt).getTime() > new Date(roadmap.generatedAt).getTime() + 180000 
     : false;
+
+  const profileChangedSinceGeneration = targetDiffers || (strengthDiffers && timeDiffers);
 
   return {
     roadmap,

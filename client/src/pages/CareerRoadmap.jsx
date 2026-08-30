@@ -341,7 +341,7 @@ const CareerRoadmapPage = () => {
                     </div>
                   </div>
 
-                  {missingItems.length > 0 && (
+                  {missingItems.length > 0 ? (
                     <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                         Improve your roadmap by completing your profile:
@@ -359,6 +359,19 @@ const CareerRoadmapPage = () => {
                         style={{ width: '100%', fontSize: '0.78rem' }}
                       >
                         Complete Profile
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontSize: '0.8rem', fontWeight: '600' }}>
+                        <CheckCircle2 size={15} /> Your profile is fully complete
+                      </div>
+                      <button
+                        onClick={() => navigate('/dashboard')}
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', color: 'var(--text-secondary)' }}
+                      >
+                        View Profile
                       </button>
                     </div>
                   )}

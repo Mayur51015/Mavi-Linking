@@ -232,18 +232,12 @@ const evaluateUserIntelligence = async (userId) => {
   user.aiAnalysis = aiAnalysis;
   user.placementReadinessScore = Math.floor((scoreData.overall / 1000) * 100);
 
-  // Re-calculate profile completion
-  let completion = 20; // base
-  if (user.avatar) completion += 10;
-  if (user.bio) completion += 15;
-  if (user.university?.name) completion += 15;
-  if (user.githubUsername || user.platforms?.github?.username) completion += 10;
-  if (projects.length > 0) completion += 10;
-  if (user.certificates?.length > 0) completion += 10;
-  if (user.portfolioDocs?.some(d => d.category === 'Resume')) completion += 10;
-  user.profileCompletion = Math.min(completion, 100);
+  // Re-calculate profile completion using unified single source of truth
+  const { calculateProfileStrength } = require('./profileStrengthService');
+  const { profileStrength } = calculateProfileStrength(user, projects);
+  user.profileCompletion = profileStrength;
 
-  await user.save();
+  await user.save({ validateModifiedOnly: true });
 
   // 4. Update CareerScore Collection
   await CareerScore.findOneAndUpdate(

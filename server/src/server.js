@@ -76,31 +76,40 @@ app.use(helmet({
   },
 })); // Security headers
 
-const allowedOrigins = [
+const defaultAllowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  'http://localhost:3000',
   'https://mavi-linking-mq7d.vercel.app',
-  process.env.CLIENT_URL,
-].filter(Boolean);
+];
+
+const envAllowedOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // Allow direct server-to-server, health checks, postman, webhooks
+  const cleanOrigin = origin.replace(/\/+$/, '');
+  if (allowedOrigins.some((o) => o.replace(/\/+$/, '') === cleanOrigin)) return true;
+  // Allow all vercel.app and onrender.com preview/production deployments
+  if (/\.vercel\.app$/i.test(cleanOrigin) || /\.onrender\.com$/i.test(cleanOrigin)) return true;
+  return false;
+};
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, Postman, etc.) only in development
-      if (!origin) {
-        if (process.env.NODE_ENV === 'production') {
-          return callback(new Error('Not allowed by CORS'));
-        }
-        return callback(null, true);
-      }
-      if (allowedOrigins.includes(origin)) {
+      if (isOriginAllowed(origin)) {
         return callback(null, true);
       }
       return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 );
 

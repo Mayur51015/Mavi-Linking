@@ -5,18 +5,32 @@ let io;
 
 module.exports = {
   init: (httpServer) => {
-    const allowedOrigins = [
+    const defaultAllowedOrigins = [
       'http://localhost:5173',
-      process.env.CLIENT_URL,
-    ].filter(Boolean);
+      'http://127.0.0.1:5173',
+      'http://localhost:3000',
+      'https://mavi-linking-mq7d.vercel.app',
+    ];
+
+    const envAllowedOrigins = (process.env.CLIENT_URL || '')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
+
+    const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
+
+    const isOriginAllowed = (origin) => {
+      if (!origin) return true;
+      const cleanOrigin = origin.replace(/\/+$/, '');
+      if (allowedOrigins.some((o) => o.replace(/\/+$/, '') === cleanOrigin)) return true;
+      if (/\.vercel\.app$/i.test(cleanOrigin) || /\.onrender\.com$/i.test(cleanOrigin)) return true;
+      return false;
+    };
 
     io = new Server(httpServer, {
       cors: {
         origin: (origin, callback) => {
-          if (!origin) return callback(null, true);
-          const cleanOrigins = allowedOrigins.map(o => o.replace(/\/+$/, ''));
-          const cleanOrigin = origin.replace(/\/+$/, '');
-          if (cleanOrigins.includes(cleanOrigin)) {
+          if (isOriginAllowed(origin)) {
             callback(null, true);
           } else {
             callback(new Error('Not allowed by CORS'));

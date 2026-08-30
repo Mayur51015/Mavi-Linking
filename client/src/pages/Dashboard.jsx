@@ -29,6 +29,7 @@ import GrowthChart from '../components/GrowthChart';
 import LeaderboardWidget from '../components/LeaderboardWidget';
 import CareerRoadmapCard from '../components/CareerRoadmapCard';
 import CareerMatchCard from '../components/CareerMatchCard';
+import CareerLabCard from '../components/CareerLabCard';
 import GitHubIntelligenceCard from '../components/GitHubIntelligenceCard';
 import SkillRadar from '../components/SkillRadar';
 import TimelineWidget from '../components/TimelineWidget';
@@ -891,6 +892,7 @@ const Dashboard = () => {
                 <LearningGrowthCard />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   <CareerMatchCard />
+                  <CareerLabCard />
                   <CareerRoadmapCard />
                   <GitHubIntelligenceCard externalScores={scores} />
                 </div>

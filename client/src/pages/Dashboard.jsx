@@ -28,6 +28,7 @@ import DNACard from '../components/DNACard';
 import GrowthChart from '../components/GrowthChart';
 import LeaderboardWidget from '../components/LeaderboardWidget';
 import CareerRoadmapCard from '../components/CareerRoadmapCard';
+import CareerMatchCard from '../components/CareerMatchCard';
 import GitHubIntelligenceCard from '../components/GitHubIntelligenceCard';
 import SkillRadar from '../components/SkillRadar';
 import TimelineWidget from '../components/TimelineWidget';
@@ -889,6 +890,7 @@ const Dashboard = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
                 <LearningGrowthCard />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <CareerMatchCard />
                   <CareerRoadmapCard />
                   <GitHubIntelligenceCard externalScores={scores} />
                 </div>

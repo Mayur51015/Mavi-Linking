@@ -46,6 +46,7 @@ const CompatibilityPage = React.lazy(() => import('./pages/CompatibilityPage'));
 const StudentAvailability = React.lazy(() => import('./pages/StudentAvailability'));
 const StudentJobs = React.lazy(() => import('./pages/StudentJobs'));
 const CareerRoadmap = React.lazy(() => import('./pages/CareerRoadmap'));
+const CareerMatch = React.lazy(() => import('./pages/CareerMatch'));
 
 // Recruiter Pages (Lazy)
 const RecruiterOverview = React.lazy(() => import('./pages/recruiter/RecruiterOverview'));
@@ -171,6 +172,21 @@ const App = () => {
             <Route path="/student/career-roadmap" element={
               <ProtectedRoute roles={['user', 'admin']}>
                 <CareerRoadmap />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/career-match" element={
+              <ProtectedRoute roles={['user', 'admin']}>
+                <CareerMatch />
+              </ProtectedRoute>
+            } />
+            <Route path="/career-match" element={
+              <ProtectedRoute roles={['user', 'admin']}>
+                <CareerMatch />
+              </ProtectedRoute>
+            } />
+            <Route path="/student/career-match" element={
+              <ProtectedRoute roles={['user', 'admin']}>
+                <CareerMatch />
               </ProtectedRoute>
             } />
 

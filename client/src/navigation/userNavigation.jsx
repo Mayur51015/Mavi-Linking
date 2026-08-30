@@ -10,10 +10,12 @@ import {
   FolderOpen,
   QrCode,
   Compass,
+  Target,
 } from 'lucide-react';
 
 export const userNavItems = [
   { name: 'Overview', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
+  { name: 'Career Match', path: '/dashboard/career-match', icon: <Target size={20} /> },
   { name: 'Career Roadmap', path: '/student/career-roadmap', icon: <Compass size={20} /> },
   { name: 'Projects', path: '/dashboard/projects', icon: <Briefcase size={20} /> },
   { name: 'Availability', path: '/dashboard/availability', icon: <User size={20} /> },

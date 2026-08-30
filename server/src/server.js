@@ -43,6 +43,7 @@ const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const billingRoutes = require('./routes/billingRoutes');
 const careerRoutes = require('./routes/careerRoutes');
+const careerMatchRoutes = require('./routes/careerMatchRoutes');
 const departmentAdminRoutes = require('./routes/departmentAdminRoutes');
 const { init } = require('./config/socket'); // socket.io
 const http = require('http');
@@ -189,6 +190,8 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/career', careerRoutes);
+app.use('/api/career-match', careerMatchRoutes);
 
 // Direct Razorpay Standard Checkout API Aliases
 const { createOrderDirect, verifyPaymentDirect } = require('./controllers/billingController');

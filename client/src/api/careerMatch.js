@@ -5,7 +5,7 @@ import api from './axios';
  * Optional role param to view analysis for a specific target role without saving.
  */
 export const getCareerMatch = async (role = null) => {
-  const url = role ? `/api/career-match?role=${encodeURIComponent(role)}` : '/api/career-match';
+  const url = role ? `/career-match?role=${encodeURIComponent(role)}` : '/career-match';
   const response = await api.get(url);
   return response.data;
 };
@@ -14,7 +14,7 @@ export const getCareerMatch = async (role = null) => {
  * Fetch all canonical supported target career roles.
  */
 export const getSupportedRoles = async () => {
-  const response = await api.get('/api/career-match/roles');
+  const response = await api.get('/career-match/roles');
   return response.data;
 };
 
@@ -22,6 +22,6 @@ export const getSupportedRoles = async () => {
  * Update the student's target career role and recalculate match.
  */
 export const updateTargetRole = async (role) => {
-  const response = await api.put('/api/career-match/target-role', { role });
+  const response = await api.put('/career-match/target-role', { role });
   return response.data;
 };

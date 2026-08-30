@@ -59,6 +59,7 @@ app.set('trust proxy', 1);
 
 // ─── Security Middleware ────────────────────────────────────────────────────
 app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -76,15 +77,23 @@ app.use(helmet({
   },
 })); // Security headers
 
+// ─── Production CORS Configuration ──────────────────────────────────────────
 const defaultAllowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:3000',
+  'http://127.0.0.1:3000',
   'https://mavi-linking-mq7d.vercel.app',
+  'https://mavi-linking-mq7d-hcv3uvrk7-mayur-khandares-projects.vercel.app',
 ];
 
-const envAllowedOrigins = (process.env.CLIENT_URL || '')
-  .split(',')
+const envAllowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+  process.env.CORS_ORIGINS,
+]
+  .filter(Boolean)
+  .flatMap((val) => val.split(','))
   .map((o) => o.trim())
   .filter(Boolean);
 
@@ -94,24 +103,38 @@ const isOriginAllowed = (origin) => {
   if (!origin) return true; // Allow direct server-to-server, health checks, postman, webhooks
   const cleanOrigin = origin.replace(/\/+$/, '');
   if (allowedOrigins.some((o) => o.replace(/\/+$/, '') === cleanOrigin)) return true;
-  // Allow all vercel.app and onrender.com preview/production deployments
-  if (/\.vercel\.app$/i.test(cleanOrigin) || /\.onrender\.com$/i.test(cleanOrigin)) return true;
+  // Support explicit project-specific Vercel preview URLs
+  if (/^https:\/\/mavi-linking(-[a-z0-9-]+)?-mayur-khandares-projects\.vercel\.app$/i.test(cleanOrigin)) return true;
+  if (/^https:\/\/mavi-linking(-[a-z0-9-]+)?\.vercel\.app$/i.test(cleanOrigin)) return true;
   return false;
 };
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (isOriginAllowed(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (isOriginAllowed(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers',
+  ],
+  exposedHeaders: ['Content-Range', 'X-Content-Range', 'Authorization'],
+  maxAge: 86400,
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Rate limiting — 1000 requests per 15 minutes per IP
 app.use('/api', apiLimiter);// ─── Body Parsing ───────────────────────────────────────────────────────────

@@ -9,11 +9,18 @@ module.exports = {
       'http://localhost:5173',
       'http://127.0.0.1:5173',
       'http://localhost:3000',
+      'http://127.0.0.1:3000',
       'https://mavi-linking-mq7d.vercel.app',
+      'https://mavi-linking-mq7d-hcv3uvrk7-mayur-khandares-projects.vercel.app',
     ];
 
-    const envAllowedOrigins = (process.env.CLIENT_URL || '')
-      .split(',')
+    const envAllowedOrigins = [
+      process.env.CLIENT_URL,
+      process.env.FRONTEND_URL,
+      process.env.CORS_ORIGINS,
+    ]
+      .filter(Boolean)
+      .flatMap((val) => val.split(','))
       .map((o) => o.trim())
       .filter(Boolean);
 
@@ -23,7 +30,8 @@ module.exports = {
       if (!origin) return true;
       const cleanOrigin = origin.replace(/\/+$/, '');
       if (allowedOrigins.some((o) => o.replace(/\/+$/, '') === cleanOrigin)) return true;
-      if (/\.vercel\.app$/i.test(cleanOrigin) || /\.onrender\.com$/i.test(cleanOrigin)) return true;
+      if (/^https:\/\/mavi-linking(-[a-z0-9-]+)?-mayur-khandares-projects\.vercel\.app$/i.test(cleanOrigin)) return true;
+      if (/^https:\/\/mavi-linking(-[a-z0-9-]+)?\.vercel\.app$/i.test(cleanOrigin)) return true;
       return false;
     };
 
@@ -33,10 +41,10 @@ module.exports = {
           if (isOriginAllowed(origin)) {
             callback(null, true);
           } else {
-            callback(new Error('Not allowed by CORS'));
+            callback(null, false);
           }
         },
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
         credentials: true
       }
     });

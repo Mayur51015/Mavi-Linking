@@ -888,16 +888,17 @@ const Dashboard = () => {
                 <LeaderboardWidget />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(340px, 100%), 1fr))', gap: '1.5rem', marginBottom: '2rem', alignItems: 'start' }}>
+                <LearningGrowthCard />
+                <CareerRoadmapCard />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(340px, 100%), 1fr))', gap: '1.5rem', marginBottom: '2rem', alignItems: 'start' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <LearningGrowthCard />
                   <CareerMatchCard />
                   <CareerLabCard />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <CareerRoadmapCard />
-                  <GitHubIntelligenceCard externalScores={scores} />
-                </div>
+                <GitHubIntelligenceCard externalScores={scores} />
               </div>
 
               <LeetCodeSection />

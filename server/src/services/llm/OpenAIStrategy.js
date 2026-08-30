@@ -4,8 +4,8 @@ const LLMProvider = require('./LLMProvider');
 class OpenAIStrategy extends LLMProvider {
   constructor(config) {
     super(config);
-    this.modelName = config.modelName || 'gpt-4o-mini';
-    this.client = new OpenAI({ 
+    this.providerName = 'openai-compatible';
+    this.modelName = config.modelName || 'gpt-4o-mini';    this.client = new OpenAI({ 
       apiKey: config.apiKey, 
       baseURL: config.baseURL 
     });

@@ -13,6 +13,11 @@ const rankingSchema = new mongoose.Schema(
       enum: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Elite Developer'],
       default: 'Bronze' 
     },
+        evidenceStatus: {
+      type: String,
+      enum: ['supported', 'uncertain'],
+      default: 'uncertain',
+    },
     globalRank: { type: Number, default: 0 },
     score: { type: Number, default: 0 },
     // Category-specific ranks
@@ -40,5 +45,7 @@ const rankingSchema = new mongoose.Schema(
 );
 
 rankingSchema.index({ score: -1 });
-
+rankingSchema.index({ globalRank: 1 });
+rankingSchema.index({ departmentRank: 1 });
+rankingSchema.index({ userId: 1 }, { unique: true });
 module.exports = mongoose.model('Ranking', rankingSchema);

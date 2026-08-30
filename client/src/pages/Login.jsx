@@ -66,10 +66,19 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const cleanId = (identifier || '').trim();
+    if (!cleanId) {
+      setError('Please enter your Email, MAVI ID, or PRN.');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
     setError('');
     setSubmitting(true);
     try {
-      const data = await login(identifier, password);
+      const data = await login(cleanId, password);
       toast.success('Successfully authenticated!');
       
       const role = data?.user?.role;

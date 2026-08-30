@@ -79,6 +79,14 @@ const loginValidation = [
   body('password')
     .notEmpty()
     .withMessage('Password is required'),
+  body()
+    .custom((_, { req }) => {
+      const id = req.body.identifier || req.body.email || req.body.maviId || req.body.prn;
+      if (!id || !id.toString().trim()) {
+        throw new Error('Email, MAVI ID, or PRN is required');
+      }
+      return true;
+    }),
 ];
 
 const updateProfileValidation = [

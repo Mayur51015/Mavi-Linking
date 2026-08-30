@@ -46,11 +46,11 @@ export const AuthProvider = ({ children }) => {
           cb({ token: localStorage.getItem('token') });
         },
         withCredentials: true,
-        transports: ['polling', 'websocket'],
+        transports: ['websocket', 'polling'],
         reconnection: true,
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 10000,
         timeout: 20000,
       });
 
@@ -67,11 +67,10 @@ export const AuthProvider = ({ children }) => {
       });
 
       newSocket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error.message);
-        const freshToken = localStorage.getItem('token');
-        if (freshToken) {
-          newSocket.auth = { token: freshToken };
-          newSocket.connect();
+        console.warn('Socket connection error:', error.message);
+        if (error.message && (error.message.includes('Authentication error') || error.message.includes('token') || error.message.includes('jwt'))) {
+          // Token is invalid/expired — stop hammering the server with polling
+          newSocket.disconnect();
         }
       });
 

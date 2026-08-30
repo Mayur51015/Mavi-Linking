@@ -46,6 +46,13 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Detailed logging on 400 Bad Request
+    if (error.response.status === 400) {
+      const errData = error.response.data;
+      const errMsg = errData?.message || (Array.isArray(errData?.errors) ? errData.errors.map((e) => e.message || e.msg).join(', ') : 'Bad Request');
+      console.warn(`[API 400 Bad Request] ${error.config?.method?.toUpperCase()} ${error.config?.url}:`, errMsg, errData);
+    }
+
     // Auto-logout on 401 (expired/invalid token)
     if (error.response.status === 401) {
       const token = localStorage.getItem('token');

@@ -534,7 +534,7 @@ const login = async (req, res, next) => {
     const refreshToken = crypto.randomBytes(40).toString('hex');
     user.refreshToken = refreshToken;
     user.lastLogin = new Date();
-    await user.save();
+    await user.save({ validateModifiedOnly: true });
 
     // Log Security Audit Activity
     try {

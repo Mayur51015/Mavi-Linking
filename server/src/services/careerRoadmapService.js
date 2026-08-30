@@ -768,16 +768,18 @@ const updateRoadmapProgress = async (userId, itemId, newStatus) => {
 /**
  * Update target career goal for student.
  */
-const updateTargetCareerGoal = async (userId, targetRole) => {
-  if (!targetRole || !targetRole.trim()) {
-    throw new Error('Target role is required');
-  }
+  const { normalizeDomain } = require('../constants/domainOptions');
+  const role = targetRole.trim();
+  const domain = normalizeDomain(role);
 
-  // Update user preferredDomain if applicable
-  await User.findByIdAndUpdate(userId, { preferredDomain: targetRole.trim() });
+  // Update user preferredRole and canonical preferredDomain
+  await User.findByIdAndUpdate(userId, {
+    preferredRole: role,
+    preferredDomain: domain,
+  });
 
   // Regenerate roadmap with new target goal
-  const roadmap = await generateCareerRoadmap(userId, targetRole.trim());
+  const roadmap = await generateCareerRoadmap(userId, role);
   return roadmap;
 };
 

@@ -353,6 +353,36 @@ const startServer = async () => {
         console.log('   🏫 Default customer institutions auto-seeded (Zeal, COEP, MIT-WPU).');
       }
 
+      // ─── preferredDomain & preferredRole Normalization Migration ────────
+      try {
+        const { normalizeDomain } = require('./constants/domainOptions');
+        const usersToNormalize = await User.find({
+          preferredDomain: { $exists: true, $ne: '' },
+        }).select('_id preferredDomain preferredRole');
+
+        let normalizedCount = 0;
+        for (const u of usersToNormalize) {
+          const canonical = normalizeDomain(u.preferredDomain);
+          if (canonical !== u.preferredDomain || (!u.preferredRole && u.preferredDomain)) {
+            await User.updateOne(
+              { _id: u._id },
+              {
+                $set: {
+                  preferredDomain: canonical,
+                  preferredRole: u.preferredRole || u.preferredDomain,
+                },
+              }
+            );
+            normalizedCount++;
+          }
+        }
+        if (normalizedCount > 0) {
+          console.log(`   ✅ Normalized ${normalizedCount} legacy preferredDomain value(s) to canonical domains.`);
+        }
+      } catch (domainMigrateErr) {
+        console.warn('   ⚠️  preferredDomain migration skipped:', domainMigrateErr.message);
+      }
+
       if (devMigrated.modifiedCount > 0 || profMigrated.modifiedCount > 0) {
         console.log(`   ✅ Role migration: ${devMigrated.modifiedCount} developer→user, ${profMigrated.modifiedCount} professor→teacher`);
       }

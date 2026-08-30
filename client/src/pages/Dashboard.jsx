@@ -38,6 +38,7 @@ import ChangeEmailModal from '../components/ChangeEmailModal';
 import { AuthContext } from '../context/AuthContext';
 import UserLayout from '../layouts/UserLayout';
 import Messages from '../pages/Messages';
+import { CANONICAL_DOMAINS } from '../constants/domainOptions';
 
 const Dashboard = () => {
   const { user, setUser, updateProfile, socket, refreshUser } = useContext(AuthContext);
@@ -1724,13 +1725,16 @@ const Dashboard = () => {
 
               <div className="input-group">
                 <label className="input-label">Preferred Technical Domain</label>
-                <input
-                  type="text"
+                <select
                   className="input-field"
-                  placeholder="e.g. Full Stack Development / AI / Data Engineering"
                   value={editProfileData.preferredDomain}
                   onChange={(e) => setEditProfileData({ ...editProfileData, preferredDomain: e.target.value })}
-                />
+                >
+                  <option value="">-- Select Preferred Domain --</option>
+                  {CANONICAL_DOMAINS.filter(Boolean).map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
               </div>
             </div>
 

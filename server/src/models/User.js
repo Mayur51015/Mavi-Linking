@@ -300,6 +300,36 @@ const userSchema = new mongoose.Schema(
     preferredDomain: {
       type: String,
       trim: true,
+      set: (v) => {
+        const { normalizeDomain } = require('../constants/domainOptions');
+        return normalizeDomain(v);
+      },
+      enum: {
+        values: [
+          'Software Development',
+          'Full-Stack Development',
+          'Frontend Development',
+          'Backend Development',
+          'Mobile App Development',
+          'AI / Machine Learning',
+          'Data Science & Analytics',
+          'Cloud & DevOps',
+          'Cybersecurity',
+          'Blockchain & Web3',
+          'Embedded Systems & IoT',
+          'Game Development',
+          'UI/UX & Product Design',
+          'Quality Assurance & Testing',
+          'Other',
+          '',
+        ],
+        message: '{VALUE} is not a valid preferred domain. Please select a valid domain option.',
+      },
+      default: '',
+    },
+    preferredRole: {
+      type: String,
+      trim: true,
       default: '',
     },
     experienceLevel: {

@@ -29,19 +29,23 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   const [repoSearch, setRepoSearch] = useState('');
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'repos' | 'scoring'
 
   const fetchIntelligence = useCallback(async () => {
     try {
       setLoading(true);
+      setFetchError(null);
       const res = await api.get('/platforms/github/intelligence');
       if (res.data?.success) {
         setData(res.data.data);
       }
     } catch (err) {
       console.error('Failed to load GitHub intelligence:', err);
-      toast.error('Failed to load GitHub Developer Intelligence.');
+      const errorMsg = err.response?.data?.message || 'Failed to load GitHub Developer Intelligence.';
+      setFetchError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -50,6 +54,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
   const handleSync = async () => {
     try {
       setSyncing(true);
+      setFetchError(null);
       const res = await api.post('/platforms/github/sync');
       if (res.data?.success) {
         toast.success(res.data.message || 'GitHub intelligence updated!');
@@ -62,7 +67,8 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
       }
     } catch (err) {
       console.error('Sync failed:', err);
-      toast.error(err.response?.data?.message || 'Synchronization failed.');
+      const errorMsg = err.response?.data?.message || 'Synchronization failed.';
+      toast.error(errorMsg);
     } finally {
       setSyncing(false);
     }
@@ -73,6 +79,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
       fetchIntelligence();
     }
   }, [isOpen, fetchIntelligence]);
+
 
   if (!isOpen) return null;
 
@@ -318,6 +325,21 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
             <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-secondary)' }}>
               <RotateCcw size={28} className="animate-spin" style={{ margin: '0 auto 0.75rem auto', color: 'var(--accent-purple)' }} />
               <p>Analyzing GitHub developer data...</p>
+            </div>
+          ) : fetchError ? (
+            <div style={{ textAlign: 'center', padding: '3rem 0' }}>
+              <AlertCircle size={36} color="var(--accent-amber, #f59e0b)" style={{ margin: '0 auto 0.75rem auto' }} />
+              <h4 style={{ color: 'white', marginBottom: '0.5rem' }}>GitHub Intelligence Unavailable</h4>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '400px', margin: '0 auto 1.25rem auto', lineHeight: '1.4' }}>
+                {fetchError}
+              </p>
+              <button
+                onClick={fetchIntelligence}
+                className="btn btn-outline btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', margin: '0 auto' }}
+              >
+                <RotateCcw size={13} /> Retry Loading
+              </button>
             </div>
           ) : !data?.linked ? (
             <div style={{ textAlign: 'center', padding: '3rem 0' }}>

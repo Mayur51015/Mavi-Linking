@@ -1,8 +1,16 @@
 const User = require('../models/User');
 const Activity = require('../models/Activity');
-const { fetchUserProfile, fetchUserRepositories, fetchUserEvents } = require('./githubService');
+const {
+  fetchUserProfile,
+  fetchUserRepositories,
+  fetchUserEvents,
+  fetchUserContributionsData,
+} = require('./githubService');
 const { normalizeGitHubIntelligence } = require('./githubIntelligenceService');
+const { evaluateUserIntelligence } = require('./careerIntelligenceService');
+const { recordSyncSuccess, recordSyncFailure } = require('./syncConsistencyService');
 const ExternalIdentity = require('../models/ExternalIdentity');
+
 // In-memory sync lock map to prevent overlapping sync operations
 const syncLocks = new Map();
 
@@ -114,6 +122,7 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
     let rawProfile = null;
     let rawRepos = [];
     let rawEvents = [];
+    let searchContributions = null;
     const partialErrors = [];
 
     try {
@@ -150,6 +159,12 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
       partialErrors.push(`Events: ${err.message}`);
     }
 
+    try {
+      searchContributions = await fetchUserContributionsData(username);
+    } catch (err) {
+      console.warn(`[GitHub Sync] Contributions search warning for @${username}:`, err.message);
+    }
+
     const completedAt = new Date();
     const durationMs = completedAt.getTime() - startedAt.getTime();
     const syncStatus = partialErrors.length > 0 ? 'partial' : 'complete';
@@ -162,14 +177,15 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
       error: partialErrors.length > 0 ? partialErrors.join(' | ') : null,
     };
 
-    // 2. Normalize Intelligence Data (merging with previous data if partial)
+    // 2. Normalize Intelligence Data (merging with previous data and search metrics)
     const githubData = normalizeGitHubIntelligence(
       rawProfile,
       rawRepos,
       rawEvents,
       username,
       previousGithubData,
-      syncMeta
+      syncMeta,
+      searchContributions
     );
 
     // 3. Persist Activities into Activity Collection (deduplicated)
@@ -202,7 +218,13 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
     user.githubUsername = username; // Legacy mirror for backwards compatibility
 
     user.platformData = user.platformData || {};
+    user.platformData.github = githubData;
+    user.lastSyncedAt = completedAt;
 
+    recordSyncSuccess(user, 'github', githubData);
+    await user.save();
+
+    // 5. Evaluate Career Intelligence, Scores & Developer DNA
     const updatedUser = await evaluateUserIntelligence(user._id);
 
     return {
@@ -210,7 +232,7 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
       status: syncStatus,
       durationMs,
       data: githubData,
-      user: updatedUser,
+      user: updatedUser || user,
       message: syncStatus === 'partial' 
         ? 'GitHub synchronized partially (some endpoints unavailable).'
         : 'GitHub intelligence synchronized successfully.',
@@ -229,8 +251,10 @@ const syncGitHubAccount = async (userId, customUsername = null) => {
     throw error;
   } finally {
     syncLocks.delete(userId.toString());
-  }};
+  }
+};
 
 module.exports = {
   syncGitHubAccount,
 };
+

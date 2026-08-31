@@ -2,15 +2,18 @@ import React, { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Terminal, X, BadgeCheck } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import { userNavItems, userQuickActions } from '../../navigation/userNavigation.jsx';
 
 const UserSidebar = ({ sidebarOpen, setSidebarOpen, onOpenVerify }) => {
   const { user } = useContext(AuthContext);
+  const { unreadCount } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
 
   const publicUsername = user?.username || user?.platforms?.github?.username;
   const maviIdDisplay = user?.maviId || (user?._id ? `MAVI-${user._id.slice(-8).toUpperCase()}` : '');
+
 
   return (
     <aside className={`dashboard-sidebar${sidebarOpen ? ' sidebar-open' : ''}`}>
@@ -58,13 +61,14 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen, onOpenVerify }) => {
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
         {userNavItems.map((item) => {
           const isActive = location.pathname === item.path;
+          const showBadge = item.badge && unreadCount > 0;
           return (
             <Link
               key={item.name}
               to={item.path}
               onClick={() => setSidebarOpen(false)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem',
                 padding: '0.625rem 1rem', borderRadius: '10px',
                 background: isActive ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
                 color: isActive ? 'white' : 'var(--text-secondary)',
@@ -78,10 +82,30 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen, onOpenVerify }) => {
                 textDecoration: 'none',
               }}
             >
-              {item.icon} {item.name}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {item.icon} {item.name}
+              </span>
+              {showBadge && (
+                <span
+                  style={{
+                    background: 'var(--accent-purple)',
+                    color: 'white',
+                    fontWeight: '700',
+                    fontSize: '0.68rem',
+                    padding: '0.125rem 0.45rem',
+                    borderRadius: '999px',
+                    minWidth: '18px',
+                    textAlign: 'center',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Link>
           );
         })}
+
 
         {/* Quick Actions */}
         <div style={{ borderTop: '1px solid var(--border-color)', marginTop: '1rem', paddingTop: '1rem' }}>

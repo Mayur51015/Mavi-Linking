@@ -26,15 +26,29 @@ const fetchPlatformProfile = async (platform, username) => {
   }
 };
 
-const { fetchUserProfile, fetchUserRepositories, fetchUserEvents } = require('./githubService');
+const {
+  fetchUserProfile,
+  fetchUserRepositories,
+  fetchUserEvents,
+  fetchUserContributionsData,
+} = require('./githubService');
 const { normalizeGitHubIntelligence } = require('./githubIntelligenceService');
 
 const fetchGitHubProfile = async (username) => {
   const profilePayload = await fetchUserProfile(username);
-  const reposPayload = await fetchUserRepositories(username, 30);
-  const eventsPayload = await fetchUserEvents(username, 50);
+  const reposPayload = await fetchUserRepositories(username, 100).catch(() => []);
+  const eventsPayload = await fetchUserEvents(username, 100).catch(() => []);
+  const contributionsPayload = await fetchUserContributionsData(username).catch(() => null);
 
-  const intelligence = normalizeGitHubIntelligence(profilePayload, reposPayload, eventsPayload, username);
+  const intelligence = normalizeGitHubIntelligence(
+    profilePayload,
+    reposPayload,
+    eventsPayload,
+    username,
+    null,
+    { status: 'complete', completedAt: new Date() },
+    contributionsPayload
+  );
 
   // Return intelligence structure with top-level backwards compatibility aliases
   return {
@@ -54,6 +68,7 @@ const fetchGitHubProfile = async (username) => {
     repos: intelligence.repositories,
   };
 };
+
 
 const fetchCodeforcesProfile = async (username) => {
   const url = `https://codeforces.com/api/user.info?handles=${encodeURIComponent(username)}`;

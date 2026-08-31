@@ -4,7 +4,15 @@
  * Provides a canonical single source of truth for developer identity.
  */
 
-const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], username = '', previousData = null, syncMeta = {}) => {
+const normalizeGitHubIntelligence = (
+  rawProfile,
+  rawRepos = [],
+  rawEvents = [],
+  username = '',
+  previousData = null,
+  syncMeta = {},
+  searchContributions = null
+) => {
   const canonicalUsername = (rawProfile?.login || username || previousData?.profile?.username || '').trim();
 
   // 1. Profile Intelligence (Validate numeric and string fields)
@@ -87,18 +95,18 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
   const commitsByRepo = {};
   const activeDaysSet = new Set();
 
-  let prsOpened = 0;
-  let prsMerged = 0;
-  let prsClosed = 0;
-  let reviewsSubmitted = 0;
-  let issuesCreated = 0;
-  let issuesClosed = 0;
-  let releaseCount = 0;
+  let eventPrsOpened = 0;
+  let eventPrsMerged = 0;
+  let eventPrsClosed = 0;
+  let eventReviewsSubmitted = 0;
+  let eventIssuesCreated = 0;
+  let eventIssuesClosed = 0;
+  let eventReleaseCount = 0;
   let latestRelease = null;
 
-  const externalReposSet = new Set();
-  let externalPRCount = 0;
-  let externalIssueCount = 0;
+  const eventExternalReposSet = new Set();
+  let eventExternalPRCount = 0;
+  let eventExternalIssueCount = 0;
 
   const eventsToProcess = Array.isArray(rawEvents) && rawEvents.length > 0
     ? rawEvents
@@ -114,10 +122,10 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
 
     const repoFullName = ev.repo?.name || '';
     const repoOwner = repoFullName.split('/')[0]?.toLowerCase();
-    const isExternal = repoOwner && canonicalUsername && repoOwner !== canonicalUsername.toLowerCase();
+    const isExternal = Boolean(repoOwner && canonicalUsername && repoOwner !== canonicalUsername.toLowerCase());
 
-    if (isExternal) {
-      externalReposSet.add(repoFullName);
+    if (isExternal && repoFullName) {
+      eventExternalReposSet.add(repoFullName);
     }
 
     if (eventType === 'PushEvent') {
@@ -130,22 +138,27 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
       const action = ev.payload?.action;
       const isMerged = Boolean(ev.payload?.pull_request?.merged);
 
-      if (action === 'opened') prsOpened++;
-      if (action === 'closed') {
-        prsClosed++;
-        if (isMerged) prsMerged++;
+      if (action === 'opened') {
+        eventPrsOpened++;
+        if (isExternal) eventExternalPRCount++;
+      } else if (action === 'closed') {
+        eventPrsClosed++;
+        if (isMerged) {
+          eventPrsMerged++;
+        }
       }
-
-      if (isExternal) externalPRCount++;
     } else if (eventType === 'PullRequestReviewEvent' || eventType === 'PullRequestReviewCommentEvent') {
-      reviewsSubmitted++;
+      eventReviewsSubmitted++;
     } else if (eventType === 'IssuesEvent') {
       const action = ev.payload?.action;
-      if (action === 'opened') issuesCreated++;
-      if (action === 'closed') issuesClosed++;
-      if (isExternal) externalIssueCount++;
+      if (action === 'opened') {
+        eventIssuesCreated++;
+        if (isExternal) eventExternalIssueCount++;
+      } else if (action === 'closed') {
+        eventIssuesClosed++;
+      }
     } else if (eventType === 'ReleaseEvent') {
-      releaseCount++;
+      eventReleaseCount++;
       if (!latestRelease && ev.payload?.release) {
         latestRelease = {
           name: ev.payload.release.name || ev.payload.release.tag_name,
@@ -156,6 +169,53 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
       }
     }
   });
+
+  // Combine external repos from search and events
+  const combinedExternalReposSet = new Set([
+    ...Array.from(eventExternalReposSet),
+    ...(Array.isArray(searchContributions?.externalRepos) ? searchContributions.externalRepos : []),
+    ...(Array.isArray(previousData?.openSource?.externalReposList) ? previousData.openSource.externalReposList : []),
+  ]);
+
+  // Aggregate Metrics with Single Source of Truth
+  const rawOpened = searchContributions?.prsOpened != null
+    ? Math.max(searchContributions.prsOpened, eventPrsOpened)
+    : Math.max(eventPrsOpened, previousData?.pullRequests?.opened || 0);
+
+  const rawMerged = searchContributions?.prsMerged != null
+    ? Math.max(searchContributions.prsMerged, eventPrsMerged)
+    : Math.max(eventPrsMerged, previousData?.pullRequests?.merged || 0);
+
+  // Merged PR count cannot exceed opened PR count
+  const prsOpened = Math.max(0, rawOpened);
+  const prsMerged = Math.max(0, Math.min(rawMerged, prsOpened || rawMerged));
+  const prsClosed = Math.max(eventPrsClosed, prsMerged, previousData?.pullRequests?.closed || 0);
+
+  // Merge rate calculation: Merged / Opened * 100 (handles 0 opened without NaN/Infinity/undefined)
+  const mergeRate = prsOpened > 0 ? Math.round((prsMerged / prsOpened) * 100) : 0;
+
+  const reviewsSubmitted = searchContributions?.reviewsSubmitted != null
+    ? Math.max(searchContributions.reviewsSubmitted, eventReviewsSubmitted)
+    : Math.max(eventReviewsSubmitted, previousData?.reviews?.submitted || previousData?.reviews?.total || 0);
+
+  const externalPRCount = searchContributions?.externalPRs != null
+    ? Math.max(searchContributions.externalPRs, eventExternalPRCount)
+    : Math.max(eventExternalPRCount, previousData?.openSource?.externalPRs || 0);
+
+  const externalIssueCount = searchContributions?.externalIssues != null
+    ? Math.max(searchContributions.externalIssues, eventExternalIssueCount)
+    : Math.max(eventExternalIssueCount, previousData?.openSource?.externalIssues || 0);
+
+  const releaseCount = Math.max(
+    eventReleaseCount,
+    previousData?.releases?.count || previousData?.releases?.published || 0
+  );
+
+  const issuesCreated = searchContributions?.externalIssues != null
+    ? Math.max(searchContributions.externalIssues, eventIssuesCreated)
+    : Math.max(eventIssuesCreated, previousData?.issues?.created || 0);
+
+  const issuesClosed = Math.max(eventIssuesClosed, previousData?.issues?.closed || 0);
 
   // Calculate daily streak from active days
   const sortedActiveDays = Array.from(activeDaysSet).sort().reverse();
@@ -181,47 +241,45 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
 
   // 5. Commit Intelligence
   const commits = {
-    available: eventsToProcess.length > 0,
+    available: eventsToProcess.length > 0 || recentCommitCount > 0,
     recentCount30Days: recentCommitCount,
     activeRepositoriesCount: Object.keys(commitsByRepo).length,
     commitsByRepo,
-    status: eventsToProcess.length > 0 ? 'active' : 'no_recent_events',
+    status: (eventsToProcess.length > 0 || recentCommitCount > 0) ? 'active' : 'no_recent_events',
   };
 
   // 6. Pull Request Intelligence
-  const totalCompletedPRs = prsClosed + prsMerged;
-  const mergeRate = totalCompletedPRs > 0 ? Math.round((prsMerged / totalCompletedPRs) * 100) : null;
-
   const pullRequests = {
-    available: eventsToProcess.length > 0,
+    available: true,
     opened: prsOpened,
     closed: prsClosed,
     merged: prsMerged,
-    mergeRate: mergeRate !== null ? `${mergeRate}%` : 'Insufficient data',
+    mergeRate: `${mergeRate}%`,
     externalPRs: externalPRCount,
-    status: eventsToProcess.length > 0 ? 'available' : 'insufficient_data',
+    status: prsOpened > 0 ? 'available' : 'none_recorded',
   };
 
   // 7. Open Source Intelligence
   const openSource = {
-    available: eventsToProcess.length > 0,
-    externalReposContributed: externalReposSet.size,
-    externalReposList: Array.from(externalReposSet),
+    available: true,
+    externalReposContributed: combinedExternalReposSet.size,
+    externalReposList: Array.from(combinedExternalReposSet),
     externalPRs: externalPRCount,
     externalIssues: externalIssueCount,
-    status: externalReposSet.size > 0 ? 'contributor' : 'personal_focus',
+    status: combinedExternalReposSet.size > 0 ? 'contributor' : 'personal_focus',
   };
 
   // 8. Reviews & Collaboration
   const reviews = {
-    available: eventsToProcess.length > 0,
+    available: true,
     submitted: reviewsSubmitted,
+    total: reviewsSubmitted,
     status: reviewsSubmitted > 0 ? 'active' : 'none_recorded',
   };
 
   // 9. Issues Intelligence
   const issues = {
-    available: eventsToProcess.length > 0,
+    available: true,
     created: issuesCreated,
     closed: issuesClosed,
     externalIssues: externalIssueCount,
@@ -230,8 +288,9 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
 
   // 10. Software Delivery & Releases
   const releases = {
-    available: eventsToProcess.length > 0,
+    available: true,
     count: releaseCount,
+    published: releaseCount,
     latestRelease,
     status: releaseCount > 0 ? 'active' : 'none_recorded',
   };
@@ -268,7 +327,7 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
       completedAt: syncMeta.completedAt || new Date(),
       durationMs: syncMeta.durationMs || 0,
       error: syncMeta.error || null,
-      source: 'github_rest_api',
+      source: searchContributions?.source || 'github_rest_api',
     },
   };
 };
@@ -276,3 +335,4 @@ const normalizeGitHubIntelligence = (rawProfile, rawRepos = [], rawEvents = [], 
 module.exports = {
   normalizeGitHubIntelligence,
 };
+

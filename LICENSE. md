@@ -1,11 +1,21 @@
+# MAVI Linking — Proprietary License
+
 Copyright (c) 2026 MAVI Linking
 
 All rights reserved.
 
-This software and its source code are proprietary and confidential.
-No part of this software may be copied, modified, distributed,
-published, sublicensed, or used without prior written permission
-from the copyright holder.
+This software and its source code are proprietary to MAVI Linking.
 
-Unauthorized use, reproduction, or distribution of this software
-is prohibited.
+No permission is granted to copy, modify, distribute, publish, sublicense,
+sell, or use this software or any part of its source code without prior
+written permission from the copyright holder.
+
+Unauthorized reproduction, distribution, modification, or use of this
+software is strictly prohibited.
+
+Third-party libraries, frameworks, APIs, fonts, icons, images, and other
+components used by this project remain subject to their respective licenses
+and terms.
+
+By accessing this repository, you acknowledge and agree to respect the
+copyright and intellectual property rights associated with this project.

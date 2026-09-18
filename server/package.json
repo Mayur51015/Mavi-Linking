@@ -51,7 +51,7 @@
     "rollup": "^4.60.3",
     "socket.io": "^4.8.3",
     "ua-parser-js": "^2.0.10",
-    "workflow": "^4.6.0"
+    "workflow": "^4.8.9"
   },
   "devDependencies": {
     "jest": "^29.7.0",

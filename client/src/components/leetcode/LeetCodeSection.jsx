@@ -78,8 +78,8 @@ const LeetCodeSection = () => {
         </div>
       ) : (
         <EmptyState
-          icon={<Code2 size={32} color="var(--accent-amber)" />}
-          iconColor="var(--accent-amber)"
+          icon={<Code2 size={32} color="#06B6D4" />}
+          iconColor="#06B6D4"
           title="Connect your LeetCode account"
           description="Sync your LeetCode profile to unlock AI-powered insights, problem breakdowns, submission history, and competitive analytics."
           action={{

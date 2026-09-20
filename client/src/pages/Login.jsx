@@ -1,7 +1,14 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Terminal, Shield, Lock, KeyRound, X } from 'lucide-react';
+import {
+  Terminal,
+  ShieldCheck,
+  CheckCircle2,
+  KeyRound,
+  X,
+  ArrowRight,
+} from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
 import api from '../api/axios';
@@ -12,7 +19,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  
+
   // Forgot / Reset Password States
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
@@ -80,7 +87,7 @@ const Login = () => {
     try {
       const data = await login(cleanId, password);
       toast.success('Successfully authenticated!');
-      
+
       const role = data?.user?.role;
       const mustChangePassword = data?.user?.mustChangePassword;
 
@@ -111,139 +118,507 @@ const Login = () => {
     }
   };
 
+  const institutionalBenefits = [
+    {
+      title: 'Developer Intelligence',
+      desc: 'Automated repository telemetry, code commit analysis, and verified skills validation.',
+    },
+    {
+      title: 'Career Intelligence',
+      desc: 'Real-time industry benchmark matching, skill gap simulation, and AI growth roadmaps.',
+    },
+    {
+      title: 'Academia–Industry Collaboration',
+      desc: 'Verified student talent pipeline, direct recruiter engagement, and placement analytics.',
+    },
+    {
+      title: 'Enterprise Access Control',
+      desc: 'Unified multi-tenant hierarchy for Institutions, Departments, Teachers, and Recruiters.',
+    },
+  ];
+
   return (
-    <div className="auth-shell" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: '#09090b' }}>
-      <div className="glass-card-static auth-card animate-fade-in" style={{ width: '100%', maxWidth: '440px', padding: '2.5rem' }}>
-        
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '54px', height: '54px', borderRadius: '16px', background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', color: 'var(--accent-purple)', marginBottom: '1rem' }}>
-            <Terminal size={28} />
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        background: '#0B0D0F',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      }}
+    >
+      {/* ── Left Institutional Info Banner (Desktop Only) ── */}
+      <div
+        className="hide-mobile"
+        style={{
+          flex: '0 0 45%',
+          background: '#101317',
+          borderRight: '1px solid #262C33',
+          padding: '3.5rem 3rem',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        }}
+      >
+        <div>
+          {/* Header Branding */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem' }}>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                background: '#3B82F6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                boxShadow: '0 2px 4px rgba(59, 130, 246, 0.25)',
+              }}
+            >
+              <Terminal size={22} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#F5F7FA', letterSpacing: '-0.02em' }}>
+                MAVI <span style={{ color: '#3B82F6', fontWeight: 700 }}>Linking</span>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Enterprise ERP Platform
+              </div>
+            </div>
           </div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: 'white' }}>Identity Verification</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.4rem' }}>
-            Sign in to access your MAVI Linking portal
-          </p>
+
+          {/* Heading */}
+          <div style={{ marginBottom: '2.5rem' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.25rem 0.65rem',
+                borderRadius: '4px',
+                background: '#172554',
+                color: '#60A5FA',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                marginBottom: '1rem',
+              }}
+            >
+              <ShieldCheck size={14} /> Enterprise Academic Intelligence
+            </div>
+            <h1
+              style={{
+                fontSize: '2rem',
+                fontWeight: 800,
+                lineHeight: 1.25,
+                color: '#F5F7FA',
+                marginBottom: '0.75rem',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Developer & Career Intelligence Platform
+            </h1>
+            <p style={{ color: '#9CA3AF', fontSize: '0.9375rem', lineHeight: 1.6, maxWidth: '440px' }}>
+              Centralized academic records, verified technical profiles, departmental analytics, and corporate recruitment pipelines.
+            </p>
+          </div>
+
+          {/* Benefit List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {institutionalBenefits.map((item, idx) => (
+              <div key={idx} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                <div
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: '#172554',
+                    color: '#3B82F6',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    marginTop: '2px',
+                  }}
+                >
+                  <CheckCircle2 size={16} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#F5F7FA' }}>{item.title}</div>
+                  <div style={{ fontSize: '0.8125rem', color: '#9CA3AF', marginTop: '0.15rem', lineHeight: 1.45 }}>
+                    {item.desc}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {error && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', padding: '0.75rem 1rem', borderRadius: '10px', marginBottom: '1.5rem', fontSize: '0.85rem', textAlign: 'center' }}>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="input-group" style={{ marginBottom: '1.25rem' }}>
-            <label className="input-label">Email Address or MAVI ID</label>
-            <input 
-              type="text" 
-              className="input-field" 
-              placeholder="e.g. user@institution.edu or MAVI-1A2B3C"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              required
-              disabled={submitting}
-              autoComplete="username"
-            />
-          </div>
-
-          <div className="input-group" style={{ marginBottom: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-              <label className="input-label" style={{ margin: 0 }}>Password</label>
-              <button
-                type="button"
-                onClick={() => {
-                  setForgotEmail('');
-                  setForgotOtp('');
-                  setForgotNewPassword('');
-                  setForgotStep(1);
-                  setForgotSuccessMsg('');
-                  setForgotError('');
-                  setShowForgotModal(true);
-                }}
-                style={{ background: 'none', border: 'none', color: 'var(--accent-purple)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '500' }}
-              >
-                Forgot Password?
-              </button>
-            </div>
-            <PasswordInput
-              className="input-field"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={submitting}
-              autoComplete="current-password"
-            />
-          </div>
-
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', padding: '0.875rem' }} disabled={submitting}>
-            {submitting ? 'Authenticating Identity...' : 'Sign In'}
-          </button>
-        </form>
-        
-        <p style={{ textAlign: 'center', marginTop: '1.75rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          Don't have an account? <Link to="/register" className="text-gradient" style={{ fontWeight: '600' }}>Sign up</Link>
-        </p>
+        {/* Footer Security Notice */}
+        <div
+          style={{
+            marginTop: '3rem',
+            paddingTop: '1.5rem',
+            borderTop: '1px solid #262C33',
+            fontSize: '0.75rem',
+            color: '#6B7280',
+            lineHeight: 1.5,
+          }}
+        >
+          <strong>Security Notice:</strong> Authorized enterprise access only. Telemetry and authentication events are logged for compliance and institutional audit standards.
+        </div>
       </div>
 
+      {/* ── Right Login Form Area ── */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '2.5rem 1.5rem',
+          background: '#0B0D0F',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '440px',
+            background: '#15191E',
+            border: '1px solid #262C33',
+            borderRadius: '10px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3)',
+            padding: '2.5rem 2.25rem',
+          }}
+        >
+          {/* Mobile Header Branding */}
+          <div className="show-mobile" style={{ display: 'none', textAlign: 'center', marginBottom: '1.5rem' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '42px',
+                height: '42px',
+                borderRadius: '8px',
+                background: '#3B82F6',
+                color: '#ffffff',
+                marginBottom: '0.5rem',
+              }}
+            >
+              <Terminal size={22} />
+            </div>
+            <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#F5F7FA' }}>
+              MAVI <span style={{ color: '#3B82F6' }}>Linking</span>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '1.75rem' }}>
+            <h2
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                color: '#F5F7FA',
+                letterSpacing: '-0.02em',
+                margin: '0 0 0.4rem 0',
+              }}
+            >
+              Sign In
+            </h2>
+            <p style={{ color: '#9CA3AF', fontSize: '0.875rem', margin: 0 }}>
+              Enter your credentials to access your ERP portal.
+            </p>
+          </div>
+
+          {error && (
+            <div
+              style={{
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#F87171',
+                padding: '0.75rem 1rem',
+                borderRadius: '6px',
+                marginBottom: '1.5rem',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+              <label className="input-label" style={{ fontWeight: 600, color: '#F5F7FA' }}>
+                Email Address, PRN, or MAVI ID
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="e.g. rollno@college.edu or MAVI-1024"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                required
+                disabled={submitting}
+                autoComplete="username"
+                style={{
+                  background: '#11151A',
+                  borderColor: '#262C33',
+                  color: '#F5F7FA',
+                  borderRadius: '6px',
+                  padding: '0.65rem 0.85rem',
+                  fontSize: '0.9rem',
+                }}
+              />
+            </div>
+
+            <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '0.4rem',
+                }}
+              >
+                <label className="input-label" style={{ margin: 0, fontWeight: 600, color: '#F5F7FA' }}>
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail('');
+                    setForgotOtp('');
+                    setForgotNewPassword('');
+                    setForgotStep(1);
+                    setForgotSuccessMsg('');
+                    setForgotError('');
+                    setShowForgotModal(true);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#3B82F6',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                  }}
+                >
+                  Forgot password?
+                </button>
+              </div>
+              <PasswordInput
+                className="input-field"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={submitting}
+                autoComplete="current-password"
+                style={{
+                  background: '#11151A',
+                  borderColor: '#262C33',
+                  color: '#F5F7FA',
+                  borderRadius: '6px',
+                  padding: '0.65rem 0.85rem',
+                  fontSize: '0.9rem',
+                }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                fontSize: '0.925rem',
+                borderRadius: '6px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+              }}
+              disabled={submitting}
+            >
+              {submitting ? 'Verifying Credentials...' : 'Sign In'}
+              {!submitting && <ArrowRight size={16} />}
+            </button>
+          </form>
+
+          <div
+            style={{
+              marginTop: '1.75rem',
+              paddingTop: '1.25rem',
+              borderTop: '1px solid #262C33',
+              textAlign: 'center',
+              fontSize: '0.875rem',
+              color: '#9CA3AF',
+            }}
+          >
+            Don't have an institutional account?{' '}
+            <Link
+              to="/register"
+              style={{
+                color: '#3B82F6',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              Create Account
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Forgot / Reset Password Modal ── */}
       {showForgotModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div className="glass-card-static animate-fade-in" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <KeyRound size={20} style={{ color: 'var(--accent-purple)' }} /> Account Recovery
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '460px',
+              background: '#15191E',
+              borderRadius: '10px',
+              border: '1px solid #262C33',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4)',
+              padding: '2rem',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1.25rem',
+              }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: '1.15rem',
+                  fontWeight: 700,
+                  color: '#F5F7FA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                <KeyRound size={20} style={{ color: '#3B82F6' }} /> Account Recovery
               </h3>
-              <button type="button" onClick={() => setShowForgotModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#9CA3AF',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                }}
+              >
                 <X size={20} />
               </button>
             </div>
 
             {forgotError && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.825rem' }}>
+              <div
+                style={{
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#F87171',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                  marginBottom: '1rem',
+                  fontSize: '0.825rem',
+                }}
+              >
                 {forgotError}
               </div>
             )}
 
             {forgotSuccessMsg && (
-              <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#34d399', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.825rem' }}>
+              <div
+                style={{
+                  background: 'rgba(34, 197, 94, 0.15)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  color: '#4ADE80',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                  marginBottom: '1rem',
+                  fontSize: '0.825rem',
+                }}
+              >
                 {forgotSuccessMsg}
               </div>
             )}
 
             {forgotStep === 1 ? (
               <form onSubmit={handleRequestRecovery}>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.5' }}>
-                  Enter your previously verified account email address to receive password recovery instructions and a 6-digit OTP code.
+                <p style={{ fontSize: '0.85rem', color: '#9CA3AF', marginBottom: '1.25rem', lineHeight: '1.5' }}>
+                  Enter your registered institutional email address to receive password recovery instructions and a 6-digit OTP code.
                 </p>
 
                 <div className="input-group">
-                  <label className="input-label">Verified Recovery Email</label>
+                  <label className="input-label" style={{ fontWeight: 600, color: '#F5F7FA' }}>Registered Institutional Email</label>
                   <input
                     type="email"
                     className="input-field"
-                    placeholder="user@example.com"
+                    placeholder="user@institution.edu"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     required
                     disabled={sendingForgot}
+                    style={{ background: '#11151A', borderColor: '#262C33', color: '#F5F7FA', borderRadius: '6px' }}
                   />
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-                  <button type="button" onClick={() => setShowForgotModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={sendingForgot}>
-                    {sendingForgot ? 'Sending...' : 'Send Recovery OTP'}
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(false)}
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                    disabled={sendingForgot}
+                  >
+                    {sendingForgot ? 'Sending OTP...' : 'Send Recovery OTP'}
                   </button>
                 </div>
               </form>
             ) : (
               <form onSubmit={handleExecuteReset}>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.5' }}>
-                  Enter the 6-digit OTP sent to your verified recovery channel (<strong>{forgotEmail}</strong>) and your new password.
+                <p style={{ fontSize: '0.85rem', color: '#9CA3AF', marginBottom: '1.25rem', lineHeight: '1.5' }}>
+                  Enter the 6-digit OTP sent to <strong style={{ color: '#F5F7FA' }}>{forgotEmail}</strong> and specify your new password.
                 </p>
 
                 <div className="input-group">
-                  <label className="input-label">6-Digit Recovery OTP</label>
+                  <label className="input-label" style={{ fontWeight: 600, color: '#F5F7FA' }}>6-Digit Recovery OTP</label>
                   <input
                     type="text"
                     className="input-field"
@@ -252,26 +627,40 @@ const Login = () => {
                     onChange={(e) => setForgotOtp(e.target.value)}
                     required
                     disabled={sendingForgot}
+                    style={{ background: '#11151A', borderColor: '#262C33', color: '#F5F7FA', borderRadius: '6px' }}
                   />
                 </div>
 
                 <div className="input-group">
-                  <label className="input-label">New Password</label>
+                  <label className="input-label" style={{ fontWeight: 600, color: '#F5F7FA' }}>New Password</label>
                   <PasswordInput
                     className="input-field"
-                    placeholder="Min 6 chars (A-Z, a-z, 0-9)"
+                    placeholder="Min 6 characters"
                     value={forgotNewPassword}
                     onChange={(e) => setForgotNewPassword(e.target.value)}
                     required
                     disabled={sendingForgot}
                     autoComplete="new-password"
+                    style={{ background: '#11151A', borderColor: '#262C33', color: '#F5F7FA', borderRadius: '6px' }}
                   />
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-                  <button type="button" onClick={() => setForgotStep(1)} className="btn btn-outline" style={{ flex: 1 }}>Back</button>
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={sendingForgot}>
-                    {sendingForgot ? 'Resetting...' : 'Reset Password'}
+                  <button
+                    type="button"
+                    onClick={() => setForgotStep(1)}
+                    className="btn btn-secondary"
+                    style={{ flex: 1 }}
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                    disabled={sendingForgot}
+                  >
+                    {sendingForgot ? 'Updating...' : 'Update Password'}
                   </button>
                 </div>
               </form>

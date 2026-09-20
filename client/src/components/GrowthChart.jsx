@@ -7,13 +7,30 @@ const GrowthChart = ({ analytics }) => {
 
   if (!hasData) {
     return (
-      <EmptyState
-        icon={<BarChart3 size={32} color="var(--accent-blue)" />}
-        iconColor="var(--accent-blue)"
-        title="No analytics data yet"
-        description="Sync your GitHub and LeetCode accounts, then click 'Sync AI DNA' to generate your developer growth analytics."
-        size="md"
-      />
+      <div className="erp-card" style={{ padding: '1.25rem 1.4rem', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#172554', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B82F6' }}>
+              <TrendingUp size={15} />
+            </div>
+            <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+              Developer Growth Analytics
+            </h3>
+          </div>
+          <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px', background: '#11151A', border: '1px solid #262C33', color: '#9CA3AF' }}>
+            6-Month Trend
+          </span>
+        </div>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '180px' }}>
+          <EmptyState
+            icon={<BarChart3 size={28} color="var(--accent-blue)" />}
+            iconColor="var(--accent-blue)"
+            title="No analytics data yet"
+            description="Sync your GitHub and LeetCode accounts, then click 'Sync AI DNA' to generate your developer growth analytics."
+            size="sm"
+          />
+        </div>
+      </div>
     );
   }
 
@@ -36,13 +53,19 @@ const GrowthChart = ({ analytics }) => {
   const latestInsight = analytics[analytics.length - 1]?.aiSummary;
 
   return (
-    <div className="glass-card" style={{ padding: '1.75rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div className="erp-card" style={{ padding: '1.25rem 1.4rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-        <h3 style={{ margin: 0, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
-          <TrendingUp size={22} color="var(--accent-cyan)" />
-          Developer Growth Analytics
-        </h3>
-        <span className="badge badge-purple" style={{ fontSize: '0.75rem' }}>6-Month Trend</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#172554', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B82F6' }}>
+            <TrendingUp size={15} />
+          </div>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+            Developer Growth Analytics
+          </h3>
+        </div>
+        <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px', background: '#11151A', border: '1px solid #262C33', color: '#9CA3AF' }}>
+          6-Month Trend
+        </span>
       </div>
 
       <div style={{ width: '100%', height: '240px', minHeight: '240px' }}>

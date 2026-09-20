@@ -62,12 +62,21 @@ const LeaderboardWidget = () => {
   }, []);
 
   return (
-    <div className="glass-card" style={{ padding: '2rem', height: '400px', display: 'flex', flexDirection: 'column' }}>
-      <h3 style={{ marginBottom: '1.5rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <Trophy size={24} color="#fbbf24" />
-        Global Leaderboard
-      </h3>
-      <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
+    <div className="erp-card" style={{ padding: '1.25rem 1.4rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(251, 191, 36, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F59E0B' }}>
+            <Trophy size={16} />
+          </div>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+            Global Leaderboard
+          </h3>
+        </div>
+        <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>
+          {leaderboard.length} Ranked
+        </span>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.25rem' }}>
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <SkeletonCard lines={2} height="55px" />

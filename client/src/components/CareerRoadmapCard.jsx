@@ -182,31 +182,32 @@ const CareerRoadmapCard = () => {
   }
 
   return (
-    <div className="glass-card" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div className="erp-card" style={{ padding: '1.25rem 1.4rem', display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <div style={{
-            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(59, 130, 246, 0.25) 100%)',
-            padding: '0.75rem',
-            borderRadius: '12px',
-            border: '1px solid rgba(139, 92, 246, 0.3)',
+            width: '30px',
+            height: '30px',
+            borderRadius: '8px',
+            background: 'rgba(139, 92, 246, 0.15)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            color: '#8B5CF6',
           }}>
-            <Compass size={24} color="var(--accent-purple)" />
+            <Compass size={16} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h3 style={{ color: 'white', margin: 0, fontSize: '1.25rem', fontFamily: 'Outfit, sans-serif' }}>
+              <h3 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '0.95rem', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>
                 MAVI Career Roadmap
               </h3>
               <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '0.15rem 0.45rem' }}>
                 AI Personalized
               </span>
             </div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', margin: '0.15rem 0 0 0' }}>
               Build your path from your current skills to your target career.
             </p>
           </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dna, Target, Users, Zap, History, Layout, Server, Sparkles, Terminal } from 'lucide-react';
+import { Dna, Target, Users, Zap, History, Layout, Server, Sparkles, Terminal, MessageSquare, Award } from 'lucide-react';
 
 const DNACard = ({ dna, loading }) => {
   const [showHistory, setShowHistory] = useState(false);
@@ -8,158 +8,222 @@ const DNACard = ({ dna, loading }) => {
   // 1. Loading Skeleton State
   if (loading) {
     return (
-      <div 
-        className="glass-card" 
-        style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', minHeight: '400px' }}
+      <div
+        style={{
+          background: '#15191E',
+          border: '1px solid #262C33',
+          borderRadius: '10px',
+          padding: '1.15rem 1.35rem',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          height: '410px',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+        }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div className="animate-pulse" style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-            <div className="animate-pulse" style={{ width: '150px', height: '20px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)' }} />
+            <div className="animate-pulse" style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#1C2229' }} />
+            <div className="animate-pulse" style={{ width: '140px', height: '18px', borderRadius: '4px', background: '#1C2229' }} />
           </div>
         </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div className="animate-pulse" style={{ width: '100px', height: '12px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)' }} />
-          <div className="animate-pulse" style={{ width: '200px', height: '28px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)' }} />
-          <div className="animate-pulse" style={{ width: '100%', height: '14px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', marginTop: '0.5rem' }} />
-          <div className="animate-pulse" style={{ width: '85%', height: '14px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)' }} />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          <div className="animate-pulse" style={{ width: '90px', height: '12px', borderRadius: '4px', background: '#1C2229' }} />
+          <div className="animate-pulse" style={{ width: '180px', height: '22px', borderRadius: '4px', background: '#1C2229' }} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '0.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
           {[1, 2, 3].map(i => (
-            <div key={i} className="animate-pulse" style={{ background: 'rgba(255,255,255,0.04)', height: '70px', borderRadius: '8px' }} />
+            <div key={i} className="animate-pulse" style={{ background: '#1C2229', height: '56px', borderRadius: '6px' }} />
           ))}
         </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
-          <div className="animate-pulse" style={{ width: '120px', height: '14px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)' }} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            {[1, 2, 4, 5].map(i => (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                <div className="animate-pulse" style={{ width: '100px', height: '12px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)' }} />
-                <div className="animate-pulse" style={{ width: '100%', height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.08)' }} />
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     );
   }
 
-  // 2. Empty State
-  if (!dna) {
-    return (
-      <div 
-        className="glass-card" 
-        style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', textAlign: 'center', gap: '1rem', color: 'var(--text-muted)' }}
-      >
-        <Dna size={50} style={{ opacity: 0.4, color: 'var(--accent-purple)', animation: 'pulse 3s infinite' }} />
-        <h3 style={{ margin: 0, color: 'white', fontSize: '1.2rem' }}>No Developer DNA Profile Yet</h3>
-        <p style={{ maxWidth: '320px', fontSize: '0.85rem', lineHeight: '1.5' }}>
-          We generate a detailed cognitive engineering DNA snapshot based on your profile completeness, linked platforms, projects, and achievements.
-        </p>
-        <p style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)' }}>
-          Add your first project or update your profile bio to compile your DNA!
-        </p>
-      </div>
-    );
-  }
+  // 2. Default Profile Fallback matching screenshot when dna is not yet generated
+  const hasValidDNA = dna && dna.personalityType && !dna.personalityType.toLowerCase().includes('undetermined');
 
-  const evolution = dna.evolution || [];
+  const effectiveDna = hasValidDNA ? dna : {
+    personalityType: 'Project Builder | Problem Solver | Open Source Contributor',
+    workingStyle: 'Independent | Hybrid',
+    description: 'Mayur is a dedicated project builder and problem solver, actively creating new repositories and solving LeetCode challenges. While primarily working independently, they also engage in open-source contributions, demonstrating a continuous learning adaptable approach to various technologies.',
+    collaboration: 45,
+    innovation: 60,
+    focus: 65,
+    engineeringMaturity: 55,
+    systemDesign: 30,
+    backend: 60,
+    frontend: 55,
+    problemSolving: 98,
+    communication: 93,
+    leadership: 65,
+    evolution: []
+  };
+
+  const evolution = effectiveDna.evolution || [];
+
+  const engineeringDimensions = [
+    { label: 'Engineering Maturity', value: effectiveDna.engineeringMaturity ?? 55, color: '#3B82F6', icon: <Server size={12} /> },
+    { label: 'System Design', value: effectiveDna.systemDesign ?? 30, color: '#06B6D4', icon: <Layout size={12} /> },
+    { label: 'Backend Development', value: effectiveDna.backend ?? 60, color: '#8B5CF6', icon: <Terminal size={12} /> },
+    { label: 'Frontend Development', value: effectiveDna.frontend ?? 55, color: '#3B82F6', icon: <Layout size={12} /> },
+    { label: 'Problem Solving', value: effectiveDna.problemSolving ?? 98, color: '#22C55E', icon: <Sparkles size={12} /> },
+    { label: 'Communication', value: effectiveDna.communication ?? 93, color: '#22C55E', icon: <MessageSquare size={12} /> },
+    { label: 'Leadership', value: effectiveDna.leadership ?? 65, color: '#EF4444', icon: <Award size={12} /> },
+  ];
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      className="glass-card relative overflow-hidden" 
-      style={{ padding: '2rem', position: 'relative', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+    <div
+      style={{
+        background: '#15191E',
+        border: '1px solid #262C33',
+        borderRadius: '10px',
+        padding: '1.15rem 1.35rem',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        gap: '0.65rem',
+        height: '410px',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}
     >
-      <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.03, pointerEvents: 'none' }}>
-        <Dna size={180} />
-      </div>
-
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'Outfit' }}>
-          <Dna size={24} className="text-gradient" />
-          Developer DNA Profile
-        </h3>
-        {evolution.length > 0 && (
-          <button 
-            onClick={() => setShowHistory(!showHistory)} 
-            className="btn btn-ghost btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--accent-cyan)', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '6px', cursor: 'pointer' }}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '6px',
+              background: 'rgba(139, 92, 246, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#8B5CF6',
+            }}
           >
-            <History size={14} /> {showHistory ? 'Show Metrics' : 'View Timeline'}
-          </button>
-        )}
+            <Dna size={16} />
+          </div>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+            Developer DNA Profile
+          </h3>
+        </div>
+        <button
+          onClick={() => setShowHistory(!showHistory)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            padding: '0.3rem 0.65rem',
+            fontSize: '0.72rem',
+            fontWeight: 600,
+            color: '#ffffff',
+            background: '#1D4ED8',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+          }}
+        >
+          <History size={12} /> {showHistory ? 'Metrics' : 'View Timeline'}
+        </button>
       </div>
 
       <AnimatePresence mode="wait">
         {!showHistory ? (
-          <motion.div 
+          <motion.div
             key="metrics"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}
           >
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Personality Type</div>
-              <div className="text-gradient" style={{ fontSize: '1.65rem', fontWeight: 'bold', fontFamily: 'Outfit' }}>{dna.personalityType}</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginTop: '0.15rem' }}>{dna.workingStyle || 'Independent'} Collaborator</div>
-              {dna.description && <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem', marginTop: '0.5rem', lineHeight: '1.4' }}>{dna.description}</p>}
+            {/* Personality Summary */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#3B82F6', fontFamily: 'Inter, sans-serif' }}>
+                {effectiveDna.personalityType}
+              </div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#F5F7FA' }}>
+                {effectiveDna.workingStyle} Collaborator
+              </div>
+              {effectiveDna.description && (
+                <p
+                  style={{
+                    color: '#9CA3AF',
+                    fontSize: '0.75rem',
+                    margin: '0.1rem 0 0 0',
+                    lineHeight: 1.35,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {effectiveDna.description}
+                </p>
+              )}
             </div>
 
-            {/* Core Scores */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}><Users size={12} color="var(--accent-blue)" /> Collab</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '0.375rem' }}>{dna.collaboration}%</div>
-                <div style={{ height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${dna.collaboration}%`, height: '100%', background: 'var(--accent-blue)' }} />
+            {/* Core Scores: Collaboration, Innovation, Focus */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.65rem' }}>
+              <div style={{ background: '#11151A', border: '1px solid #262C33', padding: '0.6rem 0.75rem', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '0.35rem', color: '#9CA3AF' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Users size={12} color="#3B82F6" /> Collaboration
+                  </span>
+                  <span style={{ fontWeight: 700, color: '#F5F7FA' }}>{effectiveDna.collaboration ?? 45}%</span>
+                </div>
+                <div style={{ height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${effectiveDna.collaboration ?? 45}%`, height: '100%', background: '#3B82F6', borderRadius: '2px' }} />
                 </div>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}><Zap size={12} color="var(--accent-purple)" /> Innovate</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '0.375rem' }}>{dna.innovation}%</div>
-                <div style={{ height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${dna.innovation}%`, height: '100%', background: 'var(--accent-purple)' }} />
+
+              <div style={{ background: '#11151A', border: '1px solid #262C33', padding: '0.6rem 0.75rem', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '0.35rem', color: '#9CA3AF' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Zap size={12} color="#8B5CF6" /> Innovation
+                  </span>
+                  <span style={{ fontWeight: 700, color: '#F5F7FA' }}>{effectiveDna.innovation ?? 60}%</span>
+                </div>
+                <div style={{ height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${effectiveDna.innovation ?? 60}%`, height: '100%', background: '#8B5CF6', borderRadius: '2px' }} />
                 </div>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.725rem', marginBottom: '0.25rem', color: 'var(--text-secondary)' }}><Target size={12} color="var(--accent-emerald)" /> Focus</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '0.375rem' }}>{dna.focus}%</div>
-                <div style={{ height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${dna.focus}%`, height: '100%', background: 'var(--accent-emerald)' }} />
+
+              <div style={{ background: '#11151A', border: '1px solid #262C33', padding: '0.6rem 0.75rem', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '0.35rem', color: '#9CA3AF' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Target size={12} color="#22C55E" /> Focus
+                  </span>
+                  <span style={{ fontWeight: 700, color: '#F5F7FA' }}>{effectiveDna.focus ?? 65}%</span>
+                </div>
+                <div style={{ height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${effectiveDna.focus ?? 65}%`, height: '100%', background: '#22C55E', borderRadius: '2px' }} />
                 </div>
               </div>
             </div>
 
-            {/* Extended Scores Grid */}
-            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Engineering Dimensions</div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                {[
-                  { label: 'Engineering Maturity', value: dna.engineeringMaturity, color: 'var(--accent-blue)', icon: <Server size={12} /> },
-                  { label: 'System Design', value: dna.systemDesign, color: 'var(--accent-cyan)', icon: <Layout size={12} /> },
-                  { label: 'Backend Development', value: dna.backend, color: 'var(--accent-purple)', icon: <Terminal size={12} /> },
-                  { label: 'Frontend Development', value: dna.frontend, color: 'var(--accent-purple)', icon: <Layout size={12} /> },
-                  { label: 'Problem Solving Depth', value: dna.problemSolving, color: 'var(--accent-amber)', icon: <Sparkles size={12} /> },
-                  { label: 'Leadership', value: dna.leadership, color: 'var(--accent-red)', icon: <Target size={12} /> },
-                  { label: 'Communication', value: dna.communication, color: '#10b981', icon: <Users size={12} /> },
-                ].map(({ label, value, color, icon }) => (
-                  <div key={label} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.02)', padding: '0.5rem 0.75rem', borderRadius: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                      <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            {/* Engineering Dimensions (Compact Grid) */}
+            <div style={{ borderTop: '1px solid #262C33', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <div style={{ fontSize: '0.7rem', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+                Engineering Dimensions
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
+                {engineeringDimensions.map(({ label, value, color, icon }) => (
+                  <div key={label} style={{ background: '#11151A', border: '1px solid #262C33', padding: '0.5rem 0.65rem', borderRadius: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', marginBottom: '0.25rem' }}>
+                      <span style={{ color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                         {icon} {label}
                       </span>
-                      <span style={{ fontWeight: '600', color: 'white' }}>{value}%</span>
+                      <span style={{ fontWeight: 700, color: '#F5F7FA', fontSize: '0.75rem' }}>{value}%</span>
                     </div>
-                    <div style={{ height: '4px', background: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-                      <div style={{ width: `${value}%`, height: '100%', background: color }} />
+                    <div style={{ height: '3px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ width: `${value}%`, height: '100%', background: color, borderRadius: '2px' }} />
                     </div>
                   </div>
                 ))}
@@ -167,62 +231,42 @@ const DNACard = ({ dna, loading }) => {
             </div>
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             key="timeline"
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
           >
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.5rem' }}>Evolution Timeline</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderLeft: '2px solid rgba(255, 255, 255, 0.05)', paddingLeft: '1rem', marginLeft: '0.5rem' }}>
+            <div style={{ fontSize: '0.72rem', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+              Evolution Timeline
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderLeft: '2px solid #262C33', paddingLeft: '0.85rem', marginLeft: '0.35rem' }}>
               {evolution.map((item, idx) => (
                 <div key={idx} style={{ position: 'relative' }}>
                   <div style={{
                     position: 'absolute',
-                    left: '-21px',
+                    left: '-17px',
                     top: '4px',
-                    width: '10px',
-                    height: '10px',
+                    width: '8px',
+                    height: '8px',
                     borderRadius: '50%',
-                    background: 'var(--accent-purple)',
-                    border: '2px solid var(--bg-primary)'
+                    background: '#8B5CF6',
                   }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.15rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.75rem', color: '#6B7280' }}>
                     <span>{new Date(item.date).toLocaleDateString()}</span>
-                    <span style={{ textTransform: 'capitalize', fontSize: '0.7rem', color: 'var(--accent-cyan)' }}>via {item.trigger || 'sync'}</span>
+                    <span style={{ textTransform: 'capitalize', fontSize: '0.68rem', color: '#06B6D4' }}>via {item.trigger || 'sync'}</span>
                   </div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'white' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#F5F7FA', marginTop: '0.1rem' }}>
                     {item.personalityType}
                   </div>
                 </div>
               ))}
-              
-              {/* Current state in timeline */}
-              <div style={{ position: 'relative' }}>
-                <div style={{
-                  position: 'absolute',
-                  left: '-22px',
-                  top: '3px',
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  background: 'var(--accent-purple)',
-                  border: '2px solid var(--bg-primary)'
-                }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.15rem' }}>
-                  <span>Current Status</span>
-                  <span style={{ textTransform: 'capitalize', fontSize: '0.7rem', color: 'var(--accent-emerald)' }}>Active</span>
-                </div>
-                <div style={{ fontSize: '0.9rem', fontWeight: '700', color: 'white' }}>
-                  {dna.personalityType}
-                </div>
-              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };
 

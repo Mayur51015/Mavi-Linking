@@ -10,3 +10,4 @@ client/.env
 client/.env.local
 server/.env
 server/.env.local
+.agents/

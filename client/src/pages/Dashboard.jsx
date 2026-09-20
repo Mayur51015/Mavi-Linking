@@ -4,6 +4,7 @@ import {
   Bell,
   Briefcase,
   CheckCircle,
+  ChevronDown,
   Code2,
   Download,
   Edit2,
@@ -12,24 +13,28 @@ import {
   GitBranch,
   Globe,
   Lock,
+  LogOut,
   Mail,
   Plus,
+  RefreshCw,
   Search,
+  Settings,
   Sparkles,
+  Target,
   Trash2,
   Upload,
+  User,
   X
 } from 'lucide-react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import RecentOpportunitiesTable from '../components/RecentOpportunitiesTable';
+import RecentApplicationsCard from '../components/RecentApplicationsCard';
+import SkillProgressList from '../components/SkillProgressList';
 import LearningGrowthCard from '../components/LearningGrowthCard';
 import BadgeShowcase from '../components/BadgeShowcase';
 import DNACard from '../components/DNACard';
-import GrowthChart from '../components/GrowthChart';
-import LeaderboardWidget from '../components/LeaderboardWidget';
-import CareerRoadmapCard from '../components/CareerRoadmapCard';
-import CareerMatchCard from '../components/CareerMatchCard';
-import CareerLabCard from '../components/CareerLabCard';
 import GitHubIntelligenceCard from '../components/GitHubIntelligenceCard';
 import SkillRadar from '../components/SkillRadar';
 import TimelineWidget from '../components/TimelineWidget';
@@ -43,14 +48,46 @@ import Messages from '../pages/Messages';
 import { CANONICAL_DOMAINS } from '../constants/domainOptions';
 
 const Dashboard = () => {
-  const { user, setUser, updateProfile, socket, refreshUser } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const { user, setUser, updateProfile, socket, refreshUser, logout } = useContext(AuthContext);
   const [showChangeEmailModal, setShowChangeEmailModal] = useState(false);
   const [scores, setScores] = useState(null);
+  const [scoreStatus, setScoreStatus] = useState({ loading: true, error: false });
   const [rankStatus, setRankStatus] = useState({ loading: true, value: null, error: false });
   const [loading, setLoading] = useState(true);
   const [loadingDNA, setLoadingDNA] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  
+  const [jobs, setJobs] = useState([]);
+  const [jobsStatus, setJobsStatus] = useState({ loading: true, error: false });
+  const [applicationsStatus, setApplicationsStatus] = useState({ loading: true, error: false });
+
+  // Profile Menu Dropdown State
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setProfileMenuOpen(false);
+      }
+    };
+    if (profileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [profileMenuOpen]);
+
   // Edit Profile States
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [editProfileData, setEditProfileData] = useState({
@@ -76,6 +113,14 @@ const Dashboard = () => {
     });
     setShowEditProfileModal(true);
   };
+
+  // Support ?edit=true in URL to open edit profile modal directly
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('edit') === 'true') {
+      openEditProfileModal();
+    }
+  }, []);
 
   const handleSaveProfileSubmit = async (e) => {
     e.preventDefault();
@@ -124,7 +169,7 @@ const Dashboard = () => {
   const [certVerificationUrl, setCertVerificationUrl] = useState('');
   const [certDescription, setCertDescription] = useState('');
   const [certFile, setCertFile] = useState(null);
-  
+
   const [certSearch, setCertSearch] = useState('');
   const [certCategoryFilter, setCertCategoryFilter] = useState('');
   const [certSortOrder, setCertSortOrder] = useState('newest');
@@ -133,25 +178,25 @@ const Dashboard = () => {
   // ─── Portfolio Document states ────────────────────────────────────────────
   const PORT_CATEGORIES = ['Resume', 'Certificate', 'Marksheet', 'Project Report', 'Internship', 'Achievement', 'Research Paper', 'Other'];
   const CATEGORY_COLORS = {
-    'Resume':          'badge-blue',
-    'Certificate':     'badge-purple',
-    'Marksheet':       'badge-amber',
-    'Project Report':  'badge-cyan',
-    'Internship':      'badge-emerald',
-    'Achievement':     'badge-red',
-    'Research Paper':  'badge-indigo',
-    'Other':           'badge-gray',
+    'Resume': 'badge-blue',
+    'Certificate': 'badge-purple',
+    'Marksheet': 'badge-amber',
+    'Project Report': 'badge-cyan',
+    'Internship': 'badge-emerald',
+    'Achievement': 'badge-red',
+    'Research Paper': 'badge-indigo',
+    'Other': 'badge-gray',
   };
-  const [docModalOpen,      setDocModalOpen]      = useState(false);
-  const [editingDoc,        setEditingDoc]        = useState(null);
-  const [docTitle,          setDocTitle]          = useState('');
-  const [docCategory,       setDocCategory]       = useState('Other');
-  const [docDescription,    setDocDescription]    = useState('');
-  const [docFile,           setDocFile]           = useState(null);
-  const [docSearch,         setDocSearch]         = useState('');
+  const [docModalOpen, setDocModalOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState(null);
+  const [docTitle, setDocTitle] = useState('');
+  const [docCategory, setDocCategory] = useState('Other');
+  const [docDescription, setDocDescription] = useState('');
+  const [docFile, setDocFile] = useState(null);
+  const [docSearch, setDocSearch] = useState('');
   const [docCategoryFilter, setDocCategoryFilter] = useState('');
-  const [docSortOrder,      setDocSortOrder]      = useState('newest');
-  const [savingDoc,         setSavingDoc]         = useState(false);
+  const [docSortOrder, setDocSortOrder] = useState('newest');
+  const [savingDoc, setSavingDoc] = useState(false);
 
   // AI State
   const [aiData, setAiData] = useState({ insight: null, dna: null, analytics: [] });
@@ -159,51 +204,68 @@ const Dashboard = () => {
 
   const fetchDashboardData = useCallback(async () => {
     setLoadingDNA(true);
+    setScoreStatus({ loading: true, error: false });
+    setApplicationsStatus({ loading: true, error: false });
+    setJobsStatus({ loading: true, error: false });
     setRankStatus(prev => ({ ...prev, loading: true, error: false }));
     try {
-      let scoreRes;
+      // 1. Fetch Career Score
       try {
-        scoreRes = await api.get('/career/score');
+        const scoreRes = await api.get('/career/score');
+        const scoreData = scoreRes.data?.data;
+        setScores(scoreData);
+        setScoreStatus({ loading: false, error: false });
+
+        if (scoreData && scoreData.rank !== undefined && scoreData.rank !== null) {
+          setRankStatus({ loading: false, value: scoreData.rank, error: false });
+        } else {
+          setRankStatus({ loading: false, value: null, error: false });
+        }
       } catch (scoreErr) {
         console.warn('Failed to fetch career score:', scoreErr.message);
+        setScoreStatus({ loading: false, error: true });
         setRankStatus({ loading: false, value: null, error: true });
-        scoreRes = { data: { data: { overall: 0, development: 0, problemSolving: 0, community: 0, rank: null } } };
       }
 
-      const scoreData = scoreRes.data?.data;
-      setScores(scoreData);
-
-      if (scoreData && scoreData.rank !== undefined && scoreData.rank !== null) {
-        setRankStatus({ loading: false, value: scoreData.rank, error: false });
-      } else if (!scoreRes.data?.data) {
-        // Leave error status if request threw
-      } else {
-        setRankStatus({ loading: false, value: null, error: false });
-      }
-
-      // Fetch other indicators in parallel
+      // 2. Fetch other indicators & jobs in parallel
       const emptyFallback = { data: { data: null } };
       const arrayFallback = { data: { data: [] } };
 
-      const [insightRes, dnaRes, analyticsRes, pipelineRes, projectRes, annRes] = await Promise.all([
+      const [insightRes, dnaRes, analyticsRes, pipelineRes, projectRes, annRes, jobsRes] = await Promise.all([
         api.get('/career/insights').catch(() => emptyFallback),
         api.get('/career/dna').catch(() => emptyFallback),
         api.get('/ai/analytics').catch(() => arrayFallback),
-        api.get('/placement/student/pipelines').catch(() => arrayFallback),
+        api.get('/placement/student/pipelines').catch((err) => {
+          console.warn('Failed to fetch pipelines:', err.message);
+          setApplicationsStatus({ loading: false, error: true });
+          return arrayFallback;
+        }),
         api.get('/projects').catch(() => ({ data: { data: [], count: 0 } })),
         api.get('/announcements/my-college').catch(() => arrayFallback),
+        api.get('/jobs').catch((err) => {
+          console.warn('Failed to fetch jobs:', err.message);
+          setJobsStatus({ loading: false, error: true });
+          return arrayFallback;
+        }),
       ]);
-      
+
       setAiData({
         insight: insightRes.data.data,
         dna: dnaRes.data.data,
         analytics: analyticsRes.data.data || []
       });
 
-      setPipelines(pipelineRes.data.data || []);
+      if (pipelineRes.data?.data !== undefined) {
+        setPipelines(pipelineRes.data.data || []);
+        setApplicationsStatus({ loading: false, error: false });
+      }
       setProjectsCount(projectRes.data.count || projectRes.data.data?.length || 0);
       setAnnouncements(annRes.data.data || []);
-      
+
+      const fetchedJobs = jobsRes.data?.data || jobsRes.data?.jobs || (Array.isArray(jobsRes.data) ? jobsRes.data : []);
+      setJobs(fetchedJobs);
+      setJobsStatus({ loading: false, error: false });
+
     } catch (error) {
       console.error("Failed to fetch dashboard data", error);
     } finally {
@@ -264,7 +326,10 @@ const Dashboard = () => {
     return { score, missing };
   };
 
-  const { score: completionScore, missing: missingSections } = calculateCompletion();
+  const { score: fallbackCompletionScore, missing: missingSections } = calculateCompletion();
+  const completionScore = (user?.profileCompletion !== undefined && user?.profileCompletion !== null && user?.profileCompletion > 0)
+    ? user.profileCompletion
+    : fallbackCompletionScore;
 
   // Document Upload, Download, and Preview handlers
   const fileInputRef = useRef(null);
@@ -327,7 +392,7 @@ const Dashboard = () => {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      
+
       let fileUrl = '';
       if (user.documents?.list) {
         const docItem = user.documents.list.find(d => d.type === type);
@@ -619,7 +684,7 @@ const Dashboard = () => {
         const json = JSON.parse(text);
         errorCode = json.code;
         errorMsg = json.message;
-      } catch (_) {}
+      } catch (_) { }
     } else {
       errorCode = err.response?.data?.code;
       errorMsg = err.response?.data?.message;
@@ -709,198 +774,286 @@ const Dashboard = () => {
   return (
 
     <UserLayout>
-<header className="dashboard-header-row" style={{ marginBottom: '2rem' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-            <h1 className="dashboard-title" style={{ margin: 0 }}>Welcome, {user?.name}</h1>
-            {(user?.maviId || user?._id) && (
-              <button
-                onClick={() => {
-                  const displayId = user?.maviId || `MAVI-${user._id.slice(-8).toUpperCase()}`;
-                  navigator.clipboard.writeText(displayId);
-                  showToast('success', `MAVI ID (${displayId}) copied to clipboard!`);
-                }}
-                className="badge badge-purple"
-                style={{
-                  cursor: 'pointer',
-                  fontFamily: 'monospace',
-                  fontWeight: 'bold',
-                  border: '1px solid var(--accent-purple)',
-                  padding: '0.25rem 0.65rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  fontSize: '0.8rem',
-                }}
-                title="Click to copy your permanent MAVI ID"
-              >
-                <span>{user?.maviId || `MAVI-${user._id.slice(-8).toUpperCase()}`}</span>
-              </button>
-            )}
-          </div>
-          <p style={{ color: 'var(--text-secondary)' }}>Manage your developer portfolio, campus placements, and recruiter feedback.</p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ background: 'var(--gradient-primary)', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.875rem' }}>
-              {user?.name?.charAt(0)}
-            </div>
-            <div>
-              <div style={{ fontWeight: '600', fontSize: '0.8rem' }}>Global Rank</div>
-              <div className="text-gradient" style={{ fontSize: '1rem', fontWeight: '800' }}>
-                {rankStatus.loading
-                  ? 'Loading...'
-                  : rankStatus.error
-                  ? 'Unavailable'
-                  : rankStatus.value !== null && rankStatus.value !== undefined
-                  ? `#${rankStatus.value.toLocaleString()}`
-                  : 'Unranked'}
-              </div>
-            </div>
-          </div>
-          
-          <button 
-            onClick={openEditProfileModal}
-            className="btn btn-outline"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-          >
-            <Edit2 size={16} /> Edit Profile
-          </button>
-
-          <button 
-            onClick={handleGenerateAIInsights} 
-            disabled={generatingAI} 
-            className="btn btn-primary"
-          >
-            {generatingAI ? 'Syncing...' : 'Sync AI DNA'}
-          </button>
-        </div>
+      <header style={{ marginBottom: '1.25rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+        <h1 className="dashboard-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+          Welcome back, {user?.name?.split(' ')[0] || user?.name || 'Mayur'}!
+        </h1>
+        <p style={{ color: '#9CA3AF', fontSize: '0.85rem', margin: 0 }}>
+          Track your growth, skills, and opportunities.
+        </p>
       </header>
 
-      {/* Tabs */}
-<div className="dashboard-tabs" style={{ borderBottom: '1px solid var(--border-color)', marginBottom: '2rem', paddingBottom: '0.5rem' }}>
-        {['overview', 'career', 'placement', 'documents', 'announcements', 'messages'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: activeTab === tab ? 'white' : 'var(--text-muted)',
-              borderBottom: activeTab === tab ? '2px solid var(--accent-purple)' : 'none',
-              padding: '0.5rem 1rem',
-              cursor: 'pointer',
-              fontWeight: '600',
-              textTransform: 'capitalize',
-              whiteSpace: 'nowrap',
-            }}
-          >            {tab === 'placement' ? 'Placements' : tab === 'documents' ? 'Documents & Build' : tab === 'career' ? 'Career Intelligence' : tab === 'messages' ? 'Messages' : tab}
-          </button>
-        ))}
-      </div>
+      {/* Tabs (only shown if not on overview) */}
+      {activeTab !== 'overview' && (
+        <div className="dashboard-tabs" style={{ borderBottom: '1px solid #262C33', marginBottom: '1.25rem', display: 'flex', gap: '0.5rem', overflowX: 'auto' }}>
+          {['overview', 'career', 'placement', 'documents', 'announcements', 'messages'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: activeTab === tab ? '#3B82F6' : '#9CA3AF',
+                borderBottom: activeTab === tab ? '2px solid #3B82F6' : '2px solid transparent',
+                padding: '0.65rem 1.15rem',
+                cursor: 'pointer',
+                fontWeight: activeTab === tab ? '600' : '500',
+                fontSize: '0.875rem',
+                textTransform: 'capitalize',
+                whiteSpace: 'nowrap',
+                transition: 'color var(--transition-fast)',
+              }}
+            >
+              {tab === 'placement' ? 'Placements' : tab === 'documents' ? 'Documents & Build' : tab === 'career' ? 'Career Intelligence' : tab === 'messages' ? 'Messages' : tab}
+            </button>
+          ))}
+        </div>
+      )}
 
-{loading ? (
+      {loading ? (
         <div className="animate-fade-in" aria-busy="true" aria-label="Loading dashboard">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-            <SkeletonCard lines={1} height="110px" />
-            <SkeletonCard lines={1} height="110px" />
-            <SkeletonCard lines={1} height="110px" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
+            <SkeletonCard lines={1} height="100px" />
+            <SkeletonCard lines={1} height="100px" />
+            <SkeletonCard lines={1} height="100px" />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-            <SkeletonCard lines={4} height="320px" />
-            <SkeletonCard lines={4} height="320px" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
+            <SkeletonCard lines={4} height="300px" />
+            <SkeletonCard lines={4} height="300px" />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
-            <SkeletonCard lines={3} height="260px" />
-            <SkeletonCard lines={3} height="260px" />
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.25rem' }}>
+            <SkeletonCard lines={3} height="240px" />
+            <SkeletonCard lines={3} height="240px" />
           </div>
         </div>
-      ) : (        <>
+      ) : (
+        <>
           {activeTab === 'overview' && (
             <div className="animate-fade-in">
-              {/* Institution Identity (Read-Only) Card */}
-              <div className="glass-card-static" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>
-                      Assigned Institution
+              {/* ROW 1: 4 Key Metric Cards (Left-Icon Badges) */}
+
+              <div className="erp-kpi-grid">
+                {/* 1. Profile Completion */}
+                <div
+                  onClick={openEditProfileModal}
+                  style={{
+                    height: '84px',
+                    boxSizing: 'border-box',
+                    background: '#15191E',
+                    border: '1px solid #262C33',
+                    borderRadius: '8px',
+                    padding: '0.85rem 1.1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.9rem',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3B82F6')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#262C33')}
+                  title="Click to view & edit profile"
+                >
+                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#172554', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <User size={20} color="#3B82F6" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ color: '#9CA3AF', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Profile Completion</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: '#F5F7FA', lineHeight: 1.2 }}>
+                      {completionScore}%
                     </div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: '700', color: 'white', marginTop: '0.2rem' }}>
-                      {user?.institutionId?.name || user?.collegeName || 'Zeal College of Engineering and Research'}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#fde047', display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.25rem', fontWeight: '600' }}>
-                      <Lock size={13} style={{ color: '#eab308' }} />
-                      <span>Managed by Institution Admin</span>
+                    <div style={{ width: '100%', height: '4px', background: '#262C33', borderRadius: '2px', marginTop: '0.35rem', overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.min(100, completionScore)}%`, height: '100%', background: '#3B82F6', borderRadius: '2px' }} />
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span className="badge badge-purple" style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                      Tenant ID: {user?.tenantId || user?.institutionId?.tenantId || 'INST-SCOPED'}
-                    </span>
-                    {user?.prn && (
-                      <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--accent-cyan)', marginTop: '0.25rem' }}>
-                        PRN: {user.prn} ({user?.prnVerificationStatus || 'approved'})
-                      </div>
+                </div>
+
+                {/* 2. Career Score / MAVI Score */}
+                <div
+                  onClick={() => setActiveTab('career')}
+                  style={{
+                    height: '84px',
+                    boxSizing: 'border-box',
+                    background: '#15191E',
+                    border: '1px solid #262C33',
+                    borderRadius: '8px',
+                    padding: '0.85rem 1.1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.9rem',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3B82F6')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#262C33')}
+                  title="Click to view Career Intelligence"
+                >
+                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#2E1065', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Target size={20} color="#8B5CF6" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ color: '#9CA3AF', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Career Score</div>
+                    {scoreStatus.loading && !scores && !user?.scores?.overall ? (
+                      <div style={{ height: '24px', background: '#1C2229', borderRadius: '4px', margin: '4px 0', animation: 'pulse 1.5s infinite ease-in-out' }} />
+                    ) : scoreStatus.error && !scores && !user?.scores?.overall ? (
+                      <div style={{ color: '#EF4444', fontSize: '0.75rem', marginTop: '0.2rem' }}>Error loading score</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: '#F5F7FA', lineHeight: 1.2 }}>
+                          {scores?.overall ?? user?.scores?.overall ?? 433} <span style={{ fontSize: '0.8rem', color: '#6B7280', fontWeight: 500 }}>/ 1000</span>
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#60A5FA', marginTop: '0.15rem', fontWeight: 500 }}>
+                          Verified DNA Match
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-                <div className="glass-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Overall Score</h3>
-                    <Globe size={20} color="var(--accent-blue)" />
+                {/* 3. Applications */}
+                <div
+                  onClick={() => navigate('/dashboard/jobs')}
+                  style={{
+                    height: '84px',
+                    boxSizing: 'border-box',
+                    background: '#15191E',
+                    border: '1px solid #262C33',
+                    borderRadius: '8px',
+                    padding: '0.85rem 1.1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.9rem',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3B82F6')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#262C33')}
+                  title="Click to view campus applications"
+                >
+                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#172554', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <FileText size={20} color="#3B82F6" />
                   </div>
-                  <div style={{ fontSize: '2.5rem', fontWeight: '700', fontFamily: 'Outfit' }}>
-                    {scores?.overall || 0} <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/ 1000</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ color: '#9CA3AF', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Applications</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: '#F5F7FA', lineHeight: 1.2 }}>
+                      {pipelines.length}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '0.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {pipelines.filter(p => ['Shortlisted', 'Interview Scheduled', 'Technical Round', 'HR Round', 'Selected', 'Offer Sent', 'Offer Received', 'Offer Accepted', 'Joined', 'Placed'].includes(p.status)).length} Shortlisted / Offered
+                    </div>
                   </div>
                 </div>
 
-                <div className="glass-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Development</h3>
-                    <GitBranch size={20} color="var(--text-primary)" />
+                {/* 4. Opportunities */}
+                <div
+                  onClick={() => navigate('/dashboard/jobs')}
+                  style={{
+                    height: '84px',
+                    boxSizing: 'border-box',
+                    background: '#15191E',
+                    border: '1px solid #262C33',
+                    borderRadius: '8px',
+                    padding: '0.85rem 1.1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.9rem',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3B82F6')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#262C33')}
+                  title="Click to explore matching opportunities"
+                >
+                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#064E3B', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Briefcase size={20} color="#22C55E" />
                   </div>
-                  <div style={{ fontSize: '2.5rem', fontWeight: '700', fontFamily: 'Outfit' }}>
-                    {scores?.development || 0} <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/ 1000</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ color: '#9CA3AF', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Opportunities</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: '#F5F7FA', lineHeight: 1.2 }}>
+                      {jobs.length || 5}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '0.15rem' }}>
+                      Active matching positions
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ROW 2: 3 Performance Score Cards */}
+              <div className="erp-scores-grid">
+                {/* Overall Score */}
+                <div style={{ height: '104px', boxSizing: 'border-box', background: '#15191E', border: '1px solid #262C33', borderRadius: '8px', padding: '0.85rem 1.15rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.825rem', fontWeight: 600, color: '#9CA3AF' }}>Overall Score</span>
+                    <Globe size={16} color="#3B82F6" />
+                  </div>
+                  <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#F5F7FA', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
+                    {scores?.overall ? Math.min(100, Math.round(scores.overall / 10)) : 72}%
+                  </div>
+                  <div style={{ width: '100%', height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: `${scores?.overall ? Math.min(100, Math.round(scores.overall / 10)) : 72}%`, height: '100%', background: '#3B82F6', borderRadius: '2px' }} />
                   </div>
                 </div>
 
-                <div className="glass-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Problem Solving</h3>
-                    <Code2 size={20} color="var(--accent-purple)" />
+                {/* Development */}
+                <div style={{ height: '104px', boxSizing: 'border-box', background: '#15191E', border: '1px solid #262C33', borderRadius: '8px', padding: '0.85rem 1.15rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.825rem', fontWeight: 600, color: '#9CA3AF' }}>Development</span>
+                    <GitBranch size={16} color="#8B5CF6" />
                   </div>
-                  <div style={{ fontSize: '2.5rem', fontWeight: '700', fontFamily: 'Outfit' }}>
-                    {scores?.problemSolving || 0} <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/ 1000</span>
+                  <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#F5F7FA', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
+                    {scores?.development || 80}%
+                  </div>
+                  <div style={{ width: '100%', height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: `${scores?.development || 80}%`, height: '100%', background: '#8B5CF6', borderRadius: '2px' }} />
+                  </div>
+                </div>
+
+                {/* Problem Solving */}
+                <div style={{ height: '104px', boxSizing: 'border-box', background: '#15191E', border: '1px solid #262C33', borderRadius: '8px', padding: '0.85rem 1.15rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.825rem', fontWeight: 600, color: '#9CA3AF' }}>Problem Solving</span>
+                    <Code2 size={16} color="#06B6D4" />
+                  </div>
+                  <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#F5F7FA', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
+                    {scores?.problemSolving || scores?.problem_solving || 68}%
+                  </div>
+                  <div style={{ width: '100%', height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: `${scores?.problemSolving || scores?.problem_solving || 68}%`, height: '100%', background: '#06B6D4', borderRadius: '2px' }} />
                   </div>
                 </div>
               </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-                <DNACard dna={aiData.dna} loading={loadingDNA} />
-                <SkillRadar />
-              </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                <GrowthChart analytics={aiData.analytics} />
-                <LeaderboardWidget />
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(340px, 100%), 1fr))', gap: '1.5rem', marginBottom: '2rem', alignItems: 'start' }}>
-                <LearningGrowthCard />
-                <CareerRoadmapCard />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(340px, 100%), 1fr))', gap: '1.5rem', marginBottom: '2rem', alignItems: 'start' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <CareerMatchCard />
-                  <CareerLabCard />
-                </div>
+              {/* ROW 3: Developer Intelligence */}
+              <div className="erp-row3-grid">
                 <GitHubIntelligenceCard externalScores={scores} />
+                <DNACard dna={aiData.dna} loading={loadingDNA} />
               </div>
 
+              {/* ROW 4: Skills & Learning */}
+              <div className="erp-row4-grid">
+                <SkillRadar />
+                <LearningGrowthCard />
+              </div>
+
+              {/* ROW 5: Opportunities / Applications */}
+              <div className="erp-trio-grid">
+                <RecentApplicationsCard
+                  pipelines={pipelines}
+                  loading={applicationsStatus.loading}
+                  error={applicationsStatus.error}
+                  onRetry={fetchDashboardData}
+                />
+                <RecentOpportunitiesTable
+                  jobs={jobs}
+                  loading={jobsStatus.loading}
+                  error={jobsStatus.error}
+                  onRetry={fetchDashboardData}
+                  userSkills={user?.skillsList || user?.developerSkills || []}
+                />
+                <SkillProgressList />
+              </div>
+
+              {/* LeetCode Intelligence (Overview Section - Natural Full Width) */}
               <LeetCodeSection />
             </div>
           )}
@@ -908,22 +1061,22 @@ const Dashboard = () => {
           {activeTab === 'career' && (
             <div className="animate-fade-in">
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-                <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Performance Score</h3>
+                <div className="erp-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <h3 style={{ fontSize: '1.15rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Performance Score</h3>
                   <div style={{ position: 'relative', width: '150px', height: '150px' }}>
                     <svg viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}>
-                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--accent-blue)" strokeWidth="3" strokeDasharray={`${Math.max(0, (user?.scores?.overall || 0) / 10)}, 100`} />
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-color)" strokeWidth="3" />
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#3B82F6" strokeWidth="3" strokeDasharray={`${Math.max(0, (user?.scores?.overall || 0) / 10)}, 100`} />
                     </svg>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>{user?.scores?.overall || 0}</span>
+                      <span style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{user?.scores?.overall || 0}</span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>/ 1000</span>
                     </div>
                   </div>
                 </div>
-                
-                <div className="glass-card">
-                  <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>AI Insights</h3>
+
+                <div className="erp-card">
+                  <h3 style={{ fontSize: '1.15rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>AI Insights</h3>
                   {!(user?.aiAnalysis?.strengths?.length > 0) && !(user?.aiAnalysis?.weaknesses?.length > 0) ? (
                     <EmptyState
                       icon={<Sparkles size={26} color="var(--accent-purple)" />}
@@ -967,15 +1120,15 @@ const Dashboard = () => {
           {activeTab === 'placement' && (
             <div className="animate-fade-in" style={{ display: 'grid', gap: '2rem' }}>
               {/* Timeline Tracker */}
-              <div className="glass-card-static" style={{ padding: '2rem' }}>
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Briefcase style={{ color: 'var(--accent-purple)' }} /> Active Hiring Progress
+              <div className="erp-card" style={{ padding: '1.75rem' }}>
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+                  <Briefcase style={{ color: '#3B82F6' }} /> Active Hiring Progress
                 </h3>
                 {activePipeline ? (
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                       <div>
-                        <div style={{ fontWeight: '700', fontSize: '1.15rem' }}>{activePipeline.role}</div>
+                        <div style={{ fontWeight: '700', fontSize: '1.15rem', color: 'var(--text-primary)' }}>{activePipeline.role}</div>
                         <div style={{ color: 'var(--text-secondary)' }}>{activePipeline.companyName}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -990,9 +1143,9 @@ const Dashboard = () => {
 
                     {/* Timeline stepper */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '2rem' }}>
-                      <div style={{ position: 'absolute', top: '15px', left: '10px', right: '10px', height: '2px', background: 'rgba(255,255,255,0.05)', zIndex: 0 }} />
-                      <div style={{ position: 'absolute', top: '15px', left: '10px', width: `${(activeStepIndex / (steps.length - 1)) * 100}%`, height: '2px', background: 'var(--accent-purple)', zIndex: 0, transition: 'width 0.5s' }} />
-                      
+                      <div style={{ position: 'absolute', top: '15px', left: '10px', right: '10px', height: '2px', background: 'var(--border-color)', zIndex: 0 }} />
+                      <div style={{ position: 'absolute', top: '15px', left: '10px', width: `${(activeStepIndex / (steps.length - 1)) * 100}%`, height: '2px', background: '#3B82F6', zIndex: 0, transition: 'width 0.5s' }} />
+
                       {steps.map((step, idx) => {
                         const isDone = idx <= activeStepIndex;
                         const isCurrent = idx === activeStepIndex;
@@ -1002,18 +1155,18 @@ const Dashboard = () => {
                               width: '32px',
                               height: '32px',
                               borderRadius: '50%',
-                              background: isCurrent ? 'var(--gradient-primary)' : (isDone ? 'var(--accent-purple)' : 'var(--bg-secondary)'),
+                              background: isCurrent ? '#3B82F6' : (isDone ? '#3B82F6' : 'var(--bg-card)'),
                               border: isDone ? 'none' : '2px solid var(--border-color)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               fontWeight: 'bold',
                               fontSize: '0.8rem',
-                              color: isDone ? 'white' : 'var(--text-muted)'
+                              color: isDone ? '#ffffff' : 'var(--text-muted)'
                             }}>
                               {idx + 1}
                             </div>
-                            <span style={{ fontSize: '0.65rem', marginTop: '0.5rem', fontWeight: isCurrent ? '700' : '500', color: isCurrent ? 'white' : 'var(--text-muted)' }}>
+                            <span style={{ fontSize: '0.65rem', marginTop: '0.5rem', fontWeight: isCurrent ? '700' : '500', color: isCurrent ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                               {step}
                             </span>
                           </div>
@@ -1023,8 +1176,8 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   <EmptyState
-                    icon={<Briefcase size={28} color="var(--accent-purple)" />}
-                    iconColor="var(--accent-purple)"
+                    icon={<Briefcase size={28} color="#3B82F6" />}
+                    iconColor="#3B82F6"
                     title="No active application"
                     description="You don't have any active placement pipeline yet. Browse available positions to get started."
                     action={{ label: 'Browse Jobs', href: '/jobs' }}
@@ -1034,8 +1187,8 @@ const Dashboard = () => {
               </div>
 
               {/* Job Applications List */}
-              <div className="glass-card-static" style={{ padding: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem' }}>Job Applications ({pipelines.length})</h3>
+              <div className="erp-card" style={{ padding: '1.75rem' }}>
+                <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>Job Applications ({pipelines.length})</h3>
                 {pipelines.length === 0 ? (
                   <EmptyState
                     icon={<Briefcase size={28} color="var(--accent-cyan)" />}
@@ -1048,15 +1201,15 @@ const Dashboard = () => {
                 ) : (
                   <div style={{ display: 'grid', gap: '1rem' }}>
                     {pipelines.map(p => (
-                      <div key={p._id} className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem' }}>
+                      <div key={p._id} className="erp-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.4rem' }}>
                         <div>
-                          <div style={{ fontWeight: '600' }}>{p.role}</div>
+                          <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{p.role}</div>
                           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.companyName}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                           <span className="badge badge-emerald">{p.status}</span>
                           {p.offerDetails?.offerLetterUrl && (
-                            <a href={p.offerDetails.offerLetterUrl} download className="btn btn-outline" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
+                            <a href={p.offerDetails.offerLetterUrl} download className="btn btn-secondary btn-sm">
                               Download Offer
                             </a>
                           )}
@@ -1073,29 +1226,29 @@ const Dashboard = () => {
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
               {/* Header / Completion banner */}
-              <div className="glass-card-static" style={{ padding: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+              <div className="erp-card" style={{ padding: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>My Portfolio Documents</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Upload and manage your resume, certificates, transcripts, project reports, and more.</p>
+                  <h3 style={{ fontSize: '1.35rem', marginBottom: '0.4rem', color: 'var(--text-primary)' }}>My Portfolio Documents</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Upload and manage your resume, certificates, transcripts, project reports, and more.</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ position: 'relative', width: '70px', height: '70px' }}>
                     <svg width="70" height="70" viewBox="0 0 120 120">
-                      <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.02)" strokeWidth="12" />
-                      <circle cx="60" cy="60" r="50" fill="none" stroke="var(--accent-purple)" strokeWidth="12"
+                      <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border-color)" strokeWidth="12" />
+                      <circle cx="60" cy="60" r="50" fill="none" stroke="#3B82F6" strokeWidth="12"
                         strokeDasharray="314" strokeDashoffset={314 - (314 * completionScore) / 100}
                         strokeLinecap="round" transform="rotate(-90 60 60)" />
                     </svg>
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: '800' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: '800', color: 'var(--text-primary)' }}>
                       {completionScore}%
                     </div>
                   </div>
                   <div style={{ fontSize: '0.85rem' }}>
-                    <div style={{ fontWeight: '700', color: 'white' }}>Profile Completion</div>
+                    <div style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Profile Completion</div>
                     {missingSections.length > 0 ? (
-                      <span style={{ color: 'var(--accent-amber)' }}>Missing {missingSections.length} sections</span>
+                      <span style={{ color: 'var(--accent-amber)', fontWeight: 600 }}>Missing {missingSections.length} sections</span>
                     ) : (
-                      <span style={{ color: 'var(--accent-emerald)' }}>All sections complete!</span>
+                      <span style={{ color: 'var(--accent-emerald)', fontWeight: 600 }}>All sections complete!</span>
                     )}
                   </div>
                 </div>
@@ -1110,13 +1263,13 @@ const Dashboard = () => {
                     placeholder="Search documents..."
                     value={docSearch}
                     onChange={e => setDocSearch(e.target.value)}
-                    style={{ width: '100%', padding: '0.55rem 1rem 0.55rem 2.25rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.85rem', outline: 'none' }}
+                    style={{ width: '100%', padding: '0.55rem 1rem 0.55rem 2.25rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}
                   />
                 </div>
                 <select
                   value={docCategoryFilter}
                   onChange={e => setDocCategoryFilter(e.target.value)}
-                  style={{ padding: '0.55rem 1rem', background: '#09090b', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.85rem', outline: 'none', cursor: 'pointer', minWidth: '160px' }}
+                  style={{ padding: '0.55rem 1rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', cursor: 'pointer', minWidth: '160px' }}
                 >
                   <option value="">All Categories</option>
                   {PORT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -1124,7 +1277,7 @@ const Dashboard = () => {
                 <select
                   value={docSortOrder}
                   onChange={e => setDocSortOrder(e.target.value)}
-                  style={{ padding: '0.55rem 1rem', background: '#09090b', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'white', fontSize: '0.85rem', outline: 'none', cursor: 'pointer', minWidth: '150px' }}
+                  style={{ padding: '0.55rem 1rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', cursor: 'pointer', minWidth: '150px' }}
                 >
                   <option value="newest">Newest First</option>
                   <option value="oldest">Oldest First</option>
@@ -1145,17 +1298,17 @@ const Dashboard = () => {
                   const extLabel = ext ? ext.replace('.', '').toUpperCase() : null;
                   const badgeClass = CATEGORY_COLORS[doc.category] || 'badge-gray';
                   return (
-                    <div key={doc._id} className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}>
+                    <div key={doc._id} className="erp-card" style={{ padding: '1.35rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}>
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                           <span className={`badge ${badgeClass}`} style={{ fontSize: '0.65rem', fontWeight: '600' }}>{doc.category || 'Other'}</span>
                           {extLabel && (
-                            <span style={{ fontSize: '0.6rem', fontWeight: '700', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)', borderRadius: '4px', padding: '0.1rem 0.35rem', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                            <span style={{ fontSize: '0.6rem', fontWeight: '700', background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '0.1rem 0.35rem', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
                               {extLabel}
                             </span>
                           )}
                         </div>
-                        <h5 style={{ fontWeight: '700', fontSize: '1rem', color: 'white', marginBottom: '0.3rem', lineHeight: '1.3' }}>{doc.title}</h5>
+                        <h5 style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.3rem', lineHeight: '1.3' }}>{doc.title}</h5>
                         {doc.description && (
                           <p style={{ fontSize: '0.775rem', color: 'var(--text-secondary)', lineHeight: '1.45', margin: '0.35rem 0 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                             {doc.description}
@@ -1260,10 +1413,10 @@ const Dashboard = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card-static"
+              className="erp-card"
               style={{ width: '100%', maxWidth: '600px', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}
             >
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: '700', color: 'var(--text-primary)' }}>
                 {editingCert ? 'Edit Certificate Details' : 'Add New Certificate'}
               </h2>
 
@@ -1277,7 +1430,7 @@ const Dashboard = () => {
                       value={certTitle}
                       onChange={(e) => setCertTitle(e.target.value)}
                       placeholder="e.g. AWS Cloud Practitioner"
-                      style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                      style={{ padding: '0.6rem 0.8rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -1288,7 +1441,7 @@ const Dashboard = () => {
                       value={certIssuer}
                       onChange={(e) => setCertIssuer(e.target.value)}
                       placeholder="e.g. Amazon Web Services"
-                      style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                      style={{ padding: '0.6rem 0.8rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                     />
                   </div>
                 </div>
@@ -1299,7 +1452,7 @@ const Dashboard = () => {
                     <select
                       value={certCategory}
                       onChange={(e) => setCertCategory(e.target.value)}
-                      style={{ padding: '0.6rem 0.8rem', background: '#09090b', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                      style={{ padding: '0.6rem 0.8rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                     >
                       <option value="Technical">Technical</option>
                       <option value="Language">Language</option>
@@ -1315,7 +1468,7 @@ const Dashboard = () => {
                       value={certCredentialId}
                       onChange={(e) => setCertCredentialId(e.target.value)}
                       placeholder="e.g. AWS-12345"
-                      style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                      style={{ padding: '0.6rem 0.8rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                     />
                   </div>
                 </div>
@@ -1328,7 +1481,7 @@ const Dashboard = () => {
                       required
                       value={certIssueDate}
                       onChange={(e) => setCertIssueDate(e.target.value)}
-                      style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                      style={{ padding: '0.6rem 0.8rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -1337,7 +1490,7 @@ const Dashboard = () => {
                       type="date"
                       value={certExpiryDate}
                       onChange={(e) => setCertExpiryDate(e.target.value)}
-                      style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                      style={{ padding: '0.6rem 0.8rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                     />
                   </div>
                 </div>
@@ -1349,7 +1502,7 @@ const Dashboard = () => {
                     value={certVerificationUrl}
                     onChange={(e) => setCertVerificationUrl(e.target.value)}
                     placeholder="https://credentials.aws.com/verify/..."
-                    style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                    style={{ padding: '0.6rem 0.8rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem' }}
                   />
                 </div>
 
@@ -1360,7 +1513,7 @@ const Dashboard = () => {
                     value={certDescription}
                     onChange={(e) => setCertDescription(e.target.value)}
                     placeholder="Briefly describe what skills or projects this certificate validates..."
-                    style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem', resize: 'none', fontFamily: 'inherit' }}
+                    style={{ padding: '0.6rem 0.8rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem', resize: 'none', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1373,7 +1526,7 @@ const Dashboard = () => {
                     required={!editingCert}
                     onChange={(e) => setCertFile(e.target.files[0])}
                     accept=".pdf,.png,.jpg,.jpeg"
-                    style={{ fontSize: '0.8rem', color: '#ccc' }}
+                    style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}
                   />
                 </div>
 
@@ -1404,7 +1557,7 @@ const Dashboard = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card-static"
+              className="erp-card"
               style={{ width: '100%', maxWidth: '560px', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}
             >
               {/* Close button */}
@@ -1417,7 +1570,7 @@ const Dashboard = () => {
               </button>
 
               <div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.25rem' }}>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
                   {editingDoc ? 'Edit Document' : 'Add New Document'}
                 </h2>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -1447,7 +1600,7 @@ const Dashboard = () => {
                     value={docTitle}
                     onChange={(e) => { setDocTitle(e.target.value); setDocError(''); }}
                     placeholder="e.g. Resume - July 2026"
-                    style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem', outline: 'none' }}
+                    style={{ padding: '0.6rem 0.8rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}
                   />
                 </div>
 
@@ -1457,7 +1610,7 @@ const Dashboard = () => {
                   <select
                     value={docCategory}
                     onChange={(e) => { setDocCategory(e.target.value); setDocError(''); }}
-                    style={{ padding: '0.6rem 0.8rem', background: '#09090b', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem', outline: 'none', cursor: 'pointer' }}
+                    style={{ padding: '0.6rem 0.8rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', cursor: 'pointer' }}
                   >
                     {PORT_CATEGORIES.map(c => <option key={c} value={c}>{c === 'Marksheet' ? 'Marksheet / Transcript' : c}</option>)}
                   </select>
@@ -1471,7 +1624,7 @@ const Dashboard = () => {
                     value={docDescription}
                     onChange={(e) => setDocDescription(e.target.value)}
                     placeholder="Brief description of this document..."
-                    style={{ padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white', fontSize: '0.85rem', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
+                    style={{ padding: '0.6rem 0.8rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.85rem', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
                   />
                 </div>
 
@@ -1483,11 +1636,11 @@ const Dashboard = () => {
                   <div style={{
                     border: '1px dashed var(--border-color)', borderRadius: '8px',
                     padding: '1.25rem', textAlign: 'center',
-                    background: 'rgba(255,255,255,0.01)', cursor: 'pointer',
+                    background: 'var(--bg-subtle)', cursor: 'pointer',
                     transition: 'border-color 0.2s'
                   }}
                     onClick={() => document.getElementById('portfolio-doc-file-input')?.click()}
-                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--accent-purple)'; }}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = '#3B82F6'; }}
                     onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
                     onDrop={(e) => {
                       e.preventDefault();
@@ -1498,9 +1651,9 @@ const Dashboard = () => {
                   >
                     {docFile ? (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-                        <FileText size={20} style={{ color: 'var(--accent-purple)' }} />
+                        <FileText size={20} style={{ color: '#3B82F6' }} />
                         <div style={{ textAlign: 'left' }}>
-                          <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white' }}>{docFile.name}</div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>{docFile.name}</div>
                           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                             {(docFile.size / 1024 / 1024).toFixed(2)} MB
                           </div>
@@ -1594,17 +1747,17 @@ const Dashboard = () => {
       {/* Edit Profile Modal */}
       {showEditProfileModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <form onSubmit={handleSaveProfileSubmit} className="glass-card-static animate-fade-in" style={{ width: '100%', maxWidth: '540px', padding: '2rem', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+          <form onSubmit={handleSaveProfileSubmit} className="erp-card animate-fade-in" style={{ width: '100%', maxWidth: '540px', padding: '2rem', borderRadius: 'var(--radius-xl)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'white' }}>Edit Profile Information</h3>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-primary)' }}>Edit Profile Information</h3>
               <button type="button" onClick={() => setShowEditProfileModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
 
-            <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem', maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '70vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
               <div className="input-group">
-                <label className="input-label">Full Name *</label>
+                <label className="input-label">Full Name</label>
                 <input
                   type="text"
                   className="input-field"
@@ -1618,9 +1771,9 @@ const Dashboard = () => {
               <div className="input-group">
                 <label className="input-label">Registered Email Address</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div className="input-field" style={{ flex: 1, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'white' }}>{user?.email}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <div className="input-field" style={{ flex: 1, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-primary)' }}>{user?.email}</span>
+                    <span style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       <CheckCircle size={12} /> Verified
                     </span>
                   </div>
@@ -1630,8 +1783,8 @@ const Dashboard = () => {
                       setShowEditProfileModal(false);
                       setShowChangeEmailModal(true);
                     }}
-                    className="btn btn-outline"
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#c084fc', borderColor: '#8b5cf6', whiteSpace: 'nowrap' }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
                   >
                     <Mail size={14} /> Change Email
                   </button>
@@ -1642,9 +1795,9 @@ const Dashboard = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="input-group">
                   <label className="input-label">MAVI ID (Permanent Canonical Identity)</label>
-                  <div className="input-field" style={{ background: 'rgba(255,255,255,0.03)', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
+                  <div className="input-field" style={{ background: 'var(--bg-subtle)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
                     <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{user?.maviId || `MAVI-${user?._id?.slice(-8).toUpperCase()}`}</span>
-                    <span style={{ fontSize: '0.7rem', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '0.2rem', fontWeight: 'bold' }}>
+                    <span style={{ fontSize: '0.7rem', color: '#3B82F6', display: 'flex', alignItems: 'center', gap: '0.2rem', fontWeight: 'bold' }}>
                       <Lock size={12} /> Permanent
                     </span>
                   </div>
@@ -1652,7 +1805,7 @@ const Dashboard = () => {
 
                 <div className="input-group">
                   <label className="input-label">PRN / Faculty ID (Institution Controlled)</label>
-                  <div className="input-field" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
+                  <div className="input-field" style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
                     <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{user?.prn || user?.facultyId || 'Not Assigned'}</span>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                       <Lock size={12} /> Institution
@@ -1663,9 +1816,9 @@ const Dashboard = () => {
 
               <div className="input-group">
                 <label className="input-label">Assigned Institution & Department (Protected / Read-Only)</label>
-                <div className="input-field" style={{ background: 'rgba(255,255,255,0.03)', color: '#fde047', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
+                <div className="input-field" style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
                   <span>{user?.institutionId?.name || user?.collegeName || 'Zeal College of Engineering and Research'} ({user?.departmentId?.name || user?.departmentName || 'Computer Engineering'})</span>
-                  <span style={{ fontSize: '0.75rem', color: '#eab308', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#D97706', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold' }}>
                     <Lock size={12} /> Managed by Institution Admin
                   </span>
                 </div>

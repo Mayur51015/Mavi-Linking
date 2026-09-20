@@ -1,50 +1,45 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import HeroNodeCanvas from './HeroNodeCanvas';
 
 const HeroSection = ({ onOpenDemoModal }) => {
   return (
-    <section className="container" style={{ paddingTop: '5.5rem', paddingBottom: '4rem', textAlign: 'center', position: 'relative' }}>
+    <section className="container" style={{ paddingTop: '6rem', paddingBottom: '3.5rem', textAlign: 'center', position: 'relative' }}>
       {/* Eyebrow Badge */}
-      <div className="reveal" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1.1rem', borderRadius: '30px', background: 'rgba(139, 92, 246, 0.12)', border: '1px solid rgba(139, 92, 246, 0.3)', marginBottom: '1.25rem' }}>
-        <Sparkles size={16} color="var(--accent-purple)" />
-        <span style={{ fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--accent-purple)' }}>
-          THE DIGITAL OPERATING PLATFORM FOR INSTITUTIONS
+      <div className="reveal" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.35rem 0.95rem', borderRadius: 'var(--radius-full)', background: '#172554', border: '1px solid rgba(59, 130, 246, 0.3)', marginBottom: '1.25rem' }}>
+        <Sparkles size={14} style={{ color: '#3B82F6' }} />
+        <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60A5FA' }}>
+          DEVELOPER & CAREER INTELLIGENCE PLATFORM
         </span>
       </div>
 
-      {/* Main Brand & Headlines */}
-      <h1 className="title-xl reveal" style={{ fontSize: 'clamp(2.5rem, 5.5vw, 4.25rem)', lineHeight: 1.12, marginBottom: '1rem', fontWeight: '800' }}>
-        MAVI LINKING <br />
-        <span className="text-gradient">Connect Your Entire Institution.</span>
+      {/* Main Headline */}
+      <h1 className="title-xl reveal" style={{ fontSize: 'clamp(2.25rem, 5vw, 3.75rem)', lineHeight: 1.15, marginBottom: '1rem', fontWeight: 800 }}>
+        Developer Intelligence <br />
+        <span className="text-gradient">for the Next Career</span>
       </h1>
 
-      <h2 className="reveal" style={{ fontSize: 'clamp(1.4rem, 3vw, 2.1rem)', fontWeight: '700', color: 'var(--text-accent)', marginBottom: '1.25rem' }}>
-        Manage. Analyze. Grow.
-      </h2>
-
       {/* Primary Brand Statement */}
-      <div className="reveal" style={{ fontSize: '1.15rem', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '0.3px', marginBottom: '1.25rem' }}>
-        "Connecting Institutions. Empowering People. Enabling Intelligence."
-      </div>
-
-      {/* Comprehensive Product Description */}
-      <p className="reveal" style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '740px', margin: '0 auto 2.25rem auto', lineHeight: 1.65 }}>
-        MAVI Linking is an AI-powered institutional platform that connects students, teachers, departments, recruiters, and administrators through one secure, intelligent ecosystem.
+      <p className="reveal" style={{ color: 'var(--text-secondary)', fontSize: '1.125rem', maxWidth: '680px', margin: '0 auto 2rem auto', lineHeight: 1.6 }}>
+        MAVI Linking connects student developer portfolios, higher-education institutions, and industry recruiters through verified skills, evidence-based career matching, and collaboration pipelines.
       </p>
 
       {/* CTAs */}
-      <div className="reveal" style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-        <a href="#modules" className="btn btn-primary btn-lg" style={{ minWidth: '220px', padding: '0.9rem 2rem', fontSize: '1rem' }}>
-          Explore MAVI Linking <ArrowRight size={18} />
+      <div className="reveal" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+        <Link to="/register" className="btn btn-primary btn-lg" style={{ minWidth: '180px' }}>
+          Get Started <ArrowRight size={16} />
+        </Link>
+        <a href="#modules" className="btn btn-outline btn-lg" style={{ minWidth: '180px' }}>
+          Explore Platform
         </a>
-        <button onClick={onOpenDemoModal} className="btn btn-outline btn-lg" style={{ minWidth: '220px', padding: '0.9rem 2rem', fontSize: '1rem', borderColor: 'rgba(139, 92, 246, 0.4)' }}>
-          Request an Institution Demo
+        <button onClick={onOpenDemoModal} className="btn btn-secondary btn-lg" style={{ minWidth: '180px' }}>
+          Request Institution Demo
         </button>
       </div>
 
-      <div className="reveal" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-        Built for modern colleges and educational institutions.
+      <div className="reveal" style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
+        Built for students, academic departments, and talent acquisition teams.
       </div>
 
       {/* Connected Ecosystem Visual Diagram */}

@@ -36,24 +36,24 @@ const LandingNavbar = ({ onOpenDemoModal }) => {
     >
       <div className="container nav-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {/* Brand Logo */}
-        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <div
             style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-md)',
+              background: '#3B82F6',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#ffffff',
-              boxShadow: '0 0 15px rgba(139, 92, 246, 0.4)',
+              boxShadow: 'var(--shadow-xs)',
             }}
           >
-            <Sparkles size={20} />
+            <Sparkles size={18} />
           </div>
-          <span style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-primary)', letterSpacing: '0.5px' }}>
-            MAVI <span style={{ color: 'var(--accent-purple)', fontWeight: '600' }}>LINKING</span>
+          <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', fontFamily: 'Outfit, Inter, sans-serif' }}>
+            MAVI <span style={{ color: '#3B82F6', fontWeight: 600 }}>LINKING</span>
           </span>
         </Link>
 

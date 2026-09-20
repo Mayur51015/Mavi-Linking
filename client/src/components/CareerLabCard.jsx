@@ -39,8 +39,8 @@ const CareerLabCard = () => {
   if (loading && !profileData) {
     return (
       <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div style={{ width: '120px', height: '18px', background: 'rgba(255,255,255,0.06)', borderRadius: '6px' }} />
-        <div style={{ width: '100%', height: '60px', background: 'rgba(255,255,255,0.04)', borderRadius: '8px' }} />
+        <div style={{ width: '120px', height: '18px', background: 'var(--bg-tertiary)', borderRadius: '6px' }} />
+        <div style={{ width: '100%', height: '60px', background: 'var(--bg-subtle)', borderRadius: '8px' }} />
       </div>
     );
   }
@@ -50,46 +50,29 @@ const CareerLabCard = () => {
 
   return (
     <div
-      className="card hover-lift"
+      className="erp-card"
       style={{
-        padding: '1.25rem',
+        padding: '1.25rem 1.4rem',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         position: 'relative',
-        overflow: 'hidden',
-        border: '1px solid rgba(236, 72, 153, 0.25)',
-        background: 'linear-gradient(145deg, rgba(25, 18, 30, 0.7) 0%, rgba(16, 12, 22, 0.9) 100%)',
       }}
     >
-      {/* Glow */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-20px',
-          right: '-20px',
-          width: '90px',
-          height: '90px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
-
       <div>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div
               style={{
-                width: '28px',
-                height: '28px',
+                width: '30px',
+                height: '30px',
                 borderRadius: '8px',
-                background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+                background: '#172554',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#fff',
+                color: '#3B82F6',
               }}
             >
               <FlaskConical size={16} />
@@ -103,13 +86,13 @@ const CareerLabCard = () => {
 
           <span
             style={{
-              fontSize: '0.68rem',
-              fontWeight: 700,
-              padding: '0.15rem 0.5rem',
-              borderRadius: '999px',
-              background: 'rgba(236, 72, 153, 0.15)',
-              color: '#f472b6',
-              border: '1px solid rgba(236, 72, 153, 0.3)',
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              padding: '0.2rem 0.55rem',
+              borderRadius: 'var(--radius-sm)',
+              background: '#172554',
+              color: '#60A5FA',
+              border: '1px solid #1D4ED8',
             }}
           >
             What-If Simulator
@@ -117,55 +100,69 @@ const CareerLabCard = () => {
         </div>
 
         {/* Content */}
-        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 0.75rem 0', lineHeight: 1.4 }}>
-          Simulate hypothetical skills, projects, and coding milestones to see estimated career impact.
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 0.85rem 0', lineHeight: 1.4 }}>
+          Simulate hypothetical skills, projects, and credentials to forecast career match trajectory.
         </p>
 
+        {/* Clean Comparison Layout */}
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '8px',
-            padding: '0.6rem 0.85rem',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '0.75rem',
+            background: 'var(--bg-subtle)',
+            borderRadius: '10px',
+            padding: '0.75rem 1rem',
             marginBottom: '0.85rem',
-            border: '1px solid rgba(255, 255, 255, 0.05)',
+            border: '1px solid var(--border-color)',
           }}
         >
           <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Target Role Match</div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {targetRole || 'Full-Stack Developer'}
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+              Current Profile
+            </div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.15rem' }}>
+              {matchScore}%
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {targetRole || 'Developer'}
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ec4899', fontFamily: 'Outfit, sans-serif' }}>
-              {matchScore}%
-            </span>
+
+          <div style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: '0.75rem' }}>
+            <div style={{ fontSize: '0.7rem', color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+              Projected Trajectory
+            </div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10B981', marginTop: '0.15rem' }}>
+              +{Math.min(15, 100 - matchScore)}%
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+              via +2 Skills / Projects
+            </div>
           </div>
+        </div>
+
+        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <span>* Hypothetical scenario — Does not alter live profile.</span>
         </div>
       </div>
 
       {/* Button */}
       <button
         onClick={() => navigate('/dashboard/career-lab')}
-        className="btn btn-outline"
+        className="btn btn-secondary"
         style={{
           width: '100%',
-          padding: '0.45rem 0.75rem',
-          fontSize: '0.8rem',
+          padding: '0.5rem 0.85rem',
+          fontSize: '0.8125rem',
           fontWeight: 600,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           gap: '0.4rem',
-          borderColor: 'rgba(236, 72, 153, 0.4)',
-          color: 'var(--text-primary)',
-          background: 'rgba(236, 72, 153, 0.08)',
         }}
       >
-        <Zap size={14} style={{ color: '#f472b6' }} /> Launch Career Lab <ArrowRight size={14} />
+        <Zap size={14} style={{ color: '#3B82F6' }} /> Launch Career Lab Simulator <ArrowRight size={14} />
       </button>
     </div>
   );

@@ -7,7 +7,7 @@ const authLimiter = rateLimit({
   max: 10, // 10 attempts per IP per window
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
+  skip: (req) => process.env.NODE_ENV === 'test' && process.env.TEST_RATE_LIMIT !== 'true' && !req.headers['x-test-rate-limit'],
   message: {
     success: false,
     message: 'Too many attempts. Please try again after 15 minutes.',
@@ -24,7 +24,7 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
-  skip: () => process.env.NODE_ENV === 'test',
+  skip: (req) => process.env.NODE_ENV === 'test' && process.env.TEST_RATE_LIMIT !== 'true' && !req.headers['x-test-rate-limit'],
   message: {
     success: false,
     message: 'Too many login attempts. Please try again after 15 minutes.',

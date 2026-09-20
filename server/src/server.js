@@ -136,7 +136,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options(/(.*)/, cors(corsOptions));
 
 // Rate limiting — 1000 requests per 15 minutes per IP
 app.use('/api', apiLimiter);// ─── Body Parsing ───────────────────────────────────────────────────────────

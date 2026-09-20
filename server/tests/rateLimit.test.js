@@ -10,6 +10,14 @@ function buildApp(middleware, status = 200) {
   return app;
 }
 
+beforeAll(() => {
+  process.env.TEST_RATE_LIMIT = 'true';
+});
+
+afterAll(() => {
+  delete process.env.TEST_RATE_LIMIT;
+});
+
 describe('loginLimiter', () => {
   it('allows requests under the limit', async () => {
     const app = buildApp(loginLimiter);

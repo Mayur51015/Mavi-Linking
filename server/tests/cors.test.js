@@ -67,7 +67,7 @@ describe('CORS Configuration Tests', () => {
     };
 
     app.use(cors(corsOptions));
-    app.options('*', cors(corsOptions));
+    app.options(/(.*)/, cors(corsOptions));
 
     app.post('/api/auth/login', (req, res) => res.json({ success: true, message: 'Logged in' }));
     app.get('/api/billing/plans', (req, res) => res.json({ success: true, plans: [] }));

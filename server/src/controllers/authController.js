@@ -226,7 +226,7 @@ const register = async (req, res, next) => {
     userData.roles = ['user'];
     userData.requestedRole = 'none';
     userData.roleStatus = 'active';
-    userData.accountStatus = 'PENDING_VERIFICATION';
+    userData.accountStatus = targetInst ? 'PENDING_EMAIL_VERIFICATION' : 'PENDING_VERIFICATION';
     userData.emailVerified = false;
 
     // Institutional identifiers & verification status
@@ -526,7 +526,33 @@ const login = async (req, res, next) => {
           },
         });
       }
-      // Note: PENDING_ADMIN_APPROVAL and PENDING_VERIFICATION students are allowed to log in to access the limited Student Dashboard shell!
+
+      if (user.institutionId && user.accountStatus === 'PENDING_ADMIN_APPROVAL') {
+        try {
+          await AuditLog.create({
+            actorId: user._id,
+            targetUserId: user._id,
+            action: 'STUDENT_LOGIN_BLOCKED_PENDING_APPROVAL',
+            details: { email: user.email, maviId: user.maviId },
+            result: 'REJECTED',
+          });
+        } catch (auditErr) {
+          console.error('Audit Log Error:', auditErr.message);
+        }
+
+        return res.status(403).json({
+          success: false,
+          code: 'ACCOUNT_PENDING_ADMIN_APPROVAL',
+          message: 'Your email has been verified. Your account is waiting for approval from your institution administrator.',
+          data: {
+            email: user.email,
+            maviId: user.maviId,
+            accountStatus: 'PENDING_ADMIN_APPROVAL',
+            emailVerified: true,
+          },
+        });
+      }
+      // Note: Independent PENDING_ADMIN_APPROVAL and PENDING_VERIFICATION students are allowed to log in to access the limited Student Dashboard shell!
     }
 
     // Generate JWT and Refresh Token
@@ -834,11 +860,15 @@ const verifyEmail = async (req, res, next) => {
       });
     }
 
-    // Complete account verification and activate user account
+    // Complete account verification -> Set ACTIVE for independent accounts or PENDING_ADMIN_APPROVAL if institution is linked
+    const isInstitutional = Boolean(user.institutionId);
+    const nextStatus = isInstitutional ? 'PENDING_ADMIN_APPROVAL' : 'ACTIVE';
     user.emailVerified = true;
-    user.accountStatus = 'ACTIVE';
-    user.prnVerificationStatus = 'approved';
-    user.roleStatus = 'approved';
+    user.accountStatus = nextStatus;
+    if (!isInstitutional) {
+      user.prnVerificationStatus = 'approved';
+      user.roleStatus = 'approved';
+    }
     user.verificationToken = null;
     user.verificationTokenExpires = null;
 
@@ -912,13 +942,18 @@ const verifyEmail = async (req, res, next) => {
       console.error('Audit Log Error:', auditErr.message);
     }
 
+    const responseCode = isInstitutional ? 'ACCOUNT_PENDING_ADMIN_APPROVAL' : 'ACCOUNT_ACTIVATED';
+    const responseMessage = isInstitutional
+      ? 'Email verified successfully. Your account is now waiting for approval from your institution administrator.'
+      : 'Account verified and activated successfully! You can now log in to your account.';
+
     res.status(200).json({
       success: true,
-      code: 'ACCOUNT_ACTIVATED',
-      message: 'Account verified and activated successfully! You can now log in to your account.',
+      code: responseCode,
+      message: responseMessage,
       data: {
         user,
-        accountStatus: 'ACTIVE',
+        accountStatus: nextStatus,
         emailVerified: true,
       },
     });

@@ -104,10 +104,15 @@ const generateRecruiterReport = async (candidateId, recruiter) => {
   let aiAvailable = Boolean(insight || dna || ranking || analytics || careerInsight);
 
   try {
+    let timer;
     const analysis = await Promise.race([
       aiAnalyzer.analyzeUser(user),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('AI analysis timeout')), 12000)),
-    ]);
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('AI analysis timeout')), 12000);
+      }),
+    ]).finally(() => {
+      if (timer) clearTimeout(timer);
+    });
 
     if (analysis) {
       aiAvailable = true;

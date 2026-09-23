@@ -35,7 +35,7 @@ const Register = () => {
     degree: 'B.Tech',
     graduationYear: '2026',
     githubUsername: '',
-    preferredDomain: 'Web Development',
+    preferredDomain: 'Software Development',
   });
 
   const [error, setError] = useState('');

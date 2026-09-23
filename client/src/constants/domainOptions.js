@@ -37,6 +37,10 @@ export const ROLE_TO_DOMAIN_MAP = {
   'cloud engineer': 'Cloud & DevOps',
   'cybersecurity analyst': 'Cybersecurity',
   'blockchain developer': 'Blockchain & Web3',
+  'web developer': 'Software Development',
+  'web development': 'Software Development',
+  'software engineer': 'Software Development',
+  'software developer': 'Software Development',
 };
 
 export function normalizeDomain(input) {

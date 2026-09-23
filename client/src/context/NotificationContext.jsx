@@ -5,16 +5,26 @@ import { AuthContext } from './AuthContext';
 export const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
-  const { user, socket } = useContext(AuthContext);
+  const { user, socket, loading: authLoading } = useContext(AuthContext);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 1 });
 
+  // Helper: Verify that authentication is fully restored with a valid token
+  const hasValidSession = useCallback(() => {
+    if (!user || authLoading) return false;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token || token === 'undefined' || token === 'null' || !token.trim()) return false;
+    // Unverified students are forbidden by protect middleware from accessing notification endpoints
+    if (user.role === 'user' && user.emailVerified === false) return false;
+    return true;
+  }, [user, authLoading]);
+
   // 1. Fetch unread count
   const fetchUnreadCount = useCallback(async () => {
-    if (!user) {
+    if (!hasValidSession()) {
       setUnreadCount(0);
       return;
     }
@@ -24,9 +34,12 @@ export const NotificationProvider = ({ children }) => {
         setUnreadCount(res.data.data.count ?? 0);
       }
     } catch (err) {
-      // Silent catch to prevent background polling errors from interrupting UI
+      // If unauthorized or forbidden, reset count safely without looping
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        setUnreadCount(0);
+      }
     }
-  }, [user]);
+  }, [hasValidSession]);
 
   // 2. Fetch notifications list
   const fetchNotifications = useCallback(async ({
@@ -37,7 +50,7 @@ export const NotificationProvider = ({ children }) => {
     unreadOnly = false,
     append = false,
   } = {}) => {
-    if (!user) return;
+    if (!hasValidSession()) return;
     setLoading(true);
     setError(null);
     try {
@@ -61,7 +74,7 @@ export const NotificationProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [hasValidSession]);
 
   // 3. Mark single notification as read
   const markAsRead = useCallback(async (id) => {
@@ -139,13 +152,16 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [socket]);
 
-  // Polling unread count every 30s
+  // Polling unread count every 30s only when fully authenticated with a valid session
   useEffect(() => {
-    if (!user) return;
+    if (!hasValidSession()) {
+      setUnreadCount(0);
+      return;
+    }
     fetchUnreadCount();
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
-  }, [user, fetchUnreadCount]);
+  }, [hasValidSession, fetchUnreadCount]);
 
   const value = useMemo(
     () => ({

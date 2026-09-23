@@ -171,5 +171,16 @@ describe('Notification Service Unit Tests', () => {
         isRead: true,
       });
     });
+
+    test('getUnreadCount returns correct unread count for user', async () => {
+      RecruitmentNotification.countDocuments.mockResolvedValue(3);
+
+      const count = await getUnreadCount(mockUserId1);
+      expect(RecruitmentNotification.countDocuments).toHaveBeenCalledWith({
+        recipientId: mockUserId1,
+        isRead: false,
+      });
+      expect(count).toBe(3);
+    });
   });
 });

@@ -205,7 +205,7 @@ app.use('/api', publicRoutes);
 app.use('/api', redirectRoutes);
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: `Route not found: ${req.originalUrl}`,

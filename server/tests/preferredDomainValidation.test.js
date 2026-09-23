@@ -8,6 +8,9 @@ describe('preferredDomain and preferredRole Validation Suite', () => {
     expect(normalizeDomain('full stack developer')).toBe('Full-Stack Development');
     expect(normalizeDomain('frontend developer')).toBe('Frontend Development');
     expect(normalizeDomain('Software Development')).toBe('Software Development');
+    expect(normalizeDomain('Web Development')).toBe('Software Development');
+    expect(normalizeDomain('web development')).toBe('Software Development');
+    expect(normalizeDomain('Web Developer')).toBe('Software Development');
     expect(normalizeDomain('')).toBe('');
     expect(normalizeDomain(null)).toBe('');
   });
@@ -23,6 +26,17 @@ describe('preferredDomain and preferredRole Validation Suite', () => {
     expect(user1.preferredDomain).toBe('Full-Stack Development');
     const err = user1.validateSync();
     expect(err).toBeUndefined();
+
+    const user2 = new User({
+      name: 'Web Dev Student',
+      email: 'webdev.student@example.com',
+      password: 'Password@123',
+      preferredDomain: 'Web Development',
+    });
+
+    expect(user2.preferredDomain).toBe('Software Development');
+    const err2 = user2.validateSync();
+    expect(err2).toBeUndefined();
   });
 
   test('User schema validates against canonical domains', () => {

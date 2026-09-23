@@ -107,9 +107,15 @@ export const AuthProvider = ({ children }) => {
 
   const register = useCallback(async (userData) => {
     const res = await api.post('/auth/register', userData);
-    localStorage.setItem('token', res.data.data.token);
-    setUser(res.data.data.user);
-    return res.data.data;
+    const token = res.data?.data?.token;
+    if (token) {
+      localStorage.setItem('token', token);
+      setUser(res.data?.data?.user);
+    }
+    return {
+      ...res.data,
+      user: res.data?.data?.user,
+    };
   }, []);
 
   const requestRoleUpgrade = useCallback(async (requestedRole, verificationDetails) => {

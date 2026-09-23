@@ -49,6 +49,7 @@ const ROLE_TO_DOMAIN_MAP = {
   'blockchain developer': 'Blockchain & Web3',
   'smart contract developer': 'Blockchain & Web3',
   'web developer': 'Software Development',
+  'web development': 'Software Development',
   'software engineer': 'Software Development',
   'software developer': 'Software Development',
 };

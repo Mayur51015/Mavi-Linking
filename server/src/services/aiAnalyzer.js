@@ -102,6 +102,99 @@ const buildProfileSummary = (user, projects = []) => {
   return summary;
 };
 
+/**
+ * Heuristic/deterministic analysis fallback when LLM is unconfigured, rate-limited, or unavailable.
+ */
+const generateHeuristicResult = (user, projects, evidence) => {
+  const userSkills = user.skillsList ? user.skillsList.map(s => s.name) : [];
+  const projectTechs = projects.flatMap(p => p.technologies || []);
+  const uniqueTechs = Array.from(new Set([...userSkills, ...projectTechs])).map(t => t.trim());
+  const selectedTechs = uniqueTechs.length > 0 ? uniqueTechs.slice(0, 8) : ["JavaScript", "Node.js", "React", "MongoDB", "Express"];
+
+  const radar = selectedTechs.map((tech) => {
+    let baseScore = 65;
+    const projectCount = projects.filter(p => p.technologies?.some(t => t.toLowerCase() === tech.toLowerCase())).length;
+    baseScore += projectCount * 10;
+    if (user.skillsList?.some(s => s.name.toLowerCase() === tech.toLowerCase())) {
+      baseScore += 10;
+    }
+    return { axis: tech, score: Math.min(baseScore, 98) };
+  });
+
+  const specialization = user.preferredDomain || (projectTechs.some(t => ['react', 'vue', 'angular', 'html', 'css'].includes(t.toLowerCase())) && projectTechs.some(t => ['node', 'express', 'mongodb', 'sql'].includes(t.toLowerCase())) ? "Full Stack Engineer" : (projectTechs.some(t => ['react', 'vue', 'angular', 'html', 'css'].includes(t.toLowerCase())) ? "Frontend Developer" : "Backend Developer"));
+  const confidence = Math.min(Math.round(50 + (user.profileCompletion || 0)/2 + (projects.length * 5)), 98);
+
+  const confidenceScores = {};
+  radar.forEach(item => {
+    confidenceScores[item.axis] = item.score;
+  });
+
+  return {
+    insight: {
+      specialization,
+      topSkills: selectedTechs.slice(0, 4),
+      techStack: selectedTechs,
+      confidenceScores,
+      radar,
+      confidence: evidence.length > 0 ? confidence : 0,
+      strengths: evidence.length > 0
+        ? [
+            `Competent in building dynamic profiles and projects using ${selectedTechs.slice(0, 2).join(', ')}`,
+            projects.length >= 3
+              ? "Demonstrates consistency through multiple repository implementations"
+              : "Shows clear understanding of technical layouts",
+          ]
+        : [],
+      improvements: [
+        !user.portfolioDocs?.some(d => d.category === 'Resume')
+          ? "Upload a complete Resume to attract recruiters"
+          : "Explore deployment strategies for system infrastructure",
+      ],
+      careerRecommendations: evidence.length > 0
+        ? [
+            `Junior/Associate ${specialization}`,
+            "Software Development Engineer",
+          ]
+        : [],
+      claims: [],
+      uncertainty: evidence.length > 0
+        ? {
+            state: 'supported',
+            reason: null,
+          }
+        : {
+            state: 'uncertain',
+            reason: 'Insufficient verified platform evidence.',
+          },
+    },
+    dna: {
+      personalityType: "Project Builder",
+      workingStyle: "Collaborative",
+      scores: {
+        collaboration: 85,
+        innovation: 80,
+        learningAdaptability: 88,
+        consistency: 75
+      },
+      extendedScores: {
+        engineeringMaturity: Math.min(70 + projects.length * 5, 100),
+        problemSolvingDepth: user.platformData?.leetcode?.solved ? Math.min(50 + Math.round(user.platformData.leetcode.solved / 5), 100) : 65,
+        systemDesign: Math.min(60 + projects.length * 6, 100),
+        codeQuality: 75,
+        technicalDiversity: 70
+      },
+      description: `${user.name} is a goal-oriented individual specializing in developer intelligence modules and placement metrics.`,
+      strengths: ["Clean component layout design", "API integration skills"],
+      weaknesses: ["Deep systems engineering expertise"]
+    },
+    analytics: {
+      aiSummary: "The developer demonstrates reliable engineering foundations and strong self-guided project ownership.",
+      growthPrediction: "Expected to specialize further in full-stack engineering over the next 12 months.",
+      careerInsight: "Best fits in software engineering roles within collaborative agile engineering environments."
+    }
+  };
+};
+
 const analyzeUser = async (user) => {
   const provider = LLMFactory.getProvider();
 
@@ -111,102 +204,14 @@ const analyzeUser = async (user) => {
   const evidenceContext = buildEvidenceContext(user);
   const evidence = evidenceContext.evidence;
 
-  let result;
-  if (!provider) {
-    // Generate clean mock result based on user details and actual projects
-    const userSkills = user.skillsList ? user.skillsList.map(s => s.name) : [];
-    const projectTechs = projects.flatMap(p => p.technologies || []);
-    const uniqueTechs = Array.from(new Set([...userSkills, ...projectTechs])).map(t => t.trim());
-    const selectedTechs = uniqueTechs.length > 0 ? uniqueTechs.slice(0, 8) : ["JavaScript", "Node.js", "React", "MongoDB", "Express"];
-    
-    // Construct dynamic radar axes with realistic confidence scores
-    const radar = selectedTechs.map((tech) => {
-      let baseScore = 65;
-      const projectCount = projects.filter(p => p.technologies?.some(t => t.toLowerCase() === tech.toLowerCase())).length;
-      baseScore += projectCount * 10;
-      if (user.skillsList?.some(s => s.name.toLowerCase() === tech.toLowerCase())) {
-        baseScore += 10;
-      }
-      return { axis: tech, score: Math.min(baseScore, 98) };
-    });
+  let result = null;
+  if (provider) {
+    try {
+      // Build enriched profile summary and verified evidence payload
+      const profileSummary = JSON.stringify(buildProfileSummary(user, projects));
+      const structuredEvidence = JSON.stringify(evidenceContext);
 
-    const specialization = user.preferredDomain || (projectTechs.some(t => ['react', 'vue', 'angular', 'html', 'css'].includes(t.toLowerCase())) && projectTechs.some(t => ['node', 'express', 'mongodb', 'sql'].includes(t.toLowerCase())) ? "Full Stack Engineer" : (projectTechs.some(t => ['react', 'vue', 'angular', 'html', 'css'].includes(t.toLowerCase())) ? "Frontend Developer" : "Backend Developer"));
-    const confidence = Math.min(Math.round(50 + (user.profileCompletion || 0)/2 + (projects.length * 5)), 98);
-
-    const confidenceScores = {};
-    radar.forEach(item => {
-      confidenceScores[item.axis] = item.score;
-    });
-
-    result = {
-      insight: {
-        specialization,
-        topSkills: selectedTechs.slice(0, 4),
-        techStack: selectedTechs,
-        confidenceScores,
-        radar,
-        confidence: evidence.length > 0 ? confidence : 0,
-        strengths: evidence.length > 0
-          ? [
-              `Competent in building dynamic profiles and projects using ${selectedTechs.slice(0, 2).join(', ')}`,
-              projects.length >= 3
-                ? "Demonstrates consistency through multiple repository implementations"
-                : "Shows clear understanding of technical layouts",
-            ]
-          : [],
-        improvements: [
-          !user.portfolioDocs?.some(d => d.category === 'Resume')
-            ? "Upload a complete Resume to attract recruiters"
-            : "Explore deployment strategies for system infrastructure",
-        ],
-        careerRecommendations: evidence.length > 0
-          ? [
-              `Junior/Associate ${specialization}`,
-              "Software Development Engineer",
-            ]
-          : [],
-        claims: [],
-        uncertainty: evidence.length > 0
-          ? {
-              state: 'supported',
-              reason: null,
-            }
-          : {
-              state: 'uncertain',
-              reason: 'Insufficient verified platform evidence.',
-            },
-      },      dna: {
-        personalityType: "Project Builder",
-        workingStyle: "Collaborative",
-        scores: {
-          collaboration: 85,
-          innovation: 80,
-          learningAdaptability: 88,
-          consistency: 75
-        },
-        extendedScores: {
-          engineeringMaturity: Math.min(70 + projects.length * 5, 100),
-          problemSolvingDepth: user.platformData?.leetcode?.solved ? Math.min(50 + Math.round(user.platformData.leetcode.solved / 5), 100) : 65,
-          systemDesign: Math.min(60 + projects.length * 6, 100),
-          codeQuality: 75,
-          technicalDiversity: 70
-        },
-        description: `${user.name} is a goal-oriented individual specializing in developer intelligence modules and placement metrics.`,
-        strengths: ["Clean component layout design", "API integration skills"],
-        weaknesses: ["Deep systems engineering expertise"]
-      },
-      analytics: {
-        aiSummary: "The developer demonstrates reliable engineering foundations and strong self-guided project ownership.",
-        growthPrediction: "Expected to specialize further in full-stack engineering over the next 12 months.",
-        careerInsight: "Best fits in software engineering roles within collaborative agile engineering environments."
-      }
-    };
-  } else {
-    // Build enriched profile summary and verified evidence payload
-    const profileSummary = JSON.stringify(buildProfileSummary(user, projects));
-    const structuredEvidence = JSON.stringify(evidenceContext);
-
-    const prompt = `You are an expert AI Developer Intelligence System.
+      const prompt = `You are an expert AI Developer Intelligence System.
 
 Use ONLY the verified evidence items supplied below when making factual claims.
 Do not invent metrics, platform activity, rankings, skills, or performance levels.
@@ -255,7 +260,8 @@ Format exactly as valid JSON:
       "state": "supported",
       "reason": null
     }
-  },  "dna": {
+  },
+  "dna": {
     "personalityType": "Problem Solver | Project Builder | Open Source Contributor | Startup Engineer | Scale Architect | Research Engineer | Product Builder | Performance Optimizer | Full Stack Generalist | DevOps Engineer | AI/ML Specialist",
     "workingStyle": "Independent | Collaborative | Hybrid | Mentorship-Driven | Sprint-Based",
     "scores": {"collaboration": 80, "innovation": 90, "learningAdaptability": 85, "consistency": 70},
@@ -271,14 +277,22 @@ Format exactly as valid JSON:
   }
 }`;
 
-    const systemPrompt = 'You are an AI Developer Intelligence System that analyzes developer profiles across GitHub, LeetCode, Codeforces, and StackOverflow to generate deep technical insights, personality profiles, and career recommendations.';
-    result = await provider.generateCompletion(systemPrompt, prompt);
+      const systemPrompt = 'You are an AI Developer Intelligence System that analyzes developer profiles across GitHub, LeetCode, Codeforces, and StackOverflow to generate deep technical insights, personality profiles, and career recommendations.';
+      const rawResult = await provider.generateCompletion(systemPrompt, prompt);
 
-    result = validateAndNormalizeAIResult(result, evidence);
+      result = validateAndNormalizeAIResult(rawResult, evidence);
+      if (!result?.insight) {
+        console.warn('[aiAnalyzer] AI completion returned invalid structure, falling back to heuristic analysis');
+        result = null;
+      }
+    } catch (llmErr) {
+      console.warn('[aiAnalyzer] LLM generation failed, falling back to heuristic analysis:', llmErr.message);
+      result = null;
+    }
   }
 
-  if (!result.insight) {
-    throw new Error('AI response could not be normalized into the required insight schema');
+  if (!result || !result.insight) {
+    result = generateHeuristicResult(user, projects, evidence);
   }
   // Calculate dynamic ranking score based on user.scores + some variance
   const rawScore = (user.scores?.overall || 0);
@@ -441,7 +455,7 @@ Format exactly as valid JSON:
   const prevRankingSnapshot = previousRanking
     ? { score: previousRanking.score, tier: previousRanking.tier, globalRank: previousRanking.globalRank }
     : null;
-  const newRankingSnapshot = { score: rawScore, tier, globalRank: ranking.globalRank };
+  const newRankingSnapshot = { score: rawScore, tier, globalRank: ranking ? ranking.globalRank : 0 };
   if (!prevRankingSnapshot || JSON.stringify(prevRankingSnapshot) !== JSON.stringify(newRankingSnapshot)) {
     await recordEvent({
       userId: user._id,
@@ -453,7 +467,8 @@ Format exactly as valid JSON:
     });
   }
 
-  // Generate 6-month historical growth trend dataset for analytics chart  const currentMonthDate = new Date();
+  // Generate 6-month historical growth trend dataset for analytics chart
+  const currentMonthDate = new Date();
   const monthsList = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() - i, 1);

@@ -111,7 +111,7 @@ exports.getAnalytics = async (req, res, next) => {
       const user = await User.findById(req.user.id);
       if (user) {
         const result = await aiAnalyzer.analyzeUser(user);
-        analytics = result.analytics;
+        analytics = result ? result.analytics : [];
       }
     }
     res.status(200).json({ success: true, data: analytics || [] });

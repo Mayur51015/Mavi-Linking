@@ -11,6 +11,9 @@ const Messages = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  // Cursor for the next (older) page of the open thread, and whether one exists.
+  const [olderCursor, setOlderCursor] = useState(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const chatEndRef = useRef(null);
 
   // Load conversations list
@@ -29,19 +32,43 @@ const Messages = () => {
   // Helper to validate MongoDB ObjectId format
   const isValidObjectId = (id) => /^[a-f0-9]{24}$/i.test(id);
 
+  // Loads the most recent page. The server no longer returns the whole thread,
+  // so anything older is fetched on demand by loadOlderMessages below.
   const loadChatHistory = async (otherUserId) => {
     // Guard against invalid IDs (e.g., user typed a name instead of ID)
     if (!isValidObjectId(otherUserId)) {
       console.warn('Invalid user ID for chat history:', otherUserId);
       setMessages([]);
+      setOlderCursor(null);
       return;
     }
     try {
       const res = await api.get(`/messages/${otherUserId}`);
       setMessages(res.data.data || []);
+      setOlderCursor(res.data.pagination?.nextBefore || null);
     } catch (err) {
       console.error(err);
       setMessages([]);
+      setOlderCursor(null);
+    }
+  };
+
+  const loadOlderMessages = async () => {
+    if (!activeChat || !olderCursor || loadingOlder) return;
+
+    setLoadingOlder(true);
+    try {
+      const res = await api.get(`/messages/${activeChat._id}`, {
+        params: { before: olderCursor },
+      });
+      // Prepend: the page comes back oldest-first, and it sits before what is
+      // already on screen.
+      setMessages((prev) => [...(res.data.data || []), ...prev]);
+      setOlderCursor(res.data.pagination?.nextBefore || null);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingOlder(false);
     }
   };
 
@@ -86,10 +113,12 @@ const Messages = () => {
     return () => socket.off('new_message', handleNewMessage);
   }, [socket]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages — but not when older ones are prepended,
+  // which would yank the reader away from what they just asked to see.
   useEffect(() => {
+    if (loadingOlder) return;
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, loadingOlder]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -169,8 +198,32 @@ const Messages = () => {
                         {conv.user.role === 'user' ? 'Student' : conv.user.role}
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '0.15rem' }}>
-                      {conv.lastMessage?.content}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.15rem' }}>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {conv.lastMessage?.content}
+                      </span>
+                      {/* The conversation aggregation returns unreadCount for
+                          free, so the badge no longer needs every thread
+                          fetched to be renderable. */}
+                      {conv.unreadCount > 0 && (
+                        <span
+                          aria-label={`${conv.unreadCount} unread messages`}
+                          style={{
+                            flexShrink: 0,
+                            minWidth: '18px',
+                            padding: '0 0.35rem',
+                            borderRadius: '9px',
+                            background: 'var(--accent-purple)',
+                            color: 'white',
+                            fontSize: '0.65rem',
+                            fontWeight: '700',
+                            textAlign: 'center',
+                            lineHeight: '18px',
+                          }}
+                        >
+                          {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -204,6 +257,21 @@ const Messages = () => {
 
               {/* Messages Body */}
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingRight: '0.5rem', marginBottom: '1rem' }}>
+                {/* The thread is paginated now, so anything past the most
+                    recent page is fetched on demand rather than shipped on
+                    every open. */}
+                {olderCursor && (
+                  <button
+                    type="button"
+                    onClick={loadOlderMessages}
+                    disabled={loadingOlder}
+                    className="btn btn-outline"
+                    style={{ alignSelf: 'center', fontSize: '0.7rem', padding: '0.3rem 0.75rem' }}
+                  >
+                    {loadingOlder ? 'Loading…' : 'Load earlier messages'}
+                  </button>
+                )}
+
                 {messages.map(msg => {
                   const isOwn = msg.senderId === user?.id || msg.senderId === user?._id;
                   return (

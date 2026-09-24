@@ -1,6 +1,18 @@
 const Message = require('../models/Message');
 const User = require('../models/User');
 const RecruitmentNotification = require('../models/RecruitmentNotification');
+const {
+  CONVERSATIONS_DEFAULT_LIMIT,
+  CONVERSATIONS_MAX_LIMIT,
+  parsePagination,
+  parseHistoryQuery,
+  isValidObjectId,
+  buildConversationsPipeline,
+  buildHistoryFilter,
+  buildHistoryPage,
+} = require('./messagePagination');
+
+const { MESSAGE_MAX_LENGTH } = Message;
 
 /**
  * Checks whether a sender is allowed to message a recipient based on role and scope.
@@ -144,38 +156,35 @@ function isMessageAllowed(sender, recipient) {
 
 
 /**
- * @desc    Get all conversations for the logged-in user
- * @route   GET /api/messages
+ * @desc    Get conversations for the logged-in user, newest activity first
+ * @route   GET /api/messages?page=&limit=
  * @access  Private
+ *
+ * The fold to one row per conversation happens in the database now. It used to
+ * be a `Message.find()` with no limit and no `lean()`, followed by a JavaScript
+ * loop that kept the first message per partner and threw the rest away — so the
+ * cost of loading the inbox grew with every message anyone had ever sent, and
+ * was paid again on every load.
  */
 const getConversations = async (req, res, next) => {
   try {
-    const messages = await Message.find({
-      $or: [{ senderId: req.user.id }, { recipientId: req.user.id }],
-    }).sort({ createdAt: -1 });
+    const { page, limit, skip } = parsePagination(req.query, {
+      defaultLimit: CONVERSATIONS_DEFAULT_LIMIT,
+      maxLimit: CONVERSATIONS_MAX_LIMIT,
+    });
 
-    const conversationMap = {};
-    for (const msg of messages) {
-      const otherUserId = msg.senderId.toString() === req.user.id ? msg.recipientId.toString() : msg.senderId.toString();
-      if (!conversationMap[otherUserId]) {
-        conversationMap[otherUserId] = msg;
-      }
-    }
+    const rows = await Message.aggregate(buildConversationsPipeline(req.user.id, { skip, limit }));
 
-    const userIds = Object.keys(conversationMap);
-    const users = await User.find({ _id: { $in: userIds } }).select('name username avatar role companyName');
-
-    const conversations = users.map(user => {
-      const lastMsg = conversationMap[user._id.toString()];
-      return {
-        user,
-        lastMessage: lastMsg,
-      };
-    }).sort((a, b) => b.lastMessage.createdAt - a.lastMessage.createdAt);
+    // One extra row was requested to detect a further page without a count.
+    const hasMore = rows.length > limit;
+    const conversations = hasMore ? rows.slice(0, limit) : rows;
 
     res.status(200).json({
       success: true,
+      // Still a bare array, as before — the pagination block is a sibling key,
+      // matching how documentController.getDocuments reports it.
       data: conversations,
+      pagination: { page, limit, hasMore },
     });
   } catch (error) {
     next(error);
@@ -184,32 +193,49 @@ const getConversations = async (req, res, next) => {
 
 /**
  * @desc    Get chat history between current user and specified user
- * @route   GET /api/messages/:userId
+ * @route   GET /api/messages/:userId?limit=&before=
  * @access  Private
+ *
+ * Returns the most recent page by default, oldest-first so the render order is
+ * unchanged, with a `before` cursor to walk backwards. Previously this returned
+ * the entire thread on every open.
  */
 const getChatHistory = async (req, res, next) => {
   try {
     const otherUserId = req.params.userId;
 
-    const messages = await Message.find({
-      $or: [
-        { senderId: req.user.id, recipientId: otherUserId },
-        { senderId: otherUserId, recipientId: req.user.id },
-      ],
-    }).sort({ createdAt: 1 });
+    // Validated here rather than left to produce a CastError. The client has an
+    // isValidObjectId guard, but that is the wrong side of the trust boundary.
+    if (!isValidObjectId(otherUserId)) {
+      return res.status(400).json({ success: false, message: 'Invalid user ID.' });
+    }
 
-    // Mark incoming messages as read
-    await Message.updateMany(
-      { senderId: otherUserId, recipientId: req.user.id, status: { $ne: 'read' } },
-      { $set: { status: 'read' } }
-    );
+    const { limit, before } = parseHistoryQuery(req.query);
 
-    res.status(200).json({
+    const rows = await Message.find(buildHistoryFilter(req.user.id, otherUserId, before))
+      // Descending to take the newest page; buildHistoryPage flips it back.
+      .sort({ createdAt: -1 })
+      .limit(limit + 1)
+      .lean();
+
+    const { messages, hasMore, nextBefore } = buildHistoryPage(rows, limit);
+
+    // Mark incoming messages as read. Only meaningful on the first page — a
+    // client paging back through history is not reading anything new.
+    if (!before) {
+      await Message.updateMany(
+        { senderId: otherUserId, recipientId: req.user.id, status: { $ne: 'read' } },
+        { $set: { status: 'read' } }
+      );
+    }
+
+    return res.status(200).json({
       success: true,
       data: messages,
+      pagination: { limit, hasMore, nextBefore },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -224,6 +250,23 @@ const sendMessage = async (req, res, next) => {
 
     if (!recipientId || !content) {
       return res.status(400).json({ success: false, message: 'Recipient ID and content are required' });
+    }
+
+    if (!isValidObjectId(recipientId)) {
+      return res.status(400).json({ success: false, message: 'Invalid recipient ID.' });
+    }
+
+    if (typeof content !== 'string' || content.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Message content cannot be empty.' });
+    }
+
+    // Matches the schema's maxlength, so an over-long message is a clear 400
+    // rather than a ValidationError shaped by the global handler.
+    if (content.length > MESSAGE_MAX_LENGTH) {
+      return res.status(400).json({
+        success: false,
+        message: `Message content cannot exceed ${MESSAGE_MAX_LENGTH} characters.`,
+      });
     }
 
     // Load recipient user to enforce scope rules

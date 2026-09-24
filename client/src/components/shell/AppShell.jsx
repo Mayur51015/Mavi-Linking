@@ -766,6 +766,7 @@ const AppShell = ({
                     <button
                       onClick={() => {
                         setUserMenuOpen(false);
+                        window.dispatchEvent(new CustomEvent('open-edit-profile'));
                         navigate('/dashboard?edit=true');
                       }}
                       style={{

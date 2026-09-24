@@ -27,7 +27,7 @@ import {
   X
 } from 'lucide-react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import RecentOpportunitiesTable from '../components/RecentOpportunitiesTable';
 import RecentApplicationsCard from '../components/RecentApplicationsCard';
@@ -49,6 +49,7 @@ import { CANONICAL_DOMAINS } from '../constants/domainOptions';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, setUser, updateProfile, socket, refreshUser, logout } = useContext(AuthContext);
   const [showChangeEmailModal, setShowChangeEmailModal] = useState(false);
   const [scores, setScores] = useState(null);
@@ -101,7 +102,7 @@ const Dashboard = () => {
   });
   const [savingProfile, setSavingProfile] = useState(false);
 
-  const openEditProfileModal = () => {
+  const openEditProfileModal = useCallback(() => {
     setEditProfileData({
       name: user?.name || '',
       bio: user?.bio || '',
@@ -112,15 +113,47 @@ const Dashboard = () => {
       preferredDomain: user?.preferredDomain || '',
     });
     setShowEditProfileModal(true);
-  };
+  }, [user]);
 
-  // Support ?edit=true in URL to open edit profile modal directly
+  const closeEditProfileModal = useCallback(() => {
+    setShowEditProfileModal(false);
+    const params = new URLSearchParams(location.search);
+    if (params.get('edit') === 'true') {
+      params.delete('edit');
+      const newSearch = params.toString();
+      navigate(newSearch ? `${location.pathname}?${newSearch}` : location.pathname, { replace: true });
+    }
+  }, [location.pathname, location.search, navigate]);
+
+  // Support ?edit=true in URL to open edit profile modal directly & react to route changes
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     if (params.get('edit') === 'true') {
       openEditProfileModal();
     }
-  }, []);
+  }, [location.search, openEditProfileModal]);
+
+  // Support direct event dispatch for instant responsiveness from shell/layout
+  useEffect(() => {
+    const handleOpenEdit = () => openEditProfileModal();
+    window.addEventListener('open-edit-profile', handleOpenEdit);
+    return () => window.removeEventListener('open-edit-profile', handleOpenEdit);
+  }, [openEditProfileModal]);
+
+  // Keep editProfileData synced if user loads or updates while modal is open
+  useEffect(() => {
+    if (user && showEditProfileModal) {
+      setEditProfileData((prev) => ({
+        name: prev.name || user.name || '',
+        bio: prev.bio || user.bio || '',
+        degree: prev.degree || user.degree || '',
+        graduationYear: prev.graduationYear || user.graduationYear || '',
+        portfolioWebsite: prev.portfolioWebsite || user.portfolioWebsite || '',
+        githubUsername: prev.githubUsername || user.githubUsername || '',
+        preferredDomain: prev.preferredDomain || user.preferredDomain || '',
+      }));
+    }
+  }, [user, showEditProfileModal]);
 
   const handleSaveProfileSubmit = async (e) => {
     e.preventDefault();
@@ -133,7 +166,7 @@ const Dashboard = () => {
         if (res.data?.data?.user) setUser(res.data.data.user);
       }
       showToast('success', 'Profile updated successfully!');
-      setShowEditProfileModal(false);
+      closeEditProfileModal();
     } catch (err) {
       showToast('error', err.response?.data?.message || 'Failed to update profile.');
     } finally {
@@ -774,13 +807,25 @@ const Dashboard = () => {
   return (
 
     <UserLayout>
-      <header style={{ marginBottom: '1.25rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
-        <h1 className="dashboard-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
-          Welcome back, {user?.name?.split(' ')[0] || user?.name || 'Mayur'}!
-        </h1>
-        <p style={{ color: '#9CA3AF', fontSize: '0.85rem', margin: 0 }}>
-          Track your growth, skills, and opportunities.
-        </p>
+      <header style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div>
+          <h1 className="dashboard-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+            Welcome back, {user?.name?.split(' ')[0] || user?.name || 'Mayur'}!
+          </h1>
+          <p style={{ color: '#9CA3AF', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
+            Track your growth, skills, and opportunities.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={openEditProfileModal}
+          className="btn btn-secondary btn-sm"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1rem', fontSize: '0.8125rem' }}
+          title="Edit Profile"
+        >
+          <Edit2 size={14} style={{ color: 'var(--brand-blue)' }} />
+          <span>Edit Profile</span>
+        </button>
       </header>
 
       {/* Tabs (only shown if not on overview) */}
@@ -1746,11 +1791,14 @@ const Dashboard = () => {
       </AnimatePresence>
       {/* Edit Profile Modal */}
       {showEditProfileModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+        <div
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeEditProfileModal(); }}
+        >
           <form onSubmit={handleSaveProfileSubmit} className="erp-card animate-fade-in" style={{ width: '100%', maxWidth: '540px', padding: '2rem', borderRadius: 'var(--radius-xl)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-primary)' }}>Edit Profile Information</h3>
-              <button type="button" onClick={() => setShowEditProfileModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <button type="button" onClick={closeEditProfileModal} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
@@ -1780,7 +1828,7 @@ const Dashboard = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setShowEditProfileModal(false);
+                      closeEditProfileModal();
                       setShowChangeEmailModal(true);
                     }}
                     className="btn btn-secondary btn-sm"
@@ -1899,7 +1947,7 @@ const Dashboard = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button type="button" onClick={() => setShowEditProfileModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
+              <button type="button" onClick={closeEditProfileModal} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
               <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={savingProfile}>
                 {savingProfile ? 'Saving...' : 'Save Profile'}
               </button>

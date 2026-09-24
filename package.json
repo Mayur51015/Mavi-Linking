@@ -17,5 +17,8 @@
     "lint": "npm run lint --workspaces",
     "db:reset-users": "npm run db:reset-users --workspace=server",
     "db:seed-super-admin": "npm run db:seed-super-admin --workspace=server"
+  },
+  "devDependencies": {
+    "dequal": "^2.0.3"
   }
 }

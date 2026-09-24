@@ -1,17 +1,27 @@
 import React, { useContext, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { userNavItems } from '../navigation/userNavigation.jsx';
 import AppShell from '../components/shell/AppShell';
 import VerificationModal from '../components/VerificationModal';
-import { QrCode, BadgeCheck } from 'lucide-react';
+import { QrCode, BadgeCheck, Edit2 } from 'lucide-react';
 
 const UserLayout = ({ children }) => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [showVerify, setShowVerify] = useState(false);
 
   const publicUsername = user?.username || user?.platforms?.github?.username;
 
   const quickActions = [
+    {
+      name: 'Edit Profile',
+      icon: <Edit2 size={16} style={{ color: 'var(--brand-blue, #3B82F6)' }} />,
+      onClick: () => {
+        window.dispatchEvent(new CustomEvent('open-edit-profile'));
+        navigate('/dashboard?edit=true');
+      },
+    },
     ...(!user?.isVerified
       ? [
           {

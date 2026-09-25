@@ -72,20 +72,20 @@ const ChangePassword = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: '#09090b' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: 'var(--bg-primary)' }}>
       <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '440px', padding: '2.5rem', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
         <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', marginBottom: '1rem' }}>
             <KeyRound size={28} />
           </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: 'white' }}>Establish New Password</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>Establish New Password</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem', lineHeight: '1.4' }}>
             For security compliance, you must change your initial temporary password before accessing MAVI Linking portal services.
           </p>
         </div>
 
         {user?.mustChangePassword && (
-          <div style={{ padding: '0.75rem', background: 'rgba(234, 179, 8, 0.12)', border: '1px solid #eab308', borderRadius: '8px', color: '#fef08a', marginBottom: '1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ padding: '0.75rem', background: 'rgba(234, 179, 8, 0.12)', border: '1px solid #eab308', borderRadius: '8px', color: '#b45309', marginBottom: '1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <ShieldAlert size={18} style={{ color: '#eab308', flexShrink: 0 }} />
             <span>Dashboard access is locked until a new password is established.</span>
           </div>

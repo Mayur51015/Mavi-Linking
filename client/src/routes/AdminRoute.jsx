@@ -12,7 +12,7 @@ const AdminRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#09090b', color: '#a1a1aa' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
         <div style={{ textAlign: 'center' }}>
           <div className="animate-pulse" style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', margin: '0 auto 1rem' }} />
           <p>Verifying Admin Authorization...</p>

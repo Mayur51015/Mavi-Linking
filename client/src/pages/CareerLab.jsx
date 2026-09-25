@@ -484,7 +484,7 @@ const CareerLab = () => {
                   value={selectedRole}
                   onChange={handleRoleSelect}
                   className="input-field"
-                  style={{ width: '100%', fontSize: '0.95rem', fontWeight: 700, background: '#18181b', color: '#fff', padding: '0.6rem 0.8rem', borderRadius: '8px' }}
+                  style={{ width: '100%', fontSize: '0.95rem', fontWeight: 700, background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '0.6rem 0.8rem', borderRadius: '8px' }}
                 >
                   {supportedRoles.map((r) => (
                     <option key={r.role} value={r.role}>

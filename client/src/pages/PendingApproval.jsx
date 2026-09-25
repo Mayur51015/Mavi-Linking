@@ -39,14 +39,14 @@ const PendingApproval = () => {
   const isRejected = user?.accountStatus === 'REJECTED';
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: '#09090b' }}>
-      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '520px', padding: '2.5rem', borderRadius: '16px', background: '#18181b', border: '1px solid #27272a' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: 'var(--bg-primary)' }}>
+      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '520px', padding: '2.5rem', borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
         
         {/* Header Branding */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
           <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
             <Terminal size={32} className="text-gradient" style={{ color: '#a855f7' }} />
-            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white' }}>MaVi Linking</span>
+            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>MaVi Linking</span>
           </Link>
         </div>
 
@@ -62,10 +62,10 @@ const PendingApproval = () => {
             </div>
           )}
 
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', marginBottom: '0.5rem' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
             {isRejected ? 'Registration Decision Notice' : 'Your Account Is Waiting for Approval'}
           </h2>
-          <p style={{ color: '#a1a1aa', fontSize: '0.9rem', lineHeight: 1.5 }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5 }}>
             {isRejected
               ? 'Your student registration was reviewed by your institution administrator and was not approved at this time.'
               : 'Your email has been verified successfully. Your account is now waiting for institutional approval from your administrator.'}
@@ -74,50 +74,50 @@ const PendingApproval = () => {
 
         {/* Verification Status Badges */}
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#4ade80', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#16a34a', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
             <CheckCircle2 size={14} /> Email Verified
           </div>
 
           {isRejected ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#dc2626', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
               <XCircle size={14} /> Registration Rejected
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(234, 179, 8, 0.12)', border: '1px solid rgba(234, 179, 8, 0.3)', color: '#fde047', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(234, 179, 8, 0.12)', border: '1px solid rgba(234, 179, 8, 0.3)', color: '#d97706', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
               <Clock size={14} /> Admin Approval Pending
             </div>
           )}
         </div>
 
         {/* Student Details Card */}
-        <div style={{ background: '#09090b', border: '1px solid #27272a', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem' }}>
+        <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.85rem' }}>
             <div>
-              <span style={{ color: '#71717a', display: 'block', fontSize: '0.75rem' }}>{user?.role === 'user' ? 'Student Name' : 'Account Name'}</span>
-              <strong style={{ color: '#ffffff' }}>{user?.name || 'Student'}</strong>
+              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>{user?.role === 'user' ? 'Student Name' : 'Account Name'}</span>
+              <strong style={{ color: 'var(--text-primary)' }}>{user?.name || 'Student'}</strong>
             </div>
             <div>
-              <span style={{ color: '#71717a', display: 'block', fontSize: '0.75rem' }}>Permanent MAVI ID</span>
-              <strong style={{ color: '#c084fc' }}>{user?.maviId || 'MAVI-PENDING'}</strong>
+              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Permanent MAVI ID</span>
+              <strong style={{ color: 'var(--accent-purple)' }}>{user?.maviId || 'MAVI-PENDING'}</strong>
             </div>
             <div>
-              <span style={{ color: '#71717a', display: 'block', fontSize: '0.75rem' }}>PRN / ZPRN</span>
-              <span style={{ color: '#e4e4e7' }}>{user?.prn || user?.institutionalIdentifier?.identifierValue || 'N/A'}</span>
+              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>PRN / ZPRN</span>
+              <span style={{ color: 'var(--text-secondary)' }}>{user?.prn || user?.institutionalIdentifier?.identifierValue || 'N/A'}</span>
             </div>
             <div>
-              <span style={{ color: '#71717a', display: 'block', fontSize: '0.75rem' }}>Department</span>
-              <span style={{ color: '#e4e4e7' }}>{user?.university?.department || 'Engineering'}</span>
+              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Department</span>
+              <span style={{ color: 'var(--text-secondary)' }}>{user?.university?.department || 'Engineering'}</span>
             </div>
           </div>
         </div>
 
         {/* Rejection Details Box if REJECTED */}
         {isRejected && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', borderLeft: '4px solid #ef4444', padding: '1rem', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#fca5a5' }}>
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', borderLeft: '4px solid #ef4444', padding: '1rem', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#dc2626' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, marginBottom: '0.25rem', color: '#ef4444' }}>
               <ShieldAlert size={16} /> Administrator Feedback:
             </div>
-            <p style={{ margin: 0, color: '#fee2e2' }}>
+            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
               {user?.rejectionReason || 'PRN/institutional identity could not be verified against institutional records.'}
             </p>
           </div>
@@ -154,9 +154,9 @@ const PendingApproval = () => {
               width: '100%',
               padding: '0.75rem',
               borderRadius: '8px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid #27272a',
-              color: '#e4e4e7',
+              background: 'var(--bg-card-hover)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
               textDecoration: 'none',
               fontWeight: 600,
               fontSize: '0.9rem',
@@ -178,7 +178,7 @@ const PendingApproval = () => {
               borderRadius: '8px',
               background: 'transparent',
               border: 'none',
-              color: '#71717a',
+              color: 'var(--text-muted)',
               fontSize: '0.85rem',
               cursor: 'pointer',
               display: 'flex',

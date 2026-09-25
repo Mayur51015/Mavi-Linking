@@ -830,7 +830,7 @@ const Dashboard = () => {
 
       {/* Tabs (only shown if not on overview) */}
       {activeTab !== 'overview' && (
-        <div className="dashboard-tabs" style={{ borderBottom: '1px solid #262C33', marginBottom: '1.25rem', display: 'flex', gap: '0.5rem', overflowX: 'auto' }}>
+        <div className="dashboard-tabs" style={{ borderBottom: '1px solid var(--border-color)', marginBottom: '1.25rem', display: 'flex', gap: '0.5rem', overflowX: 'auto' }}>
           {['overview', 'career', 'placement', 'documents', 'announcements', 'messages'].map(tab => (
             <button
               key={tab}
@@ -838,8 +838,8 @@ const Dashboard = () => {
               style={{
                 background: 'none',
                 border: 'none',
-                color: activeTab === tab ? '#3B82F6' : '#9CA3AF',
-                borderBottom: activeTab === tab ? '2px solid #3B82F6' : '2px solid transparent',
+                color: activeTab === tab ? 'var(--brand-blue)' : 'var(--text-secondary)',
+                borderBottom: activeTab === tab ? '2px solid var(--brand-blue)' : '2px solid transparent',
                 padding: '0.65rem 1.15rem',
                 cursor: 'pointer',
                 fontWeight: activeTab === tab ? '600' : '500',
@@ -884,8 +884,8 @@ const Dashboard = () => {
                   style={{
                     height: '84px',
                     boxSizing: 'border-box',
-                    background: '#15191E',
-                    border: '1px solid #262C33',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '8px',
                     padding: '0.85rem 1.1rem',
                     display: 'flex',
@@ -894,20 +894,20 @@ const Dashboard = () => {
                     cursor: 'pointer',
                     transition: 'border-color 0.15s ease',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3B82F6')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#262C33')}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-blue)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
                   title="Click to view & edit profile"
                 >
-                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#172554', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <User size={20} color="#3B82F6" />
+                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: 'var(--brand-blue-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <User size={20} color="var(--brand-blue)" />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: '#9CA3AF', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Profile Completion</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: '#F5F7FA', lineHeight: 1.2 }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Profile Completion</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: 'var(--text-primary)', lineHeight: 1.2 }}>
                       {completionScore}%
                     </div>
-                    <div style={{ width: '100%', height: '4px', background: '#262C33', borderRadius: '2px', marginTop: '0.35rem', overflow: 'hidden' }}>
-                      <div style={{ width: `${Math.min(100, completionScore)}%`, height: '100%', background: '#3B82F6', borderRadius: '2px' }} />
+                    <div style={{ width: '100%', height: '4px', background: 'var(--border-color)', borderRadius: '2px', marginTop: '0.35rem', overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.min(100, completionScore)}%`, height: '100%', background: 'var(--brand-blue)', borderRadius: '2px' }} />
                     </div>
                   </div>
                 </div>
@@ -918,8 +918,8 @@ const Dashboard = () => {
                   style={{
                     height: '84px',
                     boxSizing: 'border-box',
-                    background: '#15191E',
-                    border: '1px solid #262C33',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '8px',
                     padding: '0.85rem 1.1rem',
                     display: 'flex',
@@ -928,25 +928,25 @@ const Dashboard = () => {
                     cursor: 'pointer',
                     transition: 'border-color 0.15s ease',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3B82F6')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#262C33')}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-blue)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
                   title="Click to view Career Intelligence"
                 >
-                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#2E1065', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Target size={20} color="#8B5CF6" />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: '#9CA3AF', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Career Score</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Career Score</div>
                     {scoreStatus.loading && !scores && !user?.scores?.overall ? (
-                      <div style={{ height: '24px', background: '#1C2229', borderRadius: '4px', margin: '4px 0', animation: 'pulse 1.5s infinite ease-in-out' }} />
+                      <div style={{ height: '24px', background: 'var(--bg-tertiary)', borderRadius: '4px', margin: '4px 0', animation: 'pulse 1.5s infinite ease-in-out' }} />
                     ) : scoreStatus.error && !scores && !user?.scores?.overall ? (
-                      <div style={{ color: '#EF4444', fontSize: '0.75rem', marginTop: '0.2rem' }}>Error loading score</div>
+                      <div style={{ color: 'var(--accent-red)', fontSize: '0.75rem', marginTop: '0.2rem' }}>Error loading score</div>
                     ) : (
                       <>
-                        <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: '#F5F7FA', lineHeight: 1.2 }}>
-                          {scores?.overall ?? user?.scores?.overall ?? 433} <span style={{ fontSize: '0.8rem', color: '#6B7280', fontWeight: 500 }}>/ 1000</span>
+                        <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                          {scores?.overall ?? user?.scores?.overall ?? 433} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>/ 1000</span>
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: '#60A5FA', marginTop: '0.15rem', fontWeight: 500 }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--brand-blue)', marginTop: '0.15rem', fontWeight: 500 }}>
                           Verified DNA Match
                         </div>
                       </>
@@ -960,8 +960,8 @@ const Dashboard = () => {
                   style={{
                     height: '84px',
                     boxSizing: 'border-box',
-                    background: '#15191E',
-                    border: '1px solid #262C33',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '8px',
                     padding: '0.85rem 1.1rem',
                     display: 'flex',
@@ -970,19 +970,19 @@ const Dashboard = () => {
                     cursor: 'pointer',
                     transition: 'border-color 0.15s ease',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3B82F6')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#262C33')}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-blue)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
                   title="Click to view campus applications"
                 >
-                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#172554', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <FileText size={20} color="#3B82F6" />
+                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: 'var(--brand-blue-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <FileText size={20} color="var(--brand-blue)" />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: '#9CA3AF', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Applications</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: '#F5F7FA', lineHeight: 1.2 }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Applications</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: 'var(--text-primary)', lineHeight: 1.2 }}>
                       {pipelines.length}
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '0.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {pipelines.filter(p => ['Shortlisted', 'Interview Scheduled', 'Technical Round', 'HR Round', 'Selected', 'Offer Sent', 'Offer Received', 'Offer Accepted', 'Joined', 'Placed'].includes(p.status)).length} Shortlisted / Offered
                     </div>
                   </div>
@@ -994,8 +994,8 @@ const Dashboard = () => {
                   style={{
                     height: '84px',
                     boxSizing: 'border-box',
-                    background: '#15191E',
-                    border: '1px solid #262C33',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '8px',
                     padding: '0.85rem 1.1rem',
                     display: 'flex',
@@ -1004,19 +1004,19 @@ const Dashboard = () => {
                     cursor: 'pointer',
                     transition: 'border-color 0.15s ease',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3B82F6')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#262C33')}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-blue)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
                   title="Click to explore matching opportunities"
                 >
-                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#064E3B', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: 'rgba(34, 197, 94, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Briefcase size={20} color="#22C55E" />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: '#9CA3AF', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Opportunities</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: '#F5F7FA', lineHeight: 1.2 }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Opportunities</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: 'var(--text-primary)', lineHeight: 1.2 }}>
                       {jobs.length || 5}
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '0.15rem' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
                       Active matching positions
                     </div>
                   </div>
@@ -1026,43 +1026,43 @@ const Dashboard = () => {
               {/* ROW 2: 3 Performance Score Cards */}
               <div className="erp-scores-grid">
                 {/* Overall Score */}
-                <div style={{ height: '104px', boxSizing: 'border-box', background: '#15191E', border: '1px solid #262C33', borderRadius: '8px', padding: '0.85rem 1.15rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ height: '104px', boxSizing: 'border-box', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem 1.15rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.825rem', fontWeight: 600, color: '#9CA3AF' }}>Overall Score</span>
-                    <Globe size={16} color="#3B82F6" />
+                    <span style={{ fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Overall Score</span>
+                    <Globe size={16} color="var(--brand-blue)" />
                   </div>
-                  <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#F5F7FA', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
+                  <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
                     {scores?.overall ? Math.min(100, Math.round(scores.overall / 10)) : 72}%
                   </div>
-                  <div style={{ width: '100%', height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${scores?.overall ? Math.min(100, Math.round(scores.overall / 10)) : 72}%`, height: '100%', background: '#3B82F6', borderRadius: '2px' }} />
+                  <div style={{ width: '100%', height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: `${scores?.overall ? Math.min(100, Math.round(scores.overall / 10)) : 72}%`, height: '100%', background: 'var(--brand-blue)', borderRadius: '2px' }} />
                   </div>
                 </div>
 
                 {/* Development */}
-                <div style={{ height: '104px', boxSizing: 'border-box', background: '#15191E', border: '1px solid #262C33', borderRadius: '8px', padding: '0.85rem 1.15rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ height: '104px', boxSizing: 'border-box', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem 1.15rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.825rem', fontWeight: 600, color: '#9CA3AF' }}>Development</span>
+                    <span style={{ fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Development</span>
                     <GitBranch size={16} color="#8B5CF6" />
                   </div>
-                  <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#F5F7FA', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
+                  <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
                     {scores?.development || 80}%
                   </div>
-                  <div style={{ width: '100%', height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
                     <div style={{ width: `${scores?.development || 80}%`, height: '100%', background: '#8B5CF6', borderRadius: '2px' }} />
                   </div>
                 </div>
 
                 {/* Problem Solving */}
-                <div style={{ height: '104px', boxSizing: 'border-box', background: '#15191E', border: '1px solid #262C33', borderRadius: '8px', padding: '0.85rem 1.15rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ height: '104px', boxSizing: 'border-box', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem 1.15rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.825rem', fontWeight: 600, color: '#9CA3AF' }}>Problem Solving</span>
+                    <span style={{ fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Problem Solving</span>
                     <Code2 size={16} color="#06B6D4" />
                   </div>
-                  <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#F5F7FA', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
+                  <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
                     {scores?.problemSolving || scores?.problem_solving || 68}%
                   </div>
-                  <div style={{ width: '100%', height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
                     <div style={{ width: `${scores?.problemSolving || scores?.problem_solving || 68}%`, height: '100%', background: '#06B6D4', borderRadius: '2px' }} />
                   </div>
                 </div>
@@ -1393,7 +1393,7 @@ const Dashboard = () => {
                     <div className="glass-card" style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
                       <FileText size={48} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
                       <div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white', marginBottom: '0.4rem' }}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
                           {docSearch || docCategoryFilter ? 'No documents match your filters.' : 'No documents uploaded yet.'}
                         </div>
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -1629,7 +1629,7 @@ const Dashboard = () => {
                   display: 'flex', alignItems: 'center', gap: '0.5rem',
                   padding: '0.75rem 1rem', borderRadius: '8px',
                   background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#f87171', fontSize: '0.8rem'
+                  color: 'var(--accent-red)', fontSize: '0.8rem'
                 }}>
                   <AlertCircle size={16} style={{ flexShrink: 0 }} />
                   {docError}
@@ -1776,7 +1776,7 @@ const Dashboard = () => {
               fontSize: '0.85rem', fontWeight: '600',
               background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
               border: `1px solid ${toast.type === 'success' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
-              color: toast.type === 'success' ? '#34d399' : '#f87171',
+              color: toast.type === 'success' ? 'var(--accent-emerald)' : 'var(--accent-red)',
               backdropFilter: 'blur(12px)',
               boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
             }}

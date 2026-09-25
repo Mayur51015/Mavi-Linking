@@ -107,10 +107,10 @@ const NotificationBell = () => {
             right: `${dropdownPos.right}px`,
             width: '380px',
             maxHeight: '520px',
-            background: 'var(--bg-secondary, #18181b)',
-            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
             borderRadius: 'var(--radius-lg, 14px)',
-            boxShadow: '0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+            boxShadow: 'var(--shadow-xl)',
             zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
@@ -125,12 +125,12 @@ const NotificationBell = () => {
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '0.875rem 1.25rem',
-              borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-              background: 'rgba(18, 18, 28, 0.85)',
+              borderBottom: '1px solid var(--border-color)',
+              background: 'var(--bg-subtle)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontWeight: '700', fontSize: '0.95rem', color: 'white' }}>
+              <span style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
                 Notifications
               </span>
               {unreadCount > 0 && (
@@ -222,7 +222,7 @@ const NotificationBell = () => {
                             style={{
                               fontWeight: n.isRead ? '500' : '600',
                               fontSize: '0.85rem',
-                              color: n.isRead ? 'var(--text-secondary)' : 'white',
+                              color: n.isRead ? 'var(--text-secondary)' : 'var(--text-primary)',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap',
@@ -260,8 +260,8 @@ const NotificationBell = () => {
           <div
             style={{
               padding: '0.75rem 1.25rem',
-              borderTop: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-              background: 'rgba(18, 18, 28, 0.95)',
+              borderTop: '1px solid var(--border-color)',
+              background: 'var(--bg-subtle)',
               textAlign: 'center',
             }}
           >

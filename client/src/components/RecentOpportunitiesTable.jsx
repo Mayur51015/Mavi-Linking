@@ -31,8 +31,8 @@ const RecentOpportunitiesTable = ({
   return (
     <div
       style={{
-        background: '#15191E',
-        border: '1px solid #262C33',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-color)',
         borderRadius: '10px',
         padding: '0.9rem 0.85rem',
         display: 'flex',
@@ -58,11 +58,11 @@ const RecentOpportunitiesTable = ({
               width: '26px',
               height: '26px',
               borderRadius: '6px',
-              background: '#172554',
+              background: 'var(--brand-blue-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#3B82F6',
+              color: 'var(--brand-blue)',
             }}
           >
             <Briefcase size={14} />
@@ -72,7 +72,7 @@ const RecentOpportunitiesTable = ({
               margin: 0,
               fontSize: '0.9rem',
               fontWeight: 700,
-              color: '#F5F7FA',
+              color: 'var(--text-primary)',
               fontFamily: 'Inter, sans-serif',
             }}
           >
@@ -83,9 +83,9 @@ const RecentOpportunitiesTable = ({
         <button
           onClick={() => navigate('/dashboard/jobs')}
           style={{
-            background: '#1C2229',
-            border: '1px solid #262C33',
-            color: '#9CA3AF',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-secondary)',
             fontSize: '0.72rem',
             fontWeight: 500,
             borderRadius: '5px',
@@ -94,12 +94,12 @@ const RecentOpportunitiesTable = ({
             transition: 'all 0.15s ease',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#F5F7FA';
-            e.currentTarget.style.borderColor = '#3B82F6';
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.borderColor = 'var(--brand-blue)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = '#9CA3AF';
-            e.currentTarget.style.borderColor = '#262C33';
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.borderColor = 'var(--border-color)';
           }}
         >
           View All
@@ -110,7 +110,7 @@ const RecentOpportunitiesTable = ({
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.5rem 0' }}>
           {[1, 2, 3].map((i) => (
-            <div key={i} style={{ height: '40px', background: '#1C2229', borderRadius: '6px', animation: 'pulse 1.5s infinite ease-in-out' }} />
+            <div key={i} style={{ height: '40px', background: 'var(--bg-subtle)', borderRadius: '6px', animation: 'pulse 1.5s infinite ease-in-out' }} />
           ))}
         </div>
       ) : error ? (
@@ -124,7 +124,7 @@ const RecentOpportunitiesTable = ({
             gap: '0.5rem',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#EF4444', fontSize: '0.8125rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-red)', fontSize: '0.8125rem' }}>
             <AlertCircle size={15} />
             <span>Unable to load opportunities</span>
           </div>
@@ -139,9 +139,9 @@ const RecentOpportunitiesTable = ({
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 borderRadius: '6px',
-                background: '#1C2229',
-                border: '1px solid #262C33',
-                color: '#60A5FA',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--brand-blue)',
                 cursor: 'pointer',
               }}
             >
@@ -155,8 +155,8 @@ const RecentOpportunitiesTable = ({
             <thead>
               <tr
                 style={{
-                  borderBottom: '1px solid #262C33',
-                  color: '#9CA3AF',
+                  borderBottom: '1px solid var(--border-color)',
+                  color: 'var(--text-secondary)',
                   fontSize: '0.65rem',
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
@@ -185,11 +185,11 @@ const RecentOpportunitiesTable = ({
                 return (
                   <tr
                     key={opp._id || opp.id}
-                    style={{ borderBottom: '1px solid #1C2229', transition: 'background 0.15s ease' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#1C2229')}
+                    style={{ borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.15s ease' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-subtle)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <td style={{ padding: '0.45rem 0.2rem', color: '#F5F7FA', fontWeight: 600, fontSize: '0.74rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '105px' }}>
+                    <td style={{ padding: '0.45rem 0.2rem', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.74rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '105px' }}>
                       {opp.title}
                     </td>
                     <td style={{ padding: '0.45rem 0.2rem', whiteSpace: 'nowrap' }}>
@@ -197,18 +197,18 @@ const RecentOpportunitiesTable = ({
                         style={{
                           fontSize: '0.68rem',
                           fontWeight: 500,
-                          color: '#9CA3AF',
+                          color: 'var(--text-secondary)',
                         }}
                       >
                         {oppType}
                       </span>
                     </td>
                     <td style={{ padding: '0.45rem 0.2rem', whiteSpace: 'nowrap' }}>
-                      <span style={{ color: '#22C55E', fontWeight: 700, fontSize: '0.75rem' }}>
+                      <span style={{ color: 'var(--accent-emerald, #22C55E)', fontWeight: 700, fontSize: '0.75rem' }}>
                         {matchVal}%
                       </span>
                     </td>
-                    <td style={{ padding: '0.45rem 0.2rem', color: '#6B7280', fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0.45rem 0.2rem', color: 'var(--text-muted)', fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
                       {deadline}
                     </td>
                     <td style={{ padding: '0.45rem 0.2rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -219,14 +219,14 @@ const RecentOpportunitiesTable = ({
                           fontSize: '0.68rem',
                           fontWeight: 600,
                           borderRadius: '4px',
-                          background: '#1D4ED8',
+                          background: 'var(--brand-blue)',
                           color: '#ffffff',
                           border: 'none',
                           cursor: 'pointer',
                           transition: 'background 0.15s ease',
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = '#3B82F6')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = '#1D4ED8')}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--brand-blue-hover, #2563EB)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--brand-blue)')}
                       >
                         View
                       </button>

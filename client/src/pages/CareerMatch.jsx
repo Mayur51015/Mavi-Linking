@@ -200,7 +200,7 @@ const CareerMatch = () => {
                 }}
               >
                 {supportedRoles.map((r) => (
-                  <option key={r.role} value={r.role} style={{ background: '#18181b', color: '#fff' }}>
+                  <option key={r.role} value={r.role} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                     {r.role}
                   </option>
                 ))}
@@ -240,7 +240,7 @@ const CareerMatch = () => {
                 className="card"
                 style={{
                   padding: '1.75rem',
-                  background: 'linear-gradient(135deg, rgba(24, 24, 37, 0.9) 0%, rgba(15, 15, 26, 0.95) 100%)',
+                  background: 'var(--bg-card)',
                   border: '1px solid rgba(99, 102, 241, 0.3)',
                   position: 'relative',
                   overflow: 'hidden',
@@ -275,7 +275,7 @@ const CareerMatch = () => {
                           width: '90px',
                           height: '90px',
                           borderRadius: '50%',
-                          background: '#09090b',
+                          background: 'var(--bg-card)',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',

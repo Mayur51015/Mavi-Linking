@@ -304,9 +304,9 @@ const Notifications = () => {
                 width: '100%',
                 padding: '0.625rem 1rem 0.625rem 2.5rem',
                 borderRadius: '10px',
-                background: 'rgba(0, 0, 0, 0.3)',
-                border: '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
-                color: 'white',
+                background: 'var(--bg-input)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
                 fontSize: '0.875rem',
                 outline: 'none',
               }}
@@ -339,11 +339,11 @@ const Notifications = () => {
                     fontWeight: isActive ? '600' : '400',
                     background: isActive
                       ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(236, 72, 153, 0.25) 100%)'
-                      : 'rgba(255, 255, 255, 0.04)',
-                    color: isActive ? 'white' : 'var(--text-secondary)',
+                      : 'var(--bg-card-hover)',
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                     border: isActive
                       ? '1px solid var(--accent-purple)'
-                      : '1px solid rgba(255, 255, 255, 0.06)',
+                      : '1px solid var(--border-color)',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
                     transition: 'all 0.2s ease',
@@ -386,7 +386,7 @@ const Notifications = () => {
             }}
           >
             <AlertCircle size={44} style={{ color: 'var(--accent-red, #ef4444)', margin: '0 auto 1rem' }} />
-            <h3 style={{ color: 'white', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
               Unable to load notifications
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
@@ -406,8 +406,8 @@ const Notifications = () => {
             style={{
               padding: '4rem 1.5rem',
               textAlign: 'center',
-              background: 'var(--bg-card, rgba(24, 24, 27, 0.5))',
-              border: '1px dashed var(--border-color, rgba(255, 255, 255, 0.1))',
+              background: 'var(--bg-card)',
+              border: '1px dashed var(--border-color)',
               borderRadius: '16px',
             }}
           >
@@ -426,7 +426,7 @@ const Notifications = () => {
             >
               <BellOff size={28} />
             </div>
-            <h3 style={{ color: 'white', fontSize: '1.15rem', marginBottom: '0.5rem', fontWeight: '600' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', marginBottom: '0.5rem', fontWeight: '600' }}>
               You're all caught up!
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: '400px', margin: '0 auto' }}>
@@ -478,14 +478,14 @@ const Notifications = () => {
                           padding: '1rem 1.25rem',
                           borderRadius: '12px',
                           background: item.isRead
-                            ? 'rgba(255, 255, 255, 0.02)'
-                            : 'linear-gradient(135deg, rgba(139, 92, 246, 0.06) 0%, rgba(24, 24, 27, 0.9) 100%)',
+                            ? 'var(--bg-card)'
+                            : 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, var(--bg-card) 100%)',
                           border: item.isRead
-                            ? '1px solid rgba(255, 255, 255, 0.04)'
-                            : '1px solid rgba(139, 92, 246, 0.25)',
+                            ? '1px solid var(--border-color)'
+                            : '1px solid var(--accent-purple)',
                           boxShadow: item.isRead
                             ? 'none'
-                            : '0 4px 20px rgba(139, 92, 246, 0.05)',
+                            : '0 4px 20px rgba(139, 92, 246, 0.08)',
                           cursor: hasLink || !item.isRead ? 'pointer' : 'default',
                           transition: 'all 0.2s ease',
                           position: 'relative',
@@ -497,8 +497,8 @@ const Notifications = () => {
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'translateY(0)';
                           e.currentTarget.style.borderColor = item.isRead
-                            ? 'rgba(255, 255, 255, 0.04)'
-                            : 'rgba(139, 92, 246, 0.25)';
+                            ? 'var(--border-color)'
+                            : 'var(--accent-purple)';
                         }}
                       >
                         {/* Category Icon */}
@@ -547,7 +547,7 @@ const Notifications = () => {
                                 style={{
                                   fontSize: '0.925rem',
                                   fontWeight: item.isRead ? '500' : '600',
-                                  color: item.isRead ? 'var(--text-secondary)' : 'white',
+                                  color: item.isRead ? 'var(--text-secondary)' : 'var(--text-primary)',
                                   margin: 0,
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',

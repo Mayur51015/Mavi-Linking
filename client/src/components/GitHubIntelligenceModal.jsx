@@ -123,10 +123,10 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: '#0f111a',
-          border: '1px solid rgba(139, 92, 246, 0.25)',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
           borderRadius: '16px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          boxShadow: 'var(--shadow-xl)',
           overflow: 'hidden',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -148,7 +148,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
                 width: '44px',
                 height: '44px',
                 borderRadius: '12px',
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'var(--bg-subtle)',
                 border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
@@ -165,7 +165,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
 
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <h3 style={{ margin: 0, color: 'white', fontSize: '1.15rem', fontFamily: 'Outfit, sans-serif', fontWeight: '700' }}>
+                <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.15rem', fontFamily: 'Outfit, sans-serif', fontWeight: '700' }}>
                   {profile.name || data?.username || username || 'GitHub Developer Intelligence'}
                 </h3>
                 {data?.isVerified && (
@@ -268,7 +268,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
               background: 'transparent',
               border: 'none',
               borderBottom: activeTab === 'overview' ? '2px solid var(--accent-purple)' : '2px solid transparent',
-              color: activeTab === 'overview' ? 'white' : 'var(--text-muted)',
+              color: activeTab === 'overview' ? 'var(--text-primary)' : 'var(--text-muted)',
               fontSize: '0.85rem',
               fontWeight: '600',
               cursor: 'pointer',
@@ -287,7 +287,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
               background: 'transparent',
               border: 'none',
               borderBottom: activeTab === 'repos' ? '2px solid var(--accent-purple)' : '2px solid transparent',
-              color: activeTab === 'repos' ? 'white' : 'var(--text-muted)',
+              color: activeTab === 'repos' ? 'var(--text-primary)' : 'var(--text-muted)',
               fontSize: '0.85rem',
               fontWeight: '600',
               cursor: 'pointer',
@@ -306,7 +306,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
               background: 'transparent',
               border: 'none',
               borderBottom: activeTab === 'scoring' ? '2px solid var(--accent-purple)' : '2px solid transparent',
-              color: activeTab === 'scoring' ? 'white' : 'var(--text-muted)',
+              color: activeTab === 'scoring' ? 'var(--text-primary)' : 'var(--text-muted)',
               fontSize: '0.85rem',
               fontWeight: '600',
               cursor: 'pointer',
@@ -329,7 +329,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
           ) : fetchError ? (
             <div style={{ textAlign: 'center', padding: '3rem 0' }}>
               <AlertCircle size={36} color="var(--accent-amber, #f59e0b)" style={{ margin: '0 auto 0.75rem auto' }} />
-              <h4 style={{ color: 'white', marginBottom: '0.5rem' }}>GitHub Intelligence Unavailable</h4>
+              <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>GitHub Intelligence Unavailable</h4>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '400px', margin: '0 auto 1.25rem auto', lineHeight: '1.4' }}>
                 {fetchError}
               </p>
@@ -344,7 +344,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
           ) : !data?.linked ? (
             <div style={{ textAlign: 'center', padding: '3rem 0' }}>
               <AlertCircle size={36} color="var(--accent-amber)" style={{ margin: '0 auto 0.75rem auto' }} />
-              <h4 style={{ color: 'white', marginBottom: '0.5rem' }}>No GitHub Account Linked</h4>
+              <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>No GitHub Account Linked</h4>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '360px', margin: '0 auto' }}>
                 Link your GitHub account in Account Linking to generate Developer Intelligence and unlock Development Score breakdown.
               </p>
@@ -360,9 +360,9 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
                   gap: '0.75rem',
                 }}
               >
-                <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '0.85rem' }}>
+                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '0.85rem' }}>
                   <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase' }}>Public Repos</div>
-                  <div style={{ color: 'white', fontSize: '1.25rem', fontWeight: '700', fontFamily: 'Outfit', marginTop: '0.2rem' }}>
+                  <div style={{ color: 'var(--text-primary)', fontSize: '1.25rem', fontWeight: '700', fontFamily: 'Outfit', marginTop: '0.2rem' }}>
                     {profile.publicRepos || 0}
                   </div>
                 </div>
@@ -397,9 +397,9 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
               </div>
 
               {/* Language Distribution Section */}
-              <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '1.25rem' }}>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h4 style={{ margin: 0, color: 'white', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <h4 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Code2 size={16} color="var(--accent-purple)" /> Repository Language Distribution
                   </h4>
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
@@ -414,10 +414,10 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
                     {Object.entries(languages.distribution).slice(0, 6).map(([lang, info]) => (
                       <div key={lang}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                          <span style={{ fontWeight: '600', color: 'white' }}>{lang}</span>
+                          <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{lang}</span>
                           <span>{info.count} repo{info.count === 1 ? '' : 's'} ({info.percentage}%)</span>
                         </div>
-                        <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ width: '100%', height: '6px', background: 'var(--border-color)', borderRadius: '999px', overflow: 'hidden' }}>
                           <div
                             style={{
                               width: `${info.percentage}%`,
@@ -435,42 +435,42 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
 
               {/* Collaboration & Delivery Signals */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-                <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '1rem' }}>
-                  <h5 style={{ margin: '0 0 0.75rem 0', color: 'white', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '1rem' }}>
+                  <h5 style={{ margin: '0 0 0.75rem 0', color: 'var(--text-primary)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <GitPullRequest size={15} color="var(--accent-cyan)" /> Pull Requests & Collaboration
                   </h5>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>PRs Opened:</span> <strong style={{ color: 'white' }}>{pullRequests.opened || 0}</strong>
+                      <span>PRs Opened:</span> <strong style={{ color: 'var(--text-primary)' }}>{pullRequests.opened || 0}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>PRs Merged:</span> <strong style={{ color: 'white' }}>{pullRequests.merged || 0}</strong>
+                      <span>PRs Merged:</span> <strong style={{ color: 'var(--text-primary)' }}>{pullRequests.merged || 0}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>Merge Rate:</span> <strong style={{ color: 'var(--accent-cyan)' }}>{pullRequests.mergeRate}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Code Reviews:</span> <strong style={{ color: 'white' }}>{intelligence.reviews?.submitted || 0}</strong>
+                      <span>Code Reviews:</span> <strong style={{ color: 'var(--text-primary)' }}>{intelligence.reviews?.submitted || 0}</strong>
                     </div>
                   </div>
                 </div>
 
-                <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '1rem' }}>
-                  <h5 style={{ margin: '0 0 0.75rem 0', color: 'white', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '1rem' }}>
+                  <h5 style={{ margin: '0 0 0.75rem 0', color: 'var(--text-primary)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Package size={15} color="#10b981" /> Software Delivery & Open Source
                   </h5>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Published Releases:</span> <strong style={{ color: 'white' }}>{releases.count || 0}</strong>
+                      <span>Published Releases:</span> <strong style={{ color: 'var(--text-primary)' }}>{releases.count || 0}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>External Repos Contributed:</span> <strong style={{ color: 'white' }}>{openSource.externalReposContributed || 0}</strong>
+                      <span>External Repos Contributed:</span> <strong style={{ color: 'var(--text-primary)' }}>{openSource.externalReposContributed || 0}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>External PRs:</span> <strong style={{ color: 'white' }}>{openSource.externalPRs || 0}</strong>
+                      <span>External PRs:</span> <strong style={{ color: 'var(--text-primary)' }}>{openSource.externalPRs || 0}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>External Issues:</span> <strong style={{ color: 'white' }}>{openSource.externalIssues || 0}</strong>
+                      <span>External Issues:</span> <strong style={{ color: 'var(--text-primary)' }}>{openSource.externalIssues || 0}</strong>
                     </div>
                   </div>
                 </div>
@@ -518,18 +518,18 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
                             target="_blank"
                             rel="noreferrer"
                             style={{
-                              color: 'white',
+                              color: 'var(--text-primary)',
                               fontWeight: '600',
                               fontSize: '0.9rem',
                               textDecoration: 'none',
                             }}
                             onMouseEnter={(e) => (e.target.style.color = 'var(--accent-purple)')}
-                            onMouseLeave={(e) => (e.target.style.color = 'white')}
+                            onMouseLeave={(e) => (e.target.style.color = 'var(--text-primary)')}
                           >
                             {repo.name}
                           </a>
                           {repo.isFork && (
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.06)', padding: '0.05rem 0.35rem', borderRadius: '4px' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)', padding: '0.05rem 0.35rem', borderRadius: '4px' }}>
                               Fork
                             </span>
                           )}
@@ -592,7 +592,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
                   <div style={{ color: 'var(--accent-purple)', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em' }}>
                     Canonical Development Score
                   </div>
-                  <div style={{ color: 'white', fontSize: '2rem', fontWeight: '800', fontFamily: 'Outfit', marginTop: '0.15rem' }}>
+                  <div style={{ color: 'var(--text-primary)', fontSize: '2rem', fontWeight: '800', fontFamily: 'Outfit', marginTop: '0.15rem' }}>
                     {totalScore} <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: '500' }}>/ 1000</span>
                   </div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
@@ -602,7 +602,8 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
 
                 <div
                   style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
                     padding: '0.75rem 1rem',
                     borderRadius: '10px',
                     textAlign: 'right',
@@ -616,8 +617,8 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
               </div>
 
               {/* 7-Dimension Transparent Score Breakdown Table */}
-              <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '1.25rem' }}>
-                <h4 style={{ margin: '0 0 1rem 0', color: 'white', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '1.25rem' }}>
+                <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <Info size={16} color="var(--accent-cyan)" /> How is my score calculated?
                 </h4>
 
@@ -631,14 +632,14 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
                     { label: 'Software Delivery (5%)', score: breakdown.deliveryScore || 0, max: 50, desc: 'Evaluates published releases and live deployed applications' },
                     { label: 'Consistency (5%)', score: breakdown.consistencyScore || 0, max: 50, desc: 'Evaluates consecutive active learning and development streaks' },
                   ].map((dim) => (
-                    <div key={dim.label} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.65rem' }}>
+                    <div key={dim.label} style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.65rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '0.2rem' }}>
-                        <span style={{ color: 'white', fontWeight: '600' }}>{dim.label}</span>
+                        <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{dim.label}</span>
                         <span style={{ color: 'var(--accent-purple)', fontWeight: '700' }}>
                           {dim.score} <span style={{ color: 'var(--text-muted)', fontWeight: '400' }}>/ {dim.max}</span>
                         </span>
                       </div>
-                      <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.05)', borderRadius: '999px', overflow: 'hidden', marginBottom: '0.25rem' }}>
+                      <div style={{ width: '100%', height: '5px', background: 'var(--border-color)', borderRadius: '999px', overflow: 'hidden', marginBottom: '0.25rem' }}>
                         <div
                           style={{
                             width: `${Math.min(100, (dim.score / dim.max) * 100)}%`,

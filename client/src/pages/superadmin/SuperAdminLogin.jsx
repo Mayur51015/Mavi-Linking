@@ -73,7 +73,7 @@ const SuperAdminLogin = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: '#09090b',
+      background: 'var(--bg-primary)',
       padding: '1.5rem',
       position: 'relative',
     }}>
@@ -92,10 +92,10 @@ const SuperAdminLogin = () => {
           }}>
             <ShieldAlert size={36} style={{ color: '#ef4444' }} />
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 0.5rem', color: 'white' }}>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 0.5rem', color: 'var(--text-primary)' }}>
             Super Admin Portal
           </h2>
-          <p style={{ color: '#a1a1aa', fontSize: '0.85rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             Restricted Platform Governance Console — Authorized Personnel Only
           </p>
         </div>
@@ -104,7 +104,7 @@ const SuperAdminLogin = () => {
           <div style={{
             background: 'rgba(239, 68, 68, 0.15)',
             border: '1px solid #ef4444',
-            color: '#f87171',
+            color: '#dc2626',
             padding: '0.85rem 1rem',
             borderRadius: '8px',
             fontSize: '0.85rem',
@@ -120,7 +120,7 @@ const SuperAdminLogin = () => {
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
           <div className="input-group">
-            <label className="input-label" style={{ color: '#a1a1aa' }}>Super Admin ID / Email</label>
+            <label className="input-label" style={{ color: 'var(--text-secondary)' }}>Super Admin ID / Email</label>
             <input
               type="text"
               className="input-field"
@@ -132,7 +132,7 @@ const SuperAdminLogin = () => {
           </div>
 
           <div className="input-group">
-            <label className="input-label" style={{ color: '#a1a1aa' }}>Master Credentials</label>
+            <label className="input-label" style={{ color: 'var(--text-secondary)' }}>Master Credentials</label>
             <PasswordInput
               className="input-field"
               placeholder="••••••••"

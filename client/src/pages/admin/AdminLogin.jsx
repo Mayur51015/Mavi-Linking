@@ -102,7 +102,7 @@ const AdminLogin = () => {
           }}>
             <Shield size={32} style={{ color: 'var(--accent-purple, #8b5cf6)' }} />
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 0.5rem', color: 'white' }}>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 0.5rem', color: 'var(--text-primary)' }}>
             Institution Admin Portal
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>

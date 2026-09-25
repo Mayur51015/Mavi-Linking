@@ -382,9 +382,9 @@ const AppShell = ({
                         gap: '0.65rem',
                         padding: collapsed ? '0.65rem' : '0.55rem 0.75rem',
                         borderRadius: 'var(--radius-md)',
-                        background: isActive ? '#172554' : 'transparent',
-                        color: isActive ? '#60A5FA' : 'var(--text-secondary)',
-                        borderLeft: isActive ? '3px solid #3B82F6' : '3px solid transparent',
+                        background: isActive ? 'var(--brand-blue-light)' : 'transparent',
+                        color: isActive ? 'var(--brand-blue)' : 'var(--text-secondary)',
+                        borderLeft: isActive ? '3px solid var(--brand-blue)' : '3px solid transparent',
                         fontWeight: isActive ? 600 : 500,
                         fontSize: '0.85rem',
                         textDecoration: 'none',
@@ -404,7 +404,7 @@ const AppShell = ({
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                        <span style={{ color: isActive ? '#3B82F6' : 'var(--text-secondary)', display: 'flex' }}>
+                        <span style={{ color: isActive ? 'var(--brand-blue)' : 'var(--text-secondary)', display: 'flex' }}>
                           {item.icon}
                         </span>
                         {!collapsed && <span>{item.name}</span>}
@@ -491,18 +491,18 @@ const AppShell = ({
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.45rem 0.5rem',
-                  color: '#9CA3AF',
+                  color: 'var(--text-secondary)',
                   fontSize: '0.8rem',
                   cursor: 'pointer',
                   borderRadius: '6px',
                   transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#F5F7FA';
+                  e.currentTarget.style.color = 'var(--text-primary)';
                   e.currentTarget.style.background = 'var(--bg-card-hover)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#9CA3AF';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
                   e.currentTarget.style.background = 'transparent';
                 }}
                 onClick={() => window.open('https://github.com/Mayur51015/Mavi-Linking', '_blank')}
@@ -686,14 +686,14 @@ const AppShell = ({
                   {user?.name?.charAt(0)?.toUpperCase() || 'M'}
                 </div>
                 <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', lineHeight: 1.2 }} className="hide-mobile">
-                  <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#F5F7FA' }}>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                     {user?.name || 'Mayur S.'}
                   </span>
-                  <span style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
                     {currentRole.label || 'Student'}
                   </span>
                 </div>
-                <ChevronDown size={14} style={{ color: '#9CA3AF' }} />
+                <ChevronDown size={14} style={{ color: 'var(--text-secondary)' }} />
               </button>
 
               {/* Dropdown Menu */}
@@ -872,7 +872,7 @@ const AppShell = ({
               style={{
                 background: 'rgba(245, 158, 11, 0.1)',
                 border: '1px solid rgba(245, 158, 11, 0.25)',
-                color: '#fde047',
+                color: 'var(--accent-amber)',
                 padding: '0.85rem 1.15rem',
                 borderRadius: 'var(--radius-md)',
                 marginBottom: '1.25rem',
@@ -981,7 +981,7 @@ const AppShell = ({
                   onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-subtle)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <span style={{ color: '#3B82F6', display: 'flex' }}>{item.icon}</span>
+                  <span style={{ color: 'var(--brand-blue)', display: 'flex' }}>{item.icon}</span>
                   <span>{item.name}</span>
                 </div>
               ))}

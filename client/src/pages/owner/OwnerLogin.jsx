@@ -59,7 +59,7 @@ const OwnerLogin = () => {
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#09090b', padding: '1.5rem', position: 'relative',
+      background: 'var(--bg-primary)', padding: '1.5rem', position: 'relative',
     }}>
       <div className="glass-card-static" style={{ maxWidth: '440px', width: '100%', padding: '2.5rem', borderRadius: '16px', border: '1px solid rgba(234, 179, 8, 0.4)' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -70,17 +70,17 @@ const OwnerLogin = () => {
           }}>
             <Crown size={40} style={{ color: '#eab308' }} />
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 0.5rem', color: 'white' }}>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 0.5rem', color: 'var(--text-primary)' }}>
             Platform Owner Portal
           </h2>
-          <p style={{ color: '#a1a1aa', fontSize: '0.85rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             Master Platform Ownership & Global Licensing Console
           </p>
         </div>
 
         {error && (
           <div style={{
-            background: 'rgba(234, 179, 8, 0.12)', border: '1px solid #eab308', color: '#fde047',
+            background: 'rgba(234, 179, 8, 0.12)', border: '1px solid #eab308', color: '#b45309',
             padding: '0.85rem 1rem', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '1.5rem',
             display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
           }}>
@@ -91,7 +91,7 @@ const OwnerLogin = () => {
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
           <div className="input-group">
-            <label className="input-label" style={{ color: '#a1a1aa' }}>Owner Email / Owner ID</label>
+            <label className="input-label" style={{ color: 'var(--text-secondary)' }}>Owner Email / Owner ID</label>
             <input
               type="text"
               className="input-field"
@@ -103,7 +103,7 @@ const OwnerLogin = () => {
           </div>
 
           <div className="input-group">
-            <label className="input-label" style={{ color: '#a1a1aa' }}>Master Password</label>
+            <label className="input-label" style={{ color: 'var(--text-secondary)' }}>Master Password</label>
             <PasswordInput
               className="input-field"
               placeholder="••••••••"
@@ -133,7 +133,7 @@ const OwnerLogin = () => {
         <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
           <Link
             to="/login"
-            style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none' }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none' }}
           >
             <ArrowLeft size={14} /> Return to Public Portal
           </Link>

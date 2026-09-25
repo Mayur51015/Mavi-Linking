@@ -103,13 +103,13 @@ const StudentDocuments = () => {
             minWidth: '180px',
           }}
         >
-          <option value="" style={{ background: '#09090b' }}>All Departments</option>
-          <option value="CSE" style={{ background: '#09090b' }}>Computer Science (CSE)</option>
-          <option value="IT" style={{ background: '#09090b' }}>Information Technology (IT)</option>
-          <option value="ECE" style={{ background: '#09090b' }}>Electronics (ECE)</option>
-          <option value="EE" style={{ background: '#09090b' }}>Electrical (EE)</option>
-          <option value="ME" style={{ background: '#09090b' }}>Mechanical (ME)</option>
-          <option value="CE" style={{ background: '#09090b' }}>Civil (CE)</option>
+          <option value="" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>All Departments</option>
+          <option value="CSE" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>Computer Science (CSE)</option>
+          <option value="IT" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>Information Technology (IT)</option>
+          <option value="ECE" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>Electronics (ECE)</option>
+          <option value="EE" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>Electrical (EE)</option>
+          <option value="ME" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>Mechanical (ME)</option>
+          <option value="CE" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>Civil (CE)</option>
         </select>
       </div>
 

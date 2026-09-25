@@ -57,8 +57,8 @@ const RecentActivityFeed = () => {
   return (
     <div
       style={{
-        background: '#15191E',
-        border: '1px solid #262C33',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-color)',
         borderRadius: '10px',
         padding: '1.25rem 1.4rem',
         display: 'flex',
@@ -75,20 +75,20 @@ const RecentActivityFeed = () => {
               width: '28px',
               height: '28px',
               borderRadius: '6px',
-              background: '#172554',
+              background: 'var(--brand-blue-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#3B82F6',
+              color: 'var(--brand-blue)',
             }}
           >
             <Activity size={15} />
           </div>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif' }}>
             Recent Activity
           </h3>
         </div>
-        <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 500 }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
           Live Stream
         </span>
       </div>
@@ -97,7 +97,7 @@ const RecentActivityFeed = () => {
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', padding: '0.5rem 0' }}>
           {[1, 2, 3, 4].map(i => (
-            <div key={i} style={{ height: '32px', background: '#1C2229', borderRadius: '6px' }} />
+            <div key={i} style={{ height: '32px', background: 'var(--bg-subtle)', borderRadius: '6px' }} />
           ))}
         </div>
       ) : (
@@ -115,7 +115,7 @@ const RecentActivityFeed = () => {
                   alignItems: 'flex-start',
                   gap: '0.65rem',
                   padding: '0.35rem 0',
-                  borderBottom: index < displayList.length - 1 ? '1px solid #1C2229' : 'none',
+                  borderBottom: index < displayList.length - 1 ? '1px solid var(--border-subtle)' : 'none',
                 }}
               >
                 <div
@@ -132,7 +132,7 @@ const RecentActivityFeed = () => {
                   <div
                     style={{
                       fontSize: '0.8125rem',
-                      color: '#F5F7FA',
+                      color: 'var(--text-primary)',
                       fontWeight: 500,
                       lineHeight: 1.3,
                       whiteSpace: 'nowrap',
@@ -142,7 +142,7 @@ const RecentActivityFeed = () => {
                   >
                     {title}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#6B7280', marginTop: '0.15rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     <Clock size={10} /> {timeAgo}
                   </div>
                 </div>

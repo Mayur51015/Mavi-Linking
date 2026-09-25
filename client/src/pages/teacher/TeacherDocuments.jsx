@@ -201,7 +201,7 @@ const TeacherDocuments = () => {
               background: 'rgba(255,255,255,0.02)',
               border: '1px solid var(--border-color)',
               borderRadius: '10px',
-              color: 'white',
+              color: 'var(--text-primary)',
               fontSize: '0.9rem',
               outline: 'none',
               transition: 'border-color 0.2s',
@@ -236,7 +236,7 @@ const TeacherDocuments = () => {
                       <FileText size={20} />
                     </div>
                     <div>
-                      <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'white', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {doc.title}
                       </h3>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -338,24 +338,24 @@ const TeacherDocuments = () => {
                     onChange={(e) => setDepartment(e.target.value)}
                     style={{
                       padding: '0.75rem 1rem',
-                      background: '#09090b',
+                      background: 'var(--bg-input)',
                       border: '1px solid var(--border-color)',
                       borderRadius: '8px',
-                      color: 'white',
+                      color: 'var(--text-primary)',
                       fontSize: '0.95rem',
                       outline: 'none',
                       cursor: 'pointer',
                     }}
                   >
-                    <option value="All">All Departments</option>
+                    <option value="All" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>All Departments</option>
                     {(user?.university?.department?.split(',') || []).map(d => d.trim()).filter(Boolean).map(d => (
-                      <option key={d} value={d}>{d}</option>
+                      <option key={d} value={d} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{d}</option>
                     ))}
                   </select>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Document Title</label>
+                  <label style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Document Title *</label>
                   <input
                     type="text"
                     required
@@ -364,10 +364,10 @@ const TeacherDocuments = () => {
                     placeholder="e.g. CSE Final Syllabus / Template Report"
                     style={{
                       padding: '0.75rem 1rem',
-                      background: 'rgba(255,255,255,0.02)',
+                      background: 'var(--bg-input)',
                       border: '1px solid var(--border-color)',
                       borderRadius: '8px',
-                      color: 'white',
+                      color: 'var(--text-primary)',
                       fontSize: '0.95rem',
                       outline: 'none',
                     }}
@@ -383,10 +383,10 @@ const TeacherDocuments = () => {
                     placeholder="Describe what resources or templates are included..."
                     style={{
                       padding: '0.75rem 1rem',
-                      background: 'rgba(255,255,255,0.02)',
+                      background: 'var(--bg-input)',
                       border: '1px solid var(--border-color)',
                       borderRadius: '8px',
-                      color: 'white',
+                      color: 'var(--text-primary)',
                       fontSize: '0.95rem',
                       outline: 'none',
                       resize: 'none',
@@ -404,7 +404,7 @@ const TeacherDocuments = () => {
                       padding: '1.5rem',
                       textAlign: 'center',
                       cursor: 'pointer',
-                      background: 'rgba(255,255,255,0.01)',
+                      background: 'var(--bg-input)',
                       position: 'relative',
                     }}>
                       <input
@@ -418,7 +418,7 @@ const TeacherDocuments = () => {
                         }}
                       />
                       <Upload size={24} style={{ color: 'var(--accent-purple)', margin: '0 auto 0.5rem' }} />
-                      <div style={{ fontSize: '0.85rem', color: 'white', fontWeight: '500' }}>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '500' }}>
                         {file ? file.name : 'Drag & drop or click to choose file'}
                       </div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>

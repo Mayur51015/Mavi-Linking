@@ -36,8 +36,8 @@ const SkillProgressList = () => {
   return (
     <div
       style={{
-        background: '#15191E',
-        border: '1px solid #262C33',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-color)',
         borderRadius: '10px',
         padding: '0.9rem 1rem',
         display: 'flex',
@@ -56,25 +56,25 @@ const SkillProgressList = () => {
               width: '28px',
               height: '28px',
               borderRadius: '6px',
-              background: '#172554',
+              background: 'var(--brand-blue-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#3B82F6',
+              color: 'var(--brand-blue)',
             }}
           >
             <Layers size={15} />
           </div>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif' }}>
             Skill Progress
           </h3>
         </div>
         <button
           onClick={() => navigate('/dashboard/projects')}
           style={{
-            background: '#1C2229',
-            border: '1px solid #262C33',
-            color: '#9CA3AF',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-secondary)',
             fontSize: '0.75rem',
             fontWeight: 500,
             borderRadius: '6px',
@@ -83,12 +83,12 @@ const SkillProgressList = () => {
             transition: 'all 0.15s ease',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#F5F7FA';
-            e.currentTarget.style.borderColor = '#3B82F6';
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.borderColor = 'var(--brand-blue)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = '#9CA3AF';
-            e.currentTarget.style.borderColor = '#262C33';
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.borderColor = 'var(--border-color)';
           }}
         >
           View All
@@ -99,7 +99,7 @@ const SkillProgressList = () => {
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', padding: '0.5rem 0' }}>
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} style={{ height: '24px', background: '#1C2229', borderRadius: '4px' }} />
+            <div key={i} style={{ height: '24px', background: 'var(--bg-subtle)', borderRadius: '4px' }} />
           ))}
         </div>
       ) : (
@@ -107,8 +107,8 @@ const SkillProgressList = () => {
           {skills.map((skill, idx) => (
             <div key={skill.name || idx} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8125rem' }}>
-                <span style={{ color: '#F5F7FA', fontWeight: 500 }}>{skill.name}</span>
-                <span style={{ color: '#9CA3AF', fontWeight: 600, fontSize: '0.75rem', fontFamily: 'Inter, sans-serif' }}>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{skill.name}</span>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.75rem', fontFamily: 'Inter, sans-serif' }}>
                   {skill.pct}%
                 </span>
               </div>
@@ -117,7 +117,7 @@ const SkillProgressList = () => {
                   width: '100%',
                   height: '5px',
                   borderRadius: '3px',
-                  background: '#262C33',
+                  background: 'var(--border-color)',
                   overflow: 'hidden',
                 }}
               >

@@ -152,7 +152,7 @@ const CareerRoadmapPage = () => {
               <ChevronRight size={14} />
               <span style={{ color: 'var(--accent-purple)', fontWeight: '500' }}>MAVI Career Roadmap</span>
             </div>
-            <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: '700', fontFamily: 'Outfit, sans-serif', margin: 0 }}>
+            <h1 style={{ color: 'var(--text-primary)', fontSize: '2rem', fontWeight: '700', fontFamily: 'Outfit, sans-serif', margin: 0 }}>
               MAVI Career Roadmap
             </h1>
           </div>
@@ -196,7 +196,7 @@ const CareerRoadmapPage = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <AlertTriangle size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
               <div>
-                <div style={{ color: 'white', fontWeight: '600', fontSize: '0.9rem' }}>
+                <div style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem' }}>
                   Your profile has changed since your roadmap was generated.
                 </div>
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
@@ -237,7 +237,7 @@ const CareerRoadmapPage = () => {
         {loading ? (
           <div className="glass-card" style={{ padding: '4rem', textAlign: 'center' }}>
             <Loader2 size={48} color="var(--accent-purple)" className="animate-spin" style={{ margin: '0 auto 1.5rem' }} />
-            <h3 style={{ color: 'white', fontSize: '1.35rem', fontFamily: 'Outfit' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.35rem', fontFamily: 'Outfit' }}>
               Building your personalized career roadmap...
             </h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
@@ -270,7 +270,7 @@ const CareerRoadmapPage = () => {
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                    <h2 style={{ color: 'white', fontSize: '2rem', fontWeight: '700', fontFamily: 'Outfit, sans-serif', margin: 0 }}>
+                    <h2 style={{ color: 'var(--text-primary)', fontSize: '2rem', fontWeight: '700', fontFamily: 'Outfit, sans-serif', margin: 0 }}>
                       {targetRole}
                     </h2>
                     <button
@@ -409,7 +409,7 @@ const CareerRoadmapPage = () => {
                     <div style={{ color: 'var(--accent-cyan)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600', marginBottom: '0.2rem' }}>
                       Next Recommended Step (Phase {roadmap.nextAction.phaseNumber || 1})
                     </div>
-                    <h3 style={{ color: 'white', fontSize: '1.15rem', margin: '0 0 0.25rem 0', fontFamily: 'Outfit' }}>
+                    <h3 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', margin: '0 0 0.25rem 0', fontFamily: 'Outfit' }}>
                       {roadmap.nextAction.stepTitle}
                     </h3>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
@@ -439,7 +439,7 @@ const CareerRoadmapPage = () => {
               <div className="glass-card" style={{ padding: '1.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
                   <UserCheck size={20} color="var(--accent-purple)" />
-                  <h3 style={{ color: 'white', fontSize: '1.2rem', fontFamily: 'Outfit', margin: 0 }}>
+                  <h3 style={{ color: 'var(--text-primary)', fontSize: '1.2rem', fontFamily: 'Outfit', margin: 0 }}>
                     Current Profile
                   </h3>
                 </div>
@@ -452,7 +452,7 @@ const CareerRoadmapPage = () => {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-subtle)' }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Overall Score</span>
-                    <span style={{ color: 'white', fontWeight: '600' }}>{user?.scores?.overall || 0} / 1000</span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{user?.scores?.overall || 0} / 1000</span>
                   </div>
 
                   <div>
@@ -494,7 +494,7 @@ const CareerRoadmapPage = () => {
               <div className="glass-card" style={{ padding: '1.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
                   <TrendingUp size={20} color="var(--accent-cyan)" />
-                  <h3 style={{ color: 'white', fontSize: '1.2rem', fontFamily: 'Outfit', margin: 0 }}>
+                  <h3 style={{ color: 'var(--text-primary)', fontSize: '1.2rem', fontFamily: 'Outfit', margin: 0 }}>
                     Skill Gap Analysis
                   </h3>
                 </div>
@@ -557,7 +557,7 @@ const CareerRoadmapPage = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                   <Layers size={22} color="var(--accent-purple)" />
                   <div>
-                    <h3 style={{ color: 'white', fontSize: '1.35rem', fontFamily: 'Outfit', margin: 0 }}>
+                    <h3 style={{ color: 'var(--text-primary)', fontSize: '1.35rem', fontFamily: 'Outfit', margin: 0 }}>
                       Interactive Learning Roadmap
                     </h3>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
@@ -602,7 +602,7 @@ const CareerRoadmapPage = () => {
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <h4 style={{ color: 'white', fontSize: '1.05rem', margin: 0, fontFamily: 'Outfit' }}>
+                            <h4 style={{ color: 'var(--text-primary)', fontSize: '1.05rem', margin: 0, fontFamily: 'Outfit' }}>
                               {phase.title}
                             </h4>
                             {phaseCompleted && (
@@ -751,7 +751,7 @@ const CareerRoadmapPage = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
                 <Code2 size={22} color="var(--accent-purple)" />
                 <div>
-                  <h3 style={{ color: 'white', fontSize: '1.35rem', fontFamily: 'Outfit', margin: 0 }}>
+                  <h3 style={{ color: 'var(--text-primary)', fontSize: '1.35rem', fontFamily: 'Outfit', margin: 0 }}>
                     Recommended Practical Projects
                   </h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
@@ -786,7 +786,7 @@ const CareerRoadmapPage = () => {
                         </span>
                       </div>
 
-                      <h4 style={{ color: 'white', fontSize: '1.1rem', margin: '0 0 0.5rem 0', fontFamily: 'Outfit' }}>
+                      <h4 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', margin: '0 0 0.5rem 0', fontFamily: 'Outfit' }}>
                         {proj.title}
                       </h4>
 
@@ -838,7 +838,7 @@ const CareerRoadmapPage = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
                 <TrendingUp size={22} color="var(--accent-purple)" />
                 <div>
-                  <h3 style={{ color: 'white', fontSize: '1.35rem', fontFamily: 'Outfit', margin: 0 }}>
+                  <h3 style={{ color: 'var(--text-primary)', fontSize: '1.35rem', fontFamily: 'Outfit', margin: 0 }}>
                     Recommended Career Paths
                   </h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
@@ -863,7 +863,7 @@ const CareerRoadmapPage = () => {
                   >
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                        <h4 style={{ color: 'white', fontSize: '1rem', margin: 0, fontFamily: 'Outfit' }}>
+                        <h4 style={{ color: 'var(--text-primary)', fontSize: '1rem', margin: 0, fontFamily: 'Outfit' }}>
                           {alignment.role}
                         </h4>
                         <span style={{
@@ -919,7 +919,7 @@ const CareerRoadmapPage = () => {
             padding: '1rem',
           }}>
             <div className="glass-card" style={{ maxWidth: '460px', width: '100%', padding: '2rem' }}>
-              <h3 style={{ color: 'white', marginBottom: '0.5rem', fontSize: '1.35rem', fontFamily: 'Outfit' }}>
+              <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem', fontSize: '1.35rem', fontFamily: 'Outfit' }}>
                 Set Your Target Career Goal
               </h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
@@ -965,7 +965,7 @@ const CareerRoadmapPage = () => {
                         onClick={() => setCustomGoal(role)}
                         className="badge"
                         style={{
-                          background: customGoal === role ? 'var(--accent-purple)' : 'rgba(255, 255, 255, 0.05)',
+                          background: customGoal === role ? 'var(--accent-purple)' : 'var(--bg-input)',
                           color: customGoal === role ? 'white' : 'var(--text-secondary)',
                           cursor: 'pointer',
                           border: '1px solid var(--border-subtle)',

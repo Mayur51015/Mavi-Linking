@@ -110,8 +110,8 @@ const LearningGrowthCard = () => {
   return (
     <div
       style={{
-        background: '#15191E',
-        border: '1px solid #262C33',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-color)',
         borderRadius: '10px',
         padding: '1.25rem 1.4rem',
         display: 'flex',
@@ -131,25 +131,25 @@ const LearningGrowthCard = () => {
               width: '28px',
               height: '28px',
               borderRadius: '6px',
-              background: '#172554',
+              background: 'var(--brand-blue-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#3B82F6',
+              color: 'var(--brand-blue)',
             }}
           >
             <GraduationCap size={16} />
           </div>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif' }}>
             Learning & Growth
           </h3>
         </div>
         <button
           onClick={() => navigate('/student/career-roadmap')}
           style={{
-            background: '#1C2229',
-            border: '1px solid #262C33',
-            color: '#9CA3AF',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-secondary)',
             fontSize: '0.75rem',
             fontWeight: 500,
             borderRadius: '6px',
@@ -158,12 +158,12 @@ const LearningGrowthCard = () => {
             transition: 'all 0.15s ease',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#F5F7FA';
-            e.currentTarget.style.borderColor = '#3B82F6';
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.borderColor = 'var(--brand-blue)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = '#9CA3AF';
-            e.currentTarget.style.borderColor = '#262C33';
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.borderColor = 'var(--border-color)';
           }}
         >
           View All
@@ -171,7 +171,7 @@ const LearningGrowthCard = () => {
       </div>
 
       {/* Tabs: Current Learning | Recommended | Completed */}
-      <div style={{ display: 'flex', gap: '0.4rem', borderBottom: '1px solid #262C33', paddingBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.4rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
         {[
           { key: 'current', label: 'Current Learning' },
           { key: 'recommended', label: 'Recommended' },
@@ -181,11 +181,11 @@ const LearningGrowthCard = () => {
             key={t.key}
             onClick={() => setActiveTab(t.key)}
             style={{
-              background: activeTab === t.key ? '#1D4ED8' : 'transparent',
+              background: activeTab === t.key ? 'var(--brand-blue)' : 'transparent',
               border: 'none',
               borderRadius: '6px',
               padding: '0.3rem 0.65rem',
-              color: activeTab === t.key ? '#ffffff' : '#9CA3AF',
+              color: activeTab === t.key ? '#ffffff' : 'var(--text-secondary)',
               fontSize: '0.75rem',
               fontWeight: activeTab === t.key ? 600 : 500,
               cursor: 'pointer',
@@ -201,11 +201,11 @@ const LearningGrowthCard = () => {
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', padding: '0.5rem 0' }}>
           {[1, 2, 3].map(i => (
-            <div key={i} style={{ height: '42px', background: '#1C2229', borderRadius: '6px' }} />
+            <div key={i} style={{ height: '42px', background: 'var(--bg-subtle)', borderRadius: '6px' }} />
           ))}
         </div>
       ) : displayList.length === 0 ? (
-        <div style={{ padding: '1rem', textAlign: 'center', color: '#6B7280', fontSize: '0.8rem' }}>
+        <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
           No items in this category.
         </div>
       ) : (
@@ -214,8 +214,8 @@ const LearningGrowthCard = () => {
             <div
               key={item.id}
               style={{
-                background: '#11151A',
-                border: '1px solid #262C33',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-color)',
                 borderRadius: '8px',
                 padding: '0.6rem 0.75rem',
                 display: 'flex',
@@ -230,7 +230,8 @@ const LearningGrowthCard = () => {
                       width: '24px',
                       height: '24px',
                       borderRadius: '5px',
-                      background: '#1C2229',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border-subtle)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -243,7 +244,7 @@ const LearningGrowthCard = () => {
                     style={{
                       fontSize: '0.8125rem',
                       fontWeight: 600,
-                      color: '#F5F7FA',
+                      color: 'var(--text-primary)',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -254,29 +255,18 @@ const LearningGrowthCard = () => {
                 </div>
 
                 <span
+                  className={`badge ${
+                    item.status === 'Completed'
+                      ? 'badge-emerald'
+                      : item.status === 'In Progress'
+                        ? 'badge-blue'
+                        : 'badge-gray'
+                  }`}
                   style={{
                     fontSize: '0.68rem',
                     fontWeight: 600,
                     padding: '0.12rem 0.45rem',
                     borderRadius: '4px',
-                    background:
-                      item.status === 'Completed'
-                        ? 'rgba(34, 197, 94, 0.15)'
-                        : item.status === 'In Progress'
-                          ? '#172554'
-                          : '#1C2229',
-                    color:
-                      item.status === 'Completed'
-                        ? '#22C55E'
-                        : item.status === 'In Progress'
-                          ? '#60A5FA'
-                          : '#9CA3AF',
-                    border:
-                      item.status === 'Completed'
-                        ? '1px solid rgba(34, 197, 94, 0.3)'
-                        : item.status === 'In Progress'
-                          ? '1px solid #1D4ED8'
-                          : '1px solid #262C33',
                     flexShrink: 0,
                   }}
                 >
@@ -291,7 +281,7 @@ const LearningGrowthCard = () => {
                     flex: 1,
                     height: '4px',
                     borderRadius: '2px',
-                    background: '#262C33',
+                    background: 'var(--border-color)',
                     overflow: 'hidden',
                   }}
                 >
@@ -300,12 +290,12 @@ const LearningGrowthCard = () => {
                       width: `${item.progress}%`,
                       height: '100%',
                       borderRadius: '2px',
-                      background: item.status === 'Completed' ? '#22C55E' : '#3B82F6',
+                      background: item.status === 'Completed' ? 'var(--accent-emerald, #22C55E)' : 'var(--brand-blue)',
                       transition: 'width 0.5s ease',
                     }}
                   />
                 </div>
-                <span style={{ fontSize: '0.72rem', color: '#9CA3AF', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
                   {item.progress}%
                 </span>
               </div>

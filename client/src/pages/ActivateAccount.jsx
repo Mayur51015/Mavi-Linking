@@ -133,8 +133,8 @@ const ActivateAccount = () => {
     <div
       style={{
         minHeight: '100vh',
-        background: '#09090b',
-        color: '#ffffff',
+        background: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -165,11 +165,11 @@ const ActivateAccount = () => {
         style={{
           width: '100%',
           maxWidth: '460px',
-          background: '#121318',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
           borderRadius: '20px',
           padding: '2rem',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          boxShadow: 'var(--card-shadow)',
           position: 'relative',
           zIndex: 10,
           backdropFilter: 'blur(16px)',
@@ -187,16 +187,16 @@ const ActivateAccount = () => {
               borderRadius: '16px',
               background: 'rgba(147, 51, 234, 0.12)',
               border: '1px solid rgba(147, 51, 234, 0.25)',
-              color: '#c084fc',
+              color: '#a855f7',
               marginBottom: '1rem',
             }}
           >
             <KeyRound size={28} />
           </div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: '#ffffff', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             MAVI Account Activation
           </h1>
-          <p style={{ fontSize: '0.875rem', color: '#a1a1aa', marginTop: '0.4rem' }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
             Set your private password to activate your account
           </p>
         </div>
@@ -204,8 +204,8 @@ const ActivateAccount = () => {
         {/* Loading State */}
         {loading && (
           <div style={{ padding: '3rem 0', textAlign: 'center' }}>
-            <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#c084fc', margin: '0 auto 0.75rem auto' }} />
-            <p style={{ fontSize: '0.875rem', color: '#a1a1aa' }}>Verifying invitation token...</p>
+            <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#a855f7', margin: '0 auto 0.75rem auto' }} />
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Verifying invitation token...</p>
           </div>
         )}
 
@@ -221,14 +221,14 @@ const ActivateAccount = () => {
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: '0.75rem',
-                color: '#f87171',
+                color: '#dc2626',
                 fontSize: '0.875rem',
               }}
             >
               <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
               <div>
-                <p style={{ fontWeight: '700', margin: 0, color: '#fca5a5' }}>Activation Link Invalid or Expired</p>
-                <p style={{ margin: '0.3rem 0 0 0', lineHeight: '1.4', color: 'rgba(248, 113, 113, 0.9)' }}>{error}</p>
+                <p style={{ fontWeight: '700', margin: 0, color: '#dc2626' }}>Activation Link Invalid or Expired</p>
+                <p style={{ margin: '0.3rem 0 0 0', lineHeight: '1.4', color: 'var(--text-secondary)' }}>{error}</p>
               </div>
             </div>
             <Link
@@ -236,8 +236,9 @@ const ActivateAccount = () => {
               style={{
                 width: '100%',
                 padding: '0.75rem',
-                background: '#27272a',
-                color: '#ffffff',
+                background: 'var(--bg-card-hover)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
                 fontWeight: '600',
                 borderRadius: '12px',
                 textAlign: 'center',
@@ -265,16 +266,16 @@ const ActivateAccount = () => {
                 borderRadius: '50%',
                 background: 'rgba(16, 185, 129, 0.12)',
                 border: '1px solid rgba(16, 185, 129, 0.3)',
-                color: '#34d399',
+                color: '#16a34a',
                 margin: '0 auto',
               }}
             >
               <CheckCircle2 size={32} />
             </div>
-            <h2 style={{ fontSize: '1.35rem', fontWeight: '800', color: '#ffffff', margin: 0 }}>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
               Account Successfully Activated!
             </h2>
-            <p style={{ fontSize: '0.875rem', color: '#a1a1aa', lineHeight: '1.5', margin: 0 }}>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
               Your private password has been set. You can now sign in with your email or assigned MAVI ID.
             </p>
             <button
@@ -313,21 +314,21 @@ const ActivateAccount = () => {
             <div
               style={{
                 padding: '1.1rem',
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--bg-input)',
+                border: '1px solid var(--border-color)',
                 borderRadius: '14px',
                 display: 'grid',
                 gap: '0.5rem',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#a1a1aa' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                 <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>Invited Account</span>
                 <span
                   style={{
                     padding: '0.2rem 0.6rem',
                     borderRadius: '6px',
                     background: 'rgba(147, 51, 234, 0.15)',
-                    color: '#c084fc',
+                    color: 'var(--accent-purple)',
                     border: '1px solid rgba(147, 51, 234, 0.3)',
                     fontWeight: '700',
                     fontSize: '0.75rem',
@@ -338,17 +339,17 @@ const ActivateAccount = () => {
                 </span>
               </div>
 
-              <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '1.1rem', marginTop: '0.2rem' }}>
+              <div style={{ fontWeight: '800', color: 'var(--text-primary)', fontSize: '1.1rem', marginTop: '0.2rem' }}>
                 {inviteInfo.name}
               </div>
 
-              <div style={{ fontSize: '0.8rem', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <UserCheck size={14} style={{ color: '#71717a' }} />
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <UserCheck size={14} style={{ color: 'var(--text-muted)' }} />
                 {inviteInfo.email}
               </div>
 
               {inviteInfo.institutionName && (
-                <div style={{ fontSize: '0.8rem', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid var(--border-color)' }}>
                   <Building2 size={14} />
                   {inviteInfo.institutionName}
                 </div>
@@ -364,7 +365,7 @@ const ActivateAccount = () => {
                     border: '1px solid rgba(239, 68, 68, 0.25)',
                     borderRadius: '10px',
                     fontSize: '0.8rem',
-                    color: '#f87171',
+                    color: '#dc2626',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
@@ -377,11 +378,11 @@ const ActivateAccount = () => {
 
               {/* Password */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#d4d4d8', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
                   Create New Password *
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#71717a' }} />
+                  <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
@@ -390,12 +391,12 @@ const ActivateAccount = () => {
                     placeholder="At least 6 characters"
                     style={{
                       width: '100%',
-                      background: '#18181b',
-                      border: '1px solid #27272a',
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border-color)',
                       borderRadius: '12px',
                       padding: '0.7rem 2.5rem 0.7rem 2.4rem',
                       fontSize: '0.875rem',
-                      color: '#ffffff',
+                      color: 'var(--text-primary)',
                       boxSizing: 'border-box',
                       outline: 'none',
                     }}
@@ -403,7 +404,7 @@ const ActivateAccount = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#71717a', cursor: 'pointer' }}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -412,11 +413,11 @@ const ActivateAccount = () => {
 
               {/* Confirm Password */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#d4d4d8', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
                   Confirm Password *
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#71717a' }} />
+                  <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
@@ -425,12 +426,12 @@ const ActivateAccount = () => {
                     placeholder="Re-enter password"
                     style={{
                       width: '100%',
-                      background: '#18181b',
-                      border: '1px solid #27272a',
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border-color)',
                       borderRadius: '12px',
                       padding: '0.7rem 2.5rem 0.7rem 2.4rem',
                       fontSize: '0.875rem',
-                      color: '#ffffff',
+                      color: 'var(--text-primary)',
                       boxSizing: 'border-box',
                       outline: 'none',
                     }}
@@ -446,13 +447,13 @@ const ActivateAccount = () => {
                   border: '1px solid rgba(147, 51, 234, 0.15)',
                   borderRadius: '12px',
                   fontSize: '0.78rem',
-                  color: '#d8b4fe',
+                  color: 'var(--text-secondary)',
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: '0.5rem',
                 }}
               >
-                <ShieldCheck size={16} style={{ color: '#c084fc', flexShrink: 0, marginTop: '2px' }} />
+                <ShieldCheck size={16} style={{ color: 'var(--accent-purple)', flexShrink: 0, marginTop: '2px' }} />
                 <span>
                   No password was set by your administrator. Your password is private and end-to-end encrypted.
                 </span>

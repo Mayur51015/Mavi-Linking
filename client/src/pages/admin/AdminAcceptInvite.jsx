@@ -200,11 +200,11 @@ const AdminAcceptInvite = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-dark, #09090b)', color: '#f4f4f5', padding: '1.5rem' }}>
-      <div className="glass-card-static animate-fade-in" style={{ width: '100%', maxWidth: '520px', padding: '2.5rem', borderRadius: '16px', border: '1px solid var(--border-color, rgba(255,255,255,0.1))', background: 'rgba(24, 24, 27, 0.85)', backdropFilter: 'blur(16px)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', color: 'var(--text-primary)', padding: '1.5rem' }}>
+      <div className="glass-card-static animate-fade-in" style={{ width: '100%', maxWidth: '520px', padding: '2.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', backdropFilter: 'blur(16px)' }}>
         {/* Brand Header */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-          <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'white', fontWeight: '800', fontSize: '1.3rem' }}>
+          <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--text-primary)', fontWeight: '800', fontSize: '1.3rem' }}>
             <Terminal size={30} style={{ color: 'var(--accent-purple, #a855f7)' }} />
             <span>MAVI Linking</span>
           </Link>
@@ -214,7 +214,7 @@ const AdminAcceptInvite = () => {
         {stage === 'LOADING' && (
           <div style={{ padding: '3rem 1rem', textAlign: 'center' }}>
             <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '3px solid rgba(168, 85, 247, 0.2)', borderTopColor: 'var(--accent-purple, #a855f7)', animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem' }} />
-            <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '0.5rem', color: '#ffffff' }}>Verifying your invitation...</h3>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Verifying your invitation...</h3>
             <p style={{ color: 'var(--text-secondary, #a1a1aa)', fontSize: '0.875rem' }}>Validating cryptographic security credentials...</p>
           </div>
         )}
@@ -226,7 +226,7 @@ const AdminAcceptInvite = () => {
               <AlertTriangle size={30} />
             </div>
 
-            <h3 style={{ fontSize: '1.3rem', fontWeight: '700', color: '#fca5a5', marginBottom: '0.75rem' }}>
+            <h3 style={{ fontSize: '1.3rem', fontWeight: '700', color: '#dc2626', marginBottom: '0.75rem' }}>
               {errorDetails.title}
             </h3>
 
@@ -264,19 +264,19 @@ const AdminAcceptInvite = () => {
             </p>
 
             {inviteData && (
-              <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '1rem', marginBottom: '1.75rem', textAlign: 'left', fontSize: '0.85rem' }}>
+              <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '1rem', marginBottom: '1.75rem', textAlign: 'left', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
-                  <span style={{ color: '#a1a1aa' }}>Role:</span>
-                  <strong style={{ color: '#c084fc' }}>{formatRoleTitle(inviteData.role)}</strong>
+                  <span style={{ color: 'var(--text-muted)' }}>Role:</span>
+                  <strong style={{ color: 'var(--accent-purple)' }}>{formatRoleTitle(inviteData.role)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
-                  <span style={{ color: '#a1a1aa' }}>Institution:</span>
-                  <strong style={{ color: '#ffffff' }}>{inviteData.institution?.name || 'Platform Wide'}</strong>
+                  <span style={{ color: 'var(--text-muted)' }}>Institution:</span>
+                  <strong style={{ color: 'var(--text-primary)' }}>{inviteData.institution?.name || 'Platform Wide'}</strong>
                 </div>
                 {inviteData.department && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
-                    <span style={{ color: '#a1a1aa' }}>Department:</span>
-                    <strong style={{ color: '#ffffff' }}>{inviteData.department?.name || inviteData.department}</strong>
+                    <span style={{ color: 'var(--text-muted)' }}>Department:</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{inviteData.department?.name || inviteData.department}</strong>
                   </div>
                 )}
               </div>
@@ -296,7 +296,7 @@ const AdminAcceptInvite = () => {
         {(stage === 'VERIFIED' || stage === 'ACTIVATING') && inviteData && (
           <div>
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.35rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.35rem', color: '#ffffff' }}>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
                 <Shield style={{ color: '#a855f7' }} size={22} />
                 Administrator Invitation
               </h2>
@@ -307,31 +307,31 @@ const AdminAcceptInvite = () => {
 
             {/* Welcome & Scope Card */}
             <div style={{ background: 'rgba(168, 85, 247, 0.06)', border: '1px solid rgba(168, 85, 247, 0.25)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff', marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                 Welcome, {inviteData.name}
               </div>
 
-              <div style={{ fontSize: '0.8rem', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 You have been invited as:
               </div>
-              <div style={{ fontWeight: '700', fontSize: '1rem', color: '#c084fc', marginTop: '0.15rem' }}>
+              <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--accent-purple)', marginTop: '0.15rem' }}>
                 {formatRoleTitle(inviteData.role)}
               </div>
 
-              <div style={{ fontSize: '0.85rem', color: '#a1a1aa', marginTop: '0.5rem' }}>
-                Institution: <strong style={{ color: '#ffffff' }}>{inviteData.institution?.name || 'Platform Wide'}</strong>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                Institution: <strong style={{ color: 'var(--text-primary)' }}>{inviteData.institution?.name || 'Platform Wide'}</strong>
               </div>
 
               {inviteData.department && (
-                <div style={{ fontSize: '0.85rem', color: '#a1a1aa', marginTop: '0.25rem' }}>
-                  Department: <strong style={{ color: '#ffffff' }}>{inviteData.department?.name || inviteData.department}</strong>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                  Department: <strong style={{ color: 'var(--text-primary)' }}>{inviteData.department?.name || inviteData.department}</strong>
                 </div>
               )}
 
-              <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(168, 85, 247, 0.2)', fontSize: '0.8rem', color: '#c084fc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
+              <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(168, 85, 247, 0.2)', fontSize: '0.8rem', color: 'var(--accent-purple)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
                 <span>⏱️ This invitation is valid for 10 minutes.</span>
                 {inviteData.expiresAt && (
-                  <span style={{ color: '#a1a1aa', fontSize: '0.75rem' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                     Expires: {new Date(inviteData.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, {new Date(inviteData.expiresAt).toLocaleDateString()}
                   </span>
                 )}
@@ -339,12 +339,12 @@ const AdminAcceptInvite = () => {
             </div>
 
             {/* Form Header */}
-            <div style={{ marginBottom: '1rem', fontWeight: '600', fontSize: '0.95rem', color: '#e4e4e7' }}>
+            <div style={{ marginBottom: '1rem', fontWeight: '600', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
               Create Your Permanent Password
             </div>
 
             {formError && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', color: '#fca5a5', fontSize: '0.85rem' }}>
+              <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', color: '#dc2626', fontSize: '0.85rem' }}>
                 {formError}
               </div>
             )}
@@ -352,7 +352,7 @@ const AdminAcceptInvite = () => {
             <form onSubmit={handleSubmit}>
               {/* Password Field */}
               <div className="input-group" style={{ marginBottom: '1rem' }}>
-                <label className="input-label" style={{ display: 'block', fontSize: '0.85rem', color: '#d4d4d8', marginBottom: '0.35rem' }}>
+                <label className="input-label" style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
                   Password *
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -365,13 +365,13 @@ const AdminAcceptInvite = () => {
                     required
                     disabled={stage === 'ACTIVATING'}
                     autoComplete="new-password"
-                    style={{ width: '100%', padding: '0.75rem 2.5rem 0.75rem 0.85rem', background: '#18181b', border: '1px solid #3f3f46', borderRadius: '8px', color: 'white', fontSize: '0.9rem' }}
+                    style={{ width: '100%', padding: '0.75rem 2.5rem 0.75rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.9rem' }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#a1a1aa', cursor: 'pointer', padding: '4px' }}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -380,7 +380,7 @@ const AdminAcceptInvite = () => {
 
               {/* Confirm Password Field */}
               <div className="input-group" style={{ marginBottom: '1.25rem' }}>
-                <label className="input-label" style={{ display: 'block', fontSize: '0.85rem', color: '#d4d4d8', marginBottom: '0.35rem' }}>
+                <label className="input-label" style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
                   Confirm Password *
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -393,13 +393,13 @@ const AdminAcceptInvite = () => {
                     required
                     disabled={stage === 'ACTIVATING'}
                     autoComplete="new-password"
-                    style={{ width: '100%', padding: '0.75rem 2.5rem 0.75rem 0.85rem', background: '#18181b', border: '1px solid #3f3f46', borderRadius: '8px', color: 'white', fontSize: '0.9rem' }}
+                    style={{ width: '100%', padding: '0.75rem 2.5rem 0.75rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.9rem' }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     tabIndex={-1}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#a1a1aa', cursor: 'pointer', padding: '4px' }}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
                   >
                     {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -407,8 +407,8 @@ const AdminAcceptInvite = () => {
               </div>
 
               {/* Password Requirements Live Checklist */}
-              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.5rem', fontSize: '0.8rem' }}>
-                <div style={{ color: '#a1a1aa', marginBottom: '0.4rem', fontWeight: '600' }}>Password requirements:</div>
+              <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.5rem', fontSize: '0.8rem' }}>
+                <div style={{ color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: '600' }}>Password requirements:</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasMinLength ? '#10b981' : '#71717a' }}>
                     {hasMinLength ? <Check size={13} /> : <X size={13} />} At least 6 characters

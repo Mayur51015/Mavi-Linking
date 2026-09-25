@@ -10,8 +10,8 @@ const DNACard = ({ dna, loading }) => {
     return (
       <div
         style={{
-          background: '#15191E',
-          border: '1px solid #262C33',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
           borderRadius: '10px',
           padding: '1.15rem 1.35rem',
           display: 'flex',
@@ -25,19 +25,19 @@ const DNACard = ({ dna, loading }) => {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div className="animate-pulse" style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#1C2229' }} />
-            <div className="animate-pulse" style={{ width: '140px', height: '18px', borderRadius: '4px', background: '#1C2229' }} />
+            <div className="animate-pulse" style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--bg-subtle)' }} />
+            <div className="animate-pulse" style={{ width: '140px', height: '18px', borderRadius: '4px', background: 'var(--bg-subtle)' }} />
           </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          <div className="animate-pulse" style={{ width: '90px', height: '12px', borderRadius: '4px', background: '#1C2229' }} />
-          <div className="animate-pulse" style={{ width: '180px', height: '22px', borderRadius: '4px', background: '#1C2229' }} />
+          <div className="animate-pulse" style={{ width: '90px', height: '12px', borderRadius: '4px', background: 'var(--bg-subtle)' }} />
+          <div className="animate-pulse" style={{ width: '180px', height: '22px', borderRadius: '4px', background: 'var(--bg-subtle)' }} />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
           {[1, 2, 3].map(i => (
-            <div key={i} className="animate-pulse" style={{ background: '#1C2229', height: '56px', borderRadius: '6px' }} />
+            <div key={i} className="animate-pulse" style={{ background: 'var(--bg-subtle)', height: '56px', borderRadius: '6px' }} />
           ))}
         </div>
       </div>
@@ -79,8 +79,8 @@ const DNACard = ({ dna, loading }) => {
   return (
     <div
       style={{
-        background: '#15191E',
-        border: '1px solid #262C33',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-color)',
         borderRadius: '10px',
         padding: '1.15rem 1.35rem',
         display: 'flex',
@@ -109,7 +109,7 @@ const DNACard = ({ dna, loading }) => {
           >
             <Dna size={16} />
           </div>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif' }}>
             Developer DNA Profile
           </h3>
         </div>
@@ -123,7 +123,7 @@ const DNACard = ({ dna, loading }) => {
             fontSize: '0.72rem',
             fontWeight: 600,
             color: '#ffffff',
-            background: '#1D4ED8',
+            background: 'var(--brand-blue)',
             border: 'none',
             borderRadius: '6px',
             cursor: 'pointer',
@@ -144,16 +144,16 @@ const DNACard = ({ dna, loading }) => {
           >
             {/* Personality Summary */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#3B82F6', fontFamily: 'Inter, sans-serif' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--brand-blue)', fontFamily: 'Inter, sans-serif' }}>
                 {effectiveDna.personalityType}
               </div>
-              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#F5F7FA' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                 {effectiveDna.workingStyle} Collaborator
               </div>
               {effectiveDna.description && (
                 <p
                   style={{
-                    color: '#9CA3AF',
+                    color: 'var(--text-secondary)',
                     fontSize: '0.75rem',
                     margin: '0.1rem 0 0 0',
                     lineHeight: 1.35,
@@ -170,59 +170,59 @@ const DNACard = ({ dna, loading }) => {
 
             {/* Core Scores: Collaboration, Innovation, Focus */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.65rem' }}>
-              <div style={{ background: '#11151A', border: '1px solid #262C33', padding: '0.6rem 0.75rem', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '0.35rem', color: '#9CA3AF' }}>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', padding: '0.6rem 0.75rem', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '0.35rem', color: 'var(--text-secondary)' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     <Users size={12} color="#3B82F6" /> Collaboration
                   </span>
-                  <span style={{ fontWeight: 700, color: '#F5F7FA' }}>{effectiveDna.collaboration ?? 45}%</span>
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{effectiveDna.collaboration ?? 45}%</span>
                 </div>
-                <div style={{ height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
                   <div style={{ width: `${effectiveDna.collaboration ?? 45}%`, height: '100%', background: '#3B82F6', borderRadius: '2px' }} />
                 </div>
               </div>
 
-              <div style={{ background: '#11151A', border: '1px solid #262C33', padding: '0.6rem 0.75rem', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '0.35rem', color: '#9CA3AF' }}>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', padding: '0.6rem 0.75rem', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '0.35rem', color: 'var(--text-secondary)' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     <Zap size={12} color="#8B5CF6" /> Innovation
                   </span>
-                  <span style={{ fontWeight: 700, color: '#F5F7FA' }}>{effectiveDna.innovation ?? 60}%</span>
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{effectiveDna.innovation ?? 60}%</span>
                 </div>
-                <div style={{ height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
                   <div style={{ width: `${effectiveDna.innovation ?? 60}%`, height: '100%', background: '#8B5CF6', borderRadius: '2px' }} />
                 </div>
               </div>
 
-              <div style={{ background: '#11151A', border: '1px solid #262C33', padding: '0.6rem 0.75rem', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '0.35rem', color: '#9CA3AF' }}>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', padding: '0.6rem 0.75rem', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '0.35rem', color: 'var(--text-secondary)' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     <Target size={12} color="#22C55E" /> Focus
                   </span>
-                  <span style={{ fontWeight: 700, color: '#F5F7FA' }}>{effectiveDna.focus ?? 65}%</span>
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{effectiveDna.focus ?? 65}%</span>
                 </div>
-                <div style={{ height: '4px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
                   <div style={{ width: `${effectiveDna.focus ?? 65}%`, height: '100%', background: '#22C55E', borderRadius: '2px' }} />
                 </div>
               </div>
             </div>
 
             {/* Engineering Dimensions (Compact Grid) */}
-            <div style={{ borderTop: '1px solid #262C33', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <div style={{ fontSize: '0.7rem', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
                 Engineering Dimensions
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
                 {engineeringDimensions.map(({ label, value, color, icon }) => (
-                  <div key={label} style={{ background: '#11151A', border: '1px solid #262C33', padding: '0.5rem 0.65rem', borderRadius: '6px' }}>
+                  <div key={label} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', padding: '0.5rem 0.65rem', borderRadius: '6px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', marginBottom: '0.25rem' }}>
-                      <span style={{ color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                         {icon} {label}
                       </span>
-                      <span style={{ fontWeight: 700, color: '#F5F7FA', fontSize: '0.75rem' }}>{value}%</span>
+                      <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.75rem' }}>{value}%</span>
                     </div>
-                    <div style={{ height: '3px', background: '#262C33', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ height: '3px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
                       <div style={{ width: `${value}%`, height: '100%', background: color, borderRadius: '2px' }} />
                     </div>
                   </div>
@@ -238,10 +238,10 @@ const DNACard = ({ dna, loading }) => {
             exit={{ opacity: 0 }}
             style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
           >
-            <div style={{ fontSize: '0.72rem', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
               Evolution Timeline
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderLeft: '2px solid #262C33', paddingLeft: '0.85rem', marginLeft: '0.35rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderLeft: '2px solid var(--border-color)', paddingLeft: '0.85rem', marginLeft: '0.35rem' }}>
               {evolution.map((item, idx) => (
                 <div key={idx} style={{ position: 'relative' }}>
                   <div style={{
@@ -253,11 +253,11 @@ const DNACard = ({ dna, loading }) => {
                     borderRadius: '50%',
                     background: '#8B5CF6',
                   }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.75rem', color: '#6B7280' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     <span>{new Date(item.date).toLocaleDateString()}</span>
-                    <span style={{ textTransform: 'capitalize', fontSize: '0.68rem', color: '#06B6D4' }}>via {item.trigger || 'sync'}</span>
+                    <span style={{ textTransform: 'capitalize', fontSize: '0.68rem', color: 'var(--accent-cyan, #06B6D4)' }}>via {item.trigger || 'sync'}</span>
                   </div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#F5F7FA', marginTop: '0.1rem' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.1rem' }}>
                     {item.personalityType}
                   </div>
                 </div>

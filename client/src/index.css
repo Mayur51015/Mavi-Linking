@@ -140,24 +140,24 @@
 
 /* Light Theme (Accessible clean light ERP mode when toggled) */
 [data-theme="light"] {
-  --bg-primary: #F5F7FA;
+  --bg-primary: #F8FAFC;
   --bg-secondary: #FFFFFF;
   --bg-tertiary: #EFF6FF;
-  --bg-canvas: #F5F7FA;
+  --bg-canvas: #F8FAFC;
   --bg-surface: #FFFFFF;
   --bg-surface-elevated: #FFFFFF;
   --bg-glass: #FFFFFF;
   --bg-card: #FFFFFF;
-  --bg-card-hover: #F8FAFC;
+  --bg-card-hover: #F1F5F9;
   --bg-elevated: #FFFFFF;
   --bg-subtle: #F8FAFC;
   --bg-input: #FFFFFF;
   --bg-sidebar: #FFFFFF;
   --bg-navbar: #FFFFFF;
 
-  --text-primary: #1F2937;
-  --text-secondary: #6B7280;
-  --text-muted: #9CA3AF;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
   --text-accent: #2563EB;
 
   --brand-blue: #2563EB;
@@ -171,7 +171,7 @@
   --brand-orange-light: #EFF6FF;
   --brand-orange-subtle: #DBEAFE;
 
-  --border-color: #E5E7EB;
+  --border-color: #E2E8F0;
   --border-subtle: #F1F5F9;
   --border-hover: #CBD5E1;
   --border-glow: transparent;
@@ -183,7 +183,7 @@
   --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
   --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
 
-  --glass-border: 1px solid #E5E7EB;
+  --glass-border: 1px solid #E2E8F0;
 }
 
 * {
@@ -412,6 +412,80 @@ code,
   background: var(--brand-blue-light);
   color: var(--brand-blue-hover);
   border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Light Mode Badges (Accessible High-Contrast SaaS Badges) */
+[data-theme="light"] .badge-primary,
+[data-theme="light"] .badge-orange {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+[data-theme="light"] .badge-purple {
+  background: #F5F3FF;
+  color: #6D28D9;
+  border: 1px solid #DDD6FE;
+}
+
+[data-theme="light"] .badge-emerald {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+}
+
+[data-theme="light"] .badge-amber {
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+[data-theme="light"] .badge-pink {
+  background: #FDF2F8;
+  color: #BE185D;
+  border: 1px solid #FBCFE8;
+}
+
+[data-theme="light"] .badge-cyan {
+  background: #ECFEFF;
+  color: #0E7490;
+  border: 1px solid #A5F3FC;
+}
+
+[data-theme="light"] .badge-blue {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+[data-theme="light"] .badge-gray {
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #CBD5E1;
+}
+
+[data-theme="light"] .badge-verified {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+[data-theme="light"] .badge-placed {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+}
+
+[data-theme="light"] .badge-unavailable {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+[data-theme="light"] .badge-danger {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
 }
 
 /* Tier Badges */
@@ -1180,7 +1254,7 @@ select.input-field option {
   width: 100%;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
-  background: rgba(18, 18, 28, 0.5);
+  background: var(--bg-navbar);
   backdrop-filter: blur(12px);
   min-height: 72px;
   gap: 0.75rem;
@@ -1451,6 +1525,14 @@ select.input-field option {
   background: rgba(139, 92, 246, 0.5);
 }
 
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
 /* Verified Badge */
 .verified-badge {
   display: inline-flex;
@@ -1495,20 +1577,40 @@ select.input-field option {
   background: rgba(255, 255, 255, 0.05);
 }
 
+[data-theme="light"] .heatmap-cell {
+  background: #E2E8F0;
+}
+
 .heatmap-cell.level-1 {
   background: rgba(139, 92, 246, 0.2);
+}
+
+[data-theme="light"] .heatmap-cell.level-1 {
+  background: #DDD6FE;
 }
 
 .heatmap-cell.level-2 {
   background: rgba(139, 92, 246, 0.4);
 }
 
+[data-theme="light"] .heatmap-cell.level-2 {
+  background: #C4B5FD;
+}
+
 .heatmap-cell.level-3 {
   background: rgba(139, 92, 246, 0.6);
 }
 
+[data-theme="light"] .heatmap-cell.level-3 {
+  background: #8B5CF6;
+}
+
 .heatmap-cell.level-4 {
   background: rgba(139, 92, 246, 0.8);
+}
+
+[data-theme="light"] .heatmap-cell.level-4 {
+  background: #6D28D9;
 }
 
 /* ─── Placement & Recruitment Styles ──────────────────────────────────────── */
@@ -1772,6 +1874,24 @@ html {
   transform: none !important;
   box-shadow: none !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="light"] .google-btn-liquid-glass {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #0F172A;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .google-btn-liquid-glass:hover {
+  background: #F8FAFC;
+  border-color: #94A3B8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .google-btn-liquid-glass:focus-visible {
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
 /* Icon Badge Container */

@@ -137,8 +137,8 @@ const VerifyAccount = () => {
     <div
       style={{
         minHeight: '100vh',
-        background: '#09090b',
-        color: '#ffffff',
+        background: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -169,11 +169,11 @@ const VerifyAccount = () => {
         style={{
           width: '100%',
           maxWidth: '480px',
-          background: '#121318',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
           borderRadius: '24px',
           padding: '2.25rem',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          boxShadow: 'var(--card-shadow)',
           position: 'relative',
           zIndex: 10,
           backdropFilter: 'blur(16px)',
@@ -193,13 +193,13 @@ const VerifyAccount = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 1.25rem auto',
-                color: '#c084fc',
+                color: '#a855f7',
               }}
             >
               <Loader2 size={32} style={{ animation: 'spin 1s linear infinite' }} />
             </div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0 }}>Verifying Your Account...</h2>
-            <p style={{ fontSize: '0.875rem', color: '#a1a1aa', marginTop: '0.5rem' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>Verifying Your Account...</h2>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
               Validating your cryptographic activation proof...
             </p>
           </div>
@@ -219,17 +219,17 @@ const VerifyAccount = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto',
-                color: '#34d399',
+                color: '#16a34a',
               }}
             >
               <CheckCircle2 size={34} />
             </div>
 
             <div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: '#ffffff' }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
                 Email Verified Successfully!
               </h2>
-              <p style={{ fontSize: '0.875rem', color: '#a1a1aa', marginTop: '0.5rem', lineHeight: '1.5' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: '1.5' }}>
                 Your email address has been verified. Your account is now waiting for approval from your institution administrator.
               </p>
             </div>
@@ -274,18 +274,18 @@ const VerifyAccount = () => {
                   borderRadius: '18px',
                   background: verificationError ? 'rgba(239, 68, 68, 0.12)' : 'rgba(168, 85, 247, 0.12)',
                   border: `1px solid ${verificationError ? 'rgba(239, 68, 68, 0.3)' : 'rgba(168, 85, 247, 0.3)'}`,
-                  color: verificationError ? '#f87171' : '#c084fc',
+                  color: verificationError ? '#dc2626' : '#a855f7',
                   marginBottom: '1rem',
                 }}
               >
                 {verificationError ? <AlertCircle size={30} /> : <Mail size={30} />}
               </div>
 
-              <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: '#ffffff', letterSpacing: '-0.02em' }}>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                 {verificationError ? 'Verification Link Invalid or Expired' : 'Verify Your Email to Continue'}
               </h1>
               
-              <p style={{ fontSize: '0.875rem', color: '#a1a1aa', marginTop: '0.5rem', lineHeight: '1.5' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: '1.5' }}>
                 {verificationError
                   ? verificationError
                   : 'Your MAVI Linking account has been created successfully. Verify your email address to activate your account and access your dashboard.'}
@@ -296,8 +296,8 @@ const VerifyAccount = () => {
             <div
               style={{
                 padding: '1.1rem',
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--bg-input)',
+                border: '1px solid var(--border-color)',
                 borderRadius: '14px',
                 display: 'grid',
                 gap: '0.85rem',
@@ -305,15 +305,15 @@ const VerifyAccount = () => {
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
                 <div>
-                  <div style={{ fontSize: '0.72rem', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
                     Verification Dispatched To Student Email
                   </div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: '700', color: '#c084fc', marginTop: '0.2rem', wordBreak: 'break-all' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: '700', color: 'var(--accent-purple)', marginTop: '0.2rem', wordBreak: 'break-all' }}>
                     {activeEmail || 'mayur2006khandare@gmail.com'}
                   </div>
                   {user?.maviId && (
-                    <div style={{ fontSize: '0.75rem', color: '#71717a', marginTop: '0.2rem' }}>
-                      Permanent MAVI ID: <span style={{ color: '#e4e4e7', fontFamily: 'monospace', fontWeight: '700' }}>{user.maviId}</span>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      Permanent MAVI ID: <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: '700' }}>{user.maviId}</span>
                     </div>
                   )}
                 </div>
@@ -327,13 +327,13 @@ const VerifyAccount = () => {
                   border: '1px solid rgba(168, 85, 247, 0.2)',
                   borderRadius: '10px',
                   fontSize: '0.775rem',
-                  color: '#e4e4e7',
+                  color: 'var(--text-secondary)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
                 }}
               >
-                <ShieldCheck size={16} style={{ color: '#c084fc', flexShrink: 0 }} />
+                <ShieldCheck size={16} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} />
                 <span>
                   <strong>Institutional Verifier:</strong> MAVI ID & verification notice sent to <strong>Institution Administrator</strong> for identity verification.
                 </span>
@@ -348,14 +348,14 @@ const VerifyAccount = () => {
                 border: '1px solid rgba(147, 51, 234, 0.18)',
                 borderRadius: '12px',
                 fontSize: '0.78rem',
-                color: '#d8b4fe',
+                color: 'var(--text-secondary)',
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: '0.5rem',
                 lineHeight: '1.4',
               }}
             >
-              <ShieldCheck size={16} style={{ color: '#c084fc', flexShrink: 0, marginTop: '2px' }} />
+              <ShieldCheck size={16} style={{ color: 'var(--accent-purple)', flexShrink: 0, marginTop: '2px' }} />
               <span>
                 Account activation links expire in <strong>10 minutes</strong> for your security. Check your inbox and spam folder.
               </span>
@@ -406,10 +406,10 @@ const VerifyAccount = () => {
                 }}
                 style={{
                   padding: '0.75rem',
-                  background: '#18181b',
-                  border: '1px solid #27272a',
+                  background: 'var(--bg-card-hover)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '12px',
-                  color: '#a1a1aa',
+                  color: 'var(--text-secondary)',
                   fontSize: '0.85rem',
                   fontWeight: '600',
                   cursor: 'pointer',

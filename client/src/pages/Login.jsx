@@ -142,7 +142,7 @@ const Login = () => {
       style={{
         minHeight: '100vh',
         display: 'flex',
-        background: '#0B0D0F',
+        background: 'var(--bg-primary)',
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
@@ -151,8 +151,8 @@ const Login = () => {
         className="hide-mobile"
         style={{
           flex: '0 0 45%',
-          background: '#101317',
-          borderRight: '1px solid #262C33',
+          background: 'var(--bg-surface)',
+          borderRight: '1px solid var(--border-color)',
           padding: '3.5rem 3rem',
           display: 'flex',
           flexDirection: 'column',
@@ -167,7 +167,7 @@ const Login = () => {
                 width: '40px',
                 height: '40px',
                 borderRadius: '8px',
-                background: '#3B82F6',
+                background: 'var(--brand-blue)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -178,10 +178,10 @@ const Login = () => {
               <Terminal size={22} />
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#F5F7FA', letterSpacing: '-0.02em' }}>
-                MAVI <span style={{ color: '#3B82F6', fontWeight: 700 }}>Linking</span>
+              <div style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                MAVI <span style={{ color: 'var(--brand-blue)', fontWeight: 700 }}>Linking</span>
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Enterprise ERP Platform
               </div>
             </div>
@@ -196,8 +196,8 @@ const Login = () => {
                 gap: '0.4rem',
                 padding: '0.25rem 0.65rem',
                 borderRadius: '4px',
-                background: '#172554',
-                color: '#60A5FA',
+                background: 'var(--brand-blue-light)',
+                color: 'var(--brand-blue)',
                 border: '1px solid rgba(59, 130, 246, 0.3)',
                 fontSize: '0.75rem',
                 fontWeight: 600,
@@ -211,14 +211,14 @@ const Login = () => {
                 fontSize: '2rem',
                 fontWeight: 800,
                 lineHeight: 1.25,
-                color: '#F5F7FA',
+                color: 'var(--text-primary)',
                 marginBottom: '0.75rem',
                 letterSpacing: '-0.02em',
               }}
             >
               Developer & Career Intelligence Platform
             </h1>
-            <p style={{ color: '#9CA3AF', fontSize: '0.9375rem', lineHeight: 1.6, maxWidth: '440px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', lineHeight: 1.6, maxWidth: '440px' }}>
               Centralized academic records, verified technical profiles, departmental analytics, and corporate recruitment pipelines.
             </p>
           </div>
@@ -232,8 +232,8 @@ const Login = () => {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: '#172554',
-                    color: '#3B82F6',
+                    background: 'var(--brand-blue-light)',
+                    color: 'var(--brand-blue)',
                     border: '1px solid rgba(59, 130, 246, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
@@ -245,8 +245,8 @@ const Login = () => {
                   <CheckCircle2 size={16} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#F5F7FA' }}>{item.title}</div>
-                  <div style={{ fontSize: '0.8125rem', color: '#9CA3AF', marginTop: '0.15rem', lineHeight: 1.45 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{item.title}</div>
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.15rem', lineHeight: 1.45 }}>
                     {item.desc}
                   </div>
                 </div>
@@ -260,9 +260,9 @@ const Login = () => {
           style={{
             marginTop: '3rem',
             paddingTop: '1.5rem',
-            borderTop: '1px solid #262C33',
+            borderTop: '1px solid var(--border-color)',
             fontSize: '0.75rem',
-            color: '#6B7280',
+            color: 'var(--text-muted)',
             lineHeight: 1.5,
           }}
         >
@@ -279,17 +279,17 @@ const Login = () => {
           justifyContent: 'center',
           alignItems: 'center',
           padding: '2.5rem 1.5rem',
-          background: '#0B0D0F',
+          background: 'var(--bg-primary)',
         }}
       >
         <div
           style={{
             width: '100%',
             maxWidth: '440px',
-            background: '#15191E',
-            border: '1px solid #262C33',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
             borderRadius: '10px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3)',
+            boxShadow: 'var(--shadow-xl)',
             padding: '2.5rem 2.25rem',
           }}
         >
@@ -303,15 +303,15 @@ const Login = () => {
                 width: '42px',
                 height: '42px',
                 borderRadius: '8px',
-                background: '#3B82F6',
+                background: 'var(--brand-blue)',
                 color: '#ffffff',
                 marginBottom: '0.5rem',
               }}
             >
               <Terminal size={22} />
             </div>
-            <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#F5F7FA' }}>
-              MAVI <span style={{ color: '#3B82F6' }}>Linking</span>
+            <div style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-primary)' }}>
+              MAVI <span style={{ color: 'var(--brand-blue)' }}>Linking</span>
             </div>
           </div>
 
@@ -320,14 +320,14 @@ const Login = () => {
               style={{
                 fontSize: '1.5rem',
                 fontWeight: 700,
-                color: '#F5F7FA',
+                color: 'var(--text-primary)',
                 letterSpacing: '-0.02em',
                 margin: '0 0 0.4rem 0',
               }}
             >
               Sign In
             </h2>
-            <p style={{ color: '#9CA3AF', fontSize: '0.875rem', margin: 0 }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
               Enter your credentials to access your ERP portal.
             </p>
           </div>
@@ -337,7 +337,7 @@ const Login = () => {
               style={{
                 background: 'rgba(239, 68, 68, 0.15)',
                 border: '1px solid rgba(239, 68, 68, 0.3)',
-                color: '#F87171',
+                color: 'var(--accent-red)',
                 padding: '0.75rem 1rem',
                 borderRadius: '6px',
                 marginBottom: '1.5rem',
@@ -353,7 +353,7 @@ const Login = () => {
 
           <form onSubmit={handleSubmit}>
             <div className="input-group" style={{ marginBottom: '1.25rem' }}>
-              <label className="input-label" style={{ fontWeight: 600, color: '#F5F7FA' }}>
+              <label className="input-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                 Email Address, PRN, or MAVI ID
               </label>
               <input
@@ -366,9 +366,9 @@ const Login = () => {
                 disabled={submitting}
                 autoComplete="username"
                 style={{
-                  background: '#11151A',
-                  borderColor: '#262C33',
-                  color: '#F5F7FA',
+                  background: 'var(--bg-input)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-primary)',
                   borderRadius: '6px',
                   padding: '0.65rem 0.85rem',
                   fontSize: '0.9rem',
@@ -385,7 +385,7 @@ const Login = () => {
                   marginBottom: '0.4rem',
                 }}
               >
-                <label className="input-label" style={{ margin: 0, fontWeight: 600, color: '#F5F7FA' }}>
+                <label className="input-label" style={{ margin: 0, fontWeight: 600, color: 'var(--text-primary)' }}>
                   Password
                 </label>
                 <button
@@ -402,7 +402,7 @@ const Login = () => {
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#3B82F6',
+                    color: 'var(--brand-blue)',
                     fontSize: '0.8rem',
                     cursor: 'pointer',
                     fontWeight: 600,
@@ -420,9 +420,9 @@ const Login = () => {
                 disabled={submitting}
                 autoComplete="current-password"
                 style={{
-                  background: '#11151A',
-                  borderColor: '#262C33',
-                  color: '#F5F7FA',
+                  background: 'var(--bg-input)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-primary)',
                   borderRadius: '6px',
                   padding: '0.65rem 0.85rem',
                   fontSize: '0.9rem',
@@ -455,17 +455,17 @@ const Login = () => {
             style={{
               marginTop: '1.75rem',
               paddingTop: '1.25rem',
-              borderTop: '1px solid #262C33',
+              borderTop: '1px solid var(--border-color)',
               textAlign: 'center',
               fontSize: '0.875rem',
-              color: '#9CA3AF',
+              color: 'var(--text-secondary)',
             }}
           >
             Don't have an institutional account?{' '}
             <Link
               to="/register"
               style={{
-                color: '#3B82F6',
+                color: 'var(--brand-blue)',
                 fontWeight: 600,
                 textDecoration: 'none',
               }}
@@ -497,10 +497,10 @@ const Login = () => {
             style={{
               width: '100%',
               maxWidth: '460px',
-              background: '#15191E',
+              background: 'var(--bg-card)',
               borderRadius: '10px',
-              border: '1px solid #262C33',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4)',
+              border: '1px solid var(--border-color)',
+              boxShadow: 'var(--shadow-xl)',
               padding: '2rem',
             }}
           >
@@ -517,13 +517,13 @@ const Login = () => {
                   margin: 0,
                   fontSize: '1.15rem',
                   fontWeight: 700,
-                  color: '#F5F7FA',
+                  color: 'var(--text-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
                 }}
               >
-                <KeyRound size={20} style={{ color: '#3B82F6' }} /> Account Recovery
+                <KeyRound size={20} style={{ color: 'var(--brand-blue)' }} /> Account Recovery
               </h3>
               <button
                 type="button"
@@ -531,7 +531,7 @@ const Login = () => {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#9CA3AF',
+                  color: 'var(--text-muted)',
                   cursor: 'pointer',
                   padding: '0.25rem',
                 }}
@@ -545,7 +545,7 @@ const Login = () => {
                 style={{
                   background: 'rgba(239, 68, 68, 0.15)',
                   border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#F87171',
+                  color: 'var(--accent-red)',
                   padding: '0.75rem',
                   borderRadius: '6px',
                   marginBottom: '1rem',
@@ -561,7 +561,7 @@ const Login = () => {
                 style={{
                   background: 'rgba(34, 197, 94, 0.15)',
                   border: '1px solid rgba(34, 197, 94, 0.3)',
-                  color: '#4ADE80',
+                  color: 'var(--accent-emerald, #4ADE80)',
                   padding: '0.75rem',
                   borderRadius: '6px',
                   marginBottom: '1rem',
@@ -574,12 +574,12 @@ const Login = () => {
 
             {forgotStep === 1 ? (
               <form onSubmit={handleRequestRecovery}>
-                <p style={{ fontSize: '0.85rem', color: '#9CA3AF', marginBottom: '1.25rem', lineHeight: '1.5' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: '1.5' }}>
                   Enter your registered institutional email address to receive password recovery instructions and a 6-digit OTP code.
                 </p>
 
                 <div className="input-group">
-                  <label className="input-label" style={{ fontWeight: 600, color: '#F5F7FA' }}>Registered Institutional Email</label>
+                  <label className="input-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Registered Institutional Email</label>
                   <input
                     type="email"
                     className="input-field"
@@ -588,7 +588,7 @@ const Login = () => {
                     onChange={(e) => setForgotEmail(e.target.value)}
                     required
                     disabled={sendingForgot}
-                    style={{ background: '#11151A', borderColor: '#262C33', color: '#F5F7FA', borderRadius: '6px' }}
+                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px' }}
                   />
                 </div>
 
@@ -613,12 +613,12 @@ const Login = () => {
               </form>
             ) : (
               <form onSubmit={handleExecuteReset}>
-                <p style={{ fontSize: '0.85rem', color: '#9CA3AF', marginBottom: '1.25rem', lineHeight: '1.5' }}>
-                  Enter the 6-digit OTP sent to <strong style={{ color: '#F5F7FA' }}>{forgotEmail}</strong> and specify your new password.
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: '1.5' }}>
+                  Enter the 6-digit OTP sent to <strong style={{ color: 'var(--text-primary)' }}>{forgotEmail}</strong> and specify your new password.
                 </p>
 
                 <div className="input-group">
-                  <label className="input-label" style={{ fontWeight: 600, color: '#F5F7FA' }}>6-Digit Recovery OTP</label>
+                  <label className="input-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>6-Digit Recovery OTP</label>
                   <input
                     type="text"
                     className="input-field"
@@ -627,12 +627,12 @@ const Login = () => {
                     onChange={(e) => setForgotOtp(e.target.value)}
                     required
                     disabled={sendingForgot}
-                    style={{ background: '#11151A', borderColor: '#262C33', color: '#F5F7FA', borderRadius: '6px' }}
+                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px' }}
                   />
                 </div>
 
                 <div className="input-group">
-                  <label className="input-label" style={{ fontWeight: 600, color: '#F5F7FA' }}>New Password</label>
+                  <label className="input-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>New Password</label>
                   <PasswordInput
                     className="input-field"
                     placeholder="Min 6 characters"
@@ -641,7 +641,7 @@ const Login = () => {
                     required
                     disabled={sendingForgot}
                     autoComplete="new-password"
-                    style={{ background: '#11151A', borderColor: '#262C33', color: '#F5F7FA', borderRadius: '6px' }}
+                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px' }}
                   />
                 </div>
 

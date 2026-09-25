@@ -12,7 +12,7 @@ const SuperAdminRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#09090b', color: '#a1a1aa' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
         <div style={{ textAlign: 'center' }}>
           <div className="animate-pulse" style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)', margin: '0 auto 1rem' }} />
           <p style={{ color: '#ef4444', fontWeight: '600' }}>Verifying Super Admin Governance Credentials...</p>

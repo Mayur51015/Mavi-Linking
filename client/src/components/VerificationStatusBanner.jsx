@@ -61,7 +61,7 @@ const VerificationStatusBanner = () => {
 
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: '#ffffff' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-primary)' }}>
                   {isRejected ? '🔴 Account Verification Rejected' : '🟡 Account Verification Pending'}
                 </h3>
                 <span
@@ -73,35 +73,35 @@ const VerificationStatusBanner = () => {
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     background: isRejected ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)',
-                    color: isRejected ? '#f87171' : '#fde047',
+                    color: isRejected ? 'var(--accent-red)' : 'var(--accent-amber)',
                   }}
                 >
                   {isRejected ? 'Rejected' : 'Pending Admin Verification'}
                 </span>
               </div>
 
-              <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.875rem', color: '#a1a1aa', lineHeight: '1.5' }}>
+              <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
                 {isRejected
                   ? (user.rejectionReason || 'Your institutional account verification was not approved by your administrator. Please contact your institution administrator.')
                   : 'Your account has been created successfully! Your institutional information is currently being reviewed by your administrator. Some features will become available after your account is approved.'}
               </p>
 
               {/* Institutional Specs */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '0.85rem', fontSize: '0.78rem', color: '#d4d4d8' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '0.85rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                 <div>
-                  <span style={{ color: '#71717a' }}>MAVI ID: </span>
-                  <span style={{ fontFamily: 'monospace', fontWeight: '700', color: '#c084fc' }}>{user.maviId || 'N/A'}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>MAVI ID: </span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: '700', color: 'var(--accent-purple)' }}>{user.maviId || 'N/A'}</span>
                 </div>
                 {user.prn && (
                   <div>
-                    <span style={{ color: '#71717a' }}>PRN: </span>
-                    <span style={{ fontWeight: '700', color: '#ffffff' }}>{user.prn}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>PRN: </span>
+                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{user.prn}</span>
                   </div>
                 )}
                 {user.university?.name && (
                   <div>
-                    <span style={{ color: '#71717a' }}>Institution: </span>
-                    <span style={{ fontWeight: '600', color: '#ffffff' }}>{user.university.name}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>Institution: </span>
+                    <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{user.university.name}</span>
                   </div>
                 )}
               </div>
@@ -112,9 +112,9 @@ const VerificationStatusBanner = () => {
             onClick={handleRefresh}
             disabled={refreshing}
             style={{
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: '#ffffff',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
               padding: '0.55rem 1rem',
               borderRadius: '10px',
               fontSize: '0.82rem',
@@ -134,7 +134,7 @@ const VerificationStatusBanner = () => {
 
         {/* 4-Step Verification Tracker */}
         <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: `1px solid ${isRejected ? 'rgba(239, 68, 68, 0.15)' : 'rgba(234, 179, 8, 0.15)'}` }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
             Verification Progress
           </div>
 
@@ -153,7 +153,7 @@ const VerificationStatusBanner = () => {
             >
               <CheckCircle2 size={16} style={{ color: '#4ade80', flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#ffffff' }}>Account Created</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>Account Created</div>
                 <div style={{ fontSize: '0.68rem', color: '#4ade80' }}>Completed</div>
               </div>
             </div>
@@ -170,10 +170,10 @@ const VerificationStatusBanner = () => {
                 gap: '0.5rem',
               }}
             >
-              {user.emailVerified ? <CheckCircle2 size={16} style={{ color: '#4ade80', flexShrink: 0 }} /> : <Clock size={16} style={{ color: '#facc15', flexShrink: 0 }} />}
+              {user.emailVerified ? <CheckCircle2 size={16} style={{ color: '#4ade80', flexShrink: 0 }} /> : <Clock size={16} style={{ color: 'var(--accent-amber)', flexShrink: 0 }} />}
               <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#ffffff' }}>Email Verified</div>
-                <div style={{ fontSize: '0.68rem', color: user.emailVerified ? '#4ade80' : '#facc15' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>Email Verified</div>
+                <div style={{ fontSize: '0.68rem', color: user.emailVerified ? '#4ade80' : 'var(--accent-amber)' }}>
                   {user.emailVerified ? 'Verified' : 'Pending'}
                 </div>
               </div>
@@ -191,10 +191,10 @@ const VerificationStatusBanner = () => {
                 gap: '0.5rem',
               }}
             >
-              {isRejected ? <ShieldAlert size={16} style={{ color: '#f87171', flexShrink: 0 }} /> : <Clock size={16} style={{ color: '#facc15', flexShrink: 0 }} />}
+              {isRejected ? <ShieldAlert size={16} style={{ color: 'var(--accent-red)', flexShrink: 0 }} /> : <Clock size={16} style={{ color: 'var(--accent-amber)', flexShrink: 0 }} />}
               <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#ffffff' }}>Admin Verification</div>
-                <div style={{ fontSize: '0.68rem', color: isRejected ? '#f87171' : '#facc15' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>Admin Verification</div>
+                <div style={{ fontSize: '0.68rem', color: isRejected ? 'var(--accent-red)' : 'var(--accent-amber)' }}>
                   {isRejected ? 'Rejected' : 'In Review'}
                 </div>
               </div>
@@ -203,8 +203,8 @@ const VerificationStatusBanner = () => {
             {/* Step 4: Full Access */}
             <div
               style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: '10px',
                 padding: '0.65rem 0.75rem',
                 display: 'flex',
@@ -213,10 +213,10 @@ const VerificationStatusBanner = () => {
                 opacity: 0.75,
               }}
             >
-              <Lock size={16} style={{ color: '#a1a1aa', flexShrink: 0 }} />
+              <Lock size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#a1a1aa' }}>Full Access</div>
-                <div style={{ fontSize: '0.68rem', color: '#71717a' }}>Locked</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)' }}>Full Access</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Locked</div>
               </div>
             </div>
           </div>

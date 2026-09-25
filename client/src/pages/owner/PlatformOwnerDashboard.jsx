@@ -672,7 +672,7 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                                 <span className="badge badge-primary" style={{ fontSize: '0.68rem', textTransform: 'uppercase' }}>
                                   {adm.role?.replace(/_/g, ' ')}
                                 </span>
-                                <span className="badge" style={{ fontSize: '0.68rem', background: '#3f3f46', color: '#e4e4e7' }}>
+                                <span className="badge" style={{ fontSize: '0.68rem', background: 'var(--bg-input)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
                                   {adm.adminScope || 'INSTITUTION'}
                                 </span>
                               </div>
@@ -680,8 +680,8 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                             <td style={{ padding: '0.75rem 1rem' }}>
                               {adm.institutionId ? (
                                 <div>
-                                  <span style={{ color: '#fde047', fontWeight: '600' }}>{adm.institutionId.name}</span>
-                                  {adm.departmentId && <div style={{ fontSize: '0.75rem', color: '#a1a1aa' }}>Dept: {adm.departmentId.name}</div>}
+                                  <span style={{ color: 'var(--accent-purple)', fontWeight: '600' }}>{adm.institutionId.name}</span>
+                                  {adm.departmentId && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Dept: {adm.departmentId.name}</div>}
                                 </div>
                               ) : (
                                 <span style={{ color: 'var(--text-muted)' }}>Global Scoped</span>
@@ -1305,11 +1305,11 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                     The administrator account for <strong>{inviteDeliveryResult.name || 'the administrator'}</strong> has been created successfully.
                   </p>
 
-                  <div style={{ background: '#09090b', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', margin: '1rem 0 1.5rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
+                  <div style={{ background: 'var(--bg-input)', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', margin: '1rem 0 1.5rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
                       {inviteDeliveryResult.emailSent ? 'An invitation email has been sent to:' : 'Failed to deliver invitation email to:'}
                     </div>
-                    <div style={{ fontSize: '1rem', fontWeight: '600', color: '#ffffff', wordBreak: 'break-all' }}>
+                    <div style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)', wordBreak: 'break-all' }}>
                       {inviteDeliveryResult.email}
                     </div>
                   </div>

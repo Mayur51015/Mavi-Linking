@@ -124,7 +124,7 @@ const TeacherAnnouncements = () => {
               background: 'rgba(255,255,255,0.02)',
               border: '1px solid var(--border-color)',
               borderRadius: '10px',
-              color: 'white',
+              color: 'var(--text-primary)',
               fontSize: '0.9rem',
               outline: 'none',
               transition: 'border-color 0.2s',
@@ -137,19 +137,19 @@ const TeacherAnnouncements = () => {
           onChange={(e) => { setDepartmentFilter(e.target.value); setPage(1); }}
           style={{
             padding: '0.625rem 1rem',
-            background: 'rgba(255,255,255,0.02)',
+            background: 'var(--bg-card)',
             border: '1px solid var(--border-color)',
             borderRadius: '10px',
-            color: 'white',
+            color: 'var(--text-primary)',
             fontSize: '0.9rem',
             outline: 'none',
             cursor: 'pointer',
             minWidth: '180px',
           }}
         >
-          <option value="" style={{ background: '#09090b' }}>All Departments</option>
+          <option value="" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>All Departments</option>
           {(user?.university?.department?.split(',') || []).map(d => d.trim()).filter(Boolean).map(d => (
-            <option key={d} value={d} style={{ background: '#09090b' }}>{d}</option>
+            <option key={d} value={d} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{d}</option>
           ))}
         </select>
       </div>
@@ -170,7 +170,7 @@ const TeacherAnnouncements = () => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.25rem', color: 'white' }}>{ann.title}</h3>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{ann.title}</h3>
                   <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       <Calendar size={14} /> {new Date(ann.createdAt).toLocaleDateString()}
@@ -253,18 +253,18 @@ const TeacherAnnouncements = () => {
                     onChange={(e) => setDepartment(e.target.value)}
                     style={{
                       padding: '0.75rem 1rem',
-                      background: '#09090b',
+                      background: 'var(--bg-input)',
                       border: '1px solid var(--border-color)',
                       borderRadius: '8px',
-                      color: 'white',
+                      color: 'var(--text-primary)',
                       fontSize: '0.95rem',
                       outline: 'none',
                       cursor: 'pointer',
                     }}
                   >
-                    <option value="All">All Departments</option>
+                    <option value="All" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>All Departments</option>
                     {(user?.university?.department?.split(',') || []).map(d => d.trim()).filter(Boolean).map(d => (
-                      <option key={d} value={d}>{d}</option>
+                      <option key={d} value={d} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{d}</option>
                     ))}
                   </select>
                 </div>
@@ -279,10 +279,10 @@ const TeacherAnnouncements = () => {
                     placeholder="e.g. Google Placement Drive Registration Deadline"
                     style={{
                       padding: '0.75rem 1rem',
-                      background: 'rgba(255,255,255,0.02)',
+                      background: 'var(--bg-input)',
                       border: '1px solid var(--border-color)',
                       borderRadius: '8px',
-                      color: 'white',
+                      color: 'var(--text-primary)',
                       fontSize: '0.95rem',
                       outline: 'none',
                     }}
@@ -299,10 +299,10 @@ const TeacherAnnouncements = () => {
                     placeholder="Provide full description, timings, requirements and link coordinates here..."
                     style={{
                       padding: '0.75rem 1rem',
-                      background: 'rgba(255,255,255,0.02)',
+                      background: 'var(--bg-input)',
                       border: '1px solid var(--border-color)',
                       borderRadius: '8px',
-                      color: 'white',
+                      color: 'var(--text-primary)',
                       fontSize: '0.95rem',
                       outline: 'none',
                       resize: 'vertical',

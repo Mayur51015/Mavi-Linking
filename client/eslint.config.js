@@ -20,6 +20,11 @@ export default defineConfig([
     rules: {
       'no-unused-vars': 'warn',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/globals': 'warn',
     },
   },
 ])

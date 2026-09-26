@@ -716,8 +716,9 @@ const Dashboard = () => {
         const text = await err.response.data.text();
         const json = JSON.parse(text);
         errorCode = json.code;
-        errorMsg = json.message;
-      } catch (_) { }
+      } catch (_) {
+        // ignore parse error and fall through
+      }
     } else {
       errorCode = err.response?.data?.code;
       errorMsg = err.response?.data?.message;

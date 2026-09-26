@@ -30,6 +30,7 @@ import {
   ShieldCheck,
   Download,
   ExternalLink,
+  Clock,
 } from 'lucide-react';
 import SuperAdminLayout from '../../layouts/SuperAdminLayout';
 import api from '../../api/axios';
@@ -38,9 +39,12 @@ import PasswordInput from '../../components/ui/PasswordInput';
 import UserLifecycleTable from '../../components/admin/UserLifecycleTable';
 import UserLifecycleModal from '../../components/admin/UserLifecycleModal';
 import { AuthContext } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
   const { user: currentUser } = useContext(AuthContext);
+  const toast = useToast();
   const location = useLocation();
   const navigate = useNavigate();
 

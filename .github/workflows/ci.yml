@@ -24,20 +24,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: client/package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
-      # Advisory for now: main currently has ~178 pre-existing ESLint errors
-      # (mostly unused React imports from the React 17+ JSX transform). Flip
-      # continue-on-error off once those are cleared, so new violations start
-      # failing the build.
       - name: Lint
         run: npm run lint
-        continue-on-error: true
 
       - name: Test
         run: npm run test
@@ -57,7 +52,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: server/package-lock.json
 

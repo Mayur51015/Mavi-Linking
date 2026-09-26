@@ -236,7 +236,12 @@ const createAdmin = async (req, res, next) => {
     }
 
     // Dispatch Invitation Email
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = (
+      process.env.CLIENT_URL ||
+      process.env.FRONTEND_URL ||
+      process.env.PUBLIC_APP_URL ||
+      'http://localhost:5173'
+    ).replace(/\/+$/, '');
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
@@ -282,7 +287,7 @@ const createAdmin = async (req, res, next) => {
         action: 'ADMIN_INVITATION_EMAIL_FAILED',
         institutionId: targetInst ? targetInst._id : null,
         details: { email: lowerEmail, error: emailResult.error },
-        result: 'FAILED',
+        result: 'FAILURE',
       });
     }
 
@@ -535,7 +540,12 @@ const resendAdminInvite = async (req, res, next) => {
     adminUser.invitedAt = new Date();
     await adminUser.save();
 
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = (
+      process.env.CLIENT_URL ||
+      process.env.FRONTEND_URL ||
+      process.env.PUBLIC_APP_URL ||
+      'http://localhost:5173'
+    ).replace(/\/+$/, '');
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
@@ -548,14 +558,18 @@ const resendAdminInvite = async (req, res, next) => {
       expiresHours: getAdminInvitationExpiryHours(),
     });
 
-    await AuditLog.create({
-      actorId: req.user._id,
-      targetUserId: adminUser._id,
-      action: 'ADMIN_INVITATION_RESENT',
-      institutionId: adminUser.institutionId?._id || adminUser.institutionId || null,
-      details: { email: adminUser.email, emailSent: emailResult.success },
-      result: emailResult.success ? 'SUCCESS' : 'FAILED',
-    });
+    try {
+      await AuditLog.create({
+        actorId: req.user._id,
+        targetUserId: adminUser._id,
+        action: 'ADMIN_INVITATION_RESENT',
+        institutionId: adminUser.institutionId?._id || adminUser.institutionId || null,
+        details: { email: adminUser.email, emailSent: emailResult.success },
+        result: emailResult.success ? 'SUCCESS' : 'FAILURE',
+      });
+    } catch (auditErr) {
+      console.warn('[AUDIT LOG WARNING] Could not save resend audit log:', auditErr.message);
+    }
 
     res.status(200).json({
       success: true,

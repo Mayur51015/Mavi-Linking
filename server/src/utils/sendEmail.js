@@ -27,26 +27,38 @@ const sendEmail = async ({ to, subject, html, text, templateName }) => {
     const emailHost = (process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
     const emailPort = parseInt(process.env.EMAIL_PORT || '587', 10);
     const emailUser = (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim();
-    const emailPass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').trim();
+    const rawPass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').trim();
+    // Normalize app password by stripping enclosing quotes and spaces if Gmail
+    const emailPass = emailHost.includes('gmail')
+      ? rawPass.replace(/^["']|["']$/g, '').replace(/\s+/g, '')
+      : rawPass.replace(/^["']|["']$/g, '');
 
     if (emailUser && emailPass) {
-      // Production / Development Gmail SMTP Transporter
-      transporter = nodemailer.createTransport({
-        host: emailHost,
-        port: emailPort,
-        secure: emailPort === 465, // true for 465, false for 587
-        family: 4, // Force IPv4 to prevent 15-20s connection timeout on dual-stack IPv6 networks
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
-        auth: {
-          user: emailUser,
-          pass: emailPass,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-      });
+      // Production / Development Gmail / SMTP Transporter
+      const isGmail = emailHost.includes('gmail') || process.env.EMAIL_SERVICE === 'gmail';
+      const transportConfig = isGmail && process.env.EMAIL_USE_SERVICE === 'true'
+        ? {
+            service: 'gmail',
+            auth: { user: emailUser, pass: emailPass },
+          }
+        : {
+            host: emailHost,
+            port: emailPort,
+            secure: emailPort === 465,
+            family: 4, // Force IPv4 to prevent 15-20s connection timeout on dual-stack IPv6 networks
+            connectionTimeout: 8000,
+            greetingTimeout: 8000,
+            socketTimeout: 10000,
+            auth: {
+              user: emailUser,
+              pass: emailPass,
+            },
+            tls: {
+              rejectUnauthorized: false,
+            },
+          };
+
+      transporter = nodemailer.createTransport(transportConfig);
     } else {
       // Test / Dev Ethereal Account Fallback
       console.warn('[EMAIL WARNING] SMTP credentials (EMAIL_USER & EMAIL_PASS) not set in .env. Attempting Ethereal test account transport...');

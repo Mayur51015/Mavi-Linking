@@ -1364,6 +1364,8 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                       <label className="input-label">Administrative Role *</label>
                       <select className="input-field" value={newAdmin.role} onChange={(e) => setNewAdmin({ ...newAdmin, role: e.target.value })} required>
                         <option value="institution_admin">Institution Admin</option>
+                        <option value="super_admin">Platform Super Admin</option>
+                        <option value="admin">Platform Operations Admin</option>
                         <option value="department_admin">Department Admin</option>
                         <option value="placement_admin">Placement & TPO Admin</option>
                         <option value="academic_admin">Academic & Exam Admin</option>

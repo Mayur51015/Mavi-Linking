@@ -1881,7 +1881,7 @@ const verifyAdminInvite = async (req, res, next) => {
           institutionId: user.institutionId?._id || user.institutionId || null,
           departmentId: user.departmentId?._id || user.departmentId || null,
           details: { email: user.email, role: user.role, expiredAt: user.invitationExpires },
-          result: 'FAILED',
+          result: 'FAILURE',
         });
       } catch (err) {}
 
@@ -2026,7 +2026,7 @@ const acceptAdminInvite = async (req, res, next) => {
           institutionId: user.institutionId || null,
           departmentId: user.departmentId || null,
           details: { email: user.email, role: user.role, expiredAt: user.invitationExpires },
-          result: 'FAILED',
+          result: 'FAILURE',
         });
       } catch (err) {}
 

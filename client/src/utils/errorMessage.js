@@ -25,6 +25,8 @@ export function getErrorMessage(error, fallback = 'Something went wrong. Please 
 
   // Status code default fallbacks
   switch (status) {
+    case 400:
+      return data?.message || 'Invalid request. Please check the submitted details and try again.';
     case 401:
       return 'Invalid email or password.';
     case 403:

@@ -94,6 +94,7 @@ const auditLogSchema = new mongoose.Schema(
         'ADMIN_INVITATION_RESENT',
         'ADMIN_INVITATION_ACCEPTED',
         'ADMIN_INVITATION_REVOKED',
+        'ADMIN_INVITATION_EXPIRED',
         'ADMIN_ASSIGNED_INSTITUTION_ADMIN',
         'ADMIN_ROLE_CHANGED',
         'USER_ROLE_CHANGED',
@@ -151,7 +152,7 @@ const auditLogSchema = new mongoose.Schema(
     },
     result: {
       type: String,
-      enum: ['SUCCESS', 'FAILURE', 'REJECTED'],
+      enum: ['SUCCESS', 'FAILURE', 'FAILED', 'REJECTED'],
       default: 'SUCCESS',
     },
   },

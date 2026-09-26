@@ -140,7 +140,7 @@ const createDepartmentAdmin = async (req, res, next) => {
           institutionId: targetInstId,
           departmentId: department._id,
           details: { email: lowerEmail, error: emailResult.error },
-          result: 'FAILED',
+          result: 'FAILURE',
         });
       }
 
@@ -283,7 +283,7 @@ const createDepartmentAdmin = async (req, res, next) => {
         institutionId: targetInstId,
         departmentId: department._id,
         details: { email: lowerEmail, error: emailResult.error },
-        result: 'FAILED',
+        result: 'FAILURE',
       });
     }
 

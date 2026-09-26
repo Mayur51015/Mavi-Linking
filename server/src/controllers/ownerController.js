@@ -590,7 +590,12 @@ const inviteAdmin = async (req, res, next) => {
     }
 
     // 5. Send Invitation Email
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = (
+      process.env.CLIENT_URL ||
+      process.env.FRONTEND_URL ||
+      process.env.PUBLIC_APP_URL ||
+      'http://localhost:5173'
+    ).replace(/\/+$/, '');
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
@@ -604,37 +609,41 @@ const inviteAdmin = async (req, res, next) => {
       expiresHours: expiryHours,
     });
 
-    // Audit Logging
-    await AuditLog.create({
-      actorId: req.user._id,
-      targetUserId: existingUser._id,
-      action: 'ADMIN_INVITATION_CREATED',
-      institutionId: targetInst ? targetInst._id : null,
-      departmentId: targetDept ? targetDept._id : null,
-      details: { role, scope, permissions },
-      result: 'SUCCESS',
-    });
-
-    if (emailResult.success) {
+    // Audit Logging (isolated so logging never blocks response)
+    try {
       await AuditLog.create({
         actorId: req.user._id,
         targetUserId: existingUser._id,
-        action: 'ADMIN_INVITATION_EMAIL_SENT',
+        action: 'ADMIN_INVITATION_CREATED',
         institutionId: targetInst ? targetInst._id : null,
         departmentId: targetDept ? targetDept._id : null,
-        details: { email: lowerEmail, messageId: emailResult.messageId },
+        details: { role, scope, permissions },
         result: 'SUCCESS',
       });
-    } else {
-      await AuditLog.create({
-        actorId: req.user._id,
-        targetUserId: existingUser._id,
-        action: 'ADMIN_INVITATION_EMAIL_FAILED',
-        institutionId: targetInst ? targetInst._id : null,
-        departmentId: targetDept ? targetDept._id : null,
-        details: { email: lowerEmail, error: emailResult.error },
-        result: 'FAILED',
-      });
+
+      if (emailResult.success) {
+        await AuditLog.create({
+          actorId: req.user._id,
+          targetUserId: existingUser._id,
+          action: 'ADMIN_INVITATION_EMAIL_SENT',
+          institutionId: targetInst ? targetInst._id : null,
+          departmentId: targetDept ? targetDept._id : null,
+          details: { email: lowerEmail, messageId: emailResult.messageId },
+          result: 'SUCCESS',
+        });
+      } else {
+        await AuditLog.create({
+          actorId: req.user._id,
+          targetUserId: existingUser._id,
+          action: 'ADMIN_INVITATION_EMAIL_FAILED',
+          institutionId: targetInst ? targetInst._id : null,
+          departmentId: targetDept ? targetDept._id : null,
+          details: { email: lowerEmail, error: emailResult.error },
+          result: 'FAILURE',
+        });
+      }
+    } catch (auditErr) {
+      console.warn('[AUDIT LOG WARNING] Could not save invitation audit log:', auditErr.message);
     }
 
     const userPayload = existingUser.toObject ? existingUser.toObject() : { ...existingUser };
@@ -841,7 +850,12 @@ const resendAdminInvite = async (req, res, next) => {
     adminUser.invitedAt = new Date();
     await adminUser.save();
 
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = (
+      process.env.CLIENT_URL ||
+      process.env.FRONTEND_URL ||
+      process.env.PUBLIC_APP_URL ||
+      'http://localhost:5173'
+    ).replace(/\/+$/, '');
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
@@ -855,15 +869,19 @@ const resendAdminInvite = async (req, res, next) => {
       expiresHours: getAdminInvitationExpiryHours(),
     });
 
-    await AuditLog.create({
-      actorId: req.user._id,
-      targetUserId: adminUser._id,
-      action: 'ADMIN_INVITATION_RESENT',
-      institutionId: adminUser.institutionId?._id || adminUser.institutionId || null,
-      departmentId: adminUser.departmentId?._id || adminUser.departmentId || null,
-      details: { email: adminUser.email, emailSent: emailResult.success },
-      result: emailResult.success ? 'SUCCESS' : 'FAILED',
-    });
+    try {
+      await AuditLog.create({
+        actorId: req.user._id,
+        targetUserId: adminUser._id,
+        action: 'ADMIN_INVITATION_RESENT',
+        institutionId: adminUser.institutionId?._id || adminUser.institutionId || null,
+        departmentId: adminUser.departmentId?._id || adminUser.departmentId || null,
+        details: { email: adminUser.email, emailSent: emailResult.success },
+        result: emailResult.success ? 'SUCCESS' : 'FAILURE',
+      });
+    } catch (auditErr) {
+      console.warn('[AUDIT LOG WARNING] Could not save resend invitation audit log:', auditErr.message);
+    }
 
     res.status(200).json({
       success: true,

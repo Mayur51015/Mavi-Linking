@@ -345,7 +345,12 @@ const assignInstitutionAdmin = async (req, res, next) => {
     );
 
     // Dispatch Invitation Email
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = (
+      process.env.CLIENT_URL ||
+      process.env.FRONTEND_URL ||
+      process.env.PUBLIC_APP_URL ||
+      'http://localhost:5173'
+    ).replace(/\/+$/, '');
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
@@ -358,41 +363,47 @@ const assignInstitutionAdmin = async (req, res, next) => {
       expiresHours: expiryHours,
     });
 
-    await ActivityLog.create({
-      userId: req.user._id,
-      action: 'ADMIN_ASSIGNED_INSTITUTION_ADMIN',
-      details: `Assigned ${targetUser.email} as Institution Admin for ${institution.name}`,
-      ipAddress: req.ip || '',
-      userAgent: req.headers['user-agent'] || '',
-    });
+    try {
+      await ActivityLog.create({
+        userId: req.user._id,
+        action: 'ADMIN_ASSIGNED_INSTITUTION_ADMIN',
+        details: `Assigned ${targetUser.email} as Institution Admin for ${institution.name}`,
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+      });
+    } catch (_) {}
 
-    await AuditLog.create({
-      actorId: req.user._id,
-      targetUserId: targetUser._id,
-      action: 'ADMIN_INVITATION_CREATED',
-      institutionId: institution._id,
-      details: { role: 'institution_admin', email: targetUser.email },
-      result: 'SUCCESS',
-    });
-
-    if (emailResult.success) {
+    try {
       await AuditLog.create({
         actorId: req.user._id,
         targetUserId: targetUser._id,
-        action: 'ADMIN_INVITATION_EMAIL_SENT',
+        action: 'ADMIN_INVITATION_CREATED',
         institutionId: institution._id,
-        details: { email: targetUser.email, messageId: emailResult.messageId },
+        details: { role: 'institution_admin', email: targetUser.email },
         result: 'SUCCESS',
       });
-    } else {
-      await AuditLog.create({
-        actorId: req.user._id,
-        targetUserId: targetUser._id,
-        action: 'ADMIN_INVITATION_EMAIL_FAILED',
-        institutionId: institution._id,
-        details: { email: targetUser.email, error: emailResult.error },
-        result: 'FAILED',
-      });
+
+      if (emailResult.success) {
+        await AuditLog.create({
+          actorId: req.user._id,
+          targetUserId: targetUser._id,
+          action: 'ADMIN_INVITATION_EMAIL_SENT',
+          institutionId: institution._id,
+          details: { email: targetUser.email, messageId: emailResult.messageId },
+          result: 'SUCCESS',
+        });
+      } else {
+        await AuditLog.create({
+          actorId: req.user._id,
+          targetUserId: targetUser._id,
+          action: 'ADMIN_INVITATION_EMAIL_FAILED',
+          institutionId: institution._id,
+          details: { email: targetUser.email, error: emailResult.error },
+          result: 'FAILURE',
+        });
+      }
+    } catch (auditErr) {
+      console.warn('[AUDIT LOG WARNING] Could not save institution admin audit log:', auditErr.message);
     }
 
     const userPayload = targetUser.toObject ? targetUser.toObject() : { ...targetUser };

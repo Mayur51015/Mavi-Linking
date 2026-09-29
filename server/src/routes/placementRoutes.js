@@ -25,6 +25,8 @@ router.put('/availability', requireRole('user', 'admin'), updateAvailability);
 
 // ─── Student Pipeline Routes ────────────────────────────────────────────────
 router.get('/student/pipelines', requireRole('user', 'admin'), getStudentPipelines);
+router.get('/my', requireRole('user', 'admin'), getStudentPipelines);
+router.get('/student', requireRole('user', 'admin'), getStudentPipelines);
 
 // ─── Recruiter Pipeline Routes ──────────────────────────────────────────────
 router.get('/stats', requireRole('recruiter', 'admin'), getPipelineStats);

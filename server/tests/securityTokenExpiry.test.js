@@ -130,6 +130,73 @@ describe('MAVI LINKING — 10-Minute Security Token Expiration & Purpose Isolati
     expect(expiredRes.body.code).toBe('INVITATION_EXPIRED');
   });
 
+  test('Invitation verification accepts fresh tokens and reports invalid, expired, revoked, and consumed states safely', async () => {
+    const makeInvitation = async (email, overrides = {}) => {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const user = await User.create({
+        name: 'Invitation Verification User',
+        email,
+        role: 'super_admin',
+        accountStatus: 'INVITED',
+        invitationToken: hashedToken,
+        invitationExpires: getSecurityTokenExpiresAt(),
+        ...overrides,
+      });
+      return { rawToken, user };
+    };
+
+    const { rawToken: validToken, user: validUser } = await makeInvitation(
+      `valid_${timestamp}_token_sec_test@example.com`
+    );
+    const validRes = await request(app).get(`/api/auth/verify-invitation/${validToken}`);
+    expect(validRes.statusCode).toBe(200);
+    expect(validRes.body.success).toBe(true);
+
+    const invalidRes = await request(app).get(`/api/auth/verify-invitation/${'a'.repeat(64)}`);
+    expect(invalidRes.statusCode).toBe(400);
+    expect(invalidRes.body.code).toBe('INVITATION_NOT_FOUND');
+
+    const { rawToken: expiredToken } = await makeInvitation(
+      `expired_${timestamp}_token_sec_test@example.com`,
+      { invitationExpires: new Date(Date.now() - 1000) }
+    );
+    const expiredRes = await request(app).get(`/api/auth/verify-invitation/${expiredToken}`);
+    expect(expiredRes.statusCode).toBe(400);
+    expect(expiredRes.body.code).toBe('INVITATION_EXPIRED');
+
+    const { rawToken: revokedToken } = await makeInvitation(
+      `revoked_${timestamp}_token_sec_test@example.com`,
+      { accountStatus: 'INVITATION_REVOKED' }
+    );
+    const revokedRes = await request(app).get(`/api/auth/verify-invitation/${revokedToken}`);
+    expect(revokedRes.statusCode).toBe(400);
+    expect(revokedRes.body.code).toBe('INVITATION_REVOKED');
+
+    const revokedAdminRes = await request(app).get(`/api/auth/verify-admin-invite/${revokedToken}`);
+    expect(revokedAdminRes.statusCode).toBe(400);
+    expect(revokedAdminRes.body.code).toBe('INVITATION_REVOKED');
+
+    const revokedActivationRes = await request(app)
+      .post('/api/auth/activate-account')
+      .send({ token: revokedToken, password: 'SecurePassword123' });
+    expect(revokedActivationRes.statusCode).toBe(400);
+    expect(revokedActivationRes.body.code).toBe('INVITATION_REVOKED');
+
+    const revokedAdminActivationRes = await request(app)
+      .post('/api/auth/accept-admin-invite')
+      .send({ token: revokedToken, password: 'SecurePassword123' });
+    expect(revokedAdminActivationRes.statusCode).toBe(400);
+    expect(revokedAdminActivationRes.body.code).toBe('INVITATION_REVOKED');
+
+    validUser.invitationToken = null;
+    validUser.invitationExpires = null;
+    await validUser.save();
+    const consumedRes = await request(app).get(`/api/auth/verify-invitation/${validToken}`);
+    expect(consumedRes.statusCode).toBe(400);
+    expect(consumedRes.body.code).toBe('INVITATION_NOT_FOUND');
+  });
+
   // ─── TEST 5: Password Reset Token & OTP Expire in 10 Minutes ───────────────
   test('TEST 5: Forgot password generates reset token & OTP valid for 10 minutes', async () => {
     const userEmail = `pwd_reset_${timestamp}_token_sec_test@example.com`;

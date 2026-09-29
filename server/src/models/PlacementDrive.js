@@ -18,6 +18,7 @@ const placementDriveSchema = new mongoose.Schema(
     },
     eligibility: {
       department: { type: [String], default: [] },
+      departments: { type: [String], default: [] },
       minScore: { type: Number, default: 0 },
       batch: { type: [String], default: [] },
     },

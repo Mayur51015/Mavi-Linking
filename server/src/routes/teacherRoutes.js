@@ -11,6 +11,7 @@ const {
   recommendStudent,
   getBatchAnalytics,
   exportPdfReport,
+  getTeacherCompanies,
   createPlacementDrive,
   getPlacementDrives,
   updatePlacementDrive,
@@ -45,6 +46,9 @@ router.get('/batch-analytics', getBatchAnalytics);
 
 // Report Generation
 router.get('/reports/export', exportPdfReport);
+
+// Registered Companies for Placement Drives
+router.get('/companies', getTeacherCompanies);
 
 // Placement Drives CRUD
 router.route('/drives')

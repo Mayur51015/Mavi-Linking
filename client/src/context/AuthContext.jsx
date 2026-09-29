@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { io } from 'socket.io-client';
-import api from '../api/axios';
+import api, { getBackendBaseUrl } from '../api/axios';
 
 export const AuthContext = createContext();
 
@@ -36,9 +36,22 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (userId && token) {
-      const isProd = import.meta.env.PROD || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
-      const defaultSocket = isProd ? 'https://mavi-server-4yvl.onrender.com' : 'http://localhost:5000';
-      const socketUrl = import.meta.env.VITE_SOCKET_URL || defaultSocket;
+      const isBrowser = typeof window !== 'undefined';
+      const isLocalHostname = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      const configuredSocket = import.meta.env.VITE_SOCKET_URL;
+
+      let socketUrl;
+      if (isBrowser && !isLocalHostname) {
+        // In production/deployed environments, never use localhost
+        if (configuredSocket && !configuredSocket.includes('localhost') && !configuredSocket.includes('127.0.0.1')) {
+          socketUrl = configuredSocket.replace(/\/+$/u, '');
+        } else {
+          socketUrl = getBackendBaseUrl();
+        }
+      } else {
+        socketUrl = configuredSocket || getBackendBaseUrl();
+      }
+
       console.log('Initializing socket connection to:', socketUrl);
       
       const newSocket = io(socketUrl, {
@@ -68,8 +81,14 @@ export const AuthProvider = ({ children }) => {
 
       newSocket.on('connect_error', (error) => {
         console.warn('Socket connection error:', error.message);
-        if (error.message && (error.message.includes('Authentication error') || error.message.includes('token') || error.message.includes('jwt'))) {
-          // Token is invalid/expired — stop hammering the server with polling
+        if (
+          error.message &&
+          (error.message.includes('Authentication error') ||
+            error.message.includes('token') ||
+            error.message.includes('jwt') ||
+            error.message.includes('Unauthorized'))
+        ) {
+          // Token is invalid/expired — stop hammering the server
           newSocket.disconnect();
         }
       });
@@ -81,9 +100,34 @@ export const AuthProvider = ({ children }) => {
         }
       });
 
+      // BFCache (Back-Forward Cache) handling
+      const handlePageHide = () => {
+        if (newSocket && newSocket.connected) {
+          newSocket.disconnect();
+        }
+      };
+
+      const handlePageShow = (event) => {
+        if (event.persisted && newSocket && !newSocket.connected) {
+          const currentToken = localStorage.getItem('token');
+          if (currentToken) {
+            newSocket.connect();
+          }
+        }
+      };
+
+      if (isBrowser) {
+        window.addEventListener('pagehide', handlePageHide);
+        window.addEventListener('pageshow', handlePageShow);
+      }
+
       setSocket(newSocket);
 
       return () => {
+        if (isBrowser) {
+          window.removeEventListener('pagehide', handlePageHide);
+          window.removeEventListener('pageshow', handlePageShow);
+        }
         console.log('Cleaning up socket connection:', newSocket.id);
         newSocket.disconnect();
       };

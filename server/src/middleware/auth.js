@@ -91,10 +91,15 @@ const protect = async (req, res, next) => {
     }
 
     // ─── Backward Compatibility: migrate old role names & sync roles array ─────
-    const roleMigration = { developer: 'user', professor: 'teacher' };
+    const roleMigration = { student: 'user', developer: 'user', professor: 'teacher' };
     if (roleMigration[user.role]) {
       user.role = roleMigration[user.role];
-      await User.updateOne({ _id: user._id }, { $set: { role: user.role } });
+      if (!Array.isArray(user.roles)) user.roles = [];
+      if (!user.roles.includes(user.role)) user.roles.push(user.role);
+      await User.updateOne(
+        { _id: user._id },
+        { $set: { role: user.role, roles: user.roles } }
+      );
     }
 
     if (!user.roles || user.roles.length === 0) {

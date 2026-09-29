@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const teacherService = require('../services/teacherService');
 const PlacementDrive = require('../models/PlacementDrive');
 const TeacherAnnouncement = require('../models/TeacherAnnouncement');
@@ -155,18 +156,90 @@ const getMentoringAlerts = async (req, res, next) => {
 
 // ─── Placement Drives CRUD ──────────────────────────────────────────────────
 
+/**
+ * @desc    Get registered companies for placement drives
+ * @route   GET /api/teacher/companies
+ * @access  Private (teacher, admin)
+ */
+const getTeacherCompanies = async (req, res, next) => {
+  try {
+    const companies = await Company.find()
+      .select('name logo website location industry hrContact')
+      .sort({ name: 1 });
+    res.status(200).json({ success: true, data: companies });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const createPlacementDrive = async (req, res, next) => {
   try {
     const { title, companyId, description, eligibility, date } = req.body;
+
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Drive title is required.',
+      });
+    }
+
+    if (!companyId || !mongoose.Types.ObjectId.isValid(companyId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select a valid company from the list.',
+      });
+    }
+
+    const companyExists = await Company.findById(companyId);
+    if (!companyExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'The selected company does not exist in the database.',
+      });
+    }
+
+    if (!date || isNaN(new Date(date).getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid drive date.',
+      });
+    }
+
+    // Normalize departments and eligibility
+    const rawDepts = eligibility?.departments || eligibility?.department || [];
+    const departments = Array.isArray(rawDepts)
+      ? rawDepts.map((d) => String(d).trim()).filter(Boolean)
+      : (typeof rawDepts === 'string' ? rawDepts.split(',').map((d) => d.trim()).filter(Boolean) : []);
+
+    const minScore = typeof eligibility?.minScore === 'number'
+      ? eligibility.minScore
+      : (Number(eligibility?.minScore) || 0);
+
+    const batch = Array.isArray(eligibility?.batch)
+      ? eligibility.batch
+      : (typeof eligibility?.batch === 'string' ? eligibility.batch.split(',').map((b) => b.trim()).filter(Boolean) : []);
+
+    const normalizedEligibility = {
+      department: departments,
+      departments,
+      minScore,
+      batch,
+    };
+
     const drive = await PlacementDrive.create({
-      title,
+      title: title.trim(),
       companyId,
-      description,
-      eligibility,
+      description: description || '',
+      eligibility: normalizedEligibility,
       date,
       createdBy: req.user.id,
     });
-    res.status(201).json({ success: true, data: drive });
+
+    const populatedDrive = await PlacementDrive.findById(drive._id)
+      .populate('companyId', 'name logo website location')
+      .populate('students', 'name email scores university placementStatus');
+
+    res.status(201).json({ success: true, data: populatedDrive || drive });
   } catch (error) {
     next(error);
   }
@@ -358,6 +431,7 @@ module.exports = {
   recommendStudent,
   getBatchAnalytics,
   exportPdfReport,
+  getTeacherCompanies,
   createPlacementDrive,
   getPlacementDrives,
   updatePlacementDrive,

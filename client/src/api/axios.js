@@ -5,17 +5,36 @@ import { notify } from '../context/ToastContext';
 // baseURL is set via VITE_API_URL env var. If the provided URL omits /api,
 // normalize it to avoid production 404s when the frontend and backend are hosted separately.
 const rawApiUrl = import.meta.env.VITE_API_URL;
-const isProd = import.meta.env.PROD || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
+const isBrowser = typeof window !== 'undefined';
+const isLocalHostname = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const isProd = import.meta.env.PROD || (isBrowser && !isLocalHostname);
 
 const DEFAULT_PROD_API = 'https://mavi-server-4yvl.onrender.com/api';
 const DEFAULT_DEV_API = 'http://localhost:5000/api';
 
-const apiBaseUrl = rawApiUrl
-  ? (() => {
+export const getApiBaseUrl = () => {
+  if (isBrowser && !isLocalHostname) {
+    // In production or deployed preview environments, never attempt to connect to localhost
+    if (rawApiUrl && !rawApiUrl.includes('localhost') && !rawApiUrl.includes('127.0.0.1')) {
       const trimmed = rawApiUrl.replace(/\/+$/u, '');
       return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
-    })()
-  : (isProd ? DEFAULT_PROD_API : DEFAULT_DEV_API);
+    }
+    return DEFAULT_PROD_API;
+  }
+
+  if (rawApiUrl) {
+    const trimmed = rawApiUrl.replace(/\/+$/u, '');
+    return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+  }
+
+  return isProd ? DEFAULT_PROD_API : DEFAULT_DEV_API;
+};
+
+export const getBackendBaseUrl = () => {
+  return getApiBaseUrl().replace(/\/api\/?$/u, '');
+};
+
+const apiBaseUrl = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: apiBaseUrl,
@@ -55,15 +74,15 @@ api.interceptors.response.use(
 
     // Auto-logout on 401 (expired/invalid token)
     if (error.response.status === 401) {
-      const token = localStorage.getItem('token');
-      if (token) {
-        localStorage.removeItem('token');
-        // Only redirect if not already on login/register page
-        const path = window.location.pathname;
-        if (path !== '/login' && path !== '/register') {
-          notify('warning', 'Your session has expired. Please log in again.');
-          window.location.href = '/login';
-        }
+      const hadToken = !!localStorage.getItem('token');
+      localStorage.removeItem('token');
+      const path = typeof window !== 'undefined' ? window.location.pathname : '';
+      const authPages = ['/login', '/register', '/verify-account', '/verify-email', '/pending-approval', '/activate-account', '/admin/login'];
+      const isAuthPage = authPages.some((p) => path === p || path.startsWith('/public/'));
+
+      if (hadToken && !isAuthPage && typeof window !== 'undefined') {
+        notify('warning', 'Your session has expired. Please log in again.');
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error);

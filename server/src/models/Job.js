@@ -21,6 +21,21 @@ const jobSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Job description is required'],
     },
+    type: {
+      type: String,
+      enum: ['Full-time', 'Part-time', 'Internship', 'Apprenticeship', 'Contract'],
+      default: 'Full-time',
+    },
+    workMode: {
+      type: String,
+      enum: ['Remote', 'Hybrid', 'On-site'],
+      default: 'On-site',
+    },
+    location: {
+      type: String,
+      default: 'Flexible',
+      trim: true,
+    },
     skills: {
       type: [String],
       default: [],
@@ -41,6 +56,22 @@ const jobSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    stipend: {
+      type: String,
+      default: '',
+    },
+    responsibilities: {
+      type: String,
+      default: '',
+    },
+    eligibility: {
+      type: String,
+      default: '',
+    },
+    deadline: {
+      type: Date,
+      default: null,
+    },
     status: {
       type: String,
       enum: ['open', 'closed'],
@@ -50,8 +81,12 @@ const jobSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-jobSchema.index({ recruiterId: 1 });
+jobSchema.index({ recruiterId: 1, status: 1 });
 jobSchema.index({ companyId: 1 });
-jobSchema.index({ status: 1 });
+jobSchema.index({ status: 1, deadline: 1 });
+jobSchema.index({ createdAt: -1 });
+jobSchema.index({ skills: 1 });
+jobSchema.index({ type: 1, workMode: 1 });
 
 module.exports = mongoose.model('Job', jobSchema);
+

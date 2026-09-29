@@ -70,7 +70,7 @@ module.exports = {
         return next(new Error('Authentication error: No token provided'));
       }
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_mavi_secret_key_2026');
         socket.user = decoded;
         next();
       } catch (err) {

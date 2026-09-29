@@ -19,7 +19,12 @@ const recruitmentPipelineSchema = new mongoose.Schema(
     },
     companyId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Company',
+      default: null,
+    },
+    jobId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Job',
       default: null,
     },
 
@@ -81,6 +86,7 @@ const recruitmentPipelineSchema = new mongoose.Schema(
 
 // ─── Indexes ────────────────────────────────────────────────────────────────
 recruitmentPipelineSchema.index({ studentId: 1, recruiterId: 1 });
+recruitmentPipelineSchema.index({ studentId: 1, jobId: 1 }, { unique: true, sparse: true });
 recruitmentPipelineSchema.index({ recruiterId: 1, status: 1 });
 recruitmentPipelineSchema.index({ studentId: 1, status: 1 });
 recruitmentPipelineSchema.index({ companyName: 1 });

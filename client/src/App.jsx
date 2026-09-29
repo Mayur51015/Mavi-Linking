@@ -152,7 +152,27 @@ const App = () => {
                 <StudentAvailability />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/applications" element={
+              <ProtectedRoute roles={['user', 'admin']}>
+                <StudentAvailability />
+              </ProtectedRoute>
+            } />
+            <Route path="/applications" element={
+              <ProtectedRoute roles={['user', 'admin']}>
+                <StudentAvailability />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/jobs" element={
+              <ProtectedRoute roles={['user', 'admin']}>
+                <StudentJobs />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/opportunities" element={
+              <ProtectedRoute roles={['user', 'admin']}>
+                <StudentJobs />
+              </ProtectedRoute>
+            } />
+            <Route path="/opportunities" element={
               <ProtectedRoute roles={['user', 'admin']}>
                 <StudentJobs />
               </ProtectedRoute>

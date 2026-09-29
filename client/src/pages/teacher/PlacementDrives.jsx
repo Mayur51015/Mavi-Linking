@@ -25,18 +25,16 @@ const PlacementDrives = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [driveRes, studentRes] = await Promise.all([
+      const [driveRes, studentRes, companyRes] = await Promise.all([
         api.get('/teacher/drives'),
         api.get('/teacher/students?limit=100'),
+        api.get('/teacher/companies').catch(() => ({ data: { data: [] } })),
       ]);
       setDrives(driveRes.data.data || []);
-      setStudents(studentRes.data.data.students || []);
-      
-      // Load mock/real company list for selector
-      const companyRes = await api.get('/recruiter/company').catch(() => ({ data: { data: [] } }));
-      setCompanies(Array.isArray(companyRes.data.data) ? companyRes.data.data : [companyRes.data.data].filter(Boolean));
+      setStudents(studentRes.data.data?.students || studentRes.data.data || []);
+      setCompanies(companyRes.data.data || []);
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching placement drive data:', err);
     } finally {
       setLoading(false);
     }
@@ -61,12 +59,18 @@ const PlacementDrives = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.companyId || formData.companyId === 'mock') {
+      alert('Please select a valid partner company from the list.');
+      return;
+    }
     try {
       const payload = {
         ...formData,
         eligibility: {
-          minScore: parseInt(formData.eligibility.minScore),
-          departments: formData.eligibility.departments.split(',').map(d => d.trim()),
+          minScore: parseInt(formData.eligibility.minScore, 10) || 0,
+          departments: formData.eligibility.departments
+            ? formData.eligibility.departments.split(',').map(d => d.trim()).filter(Boolean)
+            : [],
         },
       };
       await api.post('/teacher/drives', payload);
@@ -74,8 +78,9 @@ const PlacementDrives = () => {
       setShowForm(false);
       fetchData();
     } catch (err) {
-      console.error(err);
-      alert('Failed to publish placement drive.');
+      console.error('Placement drive creation error:', err);
+      const safeErrorMsg = err.response?.data?.message || 'Failed to publish placement drive. Please check your inputs.';
+      alert(safeErrorMsg);
     }
   };
 
@@ -135,37 +140,43 @@ const PlacementDrives = () => {
             <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>Schedule Recruitment Drive</h3>
             <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div className="input-group" style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
-                <label className="input-label">Drive Title *</label>
-                <input type="text" className="input-field" name="title" value={formData.title} onChange={handleChange} required />
+                <label className="input-label" htmlFor="drive-title">Drive Title *</label>
+                <input id="drive-title" type="text" className="input-field" name="title" value={formData.title} onChange={handleChange} required />
               </div>
 
               <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label">Hosting Company *</label>
-                <select className="input-field" name="companyId" value={formData.companyId} onChange={handleChange} required>
-                  <option value="">Select Company</option>
-                  {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                  {companies.length === 0 && <option value="mock">Google (Default Recruiter)</option>}
+                <label className="input-label" htmlFor="drive-company">Hosting Company *</label>
+                <select id="drive-company" className="input-field" name="companyId" value={formData.companyId} onChange={handleChange} required>
+                  <option value="">Select Hosting Company</option>
+                  {companies.map(c => (
+                    <option key={c._id} value={c._id}>
+                      {c.name} {c.location ? `(${c.location})` : ''}
+                    </option>
+                  ))}
+                  {companies.length === 0 && (
+                    <option value="" disabled>No registered companies found</option>
+                  )}
                 </select>
               </div>
 
               <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label">Scheduled Date *</label>
-                <input type="date" className="input-field" name="date" value={formData.date} onChange={handleChange} required />
+                <label className="input-label" htmlFor="drive-date">Scheduled Date *</label>
+                <input id="drive-date" type="date" className="input-field" name="date" value={formData.date} onChange={handleChange} required />
               </div>
 
               <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label">Cutoff Score *</label>
-                <input type="number" className="input-field" name="minScore" value={formData.eligibility.minScore} onChange={handleEligibilityChange} required />
+                <label className="input-label" htmlFor="drive-min-score">Cutoff Score *</label>
+                <input id="drive-min-score" type="number" className="input-field" name="minScore" value={formData.eligibility.minScore} onChange={handleEligibilityChange} required />
               </div>
 
               <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label">Eligible Departments (comma separated) *</label>
-                <input type="text" className="input-field" placeholder="CSE, IT" name="departments" value={formData.eligibility.departments} onChange={handleEligibilityChange} required />
+                <label className="input-label" htmlFor="drive-departments">Eligible Departments (comma separated) *</label>
+                <input id="drive-departments" type="text" className="input-field" placeholder="CSE, IT" name="departments" value={formData.eligibility.departments} onChange={handleEligibilityChange} required />
               </div>
 
               <div className="input-group" style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
-                <label className="input-label">Drive Details & Guidelines *</label>
-                <textarea className="input-field" rows="3" name="description" value={formData.description} onChange={handleChange} required />
+                <label className="input-label" htmlFor="drive-description">Drive Details & Guidelines *</label>
+                <textarea id="drive-description" className="input-field" rows="3" name="description" value={formData.description} onChange={handleChange} required />
               </div>
 
               <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
@@ -216,7 +227,13 @@ const PlacementDrives = () => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Departments:</span>
-                  <span>{drive.eligibility?.departments?.join(', ')}</span>
+                  <span>
+                    {(Array.isArray(drive.eligibility?.departments) && drive.eligibility.departments.length > 0)
+                      ? drive.eligibility.departments.join(', ')
+                      : (Array.isArray(drive.eligibility?.department) && drive.eligibility.department.length > 0)
+                        ? drive.eligibility.department.join(', ')
+                        : 'All Departments'}
+                  </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Assigned Candidates:</span>

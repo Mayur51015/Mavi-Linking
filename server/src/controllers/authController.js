@@ -1856,7 +1856,7 @@ const verifyAdminInvite = async (req, res, next) => {
       });
     }
 
-    if (user.accountStatus === 'REVOKED') {
+    if (user.accountStatus === 'INVITATION_REVOKED') {
       return res.status(400).json({
         success: false,
         code: 'INVITATION_REVOKED',
@@ -2001,7 +2001,7 @@ const acceptAdminInvite = async (req, res, next) => {
       });
     }
 
-    if (user.accountStatus === 'REVOKED') {
+    if (user.accountStatus === 'INVITATION_REVOKED') {
       return res.status(400).json({
         success: false,
         code: 'INVITATION_REVOKED',
@@ -2231,20 +2231,49 @@ const verifyInvitationToken = async (req, res, next) => {
   try {
     const { token } = req.params;
     if (!token) {
-      return res.status(400).json({ success: false, message: 'Invitation token is required.' });
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_TOKEN_REQUIRED',
+        message: 'An invitation token is required.',
+      });
     }
 
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const user = await User.findOne({
       invitationToken: hashedToken,
-      invitationExpires: { $gt: Date.now() },
-    }).populate('institutionId', 'name shortName domain');
+    })
+      .select('+invitationExpires +accountStatus +isDeleted')
+      .populate('institutionId', 'name shortName domain');
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        code: 'INVITATION_INVALID_OR_EXPIRED',
-        message: 'Invitation link is invalid or has expired. Please contact your administrator to resend your invitation.',
+        code: 'INVITATION_NOT_FOUND',
+        message: 'This invitation is invalid or no longer available. Please contact your administrator.',
+      });
+    }
+
+    if (user.isDeleted || user.accountStatus === 'PERMANENTLY_DELETED') {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_NOT_FOUND',
+        message: 'This invitation is invalid or no longer available. Please contact your administrator.',
+      });
+    }
+
+    if (user.accountStatus === 'INVITATION_REVOKED') {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_REVOKED',
+        message: 'This invitation has been revoked. Please use the latest invitation email.',
+      });
+    }
+
+    if (isTokenExpired(user.invitationExpires)) {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_EXPIRED',
+        message: 'This invitation has expired. Please ask your administrator to send a new invitation.',
       });
     }
 
@@ -2293,13 +2322,29 @@ const activateAccount = async (req, res, next) => {
     const user = await User.findOne({
       invitationToken: hashedToken,
       invitationExpires: { $gt: Date.now() },
-    }).select('+password +invitationToken');
+    }).select('+password +invitationToken +accountStatus +isDeleted');
 
     if (!user) {
       return res.status(400).json({
         success: false,
         code: 'INVITATION_INVALID_OR_EXPIRED',
         message: 'Invitation link is invalid or has expired. Please contact your administrator to resend your invitation.',
+      });
+    }
+
+    if (user.isDeleted || user.accountStatus === 'PERMANENTLY_DELETED') {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_NOT_FOUND',
+        message: 'This invitation is invalid or no longer available. Please contact your administrator.',
+      });
+    }
+
+    if (user.accountStatus === 'INVITATION_REVOKED') {
+      return res.status(400).json({
+        success: false,
+        code: 'INVITATION_REVOKED',
+        message: 'This invitation has been revoked. Please use the latest invitation email.',
       });
     }
 

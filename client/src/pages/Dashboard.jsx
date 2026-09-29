@@ -235,10 +235,21 @@ const Dashboard = () => {
   const [aiData, setAiData] = useState({ insight: null, dna: null, analytics: [] });
   const [generatingAI, setGeneratingAI] = useState(false);
 
+  const placementPendingApproval =
+    user?.role === 'user' &&
+    ['PENDING_ADMIN_APPROVAL', 'PENDING_VERIFICATION'].includes(user.accountStatus);
+
   const fetchDashboardData = useCallback(async () => {
+    const placementUnavailableMessage =
+      'Placement applications are available after your institution approves your account.';
+
     setLoadingDNA(true);
     setScoreStatus({ loading: true, error: false });
-    setApplicationsStatus({ loading: true, error: false });
+    setApplicationsStatus(
+      placementPendingApproval
+        ? { loading: false, error: true, errorMessage: placementUnavailableMessage }
+        : { loading: true, error: false }
+    );
     setJobsStatus({ loading: true, error: false });
     setRankStatus(prev => ({ ...prev, loading: true, error: false }));
     try {
@@ -268,11 +279,13 @@ const Dashboard = () => {
         api.get('/career/insights').catch(() => emptyFallback),
         api.get('/career/dna').catch(() => emptyFallback),
         api.get('/ai/analytics').catch(() => arrayFallback),
-        api.get('/placement/student/pipelines').catch((err) => {
-          console.warn('Failed to fetch pipelines:', err.message);
-          setApplicationsStatus({ loading: false, error: true });
-          return arrayFallback;
-        }),
+        placementPendingApproval
+          ? Promise.resolve(null)
+          : api.get('/placement/student/pipelines').catch((err) => {
+              console.warn('Failed to fetch pipelines:', err.message);
+              setApplicationsStatus({ loading: false, error: true });
+              return null;
+            }),
         api.get('/projects').catch(() => ({ data: { data: [], count: 0 } })),
         api.get('/announcements/my-college').catch(() => arrayFallback),
         api.get('/jobs').catch((err) => {
@@ -288,7 +301,7 @@ const Dashboard = () => {
         analytics: analyticsRes.data.data || []
       });
 
-      if (pipelineRes.data?.data !== undefined) {
+      if (pipelineRes?.data?.data !== undefined) {
         setPipelines(pipelineRes.data.data || []);
         setApplicationsStatus({ loading: false, error: false });
       }
@@ -305,7 +318,7 @@ const Dashboard = () => {
       setLoading(false);
       setLoadingDNA(false);
     }
-  }, []);
+  }, [placementPendingApproval]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -315,15 +328,21 @@ const Dashboard = () => {
   useEffect(() => {
     if (socket) {
       const onCareerUpdate = async () => {
-        console.log('Real-time career update received over Socket.IO');
+        console.log('Real-time career or recruitment update received over Socket.IO');
         await refreshUser();
         await fetchDashboardData();
       };
       socket.on('career_update', onCareerUpdate);
       socket.on('new_timeline_event', onCareerUpdate);
+      socket.on('pipeline_update', onCareerUpdate);
+      socket.on('job_updated', onCareerUpdate);
+      socket.on('notification', onCareerUpdate);
       return () => {
         socket.off('career_update', onCareerUpdate);
         socket.off('new_timeline_event', onCareerUpdate);
+        socket.off('pipeline_update', onCareerUpdate);
+        socket.off('job_updated', onCareerUpdate);
+        socket.off('notification', onCareerUpdate);
       };
     }
   }, [socket, refreshUser, fetchDashboardData]);
@@ -1087,6 +1106,7 @@ const Dashboard = () => {
                   pipelines={pipelines}
                   loading={applicationsStatus.loading}
                   error={applicationsStatus.error}
+                  errorMessage={applicationsStatus.errorMessage}
                   onRetry={fetchDashboardData}
                 />
                 <RecentOpportunitiesTable
@@ -1094,6 +1114,7 @@ const Dashboard = () => {
                   loading={jobsStatus.loading}
                   error={jobsStatus.error}
                   onRetry={fetchDashboardData}
+                  onApplySuccess={fetchDashboardData}
                   userSkills={user?.skillsList || user?.developerSkills || []}
                 />
                 <SkillProgressList />

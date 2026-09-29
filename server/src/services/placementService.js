@@ -148,6 +148,24 @@ const updatePipelineStatus = async (pipelineId, newStatus, updatedBy, note = '')
     metadata: { pipelineId: pipeline._id, companyName: pipeline.companyName, role: pipeline.role, status: newStatus },
   });
 
+  // Real-time socket emission for instant dashboard updates
+  try {
+    const { getIO } = require('../config/socket');
+    const io = getIO();
+    if (io) {
+      io.to(pipeline.studentId.toString()).emit('pipeline_update', {
+        action: 'status_updated',
+        pipeline,
+      });
+      io.to(pipeline.recruiterId.toString()).emit('pipeline_update', {
+        action: 'status_updated',
+        pipeline,
+      });
+    }
+  } catch (socketErr) {
+    // Silently ignore in tests / when socket is not initialized
+  }
+
   // Notify Teachers of status updates if placed or selected
   if (['Selected', 'Offer Sent', 'Offer Accepted', 'Placed', 'Joined'].includes(newStatus)) {
     try {
@@ -243,6 +261,7 @@ const getRecruiterPipelines = async (recruiterId, status) => {
 
   return RecruitmentPipeline.find(query)
     .populate('studentId', 'name username avatar scores university placementStatus isVerified')
+    .populate('jobId', 'title type workMode location package stipend deadline')
     .sort({ updatedAt: -1 });
 };
 
@@ -252,6 +271,8 @@ const getRecruiterPipelines = async (recruiterId, status) => {
 const getStudentPipelines = async (studentId) => {
   return RecruitmentPipeline.find({ studentId })
     .populate('recruiterId', 'name companyName')
+    .populate('jobId', 'title type workMode location package stipend deadline description skills')
+    .populate('companyId', 'name logo website industry location')
     .sort({ updatedAt: -1 });
 };
 

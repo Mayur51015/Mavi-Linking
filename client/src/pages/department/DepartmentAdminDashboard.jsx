@@ -94,7 +94,7 @@ const DepartmentAdminDashboard = () => {
       !search ||
       s.name?.toLowerCase().includes(search.toLowerCase()) ||
       s.email?.toLowerCase().includes(search.toLowerCase()) ||
-      (s.maviId && s.maviId.toLowerCase().includes(search.toLowerCase())) ||
+      (s.etxId && s.etxId.toLowerCase().includes(search.toLowerCase())) ||
       (s.prn && s.prn.toLowerCase().includes(search.toLowerCase()))
   );
 
@@ -233,7 +233,7 @@ const DepartmentAdminDashboard = () => {
                       <BarChart3 size={24} />
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Avg MAVI Score</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Avg EduTalentX Score</div>
                       <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--accent-emerald)' }}>{dashboardData?.metrics?.avgMaviScore || 0} pts</div>
                     </div>
                   </div>
@@ -291,7 +291,7 @@ const DepartmentAdminDashboard = () => {
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
                         <th style={{ padding: '1rem' }}>Student Name</th>
-                        <th style={{ padding: '1rem' }}>MAVI ID / PRN</th>
+                        <th style={{ padding: '1rem' }}>ETX ID / PRN</th>
                         <th style={{ padding: '1rem' }}>Overall Score</th>
                         <th style={{ padding: '1rem' }}>Status</th>
                       </tr>
@@ -304,7 +304,7 @@ const DepartmentAdminDashboard = () => {
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{s.email}</div>
                           </td>
                           <td style={{ padding: '1rem' }}>
-                            <div style={{ fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-purple)' }}>{s.maviId}</div>
+                            <div style={{ fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-purple)' }}>{s.etxId}</div>
                             <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>{s.prn || 'Pending'}</div>
                           </td>
                           <td style={{ padding: '1rem', fontWeight: 'bold', color: 'var(--accent-emerald)' }}>
@@ -358,7 +358,7 @@ const DepartmentAdminDashboard = () => {
                     <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>Average Score Breakdown</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>Overall MAVI Score</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>Overall EduTalentX Score</span>
                         <strong style={{ color: 'var(--accent-purple)' }}>{analytics?.averages?.overallScore || 0} pts</strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -408,7 +408,7 @@ const DepartmentAdminDashboard = () => {
                         <td style={{ padding: '1rem', fontWeight: 'bold' }}>#{item.rank}</td>
                         <td style={{ padding: '1rem' }}>
                           <div style={{ fontWeight: '600' }}>{item.user?.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{item.user?.maviId}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{item.user?.etxId}</div>
                         </td>
                         <td style={{ padding: '1rem' }}>
                           <span className="badge badge-primary">{item.scoreTier}</span>

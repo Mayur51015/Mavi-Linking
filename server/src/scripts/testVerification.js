@@ -26,7 +26,7 @@ function makeRequest(options, postData) {
 }
 
 async function runVerificationSecuritySuite() {
-  console.log('=== STARTING MAVI LINKING VERIFICATION SECURITY TEST SUITE ===\n');
+  console.log('=== STARTING EDUTALENTX VERIFICATION SECURITY TEST SUITE ===\n');
   const timestamp = Date.now();
   const testEmail = `student_test_${timestamp}@example.com`;
   const testPrn = `PRN_${timestamp}`;
@@ -136,8 +136,8 @@ async function runVerificationSecuritySuite() {
 
     if (unverifiedLoginRes.status === 403 && unverifiedLoginRes.data?.code === 'EMAIL_VERIFICATION_REQUIRED') {
       console.log('✅ Login correctly blocked with 403 EMAIL_VERIFICATION_REQUIRED');
-      userMaviId = unverifiedLoginRes.data?.data?.maviId;
-      console.log('   Preserved MAVI ID:', userMaviId);
+      userMaviId = unverifiedLoginRes.data?.data?.etxId;
+      console.log('   Preserved ETX ID:', userMaviId);
     } else {
       console.error('❌ Unexpected response on unverified login:', unverifiedLoginRes);
     }
@@ -175,7 +175,7 @@ async function runVerificationSecuritySuite() {
 
     // Connect DB directly to retrieve token for verification step
     console.log('\nTEST 6: Retrieving token & completing verification...');
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mavi_linking';
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/edutalentx';
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect(mongoUri);
     }
@@ -185,7 +185,7 @@ async function runVerificationSecuritySuite() {
     if (!dbUser || !dbUser.verificationToken) {
       console.error('❌ Could not retrieve hashed token from DB');
     } else {
-      console.log('   User found in DB with MAVI ID:', dbUser.maviId);
+      console.log('   User found in DB with ETX ID:', dbUser.etxId);
 
       // Verify email using the token
       const verifyRes = await makeRequest(

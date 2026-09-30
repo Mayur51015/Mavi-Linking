@@ -228,7 +228,7 @@ export default function UserLifecycleTable({
             <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
               <th style={{ padding: '1rem 0.75rem' }}>Name</th>
               <th style={{ padding: '1rem 0.75rem' }}>Email</th>
-              <th style={{ padding: '1rem 0.75rem' }}>MAVI ID</th>
+              <th style={{ padding: '1rem 0.75rem' }}>ETX ID</th>
               <th style={{ padding: '1rem 0.75rem' }}>Role</th>
               <th style={{ padding: '1rem 0.75rem' }}>Institution</th>
               <th style={{ padding: '1rem 0.75rem' }}>Department</th>
@@ -261,7 +261,7 @@ export default function UserLifecycleTable({
                   </td>
                   <td style={{ padding: '0.85rem 0.75rem' }}>
                     <span style={{ fontFamily: 'monospace', color: '#c084fc', fontWeight: '600', fontSize: '0.8rem' }}>
-                      {u.maviId || '—'}
+                      {u.etxId || '—'}
                     </span>
                   </td>
                   <td style={{ padding: '0.85rem 0.75rem' }}>

@@ -273,7 +273,7 @@ const createCheckoutSession = async (req, res, next) => {
         paymentRecordId: payment._id,
         amount: order.amount,
         currency: order.currency,
-        keyId: process.env.RAZORPAY_KEY_ID || provider.keyId || 'rzp_test_TQ0mLvJPyus2JW',
+        keyId: process.env.RAZORPAY_KEY_ID || provider.keyId,
         targetPlanCode,
         planVersion,
         institutionName: institution.name,
@@ -416,7 +416,7 @@ const verifyPayment = async (req, res, next) => {
       },
       lineItems: [
         {
-          description: `MAVI Linking ${targetPlanCode} v${verifiedVersion} Institutional Annual Subscription`,
+          description: `EduTalentX ${targetPlanCode} v${verifiedVersion} Institutional Annual Subscription`,
           amount: verifiedAmount,
           periodStart: subscription.currentPeriodStart,
           periodEnd: subscription.currentPeriodEnd,

@@ -26,6 +26,7 @@ import NotificationBell from '../NotificationBell';
 import ThemeToggle from '../ThemeToggle';
 import VerificationStatusBanner from '../VerificationStatusBanner';
 import VerificationModal from '../VerificationModal';
+import BrandLogo from '../BrandLogo';
 
 /**
  * AppShell — Enterprise B2B SaaS Application Shell
@@ -45,7 +46,7 @@ const AppShell = ({
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
-    return localStorage.getItem('mavi_sidebar_collapsed') === 'true';
+    return localStorage.getItem('etx_sidebar_collapsed') === 'true';
   });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -96,7 +97,7 @@ const AppShell = ({
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       const next = !prev;
-      localStorage.setItem('mavi_sidebar_collapsed', String(next));
+      localStorage.setItem('etx_sidebar_collapsed', String(next));
       return next;
     });
   };
@@ -107,7 +108,7 @@ const AppShell = ({
   };
 
   const publicUsername = user?.username || user?.platforms?.github?.username;
-  const maviIdDisplay = user?.maviId || (user?._id ? `MAVI-${user._id.slice(-8).toUpperCase()}` : '');
+  const etxIdDisplay = user?.etxId || (user?._id ? `ETX-${user._id.slice(-8).toUpperCase()}` : '');
 
   // Filter navigation items for search palette
   const filteredNavItems = searchQuery.trim()
@@ -147,14 +148,7 @@ const AppShell = ({
       <div
         className={`sidebar-overlay${sidebarOpen ? ' active' : ''}`}
         onClick={() => setSidebarOpen(false)}
-        style={{
-          display: sidebarOpen ? 'block' : 'none',
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.65)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 90,
-        }}
+        aria-hidden={!sidebarOpen}
       />
 
       {/* ─── Sidebar ──────────────────────────────────────────────────────── */}
@@ -183,47 +177,12 @@ const AppShell = ({
             minHeight: '36px',
           }}
         >
-          <Link
-            to="/"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.65rem',
-              textDecoration: 'none',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'var(--brand-blue)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                flexShrink: 0,
-                boxShadow: 'var(--shadow-xs)',
-              }}
-            >
-              <Terminal size={18} />
-            </div>
-            {!collapsed && (
-              <span
-                style={{
-                  fontFamily: 'Outfit, Inter, sans-serif',
-                  fontWeight: 800,
-                  fontSize: '1.15rem',
-                  letterSpacing: '-0.02em',
-                  color: 'var(--text-primary)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                MAVI <span style={{ color: 'var(--brand-blue)', fontWeight: 600 }}>Linking</span>
-              </span>
-            )}
-          </Link>
+          <BrandLogo
+            variant={collapsed ? 'icon' : 'full'}
+            size={30}
+            linkTo="/"
+            alt="EduTalentX"
+          />
 
           {/* Desktop Collapse Toggle */}
           <button
@@ -253,7 +212,6 @@ const AppShell = ({
             className="mobile-close-btn"
             onClick={() => setSidebarOpen(false)}
             aria-label="Close menu"
-            style={{ display: 'none' }}
           >
             <X size={20} />
           </button>
@@ -560,17 +518,6 @@ const AppShell = ({
               className="mobile-menu-btn"
               onClick={() => setSidebarOpen(true)}
               aria-label="Open navigation menu"
-              style={{
-                display: 'none',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '0.4rem',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-              }}
             >
               <Menu size={20} />
             </button>
@@ -578,7 +525,7 @@ const AppShell = ({
             {/* Desktop ERP Breadcrumb Path */}
             <nav aria-label="Breadcrumb" className="breadcrumb hide-mobile">
               <span className="breadcrumb-item">
-                {user?.institutionId?.name || user?.collegeName || 'MAVI Linking'}
+                {user?.institutionId?.name || user?.collegeName || 'EduTalentX'}
               </span>
               <span className="breadcrumb-sep">/</span>
               <span className="breadcrumb-item">
@@ -592,19 +539,7 @@ const AppShell = ({
 
             {/* Mobile View Title */}
             <h1
-              className="show-mobile"
-              style={{
-                display: 'none',
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                margin: 0,
-                fontFamily: 'Inter, sans-serif',
-                letterSpacing: '-0.01em',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
+              className="show-mobile dashboard-mobile-title"
             >
               {title || currentRole.label}
             </h1>
@@ -719,9 +654,9 @@ const AppShell = ({
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {user?.email}
                     </div>
-                    {maviIdDisplay && (
+                    {etxIdDisplay && (
                       <div style={{ fontFamily: 'monospace', fontSize: '0.675rem', color: 'var(--brand-blue)', marginTop: '0.25rem', fontWeight: 600 }}>
-                        {maviIdDisplay}
+                        {etxIdDisplay}
                       </div>
                     )}
                   </div>

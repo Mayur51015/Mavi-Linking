@@ -110,7 +110,7 @@ const DemoRequestModal = ({ isOpen, onClose }) => {
               <strong>{formData.institutionName || 'your institution'}</strong>.
             </p>
             <button onClick={handleReset} className="btn btn-primary btn-lg" style={{ width: '100%' }}>
-              Back to MAVI Linking
+              Back to EduTalentX
             </button>
           </div>
         ) : (
@@ -123,7 +123,7 @@ const DemoRequestModal = ({ isOpen, onClose }) => {
                 Request an Institution Demo
               </h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                Discover how MAVI Linking connects your students, faculty, departments, and recruiters in one intelligent operating platform.
+                Discover how EduTalentX connects your students, faculty, departments, and recruiters in one intelligent operating platform.
               </p>
             </div>
 

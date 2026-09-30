@@ -79,7 +79,7 @@ const CareerLabCard = () => {
             </div>
             <div>
               <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                MAVI Career Lab
+                EduTalentX Career Lab
               </h3>
             </div>
           </div>

@@ -282,7 +282,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
     e.preventDefault();
     if (!rejectingUser) return;
     try {
-      if (rejectingUser.maviId || rejectingUser.prn) {
+      if (rejectingUser.etxId || rejectingUser.prn) {
         await api.post(`/admin/prn-verifications/${rejectingUser._id}/reject`, { reason: rejectionReason });
       } else {
         await api.post(`/admin/role-requests/${rejectingUser._id}/reject`, { reason: rejectionReason });
@@ -554,7 +554,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                   <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
                     <input
                       type="text"
-                      placeholder="Search student by name, email, PRN, or MAVI ID..."
+                      placeholder="Search student by name, email, PRN, or ETX ID..."
                       className="input-field"
                       style={{ marginBottom: 0, paddingLeft: '2.5rem' }}
                       value={search}
@@ -708,7 +708,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                          <th style={{ padding: '0.75rem' }}>Student / MAVI ID</th>
+                          <th style={{ padding: '0.75rem' }}>Student / ETX ID</th>
                           <th style={{ padding: '0.75rem' }}>PRN / Faculty ID</th>
                           <th style={{ padding: '0.75rem' }}>Actions</th>
                         </tr>
@@ -718,7 +718,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                           <tr key={req._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                             <td style={{ padding: '0.75rem' }}>
                               <div style={{ fontWeight: '600' }}>{req.name}</div>
-                              <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--accent-purple)' }}>{req.maviId}</div>
+                              <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--accent-purple)' }}>{req.etxId}</div>
                             </td>
                             <td style={{ padding: '0.75rem', fontFamily: 'monospace', fontWeight: 'bold' }}>{req.prn || req.facultyId || 'Not Provided'}</td>
                             <td style={{ padding: '0.75rem' }}>
@@ -1131,15 +1131,15 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                     </div>
                     <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Admin ID:</span>
-                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-cyan)', fontWeight: 'bold' }}>{currentUser?.adminId || currentUser?.adminLoginId || 'MAVI-ADM-001'}</span>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-cyan)', fontWeight: 'bold' }}>{currentUser?.adminId || currentUser?.adminLoginId || 'ETX-ADM-001'}</span>
                     </div>
                     <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Tenant ID:</span>
                       <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)', fontWeight: 'bold' }}>{currentUser?.tenantId || currentUser?.institutionId?.tenantId || 'INST-SCOPED'}</span>
                     </div>
                     <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>MAVI Identity ID:</span>
-                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-emerald)' }}>{currentUser?.maviId}</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>ETX Identity ID:</span>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-emerald)' }}>{currentUser?.etxId}</span>
                     </div>
                     <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Roles & Privileges:</span>

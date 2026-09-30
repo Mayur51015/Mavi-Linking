@@ -22,7 +22,7 @@ const HeroSection = ({ onOpenDemoModal }) => {
 
       {/* Primary Brand Statement */}
       <p className="reveal" style={{ color: 'var(--text-secondary)', fontSize: '1.125rem', maxWidth: '680px', margin: '0 auto 2rem auto', lineHeight: 1.6 }}>
-        MAVI Linking connects student developer portfolios, higher-education institutions, and industry recruiters through verified skills, evidence-based career matching, and collaboration pipelines.
+        EduTalentX connects student developer portfolios, higher-education institutions, and industry recruiters through verified skills, evidence-based career matching, and collaboration pipelines.
       </p>
 
       {/* CTAs */}

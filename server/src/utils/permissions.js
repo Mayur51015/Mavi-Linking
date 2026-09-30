@@ -1,6 +1,6 @@
 /**
  /**
- * MAVI LINKING — CENTRALIZED PERMISSIONS & RBAC UTILITY
+ * EDUTALENTX — CENTRALIZED PERMISSIONS & RBAC UTILITY
  * Defines all granular system permissions, system role defaults,
  * and permission delegation rules.
  */

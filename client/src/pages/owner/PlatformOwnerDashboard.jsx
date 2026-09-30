@@ -31,7 +31,7 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
   const [securityEvents, setSecurityEvents] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [systemConfig, setSystemConfig] = useState({
-    platformName: 'MAVI Linking',
+    platformName: 'EduTalentX',
     maintenanceMode: false,
     allowSelfRegistration: true,
     requirePrnVerification: true,
@@ -426,7 +426,7 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
     const matchSearch = !userSearch ||
       u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
       u.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.maviId?.toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.etxId?.toLowerCase().includes(userSearch.toLowerCase()) ||
       u.prn?.toLowerCase().includes(userSearch.toLowerCase());
     const targetRole = userRoleFilter === 'student' ? 'user' : userRoleFilter;
     const matchRole = userRoleFilter === 'all' || u.role === targetRole;
@@ -660,7 +660,7 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                         return (
                           <tr key={adm._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                             <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#c084fc', fontWeight: 'bold' }}>
-                              {adm.adminId || adm.maviId}
+                              {adm.adminId || adm.etxId}
                             </td>
                             <td style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>
                               <div>{adm.name}</div>
@@ -774,7 +774,7 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
                   type="text"
                   className="input-field"
                   style={{ paddingLeft: '2.5rem' }}
-                  placeholder="Search by MAVI ID, PRN, Name, Email..."
+                  placeholder="Search by ETX ID, PRN, Name, Email..."
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                 />
@@ -1215,7 +1215,7 @@ const PlatformOwnerDashboard = ({ activeTab: propActiveTab }) => {
               <div style={{ display: 'grid', gap: '1rem', fontSize: '0.9rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#a1a1aa' }}>Owner ID</span>
-                  <span style={{ fontFamily: 'monospace', color: '#fde047', fontWeight: 'bold' }}>{user?.adminId || 'MAVI-OWNER-001'}</span>
+                  <span style={{ fontFamily: 'monospace', color: '#fde047', fontWeight: 'bold' }}>{user?.adminId || 'ETX-OWNER-001'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#a1a1aa' }}>Global Authority Scope</span>

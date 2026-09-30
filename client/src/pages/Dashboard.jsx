@@ -932,7 +932,7 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* 2. Career Score / MAVI Score */}
+                {/* 2. Career Score / EduTalentX Score */}
                 <div
                   onClick={() => setActiveTab('career')}
                   style={{
@@ -1861,12 +1861,12 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Protected Read-Only Identity Fields (MAVI ID & PRN) */}
+              {/* Protected Read-Only Identity Fields (ETX ID & PRN) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="input-group">
-                  <label className="input-label">MAVI ID (Permanent Canonical Identity)</label>
+                  <label className="input-label">ETX ID (Permanent Canonical Identity)</label>
                   <div className="input-field" style={{ background: 'var(--bg-subtle)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
-                    <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{user?.maviId || `MAVI-${user?._id?.slice(-8).toUpperCase()}`}</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{user?.etxId || `ETX-${user?._id?.slice(-8).toUpperCase()}`}</span>
                     <span style={{ fontSize: '0.7rem', color: '#3B82F6', display: 'flex', alignItems: 'center', gap: '0.2rem', fontWeight: 'bold' }}>
                       <Lock size={12} /> Permanent
                     </span>

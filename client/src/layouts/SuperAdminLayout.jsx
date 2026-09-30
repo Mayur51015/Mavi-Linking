@@ -6,7 +6,7 @@ import AppShell from '../components/shell/AppShell';
 const SuperAdminLayout = ({ children }) => {
   const { user } = useContext(AuthContext);
 
-  const superAdminId = user?.adminId || user?.maviId || `MAVI-SA-${user?._id?.slice(-6).toUpperCase()}`;
+  const superAdminId = user?.adminId || user?.etxId || `ETX-SA-${user?._id?.slice(-6).toUpperCase()}`;
 
   const quickActions = [
     ...(superAdminId

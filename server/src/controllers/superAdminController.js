@@ -70,7 +70,7 @@ const getAllAdmins = async (req, res, next) => {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
-        { maviId: { $regex: search, $options: 'i' } },
+        { etxId: { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -297,7 +297,7 @@ const createAdmin = async (req, res, next) => {
         senderId: req.user._id,
         type: 'general',
         title: 'Administrative Access Granted 🔑',
-        message: `You have been assigned ${targetRole.replace('_', ' ').toUpperCase()} access (Admin ID: ${finalAdminId}) on MAVI Linking.`,
+        message: `You have been assigned ${targetRole.replace('_', ' ').toUpperCase()} access (Admin ID: ${finalAdminId}) on EduTalentX.`,
       });
     } catch (_) {}
 
@@ -385,7 +385,7 @@ const getSecurityEvents = async (req, res, next) => {
 
     const [events, total] = await Promise.all([
       ActivityLog.find(query)
-        .populate('userId', 'name email role status maviId')
+        .populate('userId', 'name email role status etxId')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit)),
@@ -468,12 +468,12 @@ const getPlatformSettings = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: {
-        platformName: 'MAVI Linking',
+        platformName: 'EduTalentX',
         environment: process.env.NODE_ENV || 'production',
         requireEmailVerification: true,
         allowPublicRegistrations: true,
         defaultUserPlan: 'FREE',
-        supportEmail: 'support@mavilinking.com',
+        supportEmail: 'support@edutalentx.com',
         maxLoginAttempts: 5,
         sessionTimeoutMinutes: 120,
       },

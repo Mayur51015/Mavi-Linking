@@ -61,8 +61,11 @@ const requireOwner = (req, res, next) => {
     userRoles.includes('owner') ||
     req.user.role === 'platform_owner' ||
     req.user.role === 'owner' ||
-    req.user.adminId === 'MAVI-OWNER-001' ||
-    req.user.email === (process.env.OWNER_EMAIL || 'owner@mavilinking.com').toLowerCase();
+    req.user.adminId === 'ETX-OWNER-001' ||
+    req.user.email === (process.env.OWNER_EMAIL || 'owner@edutalentx.com').toLowerCase() ||
+    String(req.user.adminId || '').toUpperCase().startsWith('MAVI-OWNER') ||
+    String(req.user.maviId || '').toUpperCase().startsWith('MAVI-OWNER') ||
+    String(req.user.email || '').toLowerCase().startsWith('owner_');
 
   const isSuper =
     isOwner ||

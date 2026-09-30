@@ -376,7 +376,7 @@ const CareerLab = () => {
                 <FlaskConical size={20} />
               </div>
               <h1 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                MAVI Career Lab
+                EduTalentX Career Lab
               </h1>
               <span
                 style={{
@@ -444,9 +444,9 @@ const CareerLab = () => {
             }}
           >
             <div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>MAVI Score</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>EduTalentX Score</div>
               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {profileData.user.maviScore} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>/ 1000</span>
+                {profileData.user.etxScore} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>/ 1000</span>
               </div>
             </div>
             <div>

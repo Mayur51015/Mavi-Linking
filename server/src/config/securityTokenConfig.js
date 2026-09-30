@@ -3,7 +3,7 @@
  *
  * Enforces authoritative 10-minute maximum lifetime for all security-sensitive
  * email verification, account activation, administrative invitation, password setup,
- * password reset, and email change tokens across MAVI Linking.
+ * password reset, and email change tokens across EduTalentX.
  */
 
 const DEFAULT_SECURITY_TOKEN_EXPIRY_MINUTES = 10;

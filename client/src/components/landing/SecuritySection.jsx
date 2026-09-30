@@ -24,7 +24,7 @@ const SecuritySection = () => {
           Built for <span className="text-gradient">Institutional Trust.</span>
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '680px', margin: '0 auto', lineHeight: 1.65 }}>
-          Security, access control, and tenant isolation are built into the foundation of MAVI Linking.
+          Security, access control, and tenant isolation are built into the foundation of EduTalentX.
         </p>
       </div>
 

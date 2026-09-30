@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { Terminal, CheckCircle2, Clock, XCircle, RefreshCw, Mail, LogOut, ShieldAlert } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import api from '../api/axios';
+import BrandLogo from '../components/BrandLogo';
 
 const PendingApproval = () => {
   const { user, refreshUser, logout } = useContext(AuthContext);
@@ -44,10 +45,14 @@ const PendingApproval = () => {
         
         {/* Header Branding */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
-          <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-            <Terminal size={32} className="text-gradient" style={{ color: '#a855f7' }} />
-            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>MaVi Linking</span>
-          </Link>
+          <BrandLogo
+            variant="full"
+            size={40}
+            linkTo="/"
+            showTagline={true}
+            style={{ flexDirection: 'column', textAlign: 'center', gap: '0.65rem' }}
+            taglineStyle={{ textAlign: 'center', maxWidth: '300px' }}
+          />
         </div>
 
         {/* Status Icon Header */}
@@ -97,8 +102,8 @@ const PendingApproval = () => {
               <strong style={{ color: 'var(--text-primary)' }}>{user?.name || 'Student'}</strong>
             </div>
             <div>
-              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Permanent MAVI ID</span>
-              <strong style={{ color: 'var(--accent-purple)' }}>{user?.maviId || 'MAVI-PENDING'}</strong>
+              <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>Permanent ETX ID</span>
+              <strong style={{ color: 'var(--accent-purple)' }}>{user?.etxId || 'ETX-PENDING'}</strong>
             </div>
             <div>
               <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.75rem' }}>PRN / ZPRN</span>
@@ -149,7 +154,7 @@ const PendingApproval = () => {
           </button>
 
           <a
-            href={`mailto:support@mavilinking.com?subject=Account%20Approval%20Inquiry%20-${encodeURIComponent(user?.maviId || '')}`}
+            href={`mailto:support@edutalentx.com?subject=Account%20Approval%20Inquiry%20-${encodeURIComponent(user?.etxId || '')}`}
             style={{
               width: '100%',
               padding: '0.75rem',

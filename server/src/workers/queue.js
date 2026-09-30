@@ -1,7 +1,7 @@
 /**
  * Background Ingestion Queue configuration.
  *
- * Redis is an optional background job accelerator for MAVI Linking.
+ * Redis is an optional background job accelerator for EduTalentX.
  * If REDIS_URL or REDIS_URI is not provided, the queue degrades gracefully
  * to an asynchronous in-memory handler without throwing connection errors.
  */

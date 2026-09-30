@@ -11,7 +11,7 @@ const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('
 
 // Default in-memory platform system configuration fallback
 let globalSystemConfig = {
-  platformName: 'MAVI Linking',
+  platformName: 'EduTalentX',
   maintenanceMode: false,
   allowSelfRegistration: true,
   requirePrnVerification: true,
@@ -49,7 +49,7 @@ const getOwnerOverview = async (req, res, next) => {
       User.countDocuments({ role: 'recruiter' }),
       ActivityLog.countDocuments(),
       Institution.find().sort({ createdAt: -1 }).limit(5),
-      ActivityLog.find().sort({ createdAt: -1 }).limit(10).populate('userId', 'name email role maviId'),
+      ActivityLog.find().sort({ createdAt: -1 }).limit(10).populate('userId', 'name email role etxId'),
     ]);
 
     res.status(200).json({
@@ -423,7 +423,7 @@ const getAdmins = async (req, res, next) => {
         { name: searchRegex },
         { email: searchRegex },
         { adminId: searchRegex },
-        { maviId: searchRegex },
+        { etxId: searchRegex },
       ];
     }
 
@@ -987,7 +987,7 @@ const getUsers = async (req, res, next) => {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
-        { maviId: { $regex: search, $options: 'i' } },
+        { etxId: { $regex: search, $options: 'i' } },
         { prn: { $regex: search, $options: 'i' } },
       ];
     }
@@ -1187,7 +1187,7 @@ const getSecurityEvents = async (req, res, next) => {
     const events = await ActivityLog.find()
       .sort({ createdAt: -1 })
       .limit(100)
-      .populate('userId', 'name email role maviId adminId');
+      .populate('userId', 'name email role etxId adminId');
 
     res.status(200).json({
       success: true,
@@ -1279,7 +1279,7 @@ const getAuditLogs = async (req, res, next) => {
     const logs = await ActivityLog.find(filter)
       .sort({ createdAt: -1 })
       .limit(200)
-      .populate('userId', 'name email role maviId adminId');
+      .populate('userId', 'name email role etxId adminId');
 
     res.status(200).json({
       success: true,
@@ -1488,7 +1488,7 @@ const convertSuperAdminToStudent = async (req, res) => {
       departmentId: department._id,
       details: {
         prn: cleanPrn,
-        maviId: targetUser.maviId,
+        etxId: targetUser.etxId,
         reason: reason || 'Converted existing platform account to student account.',
       },
       result: 'SUCCESS',
@@ -1498,15 +1498,15 @@ const convertSuperAdminToStudent = async (req, res) => {
     try {
       await sendEmail({
         to: targetUser.email,
-        subject: 'Your MAVI Linking Account Role Has Been Changed',
+        subject: 'Your EduTalentX Account Role Has Been Changed',
         html: `
           <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #6366f1;">MAVI Linking — Account Role Updated</h2>
+            <h2 style="color: #6366f1;">EduTalentX — Account Role Updated</h2>
             <p>Hello <strong>${targetUser.name}</strong>,</p>
-            <p>Your MAVI Linking account role has been updated by an administrator.</p>
+            <p>Your EduTalentX account role has been updated by an administrator.</p>
             <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 15px 0;">
               <p><strong>New Role:</strong> Student</p>
-              <p><strong>MAVI ID:</strong> ${targetUser.maviId}</p>
+              <p><strong>ETX ID:</strong> ${targetUser.etxId}</p>
               <p><strong>Institution:</strong> ${institution.name}</p>
               <p><strong>Department:</strong> ${department.name}</p>
               <p><strong>PRN:</strong> ${cleanPrn}</p>
@@ -1521,10 +1521,10 @@ const convertSuperAdminToStudent = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Account ${targetUser.name} (${targetUser.maviId}) successfully converted to Student.`,
+      message: `Account ${targetUser.name} (${targetUser.etxId}) successfully converted to Student.`,
       data: {
         _id: targetUser._id,
-        maviId: targetUser.maviId,
+        etxId: targetUser.etxId,
         name: targetUser.name,
         email: targetUser.email,
         role: targetUser.role,

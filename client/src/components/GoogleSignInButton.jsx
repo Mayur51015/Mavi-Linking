@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * Deprecated Component: Google authentication has been completely removed
- * from MAVI Linking in favor of MAVI-controlled identity & RBAC.
+ * from EduTalentX in favor of EduTalentX-controlled identity & RBAC.
  */
 const GoogleSignInButton = () => {
   return null;

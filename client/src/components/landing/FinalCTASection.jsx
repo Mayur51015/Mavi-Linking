@@ -35,7 +35,7 @@ const FinalCTASection = ({ onOpenDemoModal }) => {
           </h3>
 
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '680px', margin: '0 auto 2.5rem auto', lineHeight: 1.65 }}>
-            Join forward-thinking colleges and educational institutions transforming operations, student development, and placement intelligence with MAVI Linking.
+            Join forward-thinking colleges and educational institutions transforming operations, student development, and placement intelligence with EduTalentX.
           </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
@@ -48,7 +48,7 @@ const FinalCTASection = ({ onOpenDemoModal }) => {
           </div>
 
           <div style={{ fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-            MAVI Linking — Connecting Institutions. Empowering People. Enabling Intelligence.
+            EduTalentX — Connecting Institutions. Empowering People. Enabling Intelligence.
           </div>
         </div>
       </div>

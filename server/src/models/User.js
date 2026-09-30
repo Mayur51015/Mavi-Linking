@@ -37,8 +37,8 @@ const userSchema = new mongoose.Schema(
       minlength: [2, 'Name must be at least 2 characters'],
       maxlength: [50, 'Name cannot exceed 50 characters'],
     },
-    // Permanent MAVI ID (e.g., MAVI-8F3K7Q2P)
-    maviId: {
+    // Permanent ETX ID (e.g., ETX-8F3K7Q2P)
+    etxId: {
       type: String,
       unique: true,
       sparse: true,
@@ -551,28 +551,41 @@ userSchema.index({ facultyId: 1 });
 userSchema.index({ prnVerificationStatus: 1 });
 userSchema.index({ institutionId: 1, prn: 1 });
 
+userSchema.virtual('maviId').get(function () {
+  const rawValue = this.etxId || '';
+  if (!rawValue) return '';
+  return rawValue.toUpperCase().replace(/^ETX-/, 'MAVI-');
+}).set(function (value) {
+  if (!value) return;
+  const cleanValue = String(value).trim().toUpperCase();
+  this.etxId = cleanValue.startsWith('MAVI-') ? cleanValue.replace(/^MAVI-/, 'ETX-') : cleanValue.startsWith('ETX-') ? cleanValue : `ETX-${cleanValue.replace(/^ETX-/, '')}`;
+});
+
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
+
 // Helper to generate 8-char uppercase hex/alphanumeric code
-const generateMaviIdCode = () => {
-  return 'MAVI-' + require('crypto').randomBytes(4).toString('hex').toUpperCase();
+const generateEtxIdCode = () => {
+  return 'ETX-' + require('crypto').randomBytes(4).toString('hex').toUpperCase();
 };
 
-// ─── Pre-save: Auto-generate maviId, sync roles & hash password ───────────
+// ─── Pre-save: Auto-generate etxId, sync roles & hash password ───────────
 userSchema.pre('save', async function (next) {
   // Ensure googleId is unset if null or empty string to preserve sparse index
   if (this.googleId === null || this.googleId === '') {
     this.googleId = undefined;
   }
 
-  // Generate permanent MAVI ID if missing (with collision check)
-  if (!this.maviId) {
+  // Generate permanent ETX ID if missing (with collision check)
+  if (!this.etxId) {
     let isUnique = false;
     let attempts = 0;
     while (!isUnique && attempts < 10) {
       attempts++;
-      const candidate = generateMaviIdCode();
-      const existing = await mongoose.model('User').findOne({ maviId: candidate });
+      const candidate = generateEtxIdCode();
+      const existing = await mongoose.model('User').findOne({ etxId: candidate });
       if (!existing) {
-        this.maviId = candidate;
+        this.etxId = candidate;
         isUnique = true;
       }
     }

@@ -160,7 +160,7 @@ const CareerMatch = () => {
                 <Target size={18} />
               </div>
               <h1 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                MAVI Career Match
+                EduTalentX Career Match
               </h1>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', margin: 0 }}>
@@ -375,7 +375,7 @@ const CareerMatch = () => {
                         onClick={() => setShowExplainer(!showExplainer)}
                         className="btn btn-outline"
                         style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                        title="Learn how MAVI calculates this score"
+                        title="Learn how EduTalentX calculates this score"
                       >
                         <Info size={15} /> Scoring Info
                       </button>
@@ -396,12 +396,12 @@ const CareerMatch = () => {
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                       <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <HelpCircle size={16} /> How MAVI Career Match is Calculated
+                        <HelpCircle size={16} /> How EduTalentX Career Match is Calculated
                       </h4>
                       <button onClick={() => setShowExplainer(false)} className="btn-icon" style={{ padding: '2px' }}>✕</button>
                     </div>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '0.75rem' }}>
-                      The Match Score is 100% deterministic and derived from your real verified MAVI platform data.
+                      The Match Score is 100% deterministic and derived from your real verified EduTalentX platform data.
                       Weights are dynamically calibrated across five core competencies:
                     </p>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', fontSize: '0.8rem' }}>

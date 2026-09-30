@@ -36,7 +36,7 @@ const QRModal = ({ username, onClose }) => {
     link.href = qrData.fileUrl;
     // Set target to _blank to open image directly since it's a cross-origin static file
     link.target = '_blank';
-    link.download = `mavi-qr-${username}.png`;
+    link.download = `etx-qr-${username}.png`;
     link.click();
   };
 
@@ -45,7 +45,7 @@ const QRModal = ({ username, onClose }) => {
     const link = document.createElement('a');
     link.href = qrData.svgUrl;
     link.target = '_blank';
-    link.download = `mavi-qr-${username}.svg`;
+    link.download = `etx-qr-${username}.svg`;
     link.click();
   };
 

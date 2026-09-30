@@ -11,16 +11,31 @@ const PageLoader = () => (
     justifyContent: 'center',
     background: 'var(--bg-primary, #09090b)',
   }}>
-    <div style={{ textAlign: 'center' }}>
-      <div className="animate-pulse" style={{
-        width: '48px',
-        height: '48px',
-        borderRadius: '50%',
-        background: 'var(--gradient-primary, linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%))',
-        margin: '0 auto 1rem',
-      }} />
-      <p style={{ color: 'var(--text-secondary, #a1a1aa)', fontSize: '0.9rem', fontFamily: 'Outfit, sans-serif' }}>
-        Loading experience...
+    <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <img
+        src="/branding/edutalentx-logo.png"
+        alt="EduTalentX"
+        width={52}
+        height={52}
+        style={{
+          width: '52px',
+          height: '52px',
+          objectFit: 'contain',
+          marginBottom: '1rem',
+          animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        }}
+      />
+      <div style={{
+        fontFamily: "'Outfit', 'Inter', sans-serif",
+        fontWeight: 800,
+        fontSize: '1.2rem',
+        color: 'var(--text-primary, #ffffff)',
+        letterSpacing: '-0.02em',
+      }}>
+        EduTalent<span style={{ color: 'var(--brand-blue, #3B82F6)' }}>X</span>
+      </div>
+      <p style={{ color: 'var(--text-secondary, #a1a1aa)', fontSize: '0.8rem', marginTop: '0.35rem' }}>
+        Education, Skills, Intelligence &amp; Hiring
       </p>
     </div>
   </div>
@@ -116,7 +131,7 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/verify-account" element={<VerifyAccount />} />
             <Route path="/verify-email" element={<VerifyAccount />} />
-            <Route path="/verify/:maviId" element={<VerifyAccount />} />
+            <Route path="/verify/:etxId" element={<VerifyAccount />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
             <Route path="/activate-account" element={<ActivateAccount />} />
             <Route path="/change-password" element={<RequirePasswordChange><ChangePassword /></RequirePasswordChange>} />

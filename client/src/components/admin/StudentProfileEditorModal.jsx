@@ -168,10 +168,10 @@ const StudentProfileEditorModal = ({ studentId, onClose, onSaveSuccess }) => {
               <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 <div>
                   <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    MAVI ID <Lock size={12} color="#fbbf24" title="Protected Field" />
+                    ETX ID <Lock size={12} color="#fbbf24" title="Protected Field" />
                   </label>
                   <div style={{ fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-purple)', fontSize: '0.95rem' }}>
-                    {studentData?.maviId}
+                    {studentData?.etxId}
                   </div>
                 </div>
                 <div>

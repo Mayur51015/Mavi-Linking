@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { CreditCard, Shield, CheckCircle, AlertTriangle, ArrowUpRight, FileText, Lock, Users, GraduationCap, Building, Zap, Download, RefreshCw, XCircle } from 'lucide-react';
 import api from '../../api/axios';
 import { AuthContext } from '../../context/AuthContext';
+import { loadRazorpayCheckout } from '../../utils/razorpay';
 
 const AdminBilling = () => {
   const { user } = useContext(AuthContext);
@@ -44,24 +45,26 @@ const AdminBilling = () => {
 
       if (res.data?.success) {
         const { orderId, amount, currency, keyId, institutionName, planVersion } = res.data.data;
+
+        if (!orderId || !keyId || String(keyId).includes('placeholder')) {
+          throw new Error('Checkout is unavailable because the backend did not return a valid Razorpay order or public key.');
+        }
+
         setStatusMessage(`Razorpay Order Initiated for ${planCode} v${planVersion} (${orderId}). Opening Razorpay Checkout...`);
 
-        const effectiveKey = keyId && !keyId.includes('placeholder') ? keyId : 'rzp_test_TQ0mLvJPyus2JW';
-        const isMockOrder = !orderId || orderId.startsWith('order_mock_');
+        try {
+          const Razorpay = await loadRazorpayCheckout();
 
-        // 2. Razorpay Standard Checkout Modal
-        if (window.Razorpay && !isMockOrder) {
           const options = {
-            key: effectiveKey,
+            key: keyId,
             amount,
             currency: currency || 'INR',
-            name: 'MAVI Linking B2B SaaS',
+            name: 'EduTalentX B2B SaaS',
             description: `${planCode} v${planVersion} Institutional Subscription for ${institutionName || 'College'}`,
             order_id: orderId,
             handler: async function (response) {
               setStatusMessage('Payment received! Verifying cryptographic signature on backend...');
               try {
-                // 3. Server-Side Payment Verification (HMAC SHA-256)
                 const verifyRes = await api.post('/billing/verify-payment', {
                   orderId: response.razorpay_order_id || orderId,
                   paymentId: response.razorpay_payment_id,
@@ -83,33 +86,21 @@ const AdminBilling = () => {
               email: user?.email || '',
             },
             theme: { color: '#6366f1' },
+            modal: {
+              ondismiss: () => {
+                setStatusMessage('Razorpay checkout was closed before payment completion.');
+              },
+            },
           };
 
-          const rzp = new window.Razorpay(options);
+          const rzp = new Razorpay(options);
           rzp.on('payment.failed', function (resp) {
             setStatusMessage(`Payment Failed: ${resp.error?.description || 'Transaction declined'}`);
           });
           rzp.open();
-        } else {
-          // Dev mock fallback trigger if Razorpay SDK script not present or mock order generated
-          setStatusMessage('Processing sandbox payment simulation...');
-          setTimeout(async () => {
-            try {
-              const verifyRes = await api.post('/billing/verify-payment', {
-                orderId: orderId || `order_mock_${Date.now()}`,
-                paymentId: `pay_mock_${Date.now()}`,
-                signature: 'mock_signature_dev',
-                targetPlanCode: planCode,
-              });
-              if (verifyRes.data?.success) {
-                setStatusMessage(`🎉 Subscription updated to ${planCode} v${planVersion} successfully!`);
-                fetchBillingInfo();
-              }
-            } catch (mockErr) {
-              setStatusMessage('Sandbox payment process completed. Updating subscription status...');
-              fetchBillingInfo();
-            }
-          }, 1200);
+        } catch (sdkErr) {
+          console.error('Razorpay Checkout load failed:', sdkErr);
+          setStatusMessage('Razorpay Checkout could not be loaded. Please check the merchant configuration and try again.');
         }
       }
     } catch (err) {

@@ -17,11 +17,11 @@ async function debugQueries() {
       { accountStatus: 'PENDING_VERIFICATION' },
       { roleStatus: 'pending' }
     ]
-  }).select('name email maviId prn role accountStatus prnVerificationStatus roleStatus institutionId departmentId');
+  }).select('name email etxId prn role accountStatus prnVerificationStatus roleStatus institutionId departmentId');
 
   console.log(`Found ${adminPrnUsers.length} pending users matching Admin query:`);
   adminPrnUsers.forEach((u, i) => {
-    console.log(`[${i + 1}] Name: ${u.name} | Email: ${u.email} | MAVI ID: ${u.maviId} | PRN: ${u.prn} | Status: ${u.accountStatus} | PRNStatus: ${u.prnVerificationStatus} | Inst: ${u.institutionId}`);
+    console.log(`[${i + 1}] Name: ${u.name} | Email: ${u.email} | ETX ID: ${u.etxId} | PRN: ${u.prn} | Status: ${u.accountStatus} | PRNStatus: ${u.prnVerificationStatus} | Inst: ${u.institutionId}`);
   });
 
   // Query 2: Check institution filtering

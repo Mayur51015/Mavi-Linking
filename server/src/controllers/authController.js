@@ -17,11 +17,11 @@ const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_C
 const oauth2Client = new OAuth2Client(googleClientId);
 
 /**
- * Dispatch MAVI ID verification notice to Institution Admins when a student registers or requests verification
+ * Dispatch ETX ID verification notice to Institution Admins when a student registers or requests verification
  */
 const notifyInstitutionAdminsOfStudentVerification = async ({ user, institutionId }) => {
   try {
-    if (!user || !user.maviId) return;
+    if (!user || !user.etxId) return;
     const targetInstId = institutionId || user.institutionId;
     if (!targetInstId) return;
 
@@ -50,7 +50,7 @@ const notifyInstitutionAdminsOfStudentVerification = async ({ user, institutionI
     }
 
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-    const adminVerificationLink = `${clientUrl}/login?redirect=${encodeURIComponent(`/admin?search=${user.maviId}`)}`;
+    const adminVerificationLink = `${clientUrl}/login?redirect=${encodeURIComponent(`/admin?search=${user.etxId}`)}`;
 
     const { sendEmail, generateInstitutionAdminStudentVerificationEmailHtml } = require('../utils/sendEmail');
 
@@ -60,7 +60,7 @@ const notifyInstitutionAdminsOfStudentVerification = async ({ user, institutionI
         adminName: adminObj?.name || 'Institution Administrator',
         studentName: user.name,
         studentEmail: user.email,
-        maviId: user.maviId,
+        etxId: user.etxId,
         prn: user.prn,
         institutionName: institution.name,
         verificationLink: adminVerificationLink,
@@ -68,10 +68,10 @@ const notifyInstitutionAdminsOfStudentVerification = async ({ user, institutionI
 
       sendEmail({
         to: adminEmail,
-        subject: `MAVI Linking — MAVI ID Verification Request for Student ${user.name} [${user.maviId}]`,
+        subject: `EduTalentX — ETX ID Verification Request for Student ${user.name} [${user.etxId}]`,
         html: emailHtml,
       }).then(() => {
-        console.log(`[INSTITUTION ADMIN NOTIFIED] Dispatched verification request to admin ${adminEmail} for student MAVI ID ${user.maviId}`);
+        console.log(`[INSTITUTION ADMIN NOTIFIED] Dispatched verification request to admin ${adminEmail} for student ETX ID ${user.etxId}`);
       }).catch((err) => {
         console.error(`[EMAIL ERROR] Failed to send admin verification notice to ${adminEmail}:`, err.message);
       });
@@ -271,12 +271,12 @@ const register = async (req, res, next) => {
     userData.verificationTokenExpires = tokenExpires;
     userData.verificationTokenPurpose = 'ACCOUNT_EMAIL_VERIFICATION';
 
-    // Create user (password is hashed via pre-save hook, MAVI ID auto-generated)
+    // Create user (password is hashed via pre-save hook, ETX ID auto-generated)
     const user = await User.create(userData);
 
     // Dispatch Verification Email
     const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
-    const verificationLink = `${clientUrl}/verify/${user.maviId}?t=${rawVerificationToken}`;
+    const verificationLink = `${clientUrl}/verify/${user.etxId}?t=${rawVerificationToken}`;
 
     const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
     const emailHtml = generateStudentVerificationEmailHtml({
@@ -287,13 +287,13 @@ const register = async (req, res, next) => {
 
     sendEmail({
       to: user.email,
-      subject: 'Verify your MAVI Linking account',
+      subject: 'Verify your EduTalentX account',
       html: emailHtml,
     }).catch((emailErr) => {
       console.error('[EMAIL ERROR] Failed to dispatch verification email:', emailErr.message);
     });
 
-    // Notify Institution Admin(s) of new student registration & MAVI ID verification request
+    // Notify Institution Admin(s) of new student registration & ETX ID verification request
     notifyInstitutionAdminsOfStudentVerification({ user, institutionId: targetInst?._id || user.institutionId });
 
     // Log Activity Feed
@@ -301,7 +301,7 @@ const register = async (req, res, next) => {
       const activity = await Activity.create({
         userId: user._id,
         type: 'Milestone',
-        title: 'Joined MaVi-Linking',
+        title: 'Joined EduTalentX',
         description: 'Created a new student developer profile (Pending Email Verification)',
       });
       const io = getIO();
@@ -316,14 +316,14 @@ const register = async (req, res, next) => {
         actorId: user._id,
         targetUserId: user._id,
         action: 'STUDENT_REGISTRATION_CREATED',
-        details: { email: user.email, maviId: user.maviId, prn: user.prn },
+        details: { email: user.email, etxId: user.etxId, prn: user.prn },
         result: 'SUCCESS',
       });
       await AuditLog.create({
         actorId: user._id,
         targetUserId: user._id,
         action: 'EMAIL_VERIFICATION_SENT',
-        details: { email: user.email, maviId: user.maviId },
+        details: { email: user.email, etxId: user.etxId },
         result: 'SUCCESS',
       });
     } catch (auditErr) {
@@ -346,13 +346,13 @@ const register = async (req, res, next) => {
 };
 
 /**
- * @desc    Login user & return JWT (Supports MAVI ID, Verified PRN/Faculty ID, or Email)
+ * @desc    Login user & return JWT (Supports ETX ID, Verified PRN/Faculty ID, or Email)
  * @route   POST /api/auth/login
  * @access  Public
  */
 const login = async (req, res, next) => {
   try {
-    const rawIdentifier = (req.body.email || req.body.identifier || req.body.maviId || req.body.prn || '').toString().trim();
+    const rawIdentifier = (req.body.email || req.body.identifier || req.body.etxId || req.body.prn || '').toString().trim();
     const { password } = req.body;
 
     if (!rawIdentifier || !password) {
@@ -365,9 +365,9 @@ const login = async (req, res, next) => {
     let user = null;
     let isPrnAttempt = false;
 
-    // 1. MAVI ID format (e.g. MAVI-8F3K7Q2P)
-    if (rawIdentifier.toUpperCase().startsWith('MAVI-')) {
-      user = await User.findOne({ maviId: rawIdentifier.toUpperCase() }).select('+password');
+    // 1. ETX ID format (e.g. ETX-8F3K7Q2P)
+    if (rawIdentifier.toUpperCase().startsWith('ETX-')) {
+      user = await User.findOne({ etxId: rawIdentifier.toUpperCase() }).select('+password');
     }
     // 2. Admin ID format (e.g. ZEAL-ADMIN-001, INSTADM-XXXXXX)
     else if (rawIdentifier.toUpperCase().startsWith('ZEAL-') || rawIdentifier.toUpperCase().startsWith('INSTADM-') || rawIdentifier.toUpperCase().includes('-ADMIN-')) {
@@ -409,7 +409,7 @@ const login = async (req, res, next) => {
           return res.status(403).json({
             success: false,
             code: 'PRN_PENDING_APPROVAL',
-            message: 'Your PRN/ZPRN identity is pending institution verification. Please sign in using your MAVI ID or email.',
+            message: 'Your PRN/ZPRN identity is pending institution verification. Please sign in using your ETX ID or email.',
           });
         }
 
@@ -420,7 +420,7 @@ const login = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid MAVI ID/PRN or password.',
+        message: 'Invalid ETX ID/PRN or password.',
       });
     }
 
@@ -482,7 +482,7 @@ const login = async (req, res, next) => {
             actorId: user._id,
             targetUserId: user._id,
             action: 'STUDENT_LOGIN_BLOCKED_EMAIL_UNVERIFIED',
-            details: { email: user.email, maviId: user.maviId },
+            details: { email: user.email, etxId: user.etxId },
             result: 'REJECTED',
           });
         } catch (auditErr) {
@@ -495,7 +495,7 @@ const login = async (req, res, next) => {
           message: 'Please verify your email address before accessing your account.',
           data: {
             email: user.email,
-            maviId: user.maviId,
+            etxId: user.etxId,
             accountStatus: user.accountStatus,
             emailVerified: false,
           },
@@ -509,7 +509,7 @@ const login = async (req, res, next) => {
           message: 'Your student account registration was rejected by your institution administrator.',
           data: {
             email: user.email,
-            maviId: user.maviId,
+            etxId: user.etxId,
             accountStatus: 'REJECTED',
             rejectionReason: user.rejectionReason || 'Account registration rejected by institution administrator.',
           },
@@ -533,7 +533,7 @@ const login = async (req, res, next) => {
             actorId: user._id,
             targetUserId: user._id,
             action: 'STUDENT_LOGIN_BLOCKED_PENDING_APPROVAL',
-            details: { email: user.email, maviId: user.maviId },
+            details: { email: user.email, etxId: user.etxId },
             result: 'REJECTED',
           });
         } catch (auditErr) {
@@ -546,7 +546,7 @@ const login = async (req, res, next) => {
           message: 'Your email has been verified. Your account is waiting for approval from your institution administrator.',
           data: {
             email: user.email,
-            maviId: user.maviId,
+            etxId: user.etxId,
             accountStatus: 'PENDING_ADMIN_APPROVAL',
             emailVerified: true,
           },
@@ -567,7 +567,7 @@ const login = async (req, res, next) => {
       await ActivityLog.create({
         userId: user._id,
         action: 'Login',
-        details: `Logged in successfully via ${rawIdentifier.toUpperCase().startsWith('MAVI-') ? 'MAVI ID' : rawIdentifier.includes('@') ? 'Email' : 'PRN/Faculty ID'}`,
+        details: `Logged in successfully via ${rawIdentifier.toUpperCase().startsWith('ETX-') ? 'ETX ID' : rawIdentifier.includes('@') ? 'Email' : 'PRN/Faculty ID'}`,
         ipAddress: req.ip || '',
         userAgent: req.headers['user-agent'] || '',
       });
@@ -598,8 +598,8 @@ const getMe = async (req, res, next) => {
   try {
     // req.user is attached by the auth middleware
     const user = await User.findById(req.user.id).populate('institutionId', 'name tenantId institutionCode shortName code domain officialDomain logo status');
-    if (user && !user.maviId) {
-      user.maviId = 'MAVI-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+    if (user && !user.etxId) {
+      user.etxId = 'ETX-' + crypto.randomBytes(4).toString('hex').toUpperCase();
       await user.save();
     }
 
@@ -782,14 +782,15 @@ const refreshToken = async (req, res, next) => {
 };
 
 /**
- * @desc    Verify email address using token (supports MAVI ID-based route and legacy token-only)
+ * @desc    Verify email address using token (supports ETX ID-based route and legacy token-only)
  * @route   POST /api/auth/verify-email
- * @route   GET  /api/auth/verify-email/:maviId
+ * @route   GET  /api/auth/verify-email/:etxId
  * @access  Public
  */
 const verifyEmail = async (req, res, next) => {
   try {
     const rawToken = req.body.token || req.query.token || req.query.t;
+    const rawMaviId = (req.body.maviId || req.query.maviId || req.params.maviId || '').toString().trim();
     if (!rawToken) {
       return res.status(400).json({
         success: false,
@@ -800,13 +801,15 @@ const verifyEmail = async (req, res, next) => {
 
     const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
-    // Extract MAVI ID from body, query params, or route params
-    const maviId = (req.body.maviId || req.query.maviId || req.params.maviId || '').toUpperCase().trim();
+    // Extract ETX ID from body, query params, or route params
+    const etxId = (req.body.etxId || req.query.etxId || req.params.etxId || '').toUpperCase().trim();
+    const normalizedMaviId = rawMaviId ? rawMaviId.toUpperCase().replace(/^ETX-/, 'MAVI-') : '';
+    const lookupEtxId = normalizedMaviId ? normalizedMaviId.replace(/^MAVI-/, 'ETX-') : etxId;
 
     let user;
-    if (maviId && maviId.startsWith('MAVI-')) {
-      // MAVI ID-based lookup: find user by maviId, then validate token matches
-      user = await User.findOne({ maviId })
+    if (lookupEtxId && lookupEtxId.startsWith('ETX-')) {
+      // ETX ID-based lookup: find user by etxId, then validate token matches
+      user = await User.findOne({ etxId: lookupEtxId })
         .select('+verificationToken +verificationTokenExpires +refreshToken');
       if (user && user.verificationToken !== hashedToken && user.verificationToken !== rawToken) {
         user = null; // Token doesn't match this user — reject
@@ -846,7 +849,7 @@ const verifyEmail = async (req, res, next) => {
           actorId: user._id,
           targetUserId: user._id,
           action: 'EMAIL_VERIFICATION_EXPIRED',
-          details: { email: user.email, maviId: user.maviId },
+          details: { email: user.email, etxId: user.etxId },
           result: 'REJECTED',
         });
       } catch (auditErr) {
@@ -879,7 +882,7 @@ const verifyEmail = async (req, res, next) => {
     const { sendEmail } = require('../utils/sendEmail');
     sendEmail({
       to: user.email,
-      subject: '🎉 Your MAVI Linking Account has been Verified & Activated!',
+      subject: '🎉 Your EduTalentX Account has been Verified & Activated!',
       html: `
         <!DOCTYPE html>
         <html>
@@ -900,20 +903,20 @@ const verifyEmail = async (req, res, next) => {
         <body>
           <div class="container">
             <div class="header">
-              <div class="brand">MAVI Linking</div>
+              <div class="brand">EduTalentX</div>
               <div class="title">Account Verified & Activated 🎉</div>
             </div>
             <div class="content">
               <p>Hello ${user.name || 'Student'},</p>
-              <p>Great news! Your student account (MAVI ID: <strong style="color: #c084fc; font-family: monospace;">${user.maviId}</strong>) has been verified and activated by your Institution Administrator.</p>
-              <p>You can now log in using your MAVI ID, PRN, or Email address to access your dashboard.</p>
+              <p>Great news! Your student account (ETX ID: <strong style="color: #c084fc; font-family: monospace;">${user.etxId}</strong>) has been verified and activated by your Institution Administrator.</p>
+              <p>You can now log in using your ETX ID, PRN, or Email address to access your dashboard.</p>
               
               <div style="text-align: center; margin: 24px 0;">
-                <a href="${clientUrl}/login" class="btn-link" target="_blank">Log In to MAVI Linking</a>
+                <a href="${clientUrl}/login" class="btn-link" target="_blank">Log In to EduTalentX</a>
               </div>
             </div>
             <div class="footer">
-              &copy; ${new Date().getFullYear()} MAVI Linking Security Platform. All rights reserved.
+              &copy; ${new Date().getFullYear()} EduTalentX Security Platform. All rights reserved.
             </div>
           </div>
         </body>
@@ -928,14 +931,14 @@ const verifyEmail = async (req, res, next) => {
         actorId: user._id,
         targetUserId: user._id,
         action: 'EMAIL_VERIFICATION_COMPLETED',
-        details: { email: user.email, maviId: user.maviId },
+        details: { email: user.email, etxId: user.etxId },
         result: 'SUCCESS',
       });
       await AuditLog.create({
         actorId: user._id,
         targetUserId: user._id,
         action: 'EMAIL_VERIFICATION_SUCCESS',
-        details: { email: user.email, maviId: user.maviId },
+        details: { email: user.email, etxId: user.etxId },
         result: 'SUCCESS',
       });
     } catch (auditErr) {
@@ -969,17 +972,20 @@ const verifyEmail = async (req, res, next) => {
  */
 const resendVerification = async (req, res, next) => {
   try {
-    const rawEmailOrId = (req.body.email || req.body.maviId || req.body.identifier || req.user?.email || '').toString().trim();
+    const rawEmailOrId = (req.body.email || req.body.etxId || req.body.maviId || req.body.identifier || req.user?.email || '').toString().trim();
     if (!rawEmailOrId) {
       return res.status(400).json({
         success: false,
-        message: 'Email address or MAVI ID is required.',
+        message: 'Email address or ETX ID is required.',
       });
     }
 
-    const query = rawEmailOrId.toUpperCase().startsWith('MAVI-')
-      ? { maviId: rawEmailOrId.toUpperCase() }
-      : { email: rawEmailOrId.toLowerCase() };
+    const normalizedId = rawEmailOrId.toUpperCase();
+    const query = normalizedId.startsWith('ETX-')
+      ? { etxId: normalizedId }
+      : normalizedId.startsWith('MAVI-')
+        ? { etxId: normalizedId.replace(/^MAVI-/, 'ETX-') }
+        : { email: rawEmailOrId.toLowerCase() };
 
     const user = await User.findOne(query).select('+verificationToken +verificationTokenExpires');
 
@@ -1025,7 +1031,7 @@ const resendVerification = async (req, res, next) => {
     await user.save();
 
     const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
-    const verificationLink = `${clientUrl}/verify/${user.maviId}?t=${rawVerificationToken}`;
+    const verificationLink = `${clientUrl}/verify/${user.etxId}?t=${rawVerificationToken}`;
 
     const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
     const emailHtml = generateStudentVerificationEmailHtml({
@@ -1036,7 +1042,7 @@ const resendVerification = async (req, res, next) => {
 
     const emailResult = await sendEmail({
       to: user.email,
-      subject: 'Verify your MAVI Linking account',
+      subject: 'Verify your EduTalentX account',
       html: emailHtml,
     });
 
@@ -1056,7 +1062,7 @@ const resendVerification = async (req, res, next) => {
         actorId: user._id,
         targetUserId: user._id,
         action: 'EMAIL_VERIFICATION_RESENT',
-        details: { email: user.email, maviId: user.maviId },
+        details: { email: user.email, etxId: user.etxId },
         result: 'SUCCESS',
       });
     } catch (auditErr) {
@@ -1079,7 +1085,7 @@ const resendVerification = async (req, res, next) => {
  */
 const changeEmailPending = async (req, res, next) => {
   try {
-    const { token, currentEmail, maviId, newEmail } = req.body;
+    const { token, currentEmail, etxId, newEmail } = req.body;
     if (!newEmail || !newEmail.trim()) {
       return res.status(400).json({
         success: false,
@@ -1097,9 +1103,9 @@ const changeEmailPending = async (req, res, next) => {
       }).select('+verificationToken +verificationTokenExpires');
     }
 
-    if (!user && (currentEmail || maviId || req.user)) {
+    if (!user && (currentEmail || etxId || req.user)) {
       const queryOr = [];
-      if (maviId) queryOr.push({ maviId: maviId.toUpperCase() });
+      if (etxId) queryOr.push({ etxId: etxId.toUpperCase() });
       if (currentEmail) queryOr.push({ email: currentEmail.toLowerCase().trim() });
       if (req.user?.email) queryOr.push({ email: req.user.email.toLowerCase().trim() });
       user = await User.findOne({ $or: queryOr }).select('+verificationToken +verificationTokenExpires');
@@ -1148,7 +1154,7 @@ const changeEmailPending = async (req, res, next) => {
     await user.save();
 
     const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
-    const verificationLink = `${clientUrl}/verify/${user.maviId}?t=${rawVerificationToken}`;
+    const verificationLink = `${clientUrl}/verify/${user.etxId}?t=${rawVerificationToken}`;
 
     const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
     const emailHtml = generateStudentVerificationEmailHtml({
@@ -1159,7 +1165,7 @@ const changeEmailPending = async (req, res, next) => {
 
     const emailResult = await sendEmail({
       to: user.email,
-      subject: 'Verify your MAVI Linking account',
+      subject: 'Verify your EduTalentX account',
       html: emailHtml,
     });
 
@@ -1205,13 +1211,13 @@ const changeEmailPending = async (req, res, next) => {
  */
 const forgotPassword = async (req, res, next) => {
   try {
-    const { email, phone, maviId, prn } = req.body;
+    const { email, phone, etxId, prn } = req.body;
 
-    // Block recovery requests using only semi-public identifiers (MAVI ID or PRN)
-    if ((maviId || prn) && !email && !phone) {
+    // Block recovery requests using only semi-public identifiers (ETX ID or PRN)
+    if ((etxId || prn) && !email && !phone) {
       return res.status(400).json({
         success: false,
-        message: 'Account recovery requires a verified email address or registered phone number. Account recovery using MAVI ID or PRN alone is not permitted.',
+        message: 'Account recovery requires a verified email address or registered phone number. Account recovery using ETX ID or PRN alone is not permitted.',
       });
     }
 
@@ -1282,7 +1288,7 @@ const forgotPassword = async (req, res, next) => {
 
     const emailResult = await sendEmail({
       to: user.email,
-      subject: 'MAVI Linking — Password Reset Request & Security OTP',
+      subject: 'EduTalentX — Password Reset Request & Security OTP',
       html: emailHtml,
     });
 
@@ -1675,7 +1681,7 @@ const adminLogin = async (req, res, next) => {
         { adminId: rawIdentifier.toUpperCase() },
         { adminLoginId: rawIdentifier.toUpperCase() },
         { email: rawIdentifier.toLowerCase() },
-        { maviId: rawIdentifier.toUpperCase() },
+        { etxId: rawIdentifier.toUpperCase() },
       ],
       $and: [
         {
@@ -1760,7 +1766,7 @@ const superAdminLogin = async (req, res, next) => {
     const user = await User.findOne({
       $or: [
         { email: rawIdentifier.toLowerCase() },
-        { maviId: rawIdentifier.toUpperCase() },
+        { etxId: rawIdentifier.toUpperCase() },
         { adminId: rawIdentifier.toUpperCase() },
       ],
       role: { $in: ['super_admin', 'platform_owner', 'owner'] },
@@ -1913,7 +1919,7 @@ const verifyAdminInvite = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        adminId: user.adminId || user.maviId || user.adminLoginId || '',
+        adminId: user.adminId || user.etxId || user.adminLoginId || '',
         designation: user.designation || 'Administrator',
         institution: user.institutionId,
         department: user.departmentId,
@@ -2283,7 +2289,7 @@ const verifyInvitationToken = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        maviId: user.maviId,
+        etxId: user.etxId,
         institutionName: user.institutionId?.name || user.university?.name || 'Assigned Institution',
         identifierType: user.institutionalIdentifier?.identifierType || 'FACULTY_ID',
         identifierValue: user.institutionalIdentifier?.identifierValue || '',
@@ -2379,7 +2385,7 @@ const activateAccount = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'Your MAVI account has been activated successfully!',
+      message: 'Your EduTalentX account has been activated successfully!',
       data: {
         user,
         token: authToken,
@@ -2511,7 +2517,7 @@ const requestEmailChange = async (req, res, next) => {
     // 7. Dispatch OTP to NEW email via existing sendEmail utility
     const emailResult = await sendEmail({
       to: canonicalNewEmail,
-      subject: 'Verify your MAVI Linking email change',
+      subject: 'Verify your EduTalentX email change',
       html: generateEmailChangeOtpEmailHtml({ name: user.name, otp, newEmail: canonicalNewEmail }),
     });
 
@@ -2657,7 +2663,7 @@ const verifyEmailChange = async (req, res, next) => {
     const targetNewEmail = challenge.newEmail;
 
     // Atomic User Update: Only email and emailVerified change.
-    // MAVI ID, PRN, role, institution, projects, linked accounts remain 100% untouched.
+    // ETX ID, PRN, role, institution, projects, linked accounts remain 100% untouched.
     user.email = targetNewEmail;
     user.emailVerified = true;
     await user.save();
@@ -2670,12 +2676,12 @@ const verifyEmailChange = async (req, res, next) => {
     // Dispatch Security Notification to OLD Email
     await sendEmail({
       to: oldEmail,
-      subject: 'Your MAVI Linking email address was changed',
+      subject: 'Your EduTalentX email address was changed',
       html: generateEmailChangeNotificationOldEmailHtml({
         name: user.name,
         oldEmail,
         newEmail: targetNewEmail,
-        maviId: user.maviId,
+        etxId: user.etxId,
         timestamp: new Date().toUTCString(),
       }),
     });
@@ -2690,7 +2696,7 @@ const verifyEmailChange = async (req, res, next) => {
       details: {
         oldEmailMasked: maskEmail(oldEmail),
         newEmailMasked: maskEmail(targetNewEmail),
-        maviId: user.maviId,
+        etxId: user.etxId,
       },
       result: 'SUCCESS',
     });
@@ -2757,7 +2763,7 @@ const resendEmailChangeOtp = async (req, res, next) => {
 
     const emailResult = await sendEmail({
       to: challenge.newEmail,
-      subject: 'Verify your MAVI Linking email change',
+      subject: 'Verify your EduTalentX email change',
       html: generateEmailChangeOtpEmailHtml({ name: user?.name || 'User', otp, newEmail: challenge.newEmail }),
     });
 

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 /**
  * CareerScenario Schema
- * Stores saved hypothetical What-If scenarios created in MAVI Career Lab.
+ * Stores saved hypothetical What-If scenarios created in EduTalentX Career Lab.
  * IMPORTANT: This model stores only hypothetical parameters, never real user achievements.
  */
 const careerScenarioSchema = new mongoose.Schema(

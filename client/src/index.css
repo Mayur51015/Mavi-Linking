@@ -1216,6 +1216,107 @@ select.input-field option {
   animation-delay: 0.5s;
 }
 
+.hide-mobile {
+  display: block;
+}
+
+.show-mobile {
+  display: none;
+}
+
+.mobile-toggle-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.mobile-toggle-btn:hover,
+.mobile-toggle-btn:focus-visible {
+  border-color: var(--border-hover);
+  background: var(--bg-card);
+}
+
+.mobile-nav-panel {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(84vw, 320px);
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-color);
+  box-shadow: var(--shadow-elevated);
+  transform: translateX(-105%);
+  transition: transform 0.25s ease;
+  z-index: 210;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.mobile-nav-panel.open {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.mobile-nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mobile-nav-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mobile-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1rem;
+}
+
+.mobile-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 0.75rem;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  background: transparent;
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link:focus-visible {
+  color: var(--text-primary);
+  background: var(--bg-card);
+}
+
+.mobile-nav-cta {
+  margin-top: 0.75rem;
+  width: 100%;
+  justify-content: center;
+}
+
 /* Responsive Utilities */
 
 /* Dashboard shell layout (used by UserLayout, TeacherLayout, RecruiterLayout) */
@@ -1336,6 +1437,10 @@ select.input-field option {
     display: none !important;
   }
 
+  .show-mobile {
+    display: block;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1448,6 +1553,10 @@ select.input-field option {
 
   .mobile-menu-btn,
   .mobile-close-btn {
+    display: inline-flex;
+  }
+
+  .mobile-toggle-btn {
     display: inline-flex;
   }
 

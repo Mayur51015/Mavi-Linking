@@ -18,7 +18,7 @@ import Footer from '../components/Footer';
 import DemoRequestModal from '../components/landing/DemoRequestModal';
 
 /**
- * Home — MAVI Linking Premium Landing Page Component
+ * Home — EduTalentX Premium Landing Page Component
  * "The Digital Operating Platform for Institutions"
  * "Connecting Institutions. Empowering People. Enabling Intelligence."
  */

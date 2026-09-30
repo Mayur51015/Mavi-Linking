@@ -59,9 +59,9 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
         <div className="glass-card-static" style={{ maxWidth: '450px', padding: '2.5rem' }}>
           <h2 style={{ marginBottom: '1rem' }}>Account Suspended</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            Your account has been suspended by an administrator. Access to MAVI Linking features is restricted.
+            Your account has been suspended by an administrator. Access to EduTalentX features is restricted.
           </p>
-          <a href="mailto:support@mavilinking.com" className="btn btn-primary">Contact Support</a>
+          <a href="mailto:support@edutalentx.com" className="btn btn-primary">Contact Support</a>
         </div>
       </div>
     );
@@ -79,7 +79,7 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
   const isStudentRole = normalizedUserRoles.includes('user') && !isSuperAdmin && !isInstAdmin && !normalizedUserRoles.includes('teacher') && !normalizedUserRoles.includes('recruiter') && !normalizedUserRoles.includes('department_admin');
   if (isStudentRole) {
     if (!user.emailVerified) {
-      return <Navigate to={`/verify/${user.maviId || 'account'}`} replace />;
+      return <Navigate to={`/verify/${user.etxId || 'account'}`} replace />;
     }
     if (user.accountStatus === 'REJECTED') {
       return <Navigate to="/pending-approval" replace />;

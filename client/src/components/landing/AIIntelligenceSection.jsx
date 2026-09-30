@@ -51,7 +51,7 @@ const AIIntelligenceSection = () => {
           Turn Activity Into <span className="text-gradient">Intelligence.</span>
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '680px', margin: '0 auto', lineHeight: 1.65 }}>
-          MAVI Linking doesn't just collect institutional data. It turns activity into meaningful intelligence.
+          EduTalentX doesn't just collect institutional data. It turns activity into meaningful intelligence.
         </p>
       </div>
 
@@ -100,7 +100,7 @@ const AIIntelligenceSection = () => {
             >
               <Cpu size={32} />
             </div>
-            <div style={{ fontSize: '1.15rem', fontWeight: '900', color: 'var(--text-primary)' }}>MAVI AI ENGINE</div>
+            <div style={{ fontSize: '1.15rem', fontWeight: '900', color: 'var(--text-primary)' }}>EDUTALENTX AI ENGINE</div>
             <div style={{ fontSize: '0.75rem', color: '#ec4899', fontWeight: '700' }}>Deep Contextual Synthesis</div>
           </div>
 

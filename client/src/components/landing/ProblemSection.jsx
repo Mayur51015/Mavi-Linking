@@ -109,7 +109,7 @@ const ProblemSection = () => {
       >
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-primary)' }}>
           <Sparkles size={20} color="var(--accent-purple)" />
-          <span>MAVI Linking brings everything together.</span>
+          <span>EduTalentX brings everything together.</span>
         </div>
       </div>
     </section>

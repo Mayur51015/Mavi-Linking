@@ -11,7 +11,7 @@ const HeroNodeCanvas = () => {
     { id: 'recruiters', label: 'Recruiters', icon: Briefcase, color: '#06b6d4', category: 'Opportunity Linking', pos: { x: 82, y: 22 } },
     { id: 'departments', label: 'Departments', icon: Building2, color: '#3b82f6', category: 'Data Linking', pos: { x: 15, y: 75 } },
     { id: 'institution', label: 'Institution', icon: ShieldCheck, color: '#f59e0b', category: 'Data Linking', pos: { x: 50, y: 88 } },
-    { id: 'ai', label: 'MAVI AI', icon: Cpu, color: '#ec4899', category: 'Intelligence Linking', pos: { x: 85, y: 75 } },
+    { id: 'ai', label: 'EduTalentX AI', icon: Cpu, color: '#ec4899', category: 'Intelligence Linking', pos: { x: 85, y: 75 } },
   ];
 
   return (
@@ -61,7 +61,7 @@ const HeroNodeCanvas = () => {
         ))}
       </svg>
 
-      {/* Central Hub Node: MAVI LINKING */}
+      {/* Central Hub Node: EDUTALENTX */}
       <motion.div
         animate={{ scale: [1, 1.04, 1] }}
         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
@@ -84,7 +84,7 @@ const HeroNodeCanvas = () => {
           Central Operating Hub
         </div>
         <div style={{ fontSize: '1.35rem', fontWeight: '900', color: '#ffffff', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Sparkles size={20} /> MAVI LINKING
+          <Sparkles size={20} /> EDUTALENTX
         </div>
       </motion.div>
 

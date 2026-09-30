@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
-import { Terminal, GitBranch, Code2, Globe, Database, ExternalLink, Briefcase } from 'lucide-react';
+import { GitBranch, Code2, Globe, Database, ExternalLink, Briefcase } from 'lucide-react';
+import BrandLogo from '../components/BrandLogo';
 
 const PublicPortfolio = () => {
   const { id } = useParams();
@@ -29,12 +30,9 @@ const PublicPortfolio = () => {
 
   return (
     <>
-      <nav className="navbar" style={{ position: 'relative', background: 'transparent', borderBottom: 'none' }}>
+      <nav className="navbar" style={{ position: 'relative', background: 'transparent', borderBottom: 'none', padding: '1rem 0' }}>
         <div className="container nav-container" style={{ justifyContent: 'center' }}>
-          <Link to="/" className="nav-brand">
-            <Terminal size={24} className="text-gradient" />
-            <span style={{ fontSize: '1.25rem' }}>MaVi Linking Portfolio</span>
-          </Link>
+          <BrandLogo variant="full" size={32} linkTo="/" />
         </div>
       </nav>
 

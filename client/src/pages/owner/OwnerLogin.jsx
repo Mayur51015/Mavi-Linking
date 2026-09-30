@@ -27,7 +27,7 @@ const OwnerLogin = () => {
   useEffect(() => {
     if (user) {
       const userRoles = Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [user.role];
-      const isOwner = userRoles.includes('platform_owner') || userRoles.includes('owner') || userRoles.includes('super_admin') || user.adminId === 'MAVI-OWNER-001';
+      const isOwner = userRoles.includes('platform_owner') || userRoles.includes('owner') || userRoles.includes('super_admin') || user.adminId === 'ETX-OWNER-001';
       if (isOwner) {
         navigate('/owner', { replace: true });
       }
@@ -95,7 +95,7 @@ const OwnerLogin = () => {
             <input
               type="text"
               className="input-field"
-              placeholder="owner@mavilinking.com or MAVI-OWNER-001"
+              placeholder="owner@edutalentx.com or ETX-OWNER-001"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               required

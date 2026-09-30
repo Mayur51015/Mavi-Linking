@@ -70,10 +70,10 @@ const seedSuperAdminScript = require('./seedSuperAdmin');
 
 async function resetUsersQA() {
   console.log('============================================================');
-  console.log('MAVI LINKING — SAFE QA MANUAL TEST ENVIRONMENT RESET');
+  console.log('EDUTALENTX — SAFE QA MANUAL TEST ENVIRONMENT RESET');
   console.log('============================================================\n');
 
-  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mavi_linking';
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/edutalentx';
   
   await mongoose.connect(mongoUri);
   console.log(`✅ Connected to MongoDB database: ${mongoose.connection.name}`);
@@ -81,7 +81,7 @@ async function resetUsersQA() {
   // ─── 1. INSPECT EXISTING DATABASE & IDENTIFY USERS ─────────────────────────
   const allUsers = await User.find({}).select('+refreshToken +resetPasswordToken +resetPasswordOtp +verificationToken +invitationToken');
   
-  const seedSuperAdminEmail = (process.env.SEED_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || 'admin@mavilinking.com').toLowerCase().trim();
+  const seedSuperAdminEmail = (process.env.SEED_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || 'admin@edutalentx.com').toLowerCase().trim();
 
   const preservedUserIds = [];
   const usersToPurgeIds = [];
@@ -234,7 +234,7 @@ async function resetUsersQA() {
 
   if (remainingSuperAdmins === 0) {
     console.log('\n👑 No Platform Super Admin found after reset. Executing controlled Super Admin seed...');
-    const seedEmail = process.env.SEED_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || 'admin@mavilinking.com';
+    const seedEmail = process.env.SEED_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || 'admin@edutalentx.com';
     const seedPass = process.env.SEED_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD || 'AdminPass@123';
     const seedName = process.env.SEED_ADMIN_NAME || process.env.SUPER_ADMIN_NAME || 'Platform Super Admin';
 
@@ -251,7 +251,7 @@ async function resetUsersQA() {
       emailVerified: true,
       institutionId: null,
       departmentId: null,
-      maviId: 'MAVI-SUPER-ADMIN-01',
+      etxId: 'ETX-SUPER-ADMIN-01',
     });
     superAdminStatus = 'SEEDED';
     console.log(`  ✓ Created Platform Super Admin: ${seedEmail}`);
@@ -310,7 +310,7 @@ async function resetUsersQA() {
 
   // ─── 7. FINAL REPORT OUTPUT ───────────────────────────────────────────────
   console.log('\n============================================================');
-  console.log('MAVI LINKING QA RESET');
+  console.log('EDUTALENTX QA RESET');
   console.log(`Status: ${validationPassed ? 'SUCCESS' : 'FAILED'}`);
   console.log('============================================================\n');
 

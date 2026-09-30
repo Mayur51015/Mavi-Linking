@@ -4,8 +4,8 @@ import { Fingerprint, Building2, Cpu, LineChart, Briefcase, ShieldCheck, Message
 const PlatformModulesSection = () => {
   const modules = [
     {
-      id: 'mavi-id',
-      title: 'MAVI ID',
+      id: 'etx-id',
+      title: 'ETX ID',
       tagline: 'Identity & Authentication',
       description: 'A unified identity layer for every member of the institution.',
       icon: Fingerprint,
@@ -14,8 +14,8 @@ const PlatformModulesSection = () => {
       badge: 'Core Identity',
     },
     {
-      id: 'mavi-erp',
-      title: 'MAVI ERP',
+      id: 'etx-erp',
+      title: 'EduTalentX ERP',
       tagline: 'Institutional Governance',
       description: 'Manage students, teachers, departments, recruiters, and institutional operations.',
       icon: Building2,
@@ -24,8 +24,8 @@ const PlatformModulesSection = () => {
       badge: 'Core Operations',
     },
     {
-      id: 'mavi-ai',
-      title: 'MAVI AI',
+      id: 'etx-ai',
+      title: 'EduTalentX AI',
       tagline: 'Intelligence Engine',
       description: 'Turn institutional and development data into intelligent insights.',
       icon: Cpu,
@@ -34,8 +34,8 @@ const PlatformModulesSection = () => {
       badge: 'AI Engine',
     },
     {
-      id: 'mavi-insights',
-      title: 'MAVI Insights',
+      id: 'etx-insights',
+      title: 'EduTalentX Insights',
       tagline: 'Analytics & Reporting',
       description: 'Understand student growth, department performance, placement, and institutional trends.',
       icon: LineChart,
@@ -44,8 +44,8 @@ const PlatformModulesSection = () => {
       badge: 'Analytics',
     },
     {
-      id: 'mavi-talent',
-      title: 'MAVI Talent',
+      id: 'etx-talent',
+      title: 'EduTalentX Talent',
       tagline: 'Placement Intelligence',
       description: 'Connect student capabilities with recruiters and placement opportunities.',
       icon: Briefcase,
@@ -54,8 +54,8 @@ const PlatformModulesSection = () => {
       badge: 'Placements',
     },
     {
-      id: 'mavi-verify',
-      title: 'MAVI Verify',
+      id: 'etx-verify',
+      title: 'EduTalentX Verify',
       tagline: 'Trust & Compliance',
       description: 'Streamline student, teacher, recruiter, and institutional verification.',
       icon: ShieldCheck,
@@ -64,8 +64,8 @@ const PlatformModulesSection = () => {
       badge: 'Verification',
     },
     {
-      id: 'mavi-connect',
-      title: 'MAVI Connect',
+      id: 'etx-connect',
+      title: 'EduTalentX Connect',
       tagline: 'Stakeholder Communication',
       description: 'Keep students, faculty, departments, and recruiters connected.',
       icon: MessageSquare,
@@ -74,8 +74,8 @@ const PlatformModulesSection = () => {
       badge: 'Communication',
     },
     {
-      id: 'mavi-billing',
-      title: 'MAVI Billing',
+      id: 'etx-billing',
+      title: 'EduTalentX Billing',
       tagline: 'Subscription & Invoicing',
       description: 'Manage subscriptions, pricing, payments, invoices, and renewals.',
       icon: CreditCard,

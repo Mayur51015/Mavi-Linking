@@ -1,5 +1,5 @@
 /**
- * MAVI Career Match Service
+ * EduTalentX Career Match Service
  *
  * Provides deterministic, explainable, evidence-based matching of student profiles
  * against structured career role requirements.
@@ -72,7 +72,7 @@ async function buildStudentEvidence(userId) {
     user: {
       id: user._id,
       name: user.name,
-      maviId: user.maviId,
+      etxId: user.etxId,
       preferredRole: user.preferredRole || 'Full-Stack Developer',
       preferredDomain: user.preferredDomain || 'Software Development',
       profileCompletion: user.profileCompletion || 0,
@@ -234,7 +234,7 @@ function calculateCareerMatch(evidence, targetRole) {
     problemSolvingScore = Math.min(Math.round(solveRatio + mScoreRatio), 100);
     psEvidence.push(`${solved} coding problems solved (Target Benchmark: ${benchmark})`);
     if (evidence.user.scores.problemSolving > 0) {
-      psEvidence.push(`MAVI Problem Solving Index: ${evidence.user.scores.problemSolving}/1000`);
+      psEvidence.push(`EduTalentX Problem Solving Index: ${evidence.user.scores.problemSolving}/1000`);
     }
   } else if (evidence.user.scores.problemSolving > 0) {
     problemSolvingScore = Math.min(Math.round((evidence.user.scores.problemSolving / 800) * 100), 100);

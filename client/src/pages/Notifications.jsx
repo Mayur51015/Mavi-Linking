@@ -228,7 +228,7 @@ const Notifications = () => {
               )}
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
-              Stay updated with your account, career progress, platform activity, and important MAVI updates.
+              Stay updated with your account, career progress, platform activity, and important EduTalentX updates.
             </p>
           </div>
 

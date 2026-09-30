@@ -151,11 +151,11 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
 
   // Platform Settings Form State
   const [settingsForm, setSettingsForm] = useState({
-    platformName: 'MAVI Linking',
+    platformName: 'EduTalentX',
     requireEmailVerification: true,
     allowPublicRegistrations: true,
     defaultUserPlan: 'FREE',
-    supportEmail: 'support@mavilinking.com',
+    supportEmail: 'support@edutalentx.com',
     maxLoginAttempts: 5,
     sessionTimeoutMinutes: 120,
   });
@@ -360,7 +360,7 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
     e.preventDefault();
     if (!rejectingUser) return;
     try {
-      if (rejectingUser.prn || rejectingUser.maviId) {
+      if (rejectingUser.prn || rejectingUser.etxId) {
         await api.post(`/admin/prn-verifications/${rejectingUser._id}/reject`, { reason: rejectionReason });
       } else {
         await api.post(`/admin/role-requests/${rejectingUser._id}/reject`, { reason: rejectionReason });
@@ -670,7 +670,7 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
                   <div style={{ flex: 1, minWidth: '260px', position: 'relative' }}>
                     <input
                       type="text"
-                      placeholder="Search by name, email, PRN, or MAVI ID..."
+                      placeholder="Search by name, email, PRN, or ETX ID..."
                       className="input-field"
                       style={{ marginBottom: 0, paddingLeft: '2.5rem' }}
                       value={search}
@@ -767,7 +767,7 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                          <th style={{ padding: '0.75rem' }}>Student / MAVI ID</th>
+                          <th style={{ padding: '0.75rem' }}>Student / ETX ID</th>
                           <th style={{ padding: '0.75rem' }}>PRN / Faculty ID</th>
                           <th style={{ padding: '0.75rem' }}>Actions</th>
                         </tr>
@@ -777,7 +777,7 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
                           <tr key={req._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                             <td style={{ padding: '0.75rem' }}>
                               <div style={{ fontWeight: '600' }}>{req.name}</div>
-                              <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--accent-purple)' }}>{req.maviId}</div>
+                              <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--accent-purple)' }}>{req.etxId}</div>
                             </td>
                             <td style={{ padding: '0.75rem', fontFamily: 'monospace', fontWeight: 'bold' }}>{req.prn || req.facultyId || 'Not Provided'}</td>
                             <td style={{ padding: '0.75rem' }}>
@@ -897,7 +897,7 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
                 <div style={{ display: 'grid', gap: '0.5rem' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 3fr 1fr', padding: '0.75rem 1rem', fontWeight: 'bold', color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
                     <div>Timestamp</div>
-                    <div>Actor / MAVI ID</div>
+                    <div>Actor / ETX ID</div>
                     <div>Event Details</div>
                     <div>IP Address</div>
                   </div>
@@ -906,7 +906,7 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
                       <div style={{ color: 'var(--text-secondary)' }}>{new Date(evt.createdAt).toLocaleString()}</div>
                       <div>
                         <span style={{ fontWeight: '600' }}>{evt.userId?.name || 'System'}</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--accent-purple)', display: 'block', fontFamily: 'monospace' }}>{evt.userId?.maviId || ''}</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--accent-purple)', display: 'block', fontFamily: 'monospace' }}>{evt.userId?.etxId || ''}</span>
                       </div>
                       <div>
                         <span style={{ color: '#ef4444', fontWeight: '600', marginRight: '0.5rem' }}>{evt.action}</span>
@@ -928,7 +928,7 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
                 <div style={{ display: 'grid', gap: '0.5rem' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 3fr 1fr', padding: '0.75rem 1rem', fontWeight: 'bold', color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
                     <div>Timestamp</div>
-                    <div>Actor / MAVI ID</div>
+                    <div>Actor / ETX ID</div>
                     <div>Action & Details</div>
                     <div>IP Address</div>
                   </div>
@@ -1000,11 +1000,11 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
                     </div>
                     <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Super Admin ID:</span>
-                      <span style={{ fontFamily: 'monospace', color: '#ef4444', fontWeight: 'bold' }}>{currentUser?.adminId || currentUser?.maviId || 'MAVI-SA-MASTER'}</span>
+                      <span style={{ fontFamily: 'monospace', color: '#ef4444', fontWeight: 'bold' }}>{currentUser?.adminId || currentUser?.etxId || 'ETX-SA-MASTER'}</span>
                     </div>
                     <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>MAVI Identity ID:</span>
-                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-emerald)' }}>{currentUser?.maviId}</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>ETX Identity ID:</span>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-emerald)' }}>{currentUser?.etxId}</span>
                     </div>
                     <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Governance Authority:</span>
@@ -1115,7 +1115,7 @@ const SuperAdminDashboard = ({ activeTab: propActiveTab }) => {
               </h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
                 User: <strong>{suspendingUser.name}</strong> ({suspendingUser.email}) <br />
-                MAVI ID: <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)' }}>{suspendingUser.maviId || `MAVI-${suspendingUser._id.slice(-8).toUpperCase()}`}</span>
+                ETX ID: <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)' }}>{suspendingUser.etxId || `ETX-${suspendingUser._id.slice(-8).toUpperCase()}`}</span>
               </p>
               {suspendingUser.status !== 'suspended' && (
                 <div className="input-group" style={{ marginBottom: '1.5rem' }}>

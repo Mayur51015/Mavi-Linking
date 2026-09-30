@@ -107,7 +107,7 @@ const LeaderboardWidget = () => {
             const rank = item.rank || (index + 1);
             const medal = item.medal || (rank === 1 ? 'GOLD' : rank === 2 ? 'SILVER' : rank === 3 ? 'BRONZE' : null);
             const scoreTier = item.scoreTier || item.tier || 'Beginner';
-            const isSelf = currentUser && (userObj._id === currentUser._id || userObj.maviId === currentUser.maviId);
+            const isSelf = currentUser && (userObj._id === currentUser._id || userObj.etxId === currentUser.etxId);
 
             return (
               <div
@@ -133,9 +133,9 @@ const LeaderboardWidget = () => {
                   <div>
                     <div style={{ fontWeight: 'bold', color: isSelf ? 'var(--accent-purple)' : 'white', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                       <span>{userObj.name || 'Developer'}</span>
-                      {userObj.maviId && (
+                      {userObj.etxId && (
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                          ({userObj.maviId})
+                          ({userObj.etxId})
                         </span>
                       )}
                       {isSelf && <span className="badge badge-purple" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>You</span>}

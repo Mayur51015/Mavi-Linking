@@ -145,7 +145,7 @@ const protect = async (req, res, next) => {
             message: 'Please verify your email address before accessing your account.',
             data: {
               email: user.email,
-              maviId: user.maviId,
+              etxId: user.etxId,
               accountStatus: user.accountStatus,
               emailVerified: false,
             },
@@ -160,7 +160,7 @@ const protect = async (req, res, next) => {
           message: 'Your account registration was rejected by your institution administrator.',
           data: {
             email: user.email,
-            maviId: user.maviId,
+            etxId: user.etxId,
             accountStatus: 'REJECTED',
             rejectionReason: user.rejectionReason || 'Registration rejected by administrator.',
           },
@@ -184,7 +184,7 @@ const protect = async (req, res, next) => {
             message: 'Verification Required. This feature will become available after your account is approved by your institution administrator.',
             data: {
               accountStatus: user.accountStatus,
-              maviId: user.maviId,
+              etxId: user.etxId,
             },
           });
         }

@@ -13,13 +13,13 @@ const SolutionSection = () => {
       title: 'DATA',
       color: '#3b82f6',
       icon: Database,
-      items: ['Academic Data', 'Projects', 'Skills', 'PRN & MAVI ID', 'Placement Records'],
+      items: ['Academic Data', 'Projects', 'Skills', 'PRN & ETX ID', 'Placement Records'],
     },
     {
       title: 'INTELLIGENCE',
       color: '#ec4899',
       icon: Cpu,
-      items: ['MAVI AI Engine', 'Growth Analytics', 'Readiness Scores', 'Smart Recommendations'],
+      items: ['EduTalentX AI Engine', 'Growth Analytics', 'Readiness Scores', 'Smart Recommendations'],
     },
     {
       title: 'OPPORTUNITIES',
@@ -39,7 +39,7 @@ const SolutionSection = () => {
           One Platform. <span className="text-gradient">Every Connection.</span>
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '720px', margin: '0 auto', lineHeight: 1.65 }}>
-          From identity and institutional management to AI-powered analytics and placement intelligence, MAVI Linking creates one connected digital ecosystem for modern institutions.
+          From identity and institutional management to AI-powered analytics and placement intelligence, EduTalentX creates one connected digital ecosystem for modern institutions.
         </p>
       </div>
 
@@ -120,7 +120,7 @@ const SolutionSection = () => {
         >
           <Sparkles size={20} color="var(--accent-purple)" />
           <span style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-primary)' }}>
-            Everything connects seamlessly through MAVI LINKING
+            Everything connects seamlessly through EDUTALENTX
           </span>
         </div>
       </div>

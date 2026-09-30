@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { Sparkles, ArrowUp, ShieldCheck, FileText, Book, Lock } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 const Footer = () => {
   const scrollToTop = () => {
@@ -16,8 +17,8 @@ const Footer = () => {
       style={{
         borderTop: '1px solid var(--border-color)',
         marginTop: '4rem',
-        paddingTop: '4.5rem',
-        paddingBottom: '2.5rem',
+        paddingTop: '3.5rem',
+        paddingBottom: '2rem',
         position: 'relative',
         background: 'var(--bg-secondary)',
       }}
@@ -27,37 +28,15 @@ const Footer = () => {
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '3rem',
-            marginBottom: '3.5rem',
+            gap: '2.5rem',
+            marginBottom: '2.5rem',
           }}
         >
           {/* Brand Column */}
           <div style={{ gridColumn: 'span 2' }}>
-            <RouterLink to="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#ffffff',
-                }}
-              >
-                <Sparkles size={18} />
-              </div>
-              <span style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ffffff' }}>
-                MAVI <span style={{ color: '#c4b5fd', fontWeight: '400' }}>LINKING</span>
-              </span>
-            </RouterLink>
-
-            <div style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--accent-purple)', marginBottom: '0.5rem' }}>
-              The Digital Operating Platform for Institutions
-            </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.65, maxWidth: '320px' }}>
-              "Connecting Institutions. Empowering People. Enabling Intelligence."
+            <BrandLogo variant="full" size={40} linkTo="/" showTagline={true} />
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6, maxWidth: '340px', marginTop: '1rem' }}>
+              The digital operating platform for Education, Skills, Intelligence &amp; Hiring. Connecting Institutions, Empowering Students, and Accelerating Careers.
             </p>
           </div>
 
@@ -67,12 +46,12 @@ const Footer = () => {
               Platform
             </h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.6rem', fontSize: '0.875rem' }}>
-              <li><a href="#modules" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>MAVI ERP</a></li>
-              <li><a href="#ai" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>MAVI AI Engine</a></li>
-              <li><a href="#analytics" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>MAVI Insights</a></li>
-              <li><a href="#placement" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>MAVI Talent</a></li>
-              <li><a href="#security" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>MAVI Verify</a></li>
-              <li><a href="#pricing" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>MAVI Billing</a></li>
+              <li><a href="#modules" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>EduTalentX ERP</a></li>
+              <li><a href="#ai" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>EduTalentX AI Engine</a></li>
+              <li><a href="#analytics" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>EduTalentX Insights</a></li>
+              <li><a href="#placement" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>EduTalentX Talent</a></li>
+              <li><a href="#security" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>EduTalentX Verify</a></li>
+              <li><a href="#pricing" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>EduTalentX Billing</a></li>
             </ul>
           </div>
 
@@ -84,7 +63,6 @@ const Footer = () => {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.6rem', fontSize: '0.875rem' }}>
               <li><RouterLink to="/" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>About Us</RouterLink></li>
               <li><RouterLink to="/login" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Institution Portal</RouterLink></li>
-              <li><a href="mailto:contact@mavilinking.com" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Contact Sales</a></li>
               <li><RouterLink to="/register" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Get Started</RouterLink></li>
             </ul>
           </div>
@@ -92,7 +70,7 @@ const Footer = () => {
           {/* Resources & Legal */}
           <div>
             <h4 style={{ color: '#ffffff', marginBottom: '1.25rem', fontSize: '0.95rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              Trust & Legal
+              Trust &amp; Legal
             </h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.6rem', fontSize: '0.875rem' }}>
               <li><a href="#security" className="footer-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Security Architecture</a></li>
@@ -110,7 +88,7 @@ const Footer = () => {
             flexWrap: 'wrap',
             justifyContent: 'space-between',
             alignItems: 'center',
-            paddingTop: '2rem',
+            paddingTop: '1.5rem',
             borderTop: '1px solid var(--border-color)',
             gap: '1rem',
             fontSize: '0.85rem',
@@ -118,7 +96,7 @@ const Footer = () => {
           }}
         >
           <p style={{ margin: 0 }}>
-            &copy; {new Date().getFullYear()} MAVI Linking. The Digital Operating Platform for Institutions.
+            &copy; {new Date().getFullYear()} EduTalentX — Education, Skills, Intelligence &amp; Hiring. All rights reserved.
           </p>
 
           <button

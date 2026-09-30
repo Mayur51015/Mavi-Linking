@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShieldAlert, X, LogOut, Shield } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { superAdminNavItems } from '../../navigation/superAdminNavigation.jsx';
+import BrandLogo from '../BrandLogo';
 
 const SuperAdminSidebar = ({ sidebarOpen, setSidebarOpen, activeTab, setActiveTab }) => {
   const { user, logout } = useContext(AuthContext);
@@ -15,7 +16,7 @@ const SuperAdminSidebar = ({ sidebarOpen, setSidebarOpen, activeTab, setActiveTa
     navigate('/super-admin/login', { replace: true });
   };
 
-  const superAdminIdDisplay = user?.adminId || user?.maviId || `MAVI-SA-${user?._id?.slice(-6).toUpperCase()}`;
+  const superAdminIdDisplay = user?.adminId || user?.etxId || `ETX-SA-${user?._id?.slice(-6).toUpperCase()}`;
 
   const checkIsActive = (item) => {
     const path = location.pathname;
@@ -38,13 +39,12 @@ const SuperAdminSidebar = ({ sidebarOpen, setSidebarOpen, activeTab, setActiveTa
     <aside className={`dashboard-sidebar${sidebarOpen ? ' sidebar-open' : ''}`} style={{ borderRight: '1px solid rgba(239, 68, 68, 0.3)' }}>
       {/* Super Admin Header Branding */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to="/super-admin" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <ShieldAlert size={26} style={{ color: '#ef4444' }} />
-          <div>
-            <div style={{ fontSize: '1rem', fontWeight: '800', color: 'white' }}>MAVI LINKING</div>
-            <div style={{ fontSize: '0.65rem', color: '#f87171', letterSpacing: '0.05em', fontWeight: 'bold' }}>SUPER ADMIN CONSOLE</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+          <BrandLogo variant="full" size={28} linkTo="/super-admin" />
+          <div style={{ fontSize: '0.65rem', color: '#f87171', letterSpacing: '0.05em', fontWeight: 'bold', textTransform: 'uppercase', paddingLeft: '2px' }}>
+            SUPER ADMIN CONSOLE
           </div>
-        </Link>
+        </div>
         <button className="sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
           <X size={22} />
         </button>

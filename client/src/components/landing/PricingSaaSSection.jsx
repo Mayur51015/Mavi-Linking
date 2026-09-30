@@ -33,7 +33,7 @@ const PricingSaaSSection = ({ onOpenDemoModal }) => {
         'Up to 1,000 Students',
         '5 Department Admins',
         'Core ERP & Student Profiles',
-        'Standard MAVI AI Analytics',
+        'Standard EduTalentX AI Analytics',
         'Email & Document Support',
       ],
       color: '#3b82f6',
@@ -48,7 +48,7 @@ const PricingSaaSSection = ({ onOpenDemoModal }) => {
       featuresList: [
         'Up to 5,000 Students',
         'Unlimited Department Admins',
-        'Full MAVI AI & Placement Engine',
+        'Full EduTalentX AI & Placement Engine',
         'Recruiter Talent Discovery',
         'Priority Support & Custom Branding',
       ],
@@ -109,7 +109,7 @@ const PricingSaaSSection = ({ onOpenDemoModal }) => {
     }
     return [
       'Core ERP & Student Identity',
-      'MAVI AI & Analytics Engine',
+      'EduTalentX AI & Analytics Engine',
       'Department Scoping & RBAC',
       'Institutional Support',
     ];

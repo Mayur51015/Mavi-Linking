@@ -144,7 +144,7 @@ const CareerRoadmapCard = () => {
           <Compass size={40} color="var(--accent-purple)" />
         </div>
         <h3 style={{ color: 'white', marginBottom: '0.5rem', fontSize: '1.35rem', fontFamily: 'Outfit, sans-serif' }}>
-          MAVI Career Roadmap
+          EduTalentX Career Roadmap
         </h3>
         <p style={{ color: 'var(--accent-cyan)', fontSize: '0.95rem', fontWeight: '500', marginBottom: '0.75rem' }}>
           Your career roadmap needs a little more information.
@@ -201,7 +201,7 @@ const CareerRoadmapCard = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <h3 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '0.95rem', fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>
-                MAVI Career Roadmap
+                EduTalentX Career Roadmap
               </h3>
               <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '0.15rem 0.45rem' }}>
                 AI Personalized

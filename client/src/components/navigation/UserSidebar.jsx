@@ -4,6 +4,7 @@ import { Terminal, X, BadgeCheck } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { userNavItems, userQuickActions } from '../../navigation/userNavigation.jsx';
+import BrandLogo from '../BrandLogo';
 
 const UserSidebar = ({ sidebarOpen, setSidebarOpen, onOpenVerify }) => {
   const { user } = useContext(AuthContext);
@@ -12,16 +13,13 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen, onOpenVerify }) => {
   const navigate = useNavigate();
 
   const publicUsername = user?.username || user?.platforms?.github?.username;
-  const maviIdDisplay = user?.maviId || (user?._id ? `MAVI-${user._id.slice(-8).toUpperCase()}` : '');
+  const etxIdDisplay = user?.etxId || (user?._id ? `ETX-${user._id.slice(-8).toUpperCase()}` : '');
 
 
   return (
     <aside className={`dashboard-sidebar${sidebarOpen ? ' sidebar-open' : ''}`}>
-      <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Terminal size={24} className="text-gradient" />
-          <span className="text-gradient">MaVi Linking</span>
-        </Link>
+      <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <BrandLogo variant="full" size={30} linkTo="/" />
         <button className="sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
           <X size={22} />
         </button>
@@ -49,9 +47,9 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen, onOpenVerify }) => {
                 {user?.role === 'user' ? 'Student' : user?.role || 'Student'}
               </span>
             </div>
-            {maviIdDisplay && (
+            {etxIdDisplay && (
               <div style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: 'var(--accent-purple)', fontWeight: 'bold', marginTop: '0.2rem' }}>
-                {maviIdDisplay}
+                {etxIdDisplay}
               </div>
             )}
           </div>
@@ -114,7 +112,7 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen, onOpenVerify }) => {
           </div>
           {!user?.isVerified && (
             <button
-              onClick={() => { setSidebarOpen(false); navigate(`/verify/${user?.maviId || 'account'}`); }}
+              onClick={() => { setSidebarOpen(false); navigate(`/verify/${user?.etxId || 'account'}`); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.75rem',
                 padding: '0.625rem 1rem', borderRadius: '10px',

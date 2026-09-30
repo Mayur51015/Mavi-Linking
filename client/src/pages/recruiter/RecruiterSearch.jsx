@@ -113,7 +113,7 @@ const RecruiterSearch = () => {
                   <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <span>{dev.name}</span>
                     {dev.isVerified && <BadgeCheck size={14} style={{ color: 'var(--accent-cyan)' }} />}
-                    {dev.maviId && <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--accent-purple)', fontWeight: 'bold' }}>{dev.maviId}</span>}
+                    {dev.etxId && <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--accent-purple)', fontWeight: 'bold' }}>{dev.etxId}</span>}
                   </div>
                   <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{dev.university?.name || 'N/A'} • {dev.university?.department || 'N/A'}</div>
                 </div>

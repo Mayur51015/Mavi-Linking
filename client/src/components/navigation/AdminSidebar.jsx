@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Building, X, Shield, LogOut } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { adminNavItems } from '../../navigation/adminNavigation.jsx';
+import BrandLogo from '../BrandLogo';
 
 const AdminSidebar = ({ sidebarOpen, setSidebarOpen, activeTab, setActiveTab }) => {
   const { user, logout } = useContext(AuthContext);
@@ -34,12 +35,12 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, activeTab, setActiveTab }) 
     <aside className={`dashboard-sidebar${sidebarOpen ? ' sidebar-open' : ''}`} style={{ borderRight: '1px solid rgba(139, 92, 246, 0.2)' }}>
       {/* Institution Header Branding */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to="/admin" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <Building size={24} style={{ color: 'var(--accent-purple)' }} />
-          <span style={{ fontSize: '1.1rem', fontWeight: '800', background: 'linear-gradient(135deg, #a78bfa 0%, #ec4899 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+          <BrandLogo variant="full" size={28} linkTo="/admin" />
+          <span style={{ fontSize: '0.7rem', color: 'var(--accent-purple)', fontWeight: '700', letterSpacing: '0.05em', textTransform: 'uppercase', paddingLeft: '2px' }}>
             Institution Admin
           </span>
-        </Link>
+        </div>
         <button className="sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
           <X size={22} />
         </button>

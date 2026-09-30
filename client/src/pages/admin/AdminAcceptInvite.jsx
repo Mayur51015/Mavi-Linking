@@ -134,7 +134,7 @@ const AdminAcceptInvite = () => {
         if (!err.response) {
           setErrorDetails({
             title: 'Connection Error',
-            message: 'Unable to connect to MAVI Linking. Please check your internet connection and try again.',
+            message: 'Unable to connect to EduTalentX. Please check your internet connection and try again.',
             showLoginBtn: false,
           });
         } else {
@@ -206,7 +206,7 @@ const AdminAcceptInvite = () => {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
           <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--text-primary)', fontWeight: '800', fontSize: '1.3rem' }}>
             <Terminal size={30} style={{ color: 'var(--accent-purple, #a855f7)' }} />
-            <span>MAVI Linking</span>
+            <span>EduTalentX</span>
           </Link>
         </div>
 
@@ -260,7 +260,7 @@ const AdminAcceptInvite = () => {
             </h3>
 
             <p style={{ color: 'var(--text-secondary, #a1a1aa)', fontSize: '0.92rem', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-              Your MAVI Linking administrator account has been successfully activated.
+              Your EduTalentX administrator account has been successfully activated.
             </p>
 
             {inviteData && (

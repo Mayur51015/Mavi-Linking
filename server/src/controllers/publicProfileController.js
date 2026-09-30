@@ -13,7 +13,7 @@ const findUserByHandle = async (username) => {
   const user = await User.findOne({
     isPublic: { $ne: false },
     $or: [
-      { maviId: usernameRegex },
+      { etxId: usernameRegex },
       { username: usernameRegex },
       { email: usernameRegex },
       { 'platforms.github.username': usernameRegex },
@@ -61,7 +61,7 @@ const getPublicProfileByUsername = async (req, res, next) => {
     const publicProfile = {
       profile: {
         id: user._id,
-        maviId: user.maviId || `MAVI-${user._id.toString().slice(-8).toUpperCase()}`,
+        etxId: user.etxId || `ETX-${user._id.toString().slice(-8).toUpperCase()}`,
         name: user.name,
         username: user.username || user.platforms?.github?.username || username,
         avatar: user.avatar,

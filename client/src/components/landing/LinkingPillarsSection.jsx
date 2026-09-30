@@ -23,7 +23,7 @@ const LinkingPillarsSection = () => {
       icon: Database,
       color: '#3b82f6',
       flows: [
-        'MAVI ID & PRN',
+        'ETX ID & PRN',
         'Academic Records',
         'GitHub & LeetCode',
         'Projects & Verified Skills',
@@ -37,7 +37,7 @@ const LinkingPillarsSection = () => {
       color: '#ec4899',
       flows: [
         'Institutional Data',
-        '↓ MAVI AI Engine',
+        '↓ EduTalentX AI Engine',
         '↓ Growth Insights',
         '→ Strategic Decisions',
       ],
@@ -158,7 +158,7 @@ const LinkingPillarsSection = () => {
         }}
       >
         <p style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0, lineHeight: 1.6 }}>
-          "MAVI Linking connects the people, data, intelligence, and opportunities that drive institutional growth."
+          "EduTalentX connects the people, data, intelligence, and opportunities that drive institutional growth."
         </p>
       </div>
     </section>

@@ -73,7 +73,7 @@ const StudentGrowthSection = () => {
               Continuous Feedback Loop for Student Career Growth
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: '1.5rem' }}>
-              Instead of relying solely on exam scores, MAVI Linking analyzes real developer contributions, hackathon achievements, and project code quality to create an objective developer profile.
+              Instead of relying solely on exam scores, EduTalentX analyzes real developer contributions, hackathon achievements, and project code quality to create an objective developer profile.
             </p>
 
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.75rem' }}>

@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mavi_linking';
+const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/edutalentx';
 
 /**
  * 🔒 PRODUCTION ENVIRONMENT GUARD
@@ -27,7 +27,7 @@ const InstitutionMembership = require('../models/InstitutionMembership');
 
 async function resetDemoDatabase() {
   console.log('============================================================');
-  console.log('MAVI LINKING — CLEAN DEMO DATABASE RESET & SEEDING');
+  console.log('EDUTALENTX — CLEAN DEMO DATABASE RESET & SEEDING');
   console.log('============================================================\n');
 
   await mongoose.connect(mongoUri);
@@ -102,18 +102,18 @@ async function resetDemoDatabase() {
   console.log('\n🏛️ CREATING FRESH INSTITUTION DATASET...');
 
   const freshInstitution = await Institution.create({
-    name: 'MAVI Demo Institution',
-    institutionCode: 'MAVI-DEMO-001',
-    code: 'MAVI-DEMO-001',
-    tenantId: 'MAVI-DEMO-001',
-    shortName: 'MAVI DEMO',
-    domain: 'demo.mavilinking.com',
+    name: 'EduTalentX Demo Institution',
+    institutionCode: 'ETX-DEMO-001',
+    code: 'ETX-DEMO-001',
+    tenantId: 'ETX-DEMO-001',
+    shortName: 'ETX DEMO',
+    domain: 'demo.edutalentx.com',
     city: 'Pune',
     state: 'Maharashtra',
     country: 'India',
     status: 'active',
     primaryContact: {
-      email: 'admin.demo@mavilinking.com',
+      email: 'admin.demo@edutalentx.com',
       phone: '+919876543210',
     },
   });
@@ -148,8 +148,8 @@ async function resetDemoDatabase() {
 
   // ─── 6. FRESH INSTITUTION ADMIN ─────────────────────────────────────────
   const freshInstAdmin = await User.create({
-    name: 'MAVI Demo Institution Admin',
-    email: 'admin.demo@mavilinking.com',
+    name: 'EduTalentX Demo Institution Admin',
+    email: 'admin.demo@edutalentx.com',
     password: hashedPassword,
     role: 'institution_admin',
     roles: ['institution_admin', 'admin', 'user'],
@@ -157,20 +157,20 @@ async function resetDemoDatabase() {
     accountStatus: 'ACTIVE',
     institutionId: freshInstitution._id,
     tenantId: freshInstitution.institutionCode,
-    maviId: 'MAVI-IADMIN-DEMO01',
+    etxId: 'ETX-IADMIN-DEMO01',
     isVerified: true,
     emailVerified: true,
     university: {
       name: freshInstitution.name,
     },
   });
-  console.log(`\n👑 Created Institution Admin: ${freshInstAdmin.name} (${freshInstAdmin.email}) [MAVI: ${freshInstAdmin.maviId}]`);
+  console.log(`\n👑 Created Institution Admin: ${freshInstAdmin.name} (${freshInstAdmin.email}) [ETX: ${freshInstAdmin.etxId}]`);
 
   // ─── 7. FRESH DEPARTMENT ADMINS ────────────────────────────────────────
   const deptAdminsMap = {};
   for (const code of Object.keys(createdDepartments)) {
     const dept = createdDepartments[code];
-    const deptEmail = `${code.toLowerCase()}.admin.demo@mavilinking.com`;
+    const deptEmail = `${code.toLowerCase()}.admin.demo@edutalentx.com`;
 
     const deptAdmin = await User.create({
       name: `${code} Department Admin`,
@@ -183,7 +183,7 @@ async function resetDemoDatabase() {
       institutionId: freshInstitution._id,
       departmentId: dept._id,
       tenantId: freshInstitution.institutionCode,
-      maviId: `MAVI-DADMIN-${code}`,
+      etxId: `ETX-DADMIN-${code}`,
       isVerified: true,
       emailVerified: true,
       university: {
@@ -203,24 +203,24 @@ async function resetDemoDatabase() {
   // ─── 8. FRESH CONTROLLED STUDENTS (10 total, varied account states) ─────
   const studentDefs = [
     // CSE
-    { name: 'CSE Student 01', email: 'student.cse01@demo.mavilinking.com', prn: 'PRN-CSE-001', deptCode: 'CSE', accountStatus: 'ACTIVE', isVerified: true, emailVerified: true },
-    { name: 'CSE Student 02', email: 'student.cse02@demo.mavilinking.com', prn: 'PRN-CSE-002', deptCode: 'CSE', accountStatus: 'PENDING_ADMIN_APPROVAL', isVerified: true, emailVerified: true },
+    { name: 'CSE Student 01', email: 'student.cse01@demo.edutalentx.com', prn: 'PRN-CSE-001', deptCode: 'CSE', accountStatus: 'ACTIVE', isVerified: true, emailVerified: true },
+    { name: 'CSE Student 02', email: 'student.cse02@demo.edutalentx.com', prn: 'PRN-CSE-002', deptCode: 'CSE', accountStatus: 'PENDING_ADMIN_APPROVAL', isVerified: true, emailVerified: true },
 
     // IT
-    { name: 'IT Student 01', email: 'student.it01@demo.mavilinking.com', prn: 'PRN-IT-001', deptCode: 'IT', accountStatus: 'PENDING_EMAIL_VERIFICATION', isVerified: false, emailVerified: false },
-    { name: 'IT Student 02', email: 'student.it02@demo.mavilinking.com', prn: 'PRN-IT-002', deptCode: 'IT', accountStatus: 'ACTIVE', isVerified: true, emailVerified: true },
+    { name: 'IT Student 01', email: 'student.it01@demo.edutalentx.com', prn: 'PRN-IT-001', deptCode: 'IT', accountStatus: 'PENDING_EMAIL_VERIFICATION', isVerified: false, emailVerified: false },
+    { name: 'IT Student 02', email: 'student.it02@demo.edutalentx.com', prn: 'PRN-IT-002', deptCode: 'IT', accountStatus: 'ACTIVE', isVerified: true, emailVerified: true },
 
     // ENTC
-    { name: 'ENTC Student 01', email: 'student.entc01@demo.mavilinking.com', prn: 'PRN-ENTC-001', deptCode: 'ENTC', accountStatus: 'ACTIVE', isVerified: true, emailVerified: true },
-    { name: 'ENTC Student 02', email: 'student.entc02@demo.mavilinking.com', prn: 'PRN-ENTC-002', deptCode: 'ENTC', accountStatus: 'REJECTED', isVerified: true, emailVerified: true, rejectionReason: 'Invalid identity document' },
+    { name: 'ENTC Student 01', email: 'student.entc01@demo.edutalentx.com', prn: 'PRN-ENTC-001', deptCode: 'ENTC', accountStatus: 'ACTIVE', isVerified: true, emailVerified: true },
+    { name: 'ENTC Student 02', email: 'student.entc02@demo.edutalentx.com', prn: 'PRN-ENTC-002', deptCode: 'ENTC', accountStatus: 'REJECTED', isVerified: true, emailVerified: true, rejectionReason: 'Invalid identity document' },
 
     // MECH
-    { name: 'MECH Student 01', email: 'student.mech01@demo.mavilinking.com', prn: 'PRN-MECH-001', deptCode: 'MECH', accountStatus: 'ACTIVE', isVerified: true, emailVerified: true },
-    { name: 'MECH Student 02', email: 'student.mech02@demo.mavilinking.com', prn: 'PRN-MECH-002', deptCode: 'MECH', accountStatus: 'PENDING_ADMIN_APPROVAL', isVerified: true, emailVerified: true },
+    { name: 'MECH Student 01', email: 'student.mech01@demo.edutalentx.com', prn: 'PRN-MECH-001', deptCode: 'MECH', accountStatus: 'ACTIVE', isVerified: true, emailVerified: true },
+    { name: 'MECH Student 02', email: 'student.mech02@demo.edutalentx.com', prn: 'PRN-MECH-002', deptCode: 'MECH', accountStatus: 'PENDING_ADMIN_APPROVAL', isVerified: true, emailVerified: true },
 
     // CIVIL
-    { name: 'CIVIL Student 01', email: 'student.civil01@demo.mavilinking.com', prn: 'PRN-CIVIL-001', deptCode: 'CIVIL', accountStatus: 'ACTIVE', isVerified: true, emailVerified: true },
-    { name: 'CIVIL Student 02', email: 'student.civil02@demo.mavilinking.com', prn: 'PRN-CIVIL-002', deptCode: 'CIVIL', accountStatus: 'PENDING_EMAIL_VERIFICATION', isVerified: false, emailVerified: false },
+    { name: 'CIVIL Student 01', email: 'student.civil01@demo.edutalentx.com', prn: 'PRN-CIVIL-001', deptCode: 'CIVIL', accountStatus: 'ACTIVE', isVerified: true, emailVerified: true },
+    { name: 'CIVIL Student 02', email: 'student.civil02@demo.edutalentx.com', prn: 'PRN-CIVIL-002', deptCode: 'CIVIL', accountStatus: 'PENDING_EMAIL_VERIFICATION', isVerified: false, emailVerified: false },
   ];
 
   console.log('\n🎓 CREATING CONTROLLED STUDENT DATASET (10 Students across 5 Depts)...');
@@ -228,7 +228,7 @@ async function resetDemoDatabase() {
   for (const s of studentDefs) {
     studentCount++;
     const dept = createdDepartments[s.deptCode];
-    const studentMaviId = `MAVI-STU-${s.deptCode}-${String(studentCount).padStart(2, '0')}`;
+    const studentMaviId = `ETX-STU-${s.deptCode}-${String(studentCount).padStart(2, '0')}`;
 
     await User.create({
       name: s.name,
@@ -246,7 +246,7 @@ async function resetDemoDatabase() {
       institutionId: freshInstitution._id,
       departmentId: dept._id,
       tenantId: freshInstitution.institutionCode,
-      maviId: studentMaviId,
+      etxId: studentMaviId,
       degree: 'B.Tech',
       graduationYear: '2026',
       isVerified: s.isVerified,
@@ -265,8 +265,8 @@ async function resetDemoDatabase() {
   // ─── 9. FRESH TEACHERS (2 total) ────────────────────────────────────────
   console.log('\n👨‍🏫 CREATING FRESH CONTROLLED TEACHERS (2 Teachers)...');
   const teacherDefs = [
-    { name: 'Prof. CSE Faculty', email: 'teacher.cse01@demo.mavilinking.com', deptCode: 'CSE' },
-    { name: 'Prof. IT Faculty', email: 'teacher.it01@demo.mavilinking.com', deptCode: 'IT' },
+    { name: 'Prof. CSE Faculty', email: 'teacher.cse01@demo.edutalentx.com', deptCode: 'CSE' },
+    { name: 'Prof. IT Faculty', email: 'teacher.it01@demo.edutalentx.com', deptCode: 'IT' },
   ];
 
   for (let idx = 0; idx < teacherDefs.length; idx++) {
@@ -283,7 +283,7 @@ async function resetDemoDatabase() {
       institutionId: freshInstitution._id,
       departmentId: dept._id,
       tenantId: freshInstitution.institutionCode,
-      maviId: `MAVI-TCH-${t.deptCode}-0${idx + 1}`,
+      etxId: `ETX-TCH-${t.deptCode}-0${idx + 1}`,
       isVerified: true,
       emailVerified: true,
       designation: 'Assistant Professor',
@@ -298,8 +298,8 @@ async function resetDemoDatabase() {
   // ─── 10. FRESH RECRUITERS (2 total) ──────────────────────────────────────
   console.log('\n💼 CREATING FRESH CONTROLLED RECRUITERS (2 Recruiters)...');
   const recruiterDefs = [
-    { name: 'Recruiter Tech Corp', email: 'recruiter.demo01@mavilinking.com', companyName: 'TechCorp Solutions' },
-    { name: 'Recruiter Global Systems', email: 'recruiter.demo02@mavilinking.com', companyName: 'Global Systems Inc' },
+    { name: 'Recruiter Tech Corp', email: 'recruiter.demo01@edutalentx.com', companyName: 'TechCorp Solutions' },
+    { name: 'Recruiter Global Systems', email: 'recruiter.demo02@edutalentx.com', companyName: 'Global Systems Inc' },
   ];
 
   for (let idx = 0; idx < recruiterDefs.length; idx++) {
@@ -312,7 +312,7 @@ async function resetDemoDatabase() {
       roles: ['recruiter'],
       status: 'active',
       accountStatus: 'ACTIVE',
-      maviId: `MAVI-REC-DEMO0${idx + 1}`,
+      etxId: `ETX-REC-DEMO0${idx + 1}`,
       companyName: r.companyName,
       isVerified: true,
       emailVerified: true,
@@ -347,7 +347,7 @@ async function resetDemoDatabase() {
     institutionId: { $nin: [freshInstitution._id] },
   });
 
-  console.log(`🏛️ INSTITUTIONS: ${finalInstCount} (Expected: 1) [Code: MAVI-DEMO-001]`);
+  console.log(`🏛️ INSTITUTIONS: ${finalInstCount} (Expected: 1) [Code: ETX-DEMO-001]`);
   console.log(`🏢 DEPARTMENTS: ${finalDeptCount} (Expected: 5) [CSE, IT, ENTC, MECH, CIVIL]`);
   console.log(`🛡️ PRESERVED SUPER ADMINS: ${finalSuperAdmins}`);
   console.log(`👑 INSTITUTION ADMINS: ${finalInstAdmins}`);

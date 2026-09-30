@@ -164,7 +164,7 @@ app.use('/public', express.static(path.join(__dirname, '..', 'public')));
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'MaVi Linking API is running',
+    message: 'EduTalentX API is running',
     environment: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
   });
@@ -263,11 +263,11 @@ const startServer = async () => {
       }
 
       // Seed Dedicated Platform Owner / Master Super Admin Account if missing
-      const ownerEmail = (process.env.OWNER_EMAIL || 'owner@mavilinking.com').toLowerCase();
+      const ownerEmail = (process.env.OWNER_EMAIL || 'owner@edutalentx.com').toLowerCase();
       const ownerPassword = process.env.OWNER_PASSWORD || 'MaviOwner@2026!';
-      const ownerAdminId = 'MAVI-OWNER-001';
+      const ownerAdminId = 'ETX-OWNER-001';
 
-      let ownerUser = await User.findOne({ $or: [{ email: ownerEmail }, { maviId: 'MAVI-OWNER01' }] });
+      let ownerUser = await User.findOne({ $or: [{ email: ownerEmail }, { etxId: 'ETX-OWNER01' }] });
       if (!ownerUser) {
         ownerUser = await User.create({
           name: 'Platform Owner',
@@ -278,7 +278,7 @@ const startServer = async () => {
           adminId: ownerAdminId,
           adminLoginId: ownerAdminId,
           designation: 'Platform Owner & Founder',
-          maviId: 'MAVI-OWNER01',
+          etxId: 'ETX-OWNER01',
           status: 'active',
           emailVerified: true,
         });
@@ -293,18 +293,18 @@ const startServer = async () => {
         await ownerUser.save();
       }
 
-      // MAVI ID backfill migration for existing accounts
+      // ETX ID backfill migration for existing accounts
       const usersNeedingMaviId = await User.find({
-        $or: [{ maviId: { $exists: false } }, { maviId: null }, { maviId: '' }],
+        $or: [{ etxId: { $exists: false } }, { etxId: null }, { etxId: '' }],
       });
       if (usersNeedingMaviId.length > 0) {
         let backfillCount = 0;
         for (const userDoc of usersNeedingMaviId) {
-          // Pre-save hook will auto-generate unique MAVI ID if missing
+          // Pre-save hook will auto-generate unique ETX ID if missing
           await userDoc.save();
           backfillCount++;
         }
-        console.log(`   ✅ MAVI ID Migration: Backfilled MAVI IDs for ${backfillCount} existing user account(s).`);
+        console.log(`   ✅ ETX ID Migration: Backfilled ETX IDs for ${backfillCount} existing user account(s).`);
       }
 
       // Google ID migration: Unset googleId: null fields that break sparse indexing
@@ -399,7 +399,7 @@ const startServer = async () => {
         console.log(`   ✅ Role migration: ${devMigrated.modifiedCount} developer→user, ${profMigrated.modifiedCount} professor→teacher`);
       }
     } catch (migrationErr) {
-      console.warn('   ⚠️  Role/MAVI ID/Google ID migration skipped:', migrationErr.message);
+      console.warn('   ⚠️  Role/ETX ID/Google ID migration skipped:', migrationErr.message);
     }
 
     const server = http.createServer(app);

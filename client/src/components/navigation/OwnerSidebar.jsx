@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Crown, X, LogOut } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { ownerNavItems } from '../../navigation/ownerNavigation.jsx';
+import BrandLogo from '../BrandLogo';
 
 const OwnerSidebar = ({ sidebarOpen, setSidebarOpen, activeTab, setActiveTab }) => {
   const { user, logout } = useContext(AuthContext);
@@ -15,19 +16,18 @@ const OwnerSidebar = ({ sidebarOpen, setSidebarOpen, activeTab, setActiveTab }) 
   };
 
   const currentTab = activeTab || new URLSearchParams(location.search).get('tab') || 'overview';
-  const ownerIdDisplay = user?.adminId || 'MAVI-OWNER-001';
+  const ownerIdDisplay = user?.adminId || 'ETX-OWNER-001';
 
   return (
     <aside className={`dashboard-sidebar${sidebarOpen ? ' sidebar-open' : ''}`} style={{ borderRight: '1px solid rgba(234, 179, 8, 0.35)' }}>
       {/* Platform Owner Header Branding */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to="/owner" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <Crown size={28} style={{ color: '#eab308' }} />
-          <div>
-            <div style={{ fontSize: '1.05rem', fontWeight: '800', color: 'white' }}>MAVI LINKING</div>
-            <div style={{ fontSize: '0.65rem', color: '#fde047', letterSpacing: '0.08em', fontWeight: 'bold' }}>PLATFORM OWNER CONSOLE</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+          <BrandLogo variant="full" size={28} linkTo="/owner" />
+          <div style={{ fontSize: '0.65rem', color: '#fde047', letterSpacing: '0.08em', fontWeight: 'bold', textTransform: 'uppercase', paddingLeft: '2px' }}>
+            PLATFORM OWNER CONSOLE
           </div>
-        </Link>
+        </div>
         <button className="sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
           <X size={22} />
         </button>

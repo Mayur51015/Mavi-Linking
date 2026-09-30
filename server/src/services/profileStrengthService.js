@@ -1,8 +1,8 @@
 /**
- * Unified MAVI Profile Strength & Completion Service
+ * Unified EduTalentX Profile Strength & Completion Service
  *
  * Single Source of Truth for calculating profile strength, completeness,
- * and identifying missing profile requirements across MAVI Linking.
+ * and identifying missing profile requirements across EduTalentX.
  */
 
 const User = require('../models/User');

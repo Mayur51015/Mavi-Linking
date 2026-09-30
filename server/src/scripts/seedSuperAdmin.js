@@ -9,7 +9,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 const User = require('../models/User');
 
 async function seedSuperAdmin() {
-  const email = (process.env.SEED_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || 'admin@mavilinking.com').toLowerCase().trim();
+  const email = (process.env.SEED_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || 'admin@edutalentx.com').toLowerCase().trim();
   const password = process.env.SEED_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD || 'AdminPass@123';
   const name = process.env.SEED_ADMIN_NAME || process.env.SUPER_ADMIN_NAME || 'Platform Super Admin';
 
@@ -18,7 +18,7 @@ async function seedSuperAdmin() {
     process.exit(1);
   }
 
-  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mavi_linking';
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/edutalentx';
 
   try {
     await mongoose.connect(mongoUri);
@@ -60,10 +60,10 @@ async function seedSuperAdmin() {
         emailVerified: true,
         institutionId: null,
         departmentId: null,
-        maviId: 'MAVI-SUPER-ADMIN-01',
+        etxId: 'ETX-SUPER-ADMIN-01',
       });
 
-      console.log(`✅ Platform Super Admin account created: ${email} [MAVI ID: ${user.maviId}]`);
+      console.log(`✅ Platform Super Admin account created: ${email} [ETX ID: ${user.etxId}]`);
     }
 
     await mongoose.disconnect();

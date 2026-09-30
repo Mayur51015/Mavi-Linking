@@ -79,7 +79,7 @@ const sendEmail = async ({ to, subject, html, text, templateName }) => {
       }
     }
 
-    const fromAddress = process.env.EMAIL_FROM || `"MAVI Linking Security" <${emailUser || 'noreply@mavilinking.com'}>`;
+    const fromAddress = process.env.EMAIL_FROM || `"EduTalentX Security" <${emailUser || 'noreply@edutalentx.com'}>`;
 
     const mailOptions = {
       from: fromAddress,
@@ -120,7 +120,7 @@ const generatePasswordResetEmailHtml = ({ name, otp, resetLink }) => {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>MAVI Linking — Password Reset Request</title>
+      <title>EduTalentX — Password Reset Request</title>
       <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
         .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -138,12 +138,12 @@ const generatePasswordResetEmailHtml = ({ name, otp, resetLink }) => {
     <body>
       <div class="container">
         <div class="header">
-          <div class="brand">MAVI Linking</div>
+          <div class="brand">EduTalentX</div>
           <div class="title">Password Reset Request</div>
         </div>
         <div class="content">
           <p>Hello ${name || 'User'},</p>
-          <p>We received a password reset request for your MAVI account linked to this verified recovery email address.</p>
+          <p>We received a password reset request for your EduTalentX account linked to this verified recovery email address.</p>
           
           <div class="otp-box">
             <div style="font-size: 12px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px;">Your 6-Digit Security OTP</div>
@@ -161,7 +161,7 @@ const generatePasswordResetEmailHtml = ({ name, otp, resetLink }) => {
           </div>
         </div>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} MAVI Linking Security Platform. All rights reserved.
+          &copy; ${new Date().getFullYear()} EduTalentX Security Platform. All rights reserved.
         </div>
       </div>
     </body>
@@ -180,7 +180,7 @@ const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activ
     <html>
     <head>
       <meta charset="utf-8">
-      <title>MAVI Linking — Account Invitation & Activation</title>
+      <title>EduTalentX — Account Invitation & Activation</title>
       <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
         .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -197,12 +197,12 @@ const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activ
     <body>
       <div class="container">
         <div class="header">
-          <div class="brand">MAVI Linking</div>
+          <div class="brand">EduTalentX</div>
           <div class="title">Account Activation & Setup</div>
         </div>
         <div class="content">
           <p>Hello ${name || 'User'},</p>
-          <p>You have been officially provisioned an account on <strong>MAVI Linking</strong> as a <strong>${roleTitle}</strong>.</p>
+          <p>You have been officially provisioned an account on <strong>EduTalentX</strong> as a <strong>${roleTitle}</strong>.</p>
           
           <div class="info-card">
             <div style="font-size: 13px; color: #a1a1aa; margin-bottom: 4px;">Institution / Organization</div>
@@ -220,7 +220,7 @@ const generateAccountInvitationEmailHtml = ({ name, role, institutionName, activ
           </div>
         </div>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} MAVI Linking Identity Platform. All rights reserved.
+          &copy; ${new Date().getFullYear()} EduTalentX Identity Platform. All rights reserved.
         </div>
       </div>
     </body>
@@ -237,7 +237,7 @@ const generateEmailChangeOtpEmailHtml = ({ name, otp, newEmail }) => {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>MAVI Linking — Verify Your Email Change</title>
+      <title>EduTalentX — Verify Your Email Change</title>
       <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
         .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -254,17 +254,17 @@ const generateEmailChangeOtpEmailHtml = ({ name, otp, newEmail }) => {
     <body>
       <div class="container">
         <div class="header">
-          <div class="brand">MAVI Linking</div>
+          <div class="brand">EduTalentX</div>
           <div class="title">Verify New Email Address</div>
         </div>
         <div class="content">
           <p>Hello ${name || 'User'},</p>
-          <p>You requested to change your MAVI account email address to <strong>${newEmail}</strong>.</p>
+          <p>You requested to change your EduTalentX account email address to <strong>${newEmail}</strong>.</p>
           
           <div class="otp-box">
             <div style="font-size: 12px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px;">6-Digit Verification Code</div>
             <div class="otp-code">${otp}</div>
-            <div style="font-size: 12px; color: #e4e4e7;">Enter this code on MAVI Linking to complete verification</div>
+            <div style="font-size: 12px; color: #e4e4e7;">Enter this code on EduTalentX to complete verification</div>
           </div>
 
           <div class="warning">
@@ -272,7 +272,7 @@ const generateEmailChangeOtpEmailHtml = ({ name, otp, newEmail }) => {
           </div>
         </div>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} MAVI Linking Security Platform. All rights reserved.
+          &copy; ${new Date().getFullYear()} EduTalentX Security Platform. All rights reserved.
         </div>
       </div>
     </body>
@@ -283,13 +283,13 @@ const generateEmailChangeOtpEmailHtml = ({ name, otp, newEmail }) => {
 /**
  * Generate Dark Theme HTML Email for Security Notification (sent to OLD email)
  */
-const generateEmailChangeNotificationOldEmailHtml = ({ name, oldEmail, newEmail, maviId, timestamp }) => {
+const generateEmailChangeNotificationOldEmailHtml = ({ name, oldEmail, newEmail, etxId, timestamp }) => {
   return `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
-      <title>MAVI Linking — Email Address Changed</title>
+      <title>EduTalentX — Email Address Changed</title>
       <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
         .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -304,12 +304,12 @@ const generateEmailChangeNotificationOldEmailHtml = ({ name, oldEmail, newEmail,
     <body>
       <div class="container">
         <div class="header">
-          <div class="brand">MAVI Linking</div>
+          <div class="brand">EduTalentX</div>
           <div class="title">Security Notification — Email Address Changed</div>
         </div>
         <div class="content">
           <p>Hello ${name || 'User'},</p>
-          <p>The registered email address for your MAVI Linking account (MAVI ID: <strong>${maviId || 'N/A'}</strong>) was successfully changed.</p>
+          <p>The registered email address for your EduTalentX account (ETX ID: <strong>${etxId || 'N/A'}</strong>) was successfully changed.</p>
           
           <div class="alert-box">
             <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; color: #ef4444;">Change Summary</div>
@@ -318,14 +318,14 @@ const generateEmailChangeNotificationOldEmailHtml = ({ name, oldEmail, newEmail,
             <div>Timestamp: ${timestamp || new Date().toISOString()}</div>
           </div>
 
-          <p>Your MAVI ID, PRN, linked platform accounts (GitHub, LeetCode, LinkedIn), projects, analytics, and achievements remain fully intact on your permanent MAVI identity.</p>
+          <p>Your ETX ID, PRN, linked platform accounts (GitHub, LeetCode, LinkedIn), projects, analytics, and achievements remain fully intact on your permanent EduTalentX identity.</p>
 
           <div style="background: rgba(234, 179, 8, 0.1); border-left: 4px solid #eab308; color: #fde047; padding: 12px 16px; border-radius: 4px; font-size: 13px; margin: 20px 0;">
             <strong>Did not make this change?</strong> If you did not authorize this email update, your account may be compromised. Please secure your account or contact institutional support immediately.
           </div>
         </div>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} MAVI Linking Security Platform. All rights reserved.
+          &copy; ${new Date().getFullYear()} EduTalentX Security Platform. All rights reserved.
         </div>
       </div>
     </body>
@@ -342,7 +342,7 @@ const generateStudentVerificationEmailHtml = ({ name, verificationLink, expiresM
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Verify your MAVI Linking account</title>
+      <title>Verify your EduTalentX account</title>
       <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
         .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -358,23 +358,23 @@ const generateStudentVerificationEmailHtml = ({ name, verificationLink, expiresM
     <body>
       <div class="container">
         <div class="header">
-          <div class="brand">MAVI Linking</div>
-          <div class="title">Verify your MAVI Linking account</div>
+          <div class="brand">EduTalentX</div>
+          <div class="title">Verify your EduTalentX account</div>
         </div>
         <div class="content">
           <p>Hello ${name || 'Student'},</p>
-          <p>Welcome to MAVI Linking. Your account has been created successfully. Please verify your email address to activate your account and access your dashboard.</p>
+          <p>Welcome to EduTalentX. Your account has been created successfully. Please verify your email address to activate your account and access your dashboard.</p>
           
           <div style="text-align: center; margin: 24px 0;">
-            <a href="${verificationLink}" class="btn-link" target="_blank">Verify My MAVI Linking Account</a>
+            <a href="${verificationLink}" class="btn-link" target="_blank">Verify My EduTalentX Account</a>
           </div>
 
           <div class="warning">
-            <strong>Security Notice:</strong> This verification link is valid for <strong>10 minutes</strong> and can only be used once. If you did not register for a MAVI Linking account, please disregard this message.
+            <strong>Security Notice:</strong> This verification link is valid for <strong>10 minutes</strong> and can only be used once. If you did not register for a EduTalentX account, please disregard this message.
           </div>
         </div>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} MAVI Linking Security Platform. All rights reserved.
+          &copy; ${new Date().getFullYear()} EduTalentX Security Platform. All rights reserved.
         </div>
       </div>
     </body>
@@ -383,13 +383,13 @@ const generateStudentVerificationEmailHtml = ({ name, verificationLink, expiresM
 };
 
 /**
- * Generate Dark Theme HTML Email for Institution Admin to Verify Student MAVI ID & Identity
+ * Generate Dark Theme HTML Email for Institution Admin to Verify Student ETX ID & Identity
  */
 const generateInstitutionAdminStudentVerificationEmailHtml = ({
   adminName,
   studentName,
   studentEmail,
-  maviId,
+  etxId,
   prn,
   institutionName,
   verificationLink,
@@ -399,7 +399,7 @@ const generateInstitutionAdminStudentVerificationEmailHtml = ({
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Student MAVI ID Verification Request — MAVI Linking</title>
+      <title>Student ETX ID Verification Request — EduTalentX</title>
       <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
         .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -415,12 +415,12 @@ const generateInstitutionAdminStudentVerificationEmailHtml = ({
     <body>
       <div class="container">
         <div class="header">
-          <div class="brand">MAVI Linking</div>
-          <div class="title">Student MAVI ID Verification Request</div>
+          <div class="brand">EduTalentX</div>
+          <div class="title">Student ETX ID Verification Request</div>
         </div>
         <div class="content">
           <p>Hello ${adminName || 'Institution Administrator'},</p>
-          <p>A student has registered under <strong>${institutionName || 'your institution'}</strong> and requires identity & MAVI ID verification.</p>
+          <p>A student has registered under <strong>${institutionName || 'your institution'}</strong> and requires identity & ETX ID verification.</p>
           
           <div class="info-box">
             <table width="100%" style="border-collapse: collapse;">
@@ -433,8 +433,8 @@ const generateInstitutionAdminStudentVerificationEmailHtml = ({
                 <td style="padding: 6px 0; color: #ffffff; font-weight: 700; text-align: right;">${studentEmail}</td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; color: #a1a1aa;">Permanent MAVI ID:</td>
-                <td style="padding: 6px 0; color: #c084fc; font-weight: 800; font-family: monospace; text-align: right;">${maviId}</td>
+                <td style="padding: 6px 0; color: #a1a1aa;">Permanent ETX ID:</td>
+                <td style="padding: 6px 0; color: #c084fc; font-weight: 800; font-family: monospace; text-align: right;">${etxId}</td>
               </tr>
               <tr>
                 <td style="padding: 6px 0; color: #a1a1aa;">PRN / Roll No:</td>
@@ -443,14 +443,14 @@ const generateInstitutionAdminStudentVerificationEmailHtml = ({
             </table>
           </div>
 
-          <p>As an authorized Institution Administrator, please review the student's credentials and verify their MAVI ID to grant full platform access.</p>
+          <p>As an authorized Institution Administrator, please review the student's credentials and verify their ETX ID to grant full platform access.</p>
 
           <div style="text-align: center; margin: 24px 0;">
-            <a href="${verificationLink}" class="btn-link" target="_blank">Verify Student MAVI ID & Account</a>
+            <a href="${verificationLink}" class="btn-link" target="_blank">Verify Student ETX ID & Account</a>
           </div>
         </div>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} MAVI Linking Security Platform. All rights reserved.
+          &copy; ${new Date().getFullYear()} EduTalentX Security Platform. All rights reserved.
         </div>
       </div>
     </body>
@@ -494,7 +494,7 @@ const generateAdminInvitationEmailHtml = ({
     <html>
     <head>
       <meta charset="utf-8">
-      <title>MAVI Linking — Administrator Invitation</title>
+      <title>EduTalentX — Administrator Invitation</title>
       <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 20px; }
         .container { max-width: 580px; margin: 0 auto; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -513,12 +513,12 @@ const generateAdminInvitationEmailHtml = ({
     <body>
       <div class="container">
         <div class="header">
-          <div class="brand">MAVI Linking</div>
+          <div class="brand">EduTalentX</div>
           <div class="title">Administrative Invitation & Account Setup</div>
         </div>
         <div class="content">
           <p>Hello ${name || 'Administrator'},</p>
-          <p>You have been officially invited to join and administer the <strong>MAVI Linking</strong> platform as a <strong>${roleTitle}</strong>.</p>
+          <p>You have been officially invited to join and administer the <strong>EduTalentX</strong> platform as a <strong>${roleTitle}</strong>.</p>
           
           <div class="info-card">
             <table width="100%" style="border-collapse: collapse;">
@@ -547,7 +547,7 @@ const generateAdminInvitationEmailHtml = ({
           </div>
 
           <p style="font-size: 14px; color: #e4e4e7; text-align: center; margin-top: 16px;">
-            Your MAVI Linking administrator invitation is valid for <strong>${validityText}</strong>. Please complete your account setup before the invitation expires.
+            Your EduTalentX administrator invitation is valid for <strong>${validityText}</strong>. Please complete your account setup before the invitation expires.
           </p>
 
           <div style="text-align: center; margin: 24px 0;">
@@ -559,7 +559,7 @@ const generateAdminInvitationEmailHtml = ({
           </div>
         </div>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} MAVI Linking Identity & Security Platform. All rights reserved.
+          &copy; ${new Date().getFullYear()} EduTalentX Identity & Security Platform. All rights reserved.
         </div>
       </div>
     </body>
@@ -600,7 +600,7 @@ const sendAdminInvitationEmail = async ({
 
   return await sendEmail({
     to: to.toLowerCase().trim(),
-    subject: `You've been invited to become a MAVI Linking Administrator`,
+    subject: `You've been invited to become a EduTalentX Administrator`,
     html,
     templateName: 'admin-invitation',
   });
@@ -609,7 +609,7 @@ const sendAdminInvitationEmail = async ({
 /**
  * Generate responsive HTML for user lifecycle events (Suspension, Deactivation, Reactivation)
  */
-const generateAccountLifecycleEmailHtml = ({ type, name, maviId, role, reason, expiresDate }) => {
+const generateAccountLifecycleEmailHtml = ({ type, name, etxId, role, reason, expiresDate }) => {
   const isSuspension = type === 'SUSPENDED';
   const isDeactivation = type === 'DEACTIVATED';
   const isReactivation = type === 'REACTIVATED';
@@ -622,10 +622,10 @@ const generateAccountLifecycleEmailHtml = ({ type, name, maviId, role, reason, e
     : 'Account Deactivated';
 
   const message = isReactivation
-    ? 'Your MAVI Linking account has been reactivated. You may now log in to the portal with your credentials.'
+    ? 'Your EduTalentX account has been reactivated. You may now log in to the portal with your credentials.'
     : isSuspension
-    ? 'Your MAVI Linking account has been temporarily suspended by an administrator.'
-    : 'Your MAVI Linking account has been deactivated by an administrator.';
+    ? 'Your EduTalentX account has been temporarily suspended by an administrator.'
+    : 'Your EduTalentX account has been deactivated by an administrator.';
 
   return `
 <!DOCTYPE html>
@@ -639,7 +639,7 @@ const generateAccountLifecycleEmailHtml = ({ type, name, maviId, role, reason, e
   <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background: #161b22; border-radius: 12px; border: 1px solid #30363d; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);">
     <tr>
       <td style="padding: 30px; text-align: center; border-bottom: 1px solid #21262d; background: linear-gradient(135deg, rgba(88, 28, 135, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);">
-        <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">MAVI LINKING</h1>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">EDUTALENTX</h1>
         <p style="margin: 5px 0 0 0; font-size: 13px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px;">Security & Account Governance</p>
       </td>
     </tr>
@@ -657,7 +657,7 @@ const generateAccountLifecycleEmailHtml = ({ type, name, maviId, role, reason, e
         </p>
         
         <table width="100%" style="background: #0d1117; border: 1px solid #30363d; border-radius: 8px; margin: 20px 0; padding: 15px;">
-          ${maviId ? `<tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px; width: 140px;">MAVI ID:</td><td style="padding: 6px 12px; color: #ffffff; font-family: monospace; font-size: 13px; font-weight: 600;">${maviId}</td></tr>` : ''}
+          ${etxId ? `<tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px; width: 140px;">ETX ID:</td><td style="padding: 6px 12px; color: #ffffff; font-family: monospace; font-size: 13px; font-weight: 600;">${etxId}</td></tr>` : ''}
           ${role ? `<tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px;">Role:</td><td style="padding: 6px 12px; color: #ffffff; font-size: 13px;">${role}</td></tr>` : ''}
           ${reason ? `<tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px;">Reason:</td><td style="padding: 6px 12px; color: #f87171; font-size: 13px;">${reason}</td></tr>` : ''}
           ${expiresDate ? `<tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px;">Suspended Until:</td><td style="padding: 6px 12px; color: #fbbf24; font-size: 13px;">${new Date(expiresDate).toUTCString()}</td></tr>` : ''}
@@ -666,7 +666,7 @@ const generateAccountLifecycleEmailHtml = ({ type, name, maviId, role, reason, e
         ${
           isReactivation
             ? `<div style="text-align: center; margin: 30px 0 10px 0;">
-                <a href="${process.env.CLIENT_URL || 'https://mavilinking.com'}/login" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">Sign In to Portal</a>
+                <a href="${process.env.CLIENT_URL || 'https://edutalentx.com'}/login" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">Sign In to Portal</a>
                </div>`
             : `<p style="margin: 20px 0 0 0; font-size: 13px; line-height: 1.5; color: #8b949e;">If you believe this was done in error or require further assistance, please contact your institution administration or platform support team.</p>`
         }
@@ -674,7 +674,7 @@ const generateAccountLifecycleEmailHtml = ({ type, name, maviId, role, reason, e
     </tr>
     <tr>
       <td style="padding: 20px 30px; background: #0d1117; border-top: 1px solid #21262d; text-align: center;">
-        <p style="margin: 0; font-size: 12px; color: #484f58;">&copy; ${new Date().getFullYear()} MAVI Linking System. All rights reserved.</p>
+        <p style="margin: 0; font-size: 12px; color: #484f58;">&copy; ${new Date().getFullYear()} EduTalentX System. All rights reserved.</p>
       </td>
     </tr>
   </table>
@@ -686,21 +686,21 @@ const generateAccountLifecycleEmailHtml = ({ type, name, maviId, role, reason, e
 /**
  * Dispatch Account Lifecycle Notification Email
  */
-const sendAccountLifecycleEmail = async ({ to, name, maviId, role, type, reason, expiresDate }) => {
+const sendAccountLifecycleEmail = async ({ to, name, etxId, role, type, reason, expiresDate }) => {
   if (!to || typeof to !== 'string' || !to.includes('@')) {
     return { success: false, error: 'INVALID_EMAIL' };
   }
 
   const subjectMap = {
-    SUSPENDED: 'MAVI Linking — Account Temporarily Suspended',
-    DEACTIVATED: 'MAVI Linking — Account Deactivated',
-    REACTIVATED: 'MAVI Linking — Account Access Restored',
+    SUSPENDED: 'EduTalentX — Account Temporarily Suspended',
+    DEACTIVATED: 'EduTalentX — Account Deactivated',
+    REACTIVATED: 'EduTalentX — Account Access Restored',
   };
 
   const html = generateAccountLifecycleEmailHtml({
     type,
     name,
-    maviId,
+    etxId,
     role,
     reason,
     expiresDate,
@@ -708,7 +708,7 @@ const sendAccountLifecycleEmail = async ({ to, name, maviId, role, type, reason,
 
   return await sendEmail({
     to: to.toLowerCase().trim(),
-    subject: subjectMap[type] || `MAVI Linking — Account Status Update (${type})`,
+    subject: subjectMap[type] || `EduTalentX — Account Status Update (${type})`,
     html,
     templateName: `account-lifecycle-${type.toLowerCase()}`,
   });

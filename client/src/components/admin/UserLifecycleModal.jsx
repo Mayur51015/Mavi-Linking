@@ -179,7 +179,7 @@ export default function UserLifecycleModal({
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
               <div><strong style={{ color: '#94a3b8' }}>Email:</strong> {user.email}</div>
-              <div><strong style={{ color: '#94a3b8' }}>MAVI ID:</strong> <span style={{ fontFamily: 'monospace', color: '#c084fc' }}>{user.maviId}</span></div>
+              <div><strong style={{ color: '#94a3b8' }}>ETX ID:</strong> <span style={{ fontFamily: 'monospace', color: '#c084fc' }}>{user.etxId}</span></div>
               <div><strong style={{ color: '#94a3b8' }}>Role:</strong> <span className="badge badge-outline" style={{ fontSize: '0.7rem' }}>{user.role}</span></div>
             </div>
             {(user.institutionId?.name || user.institutionId?.code) && (
@@ -259,7 +259,7 @@ export default function UserLifecycleModal({
                 }}
               >
                 <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#ef4444' }}>Important Deactivation Policy:</strong>
-                The user will immediately lose access to all MAVI Linking systems and active sessions will be revoked. The account will remain disabled indefinitely until an authorized administrator explicitly reactivates it.
+                The user will immediately lose access to all EduTalentX systems and active sessions will be revoked. The account will remain disabled indefinitely until an authorized administrator explicitly reactivates it.
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
@@ -337,7 +337,7 @@ export default function UserLifecycleModal({
                 <ul style={{ margin: '0 0 0 1.25rem', padding: 0 }}>
                   <li>This action permanently deletes this user record and eligible dependent data from the database.</li>
                   <li><strong>The email address ({user.email}) will become available for a fresh new registration.</strong></li>
-                  <li>Any future registration with this email will receive a brand-new MAVI ID and start as a new account with zero inherited permissions.</li>
+                  <li>Any future registration with this email will receive a brand-new ETX ID and start as a new account with zero inherited permissions.</li>
                   <li>Legal and compliance audit logs are preserved for security governance.</li>
                 </ul>
               </div>
@@ -404,8 +404,8 @@ export default function UserLifecycleModal({
                   <div style={{ fontWeight: '600', color: '#ffffff' }}>{user.email}</div>
                 </div>
                 <div className="glass-card" style={{ padding: '0.85rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>MAVI ID</div>
-                  <div style={{ fontWeight: '600', fontFamily: 'monospace', color: '#c084fc' }}>{user.maviId}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ETX ID</div>
+                  <div style={{ fontWeight: '600', fontFamily: 'monospace', color: '#c084fc' }}>{user.etxId}</div>
                 </div>
                 <div className="glass-card" style={{ padding: '0.85rem' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Primary Role</div>

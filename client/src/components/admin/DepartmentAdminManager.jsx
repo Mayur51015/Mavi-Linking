@@ -181,7 +181,7 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
                 <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
                   <th style={{ padding: '1rem' }}>Administrator</th>
                   <th style={{ padding: '1rem' }}>Assigned Department</th>
-                  <th style={{ padding: '1rem' }}>MAVI ID</th>
+                  <th style={{ padding: '1rem' }}>ETX ID</th>
                   <th style={{ padding: '1rem' }}>Account Status</th>
                   <th style={{ padding: '1rem' }}>Actions</th>
                 </tr>
@@ -203,7 +203,7 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
                         </span>
                       </td>
                       <td style={{ padding: '1rem', fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-purple)' }}>
-                        {admin.maviId}
+                        {admin.etxId}
                       </td>
                       <td style={{ padding: '1rem' }}>
                         <span
@@ -295,7 +295,7 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
           <form onSubmit={handleReassign} className="glass-card-static" style={{ width: '420px', padding: '2rem' }}>
             <h3 style={{ marginBottom: '1rem' }}>Reassign Department Admin</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-              Target Admin: <strong>{reassigningAdmin.name}</strong> ({reassigningAdmin.maviId})
+              Target Admin: <strong>{reassigningAdmin.name}</strong> ({reassigningAdmin.etxId})
             </p>
             <div className="input-group" style={{ marginBottom: '1.5rem' }}>
               <label className="input-label">Select New Department</label>

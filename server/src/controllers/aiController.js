@@ -58,12 +58,12 @@ exports.getLeaderboard = async (req, res, next) => {
       status: { $ne: 'suspended' },
       'scores.overall': { $gt: 0 }
     })
-    .select('name avatar maviId scores role status platforms')
+    .select('name avatar etxId scores role status platforms')
     .sort({
       'scores.overall': -1,
       'scores.problemSolving': -1,
       'scores.development': -1,
-      'maviId': 1,
+      'etxId': 1,
       '_id': 1
     })
     .limit(50);
@@ -85,14 +85,14 @@ exports.getLeaderboard = async (req, res, next) => {
           _id: u._id,
           name: u.name,
           avatar: u.avatar,
-          maviId: u.maviId,
+          etxId: u.etxId,
           role: u.role
         },
         userId: {
           _id: u._id,
           name: u.name,
           avatar: u.avatar,
-          maviId: u.maviId,
+          etxId: u.etxId,
           role: u.role
         }
       };
@@ -170,7 +170,7 @@ exports.generateReport = async (req, res, next) => {
     doc.on('data', (chunk) => buffers.push(chunk));
 
     // Header & Title
-    doc.fontSize(24).fillColor('#0f172a').text('MAVI Developer Intelligence Report', { align: 'center' });
+    doc.fontSize(24).fillColor('#0f172a').text('EduTalentX Developer Intelligence Report', { align: 'center' });
     doc.moveDown();
 
     // User info

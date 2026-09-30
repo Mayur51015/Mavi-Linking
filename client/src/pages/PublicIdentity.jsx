@@ -11,6 +11,7 @@ import QRModal from '../components/QRModal';
 import ReportGenerator from '../components/ReportGenerator';
 import { AuthContext } from '../context/AuthContext';
 import { SkeletonCircle, SkeletonText, SkeletonCard } from '../components/ui/Skeleton';
+import BrandLogo from '../components/BrandLogo';
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
 const tierColors = {
@@ -32,7 +33,7 @@ const PublicIdentity = () => {
   const [showQR, setShowQR] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [copiedMaviId, setCopiedMaviId] = useState(false);
+  const [copiedEtxId, setCopiedEtxId] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -79,12 +80,9 @@ if (loading) return (
   return (
     <>
       {/* Nav */}
-      <nav className="navbar">
+      <nav className="navbar" style={{ padding: '0.85rem 0' }}>
         <div className="container nav-container">
-          <Link to="/" className="nav-brand">
-            <Terminal size={24} className="text-gradient" />
-            <span>MaVi Linking</span>
-          </Link>
+          <BrandLogo variant="full" size={32} linkTo="/" />
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             {['recruiter', 'admin'].includes(user?.role) && (
               <button className="btn btn-primary btn-sm" onClick={() => setShowReport(true)} title="Generate Recruiter AI Report">
@@ -124,12 +122,12 @@ if (loading) return (
             </div>
             <div style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
               <span>@{profile.username}</span>
-              {profile.maviId && (
+              {profile.etxId && (
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(profile.maviId);
-                    setCopiedMaviId(true);
-                    setTimeout(() => setCopiedMaviId(false), 2000);
+                    navigator.clipboard.writeText(profile.etxId);
+                    setCopiedEtxId(true);
+                    setTimeout(() => setCopiedEtxId(false), 2000);
                   }}
                   className="badge badge-purple"
                   style={{
@@ -142,11 +140,11 @@ if (loading) return (
                     alignItems: 'center',
                     gap: '0.3rem',
                   }}
-                  title="Click to copy MAVI ID"
+                  title="Click to copy ETX ID"
                 >
-                  {copiedMaviId ? <Check size={12} style={{ color: 'var(--accent-emerald)' }} /> : <Copy size={12} />}
-                  <span>{profile.maviId}</span>
-                  {copiedMaviId && <span style={{ fontSize: '0.7rem', textTransform: 'none', marginLeft: '2px' }}>Copied!</span>}
+                  {copiedEtxId ? <Check size={12} style={{ color: 'var(--accent-emerald)' }} /> : <Copy size={12} />}
+                  <span>{profile.etxId}</span>
+                  {copiedEtxId && <span style={{ fontSize: '0.7rem', textTransform: 'none', marginLeft: '2px' }}>Copied!</span>}
                 </button>
               )}
             </div>

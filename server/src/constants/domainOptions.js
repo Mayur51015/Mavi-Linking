@@ -1,5 +1,5 @@
 /**
- * Canonical Career Domains and Target Roles for MAVI Linking.
+ * Canonical Career Domains and Target Roles for EduTalentX.
  * Provides normalized domains, valid domain enums, and mapping from job roles to career domains.
  */
 

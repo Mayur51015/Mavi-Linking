@@ -80,7 +80,7 @@ const ChangePassword = () => {
           </div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>Establish New Password</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem', lineHeight: '1.4' }}>
-            For security compliance, you must change your initial temporary password before accessing MAVI Linking portal services.
+            For security compliance, you must change your initial temporary password before accessing EduTalentX portal services.
           </p>
         </div>
 

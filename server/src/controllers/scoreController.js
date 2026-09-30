@@ -84,12 +84,12 @@ const getMyScores = async (req, res, next) => {
         status: { $ne: 'suspended' },
         'scores.overall': { $gt: 0 }
       })
-      .select('maviId scores')
+      .select('etxId scores')
       .sort({
         'scores.overall': -1,
         'scores.problemSolving': -1,
         'scores.development': -1,
-        'maviId': 1,
+        'etxId': 1,
         '_id': 1
       });
 

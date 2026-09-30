@@ -333,7 +333,7 @@ const getAllUsers = async (req, res, next) => {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
-        { maviId: { $regex: search, $options: 'i' } },
+        { etxId: { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -491,7 +491,7 @@ const suspendUser = async (req, res, next) => {
         suspendedUntil: expiryDate,
         suspendedByName: req.user.name,
         targetEmail: user.email,
-        targetMaviId: user.maviId,
+        targetMaviId: user.etxId,
       },
       result: 'SUCCESS',
     });
@@ -511,7 +511,7 @@ const suspendUser = async (req, res, next) => {
         senderId: req.user._id,
         type: 'general',
         title: 'Account Suspended ⚠️',
-        message: `Your MAVI Linking account has been temporarily suspended. Reason: ${reason.trim()}.${expiryDate ? ` Suspension expires on: ${expiryDate.toUTCString()}.` : ' Contact support for assistance.'}`,
+        message: `Your EduTalentX account has been temporarily suspended. Reason: ${reason.trim()}.${expiryDate ? ` Suspension expires on: ${expiryDate.toUTCString()}.` : ' Contact support for assistance.'}`,
       });
     } catch (_) {}
 
@@ -519,7 +519,7 @@ const suspendUser = async (req, res, next) => {
     sendAccountLifecycleEmail({
       to: user.email,
       name: user.name,
-      maviId: user.maviId,
+      etxId: user.etxId,
       role: user.role,
       type: 'SUSPENDED',
       reason: reason.trim(),
@@ -585,7 +585,7 @@ const deactivateUser = async (req, res, next) => {
       details: {
         deactivatedByName: req.user.name,
         targetEmail: user.email,
-        targetMaviId: user.maviId,
+        targetMaviId: user.etxId,
       },
       result: 'SUCCESS',
     });
@@ -605,7 +605,7 @@ const deactivateUser = async (req, res, next) => {
         senderId: req.user._id,
         type: 'general',
         title: 'Account Deactivated ⛔',
-        message: `Your MAVI Linking account has been deactivated. Reason: ${deactivationReasonText}. Contact your administrator for reactivation.`,
+        message: `Your EduTalentX account has been deactivated. Reason: ${deactivationReasonText}. Contact your administrator for reactivation.`,
       });
     } catch (_) {}
 
@@ -613,7 +613,7 @@ const deactivateUser = async (req, res, next) => {
     sendAccountLifecycleEmail({
       to: user.email,
       name: user.name,
-      maviId: user.maviId,
+      etxId: user.etxId,
       role: user.role,
       type: 'DEACTIVATED',
       reason: deactivationReasonText,
@@ -677,7 +677,7 @@ const reactivateUser = async (req, res, next) => {
       details: {
         reactivatedByName: req.user.name,
         targetEmail: user.email,
-        targetMaviId: user.maviId,
+        targetMaviId: user.etxId,
       },
       result: 'SUCCESS',
     });
@@ -697,7 +697,7 @@ const reactivateUser = async (req, res, next) => {
         senderId: req.user._id,
         type: 'general',
         title: 'Account Reactivated ✅',
-        message: 'Your MAVI Linking account has been reactivated. You may now log in to the portal.',
+        message: 'Your EduTalentX account has been reactivated. You may now log in to the portal.',
       });
     } catch (_) {}
 
@@ -705,7 +705,7 @@ const reactivateUser = async (req, res, next) => {
     sendAccountLifecycleEmail({
       to: user.email,
       name: user.name,
-      maviId: user.maviId,
+      etxId: user.etxId,
       role: user.role,
       type: 'REACTIVATED',
     }).catch((err) => console.error('[EMAIL ERROR]', err.message));
@@ -758,7 +758,7 @@ const deleteUserPermanently = async (req, res, next) => {
       reason: reason || 'Permanent administrative account deletion',
       details: {
         deletedUserEmail: user.email,
-        deletedUserMaviId: user.maviId,
+        deletedUserMaviId: user.maviId || user.etxId,
         deletedUserRole: user.role,
         deletedBy: req.user.email,
         deletedAt: new Date(),
@@ -769,7 +769,7 @@ const deleteUserPermanently = async (req, res, next) => {
     await ActivityLog.create({
       userId: req.user._id,
       action: 'ADMIN_DELETED_USER',
-      details: `Admin ${req.user.email} permanently deleted user account: ${user.email} (MAVI ID: ${user.maviId})`,
+      details: `Admin ${req.user.email} permanently deleted user account: ${user.email} (ETX ID: ${user.etxId})`,
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
@@ -1036,7 +1036,7 @@ const getPrnVerifications = async (req, res, next) => {
     }
 
     const verifications = await User.find(query)
-      .select('name email maviId prn facultyId role requestedRole accountStatus prnVerificationStatus prnRejectionReason createdAt institutionId university degree')
+      .select('name email etxId prn facultyId role requestedRole accountStatus prnVerificationStatus prnRejectionReason createdAt institutionId university degree')
       .populate('institutionId', 'name code domain')
       .sort({ createdAt: -1 });
 
@@ -1091,7 +1091,7 @@ const approvePrnVerification = async (req, res, next) => {
     await ActivityLog.create({
       userId: req.user._id,
       action: 'ADMIN_APPROVED_PRN',
-      details: `Approved institutional identity verification for ${user.email} (PRN: ${user.prn || user.facultyId || 'N/A'}, MAVI ID: ${user.maviId})`,
+      details: `Approved institutional identity verification for ${user.email} (PRN: ${user.prn || user.facultyId || 'N/A'}, ETX ID: ${user.etxId})`,
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
@@ -1102,7 +1102,7 @@ const approvePrnVerification = async (req, res, next) => {
         senderId: req.user._id,
         type: 'general',
         title: 'Institutional PRN Verified! 🎉',
-        message: `Your institutional identity (PRN/Faculty ID: ${user.prn || user.facultyId || 'Verified'}) has been approved by your institution administrator. You can now log in using your PRN, MAVI ID, or Email!`,
+        message: `Your institutional identity (PRN/Faculty ID: ${user.prn || user.facultyId || 'Verified'}) has been approved by your institution administrator. You can now log in using your PRN, ETX ID, or Email!`,
       });
     } catch (_) {}
 
@@ -1281,8 +1281,8 @@ const updateUserInstitution = async (req, res, next) => {
     // 1. Verify administrator authorization from authenticated req.user (Never trust req.body.adminId/role)
     const actorRole = req.user.role;
     const actorRoles = req.user.roles || [actorRole];
-    const isOwner = actorRoles.includes('platform_owner') || actorRoles.includes('owner') || req.user.email === 'mayur1718khandare@gmail.com' || req.user.adminId === 'MAVI-OWNER-001';
-    const isSuperAdmin = isOwner || actorRoles.includes('super_admin') || req.user.email === 'mayur2006khandare@gmail.com' || req.user.adminId === 'MAVI-SA-001';
+    const isOwner = actorRoles.includes('platform_owner') || actorRoles.includes('owner') || req.user.email === 'mayur1718khandare@gmail.com' || req.user.adminId === 'ETX-OWNER-001';
+    const isSuperAdmin = isOwner || actorRoles.includes('super_admin') || req.user.email === 'mayur2006khandare@gmail.com' || req.user.adminId === 'ETX-SA-001';
     const isInstAdmin = isSuperAdmin || actorRoles.includes('institution_admin') || actorRoles.includes('admin');
 
     if (!isInstAdmin) {
@@ -1334,14 +1334,14 @@ const updateUserInstitution = async (req, res, next) => {
       targetUser.isVerifiedStudent = false;
     }
 
-    // 8. Save updated user while preserving MAVI ID, User ID, Profile details & role
+    // 8. Save updated user while preserving ETX ID, User ID, Profile details & role
     await targetUser.save();
 
     // 9. Create Immutable Audit Log Event
     await ActivityLog.create({
       userId: req.user._id,
       action: 'INSTITUTION_MEMBERSHIP_UPDATED',
-      details: `Admin ${req.user.email} updated user ${targetUser.email} (${targetUser.maviId || targetUser._id}) institution assignment from ${oldTenantId} to ${newInstitution.name} (${newInstitution.tenantId}). PRN status set to pending verification.`,
+      details: `Admin ${req.user.email} updated user ${targetUser.email} (${targetUser.etxId || targetUser._id}) institution assignment from ${oldTenantId} to ${newInstitution.name} (${newInstitution.tenantId}). PRN status set to pending verification.`,
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
@@ -1491,7 +1491,7 @@ const createStaffUser = async (req, res, next) => {
       await ActivityLog.create({
         userId: req.user._id,
         action: actionType,
-        details: `Admin ${req.user.email} updated/appointed ${lowerEmail} (${existingUser.maviId}) as ${lowerRole.toUpperCase()}.`,
+        details: `Admin ${req.user.email} updated/appointed ${lowerEmail} (${existingUser.etxId}) as ${lowerRole.toUpperCase()}.`,
         ipAddress: req.ip || '',
         userAgent: req.headers['user-agent'] || '',
       });
@@ -1506,8 +1506,8 @@ const createStaffUser = async (req, res, next) => {
       });
     }
 
-    // 5. Generate Immutable MAVI ID
-    const generatedMaviId = `MAVI-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    // 5. Generate Immutable ETX ID
+    const generatedMaviId = `ETX-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
     // 6. Generate 32-byte cryptographic single-use invitation token & expiration
     const rawInviteToken = crypto.randomBytes(32).toString('hex');
@@ -1524,7 +1524,7 @@ const createStaffUser = async (req, res, next) => {
       email: lowerEmail,
       role: lowerRole,
       roles: [lowerRole, 'user'],
-      maviId: generatedMaviId,
+      etxId: generatedMaviId,
       institutionId: targetInst?._id || null,
       departmentId: selectedDepartment?._id || null,
       tenantId: targetInst?.tenantId || '',
@@ -1570,7 +1570,7 @@ const createStaffUser = async (req, res, next) => {
 
     sendEmail({
       to: lowerEmail,
-      subject: `Account Activation: Set Password & Access your MAVI ${lowerRole === 'teacher' ? 'Teacher' : lowerRole === 'recruiter' ? 'Recruiter' : 'Department Admin'} Account`,
+      subject: `Account Activation: Set Password & Access your EduTalentX ${lowerRole === 'teacher' ? 'Teacher' : lowerRole === 'recruiter' ? 'Recruiter' : 'Department Admin'} Account`,
       html: emailHtml,
     }).catch(err => console.error('[ASYNC EMAIL ERROR]', err));
 
@@ -1665,7 +1665,7 @@ const resendUserInvitation = async (req, res, next) => {
 
       emailResult = await sendEmail({
         to: user.email,
-        subject: `New Invitation: Activate your MAVI Linking ${user.role === 'teacher' ? 'Teacher' : user.role === 'recruiter' ? 'Recruiter' : 'Student'} Account`,
+        subject: `New Invitation: Activate your EduTalentX ${user.role === 'teacher' ? 'Teacher' : user.role === 'recruiter' ? 'Recruiter' : 'Student'} Account`,
         html: emailHtml,
       });
     }
@@ -1673,7 +1673,7 @@ const resendUserInvitation = async (req, res, next) => {
     await ActivityLog.create({
       userId: req.user._id,
       action: 'INVITATION_RESENT',
-      details: `Admin ${req.user.email} resent invitation email to ${user.email} (${user.maviId || user._id}).`,
+      details: `Admin ${req.user.email} resent invitation email to ${user.email} (${user.etxId || user._id}).`,
       ipAddress: req.ip || '',
       userAgent: req.headers['user-agent'] || '',
     });
@@ -1693,7 +1693,7 @@ const resendUserInvitation = async (req, res, next) => {
 };
 
 /**
- * @desc    Get paginated student list for Institution Admin with search (Name, MAVI ID, PRN, Email) and filters
+ * @desc    Get paginated student list for Institution Admin with search (Name, ETX ID, PRN, Email) and filters
  * @route   GET /api/admin/students
  * @access  Private (admin with STUDENT_PROFILE_MANAGE)
  */
@@ -1720,7 +1720,7 @@ const getStudentsForAdmin = async (req, res, next) => {
       query.$or = [
         { name: { $regex: cleanSearch, $options: 'i' } },
         { email: { $regex: cleanSearch, $options: 'i' } },
-        { maviId: { $regex: cleanSearch, $options: 'i' } },
+        { etxId: { $regex: cleanSearch, $options: 'i' } },
         { prn: { $regex: cleanSearch, $options: 'i' } },
         { 'institutionalIdentifier.identifierValue': { $regex: cleanSearch, $options: 'i' } },
       ];
@@ -1730,7 +1730,7 @@ const getStudentsForAdmin = async (req, res, next) => {
 
     const [students, total] = await Promise.all([
       User.find(query)
-        .select('name email maviId prn avatar university role status accountStatus prnVerificationStatus createdAt')
+        .select('name email etxId prn avatar university role status accountStatus prnVerificationStatus createdAt')
         .populate('institutionId', 'name code tenantId')
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -1808,7 +1808,7 @@ const getStudentProfileForAdmin = async (req, res, next) => {
     const sanitizedData = {
       id: student._id,
       _id: student._id,
-      maviId: student.maviId,
+      etxId: student.etxId,
       name: student.name,
       email: student.email,
       phone: student.phone || '',
@@ -1900,7 +1900,7 @@ const updateStudentProfileForAdmin = async (req, res, next) => {
     // 3. Reject Attempted Updates to Protected Fields
     const protectedFieldsAttempted = [];
     const forbiddenKeys = [
-      'maviId', 'userId', 'tenantId', 'institutionId', 'password', 'passwordHash',
+      'etxId', 'userId', 'tenantId', 'institutionId', 'password', 'passwordHash',
       'role', 'roles', 'permissions', 'isSuperAdmin', 'jwt', 'refreshToken',
       'resetPasswordToken', 'resetPasswordOtp', 'invitationToken'
     ];
@@ -2002,7 +2002,7 @@ const updateStudentProfileForAdmin = async (req, res, next) => {
         if (prnConflict) {
           return res.status(409).json({
             success: false,
-            message: `PRN '${rawNewPrn}' is already assigned to student ${prnConflict.name} (${prnConflict.maviId}).`,
+            message: `PRN '${rawNewPrn}' is already assigned to student ${prnConflict.name} (${prnConflict.etxId}).`,
           });
         }
       }
@@ -2098,7 +2098,7 @@ const updateStudentProfileForAdmin = async (req, res, next) => {
       data: {
         id: student._id,
         _id: student._id,
-        maviId: student.maviId,
+        etxId: student.etxId,
         name: student.name,
         email: student.email,
         phone: student.phone,
@@ -2156,7 +2156,7 @@ const getPendingStudentApprovals = async (req, res, next) => {
       baseQuery.$or = [
         { name: searchRegex },
         { email: searchRegex },
-        { maviId: searchRegex },
+        { etxId: searchRegex },
         { prn: searchRegex },
       ];
     }
@@ -2297,7 +2297,7 @@ const approveStudentAccount = async (req, res, next) => {
         departmentId: student.departmentId,
         previousStatus,
         newStatus: 'ACTIVE',
-        details: { approvedByName: admin.name, maviId: student.maviId },
+        details: { approvedByName: admin.name, etxId: student.etxId },
         result: 'SUCCESS',
       });
     } catch (auditErr) {
@@ -2308,12 +2308,12 @@ const approveStudentAccount = async (req, res, next) => {
     const { sendEmail } = require('../utils/sendEmail');
     sendEmail({
       to: student.email,
-      subject: 'Your MAVI Linking account has been approved!',
+      subject: 'Your EduTalentX account has been approved!',
       html: `
         <div style="font-family: Arial, sans-serif; background: #09090b; color: #f4f4f5; padding: 24px; border-radius: 8px;">
           <h2 style="color: #a855f7;">Account Approved 🎉</h2>
           <p>Hello <strong>${student.name}</strong>,</p>
-          <p>Your student account (MAVI ID: <strong>${student.maviId}</strong>) has been officially approved by your institution administrator.</p>
+          <p>Your student account (ETX ID: <strong>${student.etxId}</strong>) has been officially approved by your institution administrator.</p>
           <p>You now have full access to your student dashboard, project tools, placement drives, and AI analytics.</p>
           <div style="margin-top: 20px;">
             <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login" style="background: #a855f7; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">Log In to Dashboard</a>
@@ -2421,7 +2421,7 @@ const rejectStudentAccount = async (req, res, next) => {
         previousStatus,
         newStatus: 'REJECTED',
         reason: reason.trim(),
-        details: { rejectedByName: admin.name, maviId: student.maviId },
+        details: { rejectedByName: admin.name, etxId: student.etxId },
         result: 'REJECTED',
       });
     } catch (auditErr) {
@@ -2432,12 +2432,12 @@ const rejectStudentAccount = async (req, res, next) => {
     const { sendEmail } = require('../utils/sendEmail');
     sendEmail({
       to: student.email,
-      subject: 'Your MAVI Linking account registration requires attention',
+      subject: 'Your EduTalentX account registration requires attention',
       html: `
         <div style="font-family: Arial, sans-serif; background: #09090b; color: #f4f4f5; padding: 24px; border-radius: 8px;">
           <h2 style="color: #ef4444;">Registration Decision Notice</h2>
           <p>Hello <strong>${student.name}</strong>,</p>
-          <p>Your student account registration (MAVI ID: <strong>${student.maviId}</strong>) was reviewed by your institution administrator and was not approved at this time.</p>
+          <p>Your student account registration (ETX ID: <strong>${student.etxId}</strong>) was reviewed by your institution administrator and was not approved at this time.</p>
           <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px; margin: 16px 0; border-radius: 4px; color: #fca5a5;">
             <strong>Reason:</strong> ${reason.trim()}
           </div>

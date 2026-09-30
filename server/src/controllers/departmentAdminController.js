@@ -180,8 +180,8 @@ const createDepartmentAdmin = async (req, res, next) => {
       }
     }
 
-    // 5. Generate System MAVI ID
-    const generatedMaviId = `MAVI-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    // 5. Generate System ETX ID
+    const generatedMaviId = `ETX-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
     // 6. Single-Use Cryptographic Invitation Token & Expiration
     const rawInviteToken = crypto.randomBytes(32).toString('hex');
@@ -195,7 +195,7 @@ const createDepartmentAdmin = async (req, res, next) => {
       email: lowerEmail,
       role: 'department_admin',
       roles: ['department_admin', 'user'],
-      maviId: generatedMaviId,
+      etxId: generatedMaviId,
       institutionId: targetInstId,
       departmentId: department._id,
       tenantId: institution?.tenantId || req.user.tenantId || '',
@@ -299,7 +299,7 @@ const createDepartmentAdmin = async (req, res, next) => {
         id: newDeptAdmin._id,
         name: newDeptAdmin.name,
         email: newDeptAdmin.email,
-        maviId: newDeptAdmin.maviId,
+        etxId: newDeptAdmin.etxId,
         role: newDeptAdmin.role,
         accountStatus: newDeptAdmin.accountStatus,
         emailSent: emailResult.success,
@@ -334,7 +334,7 @@ const getDepartmentAdmins = async (req, res, next) => {
     }
 
     const admins = await User.find(query)
-      .select('name email maviId role status accountStatus designation phone avatar createdAt')
+      .select('name email etxId role status accountStatus designation phone avatar createdAt')
       .populate('institutionId', 'name code tenantId')
       .populate('departmentId', 'name code')
       .sort({ createdAt: -1 });
@@ -376,7 +376,7 @@ const getEligibleCandidates = async (req, res, next) => {
       status: 'active',
       role: { $in: ['teacher', 'user', 'admin', 'professor'] },
     })
-      .select('name email maviId role designation department university avatar')
+      .select('name email etxId role designation department university avatar')
       .sort({ name: 1 });
 
     res.status(200).json({
@@ -535,7 +535,7 @@ const getAppointmentHistory = async (req, res, next) => {
       action: { $in: ['DEPARTMENT_ADMIN_APPOINTED', 'DEPARTMENT_ADMIN_REASSIGNED', 'DEPARTMENT_ADMIN_SUSPENDED', 'DEPARTMENT_ADMIN_REACTIVATED'] },
     })
       .populate('actorId', 'name role email')
-      .populate('targetUserId', 'name email maviId role')
+      .populate('targetUserId', 'name email etxId role')
       .sort({ createdAt: -1 });
 
     res.status(200).json({

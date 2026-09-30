@@ -122,7 +122,7 @@ const DepartmentAdminAppointmentModal = ({ department, onClose, onAppointmentSuc
                     <option value="">-- Choose Candidate from Faculty --</option>
                     {candidates.map((c) => (
                       <option key={c._id} value={c._id}>
-                        {c.name} ({c.email}) — MAVI ID: {c.maviId} — Role: {c.role}
+                        {c.name} ({c.email}) — ETX ID: {c.etxId} — Role: {c.role}
                       </option>
                     ))}
                   </select>
@@ -132,7 +132,7 @@ const DepartmentAdminAppointmentModal = ({ department, onClose, onAppointmentSuc
               {selectedCandidate && (
                 <div style={{ padding: '0.9rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.85rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                   <div><span style={{ color: 'var(--text-muted)' }}>Candidate:</span> <strong>{selectedCandidate.name}</strong></div>
-                  <div><span style={{ color: 'var(--text-muted)' }}>MAVI ID:</span> <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)' }}>{selectedCandidate.maviId}</span></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>ETX ID:</span> <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)' }}>{selectedCandidate.etxId}</span></div>
                   <div><span style={{ color: 'var(--text-muted)' }}>Current Role:</span> <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{selectedCandidate.role}</span></div>
                   <div><span style={{ color: 'var(--text-muted)' }}>Email:</span> {selectedCandidate.email}</div>
                 </div>
@@ -191,8 +191,8 @@ const DepartmentAdminAppointmentModal = ({ department, onClose, onAppointmentSuc
                   <strong style={{ color: 'white' }}>{selectedCandidate?.name}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Permanent MAVI ID:</span>
-                  <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)', fontWeight: 'bold' }}>{selectedCandidate?.maviId}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Permanent ETX ID:</span>
+                  <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)', fontWeight: 'bold' }}>{selectedCandidate?.etxId}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Target Department:</span>

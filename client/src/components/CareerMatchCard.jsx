@@ -64,7 +64,7 @@ const CareerMatchCard = () => {
       <div className="card" style={{ padding: '1.25rem', border: '1px solid #FECACA' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#DC2626', fontWeight: 600, fontSize: '0.9rem' }}>
-            <Target size={16} /> MAVI Career Match
+            <Target size={16} /> EduTalentX Career Match
           </div>
           <button onClick={fetchMatch} className="btn-icon" title="Retry" style={{ padding: '4px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
             <RefreshCw size={14} />

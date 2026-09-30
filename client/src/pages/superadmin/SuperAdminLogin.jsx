@@ -124,7 +124,7 @@ const SuperAdminLogin = () => {
             <input
               type="text"
               className="input-field"
-              placeholder="e.g. MAVI-SA-001 or email@mavilinking.com"
+              placeholder="e.g. ETX-SA-001 or email@edutalentx.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

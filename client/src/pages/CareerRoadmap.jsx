@@ -150,10 +150,10 @@ const CareerRoadmapPage = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
               <span style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Student Dashboard</span>
               <ChevronRight size={14} />
-              <span style={{ color: 'var(--accent-purple)', fontWeight: '500' }}>MAVI Career Roadmap</span>
+              <span style={{ color: 'var(--accent-purple)', fontWeight: '500' }}>EduTalentX Career Roadmap</span>
             </div>
             <h1 style={{ color: 'var(--text-primary)', fontSize: '2rem', fontWeight: '700', fontFamily: 'Outfit, sans-serif', margin: 0 }}>
-              MAVI Career Roadmap
+              EduTalentX Career Roadmap
             </h1>
           </div>
 
@@ -484,7 +484,7 @@ const CareerRoadmapPage = () => {
                     </div>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
                       {user?.degree ? `${user.degree} student at ${user.university?.name || 'University'}. ` : ''}
-                      Actively building developer portfolio on MAVI Linking.
+                      Actively building developer portfolio on EduTalentX.
                     </p>
                   </div>
                 </div>

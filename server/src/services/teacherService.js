@@ -382,7 +382,7 @@ const generatePdfReport = async (teacher, type) => {
   // design styling
   doc.fontSize(22)
      .font('Helvetica-Bold')
-     .text('MAVI LINKING — CAMPUS PLACEMENT REPORT', 50, 50);
+     .text('EDUTALENTX — CAMPUS PLACEMENT REPORT', 50, 50);
 
   doc.fontSize(10)
      .fillColor('#71717a')

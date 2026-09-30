@@ -62,7 +62,7 @@ const verifyAndLinkIdentity = async ({
     String(existingIdentity.userId) !== String(userId)
   ) {
     const error = new Error(
-      `This ${platform} account is already linked to another MAVI Linking user.`
+      `This ${platform} account is already linked to another EduTalentX user.`
     );
     error.statusCode = 409;
     throw error;

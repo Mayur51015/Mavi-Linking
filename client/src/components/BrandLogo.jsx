@@ -6,16 +6,19 @@ import { Link } from 'react-router-dom';
  *
  * @param {'full'|'compact'|'icon'|'icon-only'} variant - Display variant
  * @param {'sm'|'md'|'lg'|'xl'|number} size - Visual size preset or pixel value
+ * @param {'horizontal'|'vertical'} layout - Layout direction (default: 'horizontal')
  * @param {boolean} showTagline - Whether to show the official tagline below the name
  * @param {string} linkTo - Optional route to link to (e.g. '/')
  * @param {string} alt - Accessible alt text (defaults to 'EduTalentX')
  * @param {string} className - Additional CSS class name
  * @param {object} style - Inline style overrides for container
  * @param {object} textStyle - Inline style overrides for text
+ * @param {object} taglineStyle - Inline style overrides for tagline
  */
 const BrandLogo = ({
   variant = 'full',
   size = 'md',
+  layout = 'horizontal',
   showTagline = false,
   linkTo,
   alt = 'EduTalentX',
@@ -61,6 +64,7 @@ const BrandLogo = ({
   }
 
   const isIconOnly = variant === 'icon' || variant === 'icon-only';
+  const isVertical = layout === 'vertical';
 
   const logoImage = (
     <img
@@ -87,10 +91,12 @@ const BrandLogo = ({
       className={`brand-logo brand-logo-${variant} ${className}`}
       style={{
         display: 'inline-flex',
+        flexDirection: isVertical ? 'column' : 'row',
         alignItems: 'center',
-        gap: `${Math.round(iconDimension * 0.28)}px`,
+        gap: isVertical ? `${Math.round(iconDimension * 0.22)}px` : `${Math.round(iconDimension * 0.28)}px`,
         textDecoration: 'none',
         userSelect: 'none',
+        ...(isVertical ? { textAlign: 'center' } : {}),
         ...style,
       }}
       onClick={onClick}
@@ -98,7 +104,12 @@ const BrandLogo = ({
       {logoImage}
 
       {!isIconOnly && (
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          lineHeight: 1.15,
+          ...(isVertical ? { alignItems: 'center' } : {}),
+        }}>
           <span
             style={{
               fontFamily: "'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -108,6 +119,7 @@ const BrandLogo = ({
               color: 'var(--text-primary, #ffffff)',
               display: 'inline-flex',
               alignItems: 'center',
+              whiteSpace: 'nowrap',
               ...textStyle,
             }}
           >
@@ -119,8 +131,9 @@ const BrandLogo = ({
                 fontSize: taglineSize,
                 color: 'var(--text-secondary, #94a3b8)',
                 fontWeight: 500,
-                marginTop: '0.2rem',
+                marginTop: isVertical ? '0.35rem' : '0.2rem',
                 letterSpacing: '-0.01em',
+                ...(isVertical ? { textAlign: 'center' } : {}),
                 ...taglineStyle,
               }}
             >
@@ -140,7 +153,9 @@ const BrandLogo = ({
           textDecoration: 'none',
           display: 'inline-flex',
           alignItems: 'center',
+          justifyContent: isVertical ? 'center' : undefined,
           color: 'inherit',
+          ...(isVertical ? { width: '100%' } : {}),
         }}
         aria-label={alt}
       >

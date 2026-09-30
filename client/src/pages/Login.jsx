@@ -257,7 +257,7 @@ const Login = () => {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '2.5rem 1.5rem',
+          padding: 'clamp(1rem, 3vw, 2.5rem) clamp(1rem, 3vw, 1.5rem)',
           background: 'var(--bg-primary)',
         }}
       >
@@ -269,34 +269,42 @@ const Login = () => {
             border: '1px solid var(--border-color)',
             borderRadius: '10px',
             boxShadow: 'var(--shadow-xl)',
-            padding: '2.5rem 2.25rem',
+            padding: 'clamp(1.5rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.25rem)',
           }}
         >
-          {/* Card Header Branding */}
-          <div style={{ textAlign: 'center', marginBottom: '1.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {/* Card Header Branding — unified vertical brand block */}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 'clamp(1.5rem, 3vw, 2.25rem)' }}>
             <BrandLogo
               variant="full"
               size={48}
+              layout="vertical"
               linkTo="/"
               showTagline={true}
-              style={{ flexDirection: 'column', textAlign: 'center', gap: '0.65rem' }}
-              taglineStyle={{ textAlign: 'center', maxWidth: '280px' }}
+              textStyle={{
+                fontSize: 'clamp(1.65rem, 3vw, 2.1rem)',
+                lineHeight: 1.1,
+              }}
+              taglineStyle={{
+                fontSize: 'clamp(0.8rem, 1.5vw, 0.9375rem)',
+                lineHeight: 1.4,
+                maxWidth: '100%',
+              }}
             />
           </div>
 
-          <div style={{ marginBottom: '1.75rem' }}>
+          <div style={{ marginBottom: '1.25rem' }}>
             <h2
               style={{
-                fontSize: '1.5rem',
+                fontSize: '1.35rem',
                 fontWeight: 700,
                 color: 'var(--text-primary)',
                 letterSpacing: '-0.02em',
-                margin: '0 0 0.4rem 0',
+                margin: '0 0 0.35rem 0',
               }}
             >
               Sign In
             </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
               Enter your credentials to access your ERP portal.
             </p>
           </div>

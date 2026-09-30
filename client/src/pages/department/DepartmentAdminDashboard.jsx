@@ -32,7 +32,7 @@ const DepartmentAdminDashboard = () => {
         responseType: 'blob',
       });
 
-      let filename = `MAVI_Department_Performance_Report_${(dashboardData?.departmentName || user?.university?.department || 'Department').replace(/[^a-zA-Z0-9_-]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      let filename = `ETX_Department_Performance_Report_${(dashboardData?.departmentName || user?.university?.department || 'Department').replace(/[^a-zA-Z0-9_-]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
       const disposition = response.headers?.['content-disposition'];
       if (disposition && disposition.includes('filename=')) {
         const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);

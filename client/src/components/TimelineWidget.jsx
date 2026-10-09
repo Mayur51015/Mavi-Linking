@@ -162,43 +162,72 @@ const TimelineWidget = ({ userId }) => {
 
   return (
     <div
-      className="glass-card"
       style={{
+        background: '#FFFFFF',
+        border: '1px solid #E5E7EB',
+        borderRadius: '8px',
         maxHeight: '600px',
         overflowY: 'auto',
-        padding: '1.5rem',
+        padding: '1.25rem 1.4rem',
       }}
     >
-      <h3
+      <div
         style={{
-          fontSize: '1.25rem',
-          marginBottom: '1.5rem',
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
+          marginBottom: '1rem',
+          paddingBottom: '0.75rem',
+          borderBottom: '1px solid #E5E7EB',
         }}
       >
-        <Calendar size={24} color="var(--accent-blue)" />
-        Developer Activity
-      </h3>
+        <div
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '6px',
+            background: '#EFF6FF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#2563EB',
+            flexShrink: 0,
+          }}
+        >
+          <Calendar size={16} />
+        </div>
+        <h3
+          style={{
+            fontSize: '1rem',
+            fontWeight: 700,
+            color: '#111111',
+            margin: 0,
+            fontFamily: 'Inter, sans-serif',
+          }}
+        >
+          Developer Activity & Timeline
+        </h3>
+      </div>
 
       <div
         style={{
           display: 'flex',
-          gap: '0.75rem',
+          gap: '0.65rem',
           flexWrap: 'wrap',
-          marginBottom: '1.5rem',
+          marginBottom: '1.25rem',
         }}
       >
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           style={{
-            padding: '0.5rem 0.75rem',
-            borderRadius: '8px',
-            border: '1px solid var(--border-color)',
-            background: 'var(--bg-dark)',
-            color: 'var(--text-primary)',
+            padding: '0.45rem 0.75rem',
+            borderRadius: '6px',
+            border: '1px solid #E5E7EB',
+            background: '#FFFFFF',
+            color: '#111111',
+            fontSize: '0.8125rem',
+            outline: 'none',
           }}
         >
           <option value="all">All Activities</option>
@@ -213,11 +242,13 @@ const TimelineWidget = ({ userId }) => {
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
           style={{
-            padding: '0.5rem 0.75rem',
-            borderRadius: '8px',
-            border: '1px solid var(--border-color)',
-            background: 'var(--bg-dark)',
-            color: 'var(--text-primary)',
+            padding: '0.45rem 0.75rem',
+            borderRadius: '6px',
+            border: '1px solid #E5E7EB',
+            background: '#FFFFFF',
+            color: '#111111',
+            fontSize: '0.8125rem',
+            outline: 'none',
           }}
         >
           <option value="all">All Time</option>
@@ -236,9 +267,7 @@ const TimelineWidget = ({ userId }) => {
             bottom: 0,
             left: '7px',
             width: '2px',
-            background:
-              'linear-gradient(to bottom, var(--accent-blue), var(--accent-purple), transparent)',
-            opacity: 0.3,
+            background: '#E5E7EB',
           }}
         />
 
@@ -246,34 +275,34 @@ const TimelineWidget = ({ userId }) => {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '1.25rem',
+            gap: '1rem',
           }}
         >
           {events.map((event, index) => {
             const icon =
               iconMap[event.type] ||
               iconMap[event.type?.toUpperCase()] || (
-                <CheckCircle size={20} />
+                <CheckCircle size={18} />
               );
 
             return (
               <motion.div
                 key={`${event._id}-${index}`}
-                initial={{ opacity: 0, x: -15 }}
+                initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: Math.min(index * 0.05, 0.5) }}
+                transition={{ delay: Math.min(index * 0.04, 0.4) }}
                 style={{ position: 'relative' }}
               >
                 <div
                   style={{
                     position: 'absolute',
                     left: '-1.5rem',
-                    top: '0.35rem',
-                    width: '16px',
-                    height: '16px',
+                    top: '0.45rem',
+                    width: '14px',
+                    height: '14px',
                     borderRadius: '50%',
-                    background: 'var(--bg-card)',
-                    border: '2px solid var(--accent-blue)',
+                    background: '#FFFFFF',
+                    border: '2px solid #2563EB',
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -285,40 +314,40 @@ const TimelineWidget = ({ userId }) => {
                       width: '6px',
                       height: '6px',
                       borderRadius: '50%',
-                      background: 'var(--accent-blue)',
+                      background: '#2563EB',
                     }}
                   />
                 </div>
 
                 <div
                   style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '12px',
-                    padding: '1rem',
-                    marginLeft: '1rem',
+                    background: '#F8F9FA',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '8px',
+                    padding: '0.9rem 1rem',
+                    marginLeft: '0.75rem',
                   }}
                 >
                   <div
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: '1rem',
+                      gap: '0.85rem',
                     }}
                   >
                     <div
                       style={{
-                        minWidth: '40px',
-                        width: '40px',
-                        height: '40px',
-                        padding: '0.5rem',
-                        background: 'var(--bg-dark)',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-color)',
+                        minWidth: '36px',
+                        width: '36px',
+                        height: '36px',
+                        background: '#EFF6FF',
+                        borderRadius: '6px',
+                        border: '1px solid #DBEAFE',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'var(--accent-blue)',
+                        color: '#2563EB',
+                        flexShrink: 0,
                       }}
                     >
                       {icon}
@@ -330,8 +359,8 @@ const TimelineWidget = ({ userId }) => {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'flex-start',
-                          gap: '1rem',
-                          marginBottom: '0.25rem',
+                          gap: '0.75rem',
+                          marginBottom: '0.2rem',
                         }}
                       >
                         <h4
@@ -339,8 +368,9 @@ const TimelineWidget = ({ userId }) => {
                             flex: 1,
                             minWidth: 0,
                             overflowWrap: 'anywhere',
-                            fontWeight: '600',
-                            fontSize: '1rem',
+                            fontWeight: 600,
+                            fontSize: '0.925rem',
+                            color: '#111111',
                             margin: 0,
                           }}
                         >
@@ -350,7 +380,7 @@ const TimelineWidget = ({ userId }) => {
                         <span
                           style={{
                             fontSize: '0.75rem',
-                            color: 'var(--text-muted)',
+                            color: '#6B7280',
                             whiteSpace: 'nowrap',
                           }}
                         >
@@ -368,10 +398,10 @@ const TimelineWidget = ({ userId }) => {
                       {event.description && (
                         <p
                           style={{
-                            fontSize: '0.875rem',
-                            color: 'var(--text-secondary)',
-                            lineHeight: 1.4,
-                            margin: '0.25rem 0 0',
+                            fontSize: '0.8125rem',
+                            color: '#4B5563',
+                            lineHeight: 1.45,
+                            margin: '0.2rem 0 0',
                           }}
                         >
                           {event.description}
@@ -386,15 +416,16 @@ const TimelineWidget = ({ userId }) => {
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '0.3rem',
-                            marginTop: '0.5rem',
-                            fontSize: '0.8rem',
-                            color: 'var(--accent-blue)',
+                            gap: '0.25rem',
+                            marginTop: '0.45rem',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: '#2563EB',
                             textDecoration: 'none',
                           }}
                         >
-                          View activity
-                          <ExternalLink size={13} />
+                          <span>View activity</span>
+                          <ExternalLink size={12} />
                         </a>
                       )}
                     </div>
@@ -440,12 +471,14 @@ const TimelineWidget = ({ userId }) => {
           disabled={loadingMore}
           style={{
             display: 'block',
-            margin: '1.5rem auto 0',
-            padding: '0.6rem 1.5rem',
-            borderRadius: '8px',
-            border: '1px solid var(--border-color)',
-            background: 'var(--bg-dark)',
-            color: 'var(--text-primary)',
+            margin: '1.25rem auto 0',
+            padding: '0.45rem 1.25rem',
+            borderRadius: '6px',
+            border: '1px solid #E5E7EB',
+            background: '#FFFFFF',
+            color: '#111111',
+            fontSize: '0.8125rem',
+            fontWeight: 600,
             cursor: loadingMore ? 'wait' : 'pointer',
           }}
         >

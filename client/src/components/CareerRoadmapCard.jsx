@@ -122,14 +122,14 @@ const CareerRoadmapCard = () => {
 
   if (loading) {
     return (
-      <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '360px', textAlign: 'center' }}>
-        <div style={{ background: 'rgba(139, 92, 246, 0.1)', padding: '1.25rem', borderRadius: '50%', marginBottom: '1.25rem' }}>
-          <Loader2 size={36} color="var(--accent-purple)" className="animate-spin" />
+      <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '360px', textAlign: 'center', background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+        <div style={{ background: '#EFF6FF', padding: '1.25rem', borderRadius: '50%', marginBottom: '1.25rem' }}>
+          <Loader2 size={36} color="#2563EB" className="animate-spin" />
         </div>
-        <h4 style={{ color: 'white', fontSize: '1.15rem', marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif' }}>
+        <h4 style={{ color: '#111111', fontSize: '1.15rem', marginBottom: '0.5rem', fontFamily: 'Inter, sans-serif', fontWeight: 700 }}>
           Loading Your Career Roadmap...
         </h4>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+        <p style={{ color: '#6B7280', fontSize: '0.875rem' }}>
           Retrieving your real-time skills and milestones
         </p>
       </div>
@@ -139,17 +139,17 @@ const CareerRoadmapCard = () => {
   // Empty state if no roadmap could be found/generated and profile lacks info
   if (!roadmap && !generating) {
     return (
-      <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-        <div style={{ background: 'rgba(139, 92, 246, 0.15)', padding: '1.25rem', borderRadius: '50%', marginBottom: '1.25rem' }}>
-          <Compass size={40} color="var(--accent-purple)" />
+      <div className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+        <div style={{ background: '#EFF6FF', padding: '1.25rem', borderRadius: '50%', marginBottom: '1.25rem' }}>
+          <Compass size={40} color="#2563EB" />
         </div>
-        <h3 style={{ color: 'white', marginBottom: '0.5rem', fontSize: '1.35rem', fontFamily: 'Outfit, sans-serif' }}>
+        <h3 style={{ color: '#111111', marginBottom: '0.5rem', fontSize: '1.35rem', fontFamily: 'Inter, sans-serif', fontWeight: 800 }}>
           EduTalentX Career Roadmap
         </h3>
-        <p style={{ color: 'var(--accent-cyan)', fontSize: '0.95rem', fontWeight: '500', marginBottom: '0.75rem' }}>
+        <p style={{ color: '#2563EB', fontSize: '0.95rem', fontWeight: '600', marginBottom: '0.75rem' }}>
           Your career roadmap needs a little more information.
         </p>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: '380px', marginBottom: '1.5rem' }}>
+        <p style={{ color: '#4B5563', fontSize: '0.875rem', maxWidth: '380px', marginBottom: '1.5rem' }}>
           Add your skills, projects or career goal to generate a personalized AI roadmap tailored to your dream role.
         </p>
 
@@ -247,17 +247,17 @@ const CareerRoadmapCard = () => {
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '0.75rem',
-        background: 'rgba(255, 255, 255, 0.02)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: '12px',
+        background: '#F8F9FA',
+        border: '1px solid #E5E7EB',
+        borderRadius: '8px',
         padding: '0.875rem 1rem',
         marginBottom: '1.25rem',
       }}>
         <div>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
+          <div style={{ color: '#6B7280', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem', fontWeight: 600 }}>
             Current Level
           </div>
-          <div style={{ color: 'white', fontWeight: '600', fontSize: '0.95rem' }}>
+          <div style={{ color: '#111111', fontWeight: '700', fontSize: '0.95rem' }}>
             {currentLevel}
           </div>
         </div>
@@ -406,11 +406,11 @@ const CareerRoadmapCard = () => {
           zIndex: 1000,
           padding: '1rem',
         }}>
-          <div className="glass-card" style={{ maxWidth: '440px', width: '100%', padding: '1.75rem' }}>
-            <h3 style={{ color: 'white', marginBottom: '0.5rem', fontSize: '1.25rem', fontFamily: 'Outfit' }}>
+          <div className="glass-card" style={{ maxWidth: '440px', width: '100%', padding: '1.75rem', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px' }}>
+            <h3 style={{ color: '#111111', marginBottom: '0.5rem', fontSize: '1.25rem', fontFamily: 'Inter, sans-serif', fontWeight: 700 }}>
               Update Target Career Goal
             </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+            <p style={{ color: '#6B7280', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
               Specify your dream role to instantly regenerate your personalized learning roadmap.
             </p>
 

@@ -382,31 +382,31 @@ const CareerRoadmapPage = () => {
             {/* NEXT ACTION HERO CALLOUT */}
             {roadmap?.nextAction && (
               <div style={{
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(59, 130, 246, 0.1) 100%)',
-                border: '1px solid rgba(139, 92, 246, 0.3)',
-                borderRadius: '16px',
-                padding: '1.5rem',
-                marginBottom: '2rem',
+                background: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                borderRadius: '8px',
+                padding: '1.25rem 1.4rem',
+                marginBottom: '1.5rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: '1.5rem',
+                gap: '1.25rem',
                 flexWrap: 'wrap',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '280px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: '280px' }}>
                   <div style={{
-                    background: 'var(--accent-purple)',
-                    borderRadius: '12px',
-                    padding: '0.85rem',
-                    color: 'white',
+                    background: '#EFF6FF',
+                    borderRadius: '8px',
+                    padding: '0.75rem',
+                    color: '#2563EB',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
-                    <Zap size={24} />
+                    <Zap size={22} />
                   </div>
                   <div>
-                    <div style={{ color: 'var(--accent-cyan)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600', marginBottom: '0.2rem' }}>
+                    <div style={{ color: '#2563EB', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700', marginBottom: '0.2rem' }}>
                       Next Recommended Step (Phase {roadmap.nextAction.phaseNumber || 1})
                     </div>
                     <h3 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', margin: '0 0 0.25rem 0', fontFamily: 'Outfit' }}>
@@ -814,7 +814,7 @@ const CareerRoadmapPage = () => {
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                             {proj.suggestedTechnologies.map((t, tIdx) => (
-                              <span key={tIdx} style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', background: 'rgba(255, 255, 255, 0.04)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                              <span key={tIdx} style={{ fontSize: '0.72rem', color: '#4B5563', background: '#F3F4F6', border: '1px solid #E5E7EB', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
                                 {t}
                               </span>
                             ))}
@@ -852,9 +852,9 @@ const CareerRoadmapPage = () => {
                   <div
                     key={idx}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: '12px',
+                      background: '#F8F9FA',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
                       padding: '1.25rem',
                       display: 'flex',
                       flexDirection: 'column',

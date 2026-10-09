@@ -916,10 +916,10 @@ const Dashboard = () => {
     <UserLayout>
       <header style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h1 className="dashboard-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+          <h1 className="dashboard-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: '#111111', fontFamily: 'Inter, sans-serif' }}>
             Welcome back, {user?.name?.split(' ')[0] || user?.name || 'Mayur'}!
           </h1>
-          <p style={{ color: '#9CA3AF', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: '#4B5563', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
             Track your growth, skills, and opportunities.
           </p>
         </div>

@@ -52,8 +52,15 @@ const LeetCodeSection = () => {
 
   return (
     <div style={{ marginTop: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.5rem' }}>LeetCode Intelligence</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111111', fontFamily: 'Inter, sans-serif', margin: 0 }}>
+            Coding & LeetCode Intelligence
+          </h2>
+          <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8125rem', color: '#6B7280' }}>
+            Verified problem-solving analytics, submissions, and competition achievements.
+          </p>
+        </div>
         {/* Hidden ref target so the EmptyState CTA can click the real sync button */}
         <div ref={syncBtnRef}>
           <SyncLeetCodeButton username={data?.username} onSyncSuccess={handleSyncSuccess} />
@@ -61,8 +68,8 @@ const LeetCodeSection = () => {
       </div>
 
       {data ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.25rem' }}>
             <LeetCodeStatsCard data={data} />
             <ProblemBreakdownChart data={data} />
           </div>
@@ -71,15 +78,15 @@ const LeetCodeSection = () => {
             <AIInsightCard insight={data.aiInsight} />
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '1.25rem' }}>
             <RecentSubmissions submissions={data.recentSubmissions} />
             <BadgeList badges={data.badges} />
           </div>
         </div>
       ) : (
         <EmptyState
-          icon={<Code2 size={32} color="#06B6D4" />}
-          iconColor="#06B6D4"
+          icon={<Code2 size={32} color="#2563EB" />}
+          iconColor="#2563EB"
           title="Connect your LeetCode account"
           description="Sync your LeetCode profile to unlock AI-powered insights, problem breakdowns, submission history, and competitive analytics."
           action={{

@@ -50,10 +50,10 @@ const StudentAnnouncements = () => {
             style={{
               width: '100%',
               padding: '0.625rem 1rem 0.625rem 2.75rem',
-              background: 'rgba(255,255,255,0.02)',
+              background: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
-              borderRadius: '10px',
-              color: 'white',
+              borderRadius: '8px',
+              color: 'var(--text-primary)',
               fontSize: '0.9rem',
               outline: 'none',
             }}
@@ -65,10 +65,10 @@ const StudentAnnouncements = () => {
           onChange={(e) => { setDeptFilter(e.target.value); setPage(1); }}
           style={{
             padding: '0.625rem 1rem',
-            background: 'rgba(255,255,255,0.02)',
+            background: 'var(--bg-card)',
             border: '1px solid var(--border-color)',
-            borderRadius: '10px',
-            color: 'white',
+            borderRadius: '8px',
+            color: 'var(--text-primary)',
             fontSize: '0.9rem',
             outline: 'none',
             cursor: 'pointer',
@@ -87,7 +87,7 @@ const StudentAnnouncements = () => {
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-          <Loader2 size={36} className="animate-spin" style={{ color: 'var(--accent-purple)' }} />
+          <Loader2 size={36} className="animate-spin" style={{ color: 'var(--brand-blue)' }} />
         </div>
       ) : (
         <div style={{ display: 'grid', gap: '1.5rem' }}>
@@ -101,7 +101,7 @@ const StudentAnnouncements = () => {
             >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'white' }}>{ann.title}</h3>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-primary)' }}>{ann.title}</h3>
                   <span className="badge badge-primary">{ann.department || 'All Departments'}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>

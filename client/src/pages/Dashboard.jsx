@@ -46,11 +46,25 @@ import { AuthContext } from '../context/AuthContext';
 import UserLayout from '../layouts/UserLayout';
 import Messages from '../pages/Messages';
 import { CANONICAL_DOMAINS } from '../constants/domainOptions';
+import {
+  getUserPrimaryRole,
+  getDashboardRouteForRole,
+  isValidInternalReturnPath,
+} from '../utils/roleRouting';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, setUser, updateProfile, socket, refreshUser, logout } = useContext(AuthContext);
+  const {
+    user,
+    loading: authLoading,
+    setUser,
+    updateProfile,
+    socket,
+    refreshUser,
+    logout,
+    isPendingVerification: isPendingVerificationContext,
+  } = useContext(AuthContext);
   const [showChangeEmailModal, setShowChangeEmailModal] = useState(false);
   const [scores, setScores] = useState(null);
   const [scoreStatus, setScoreStatus] = useState({ loading: true, error: false });
@@ -117,21 +131,44 @@ const Dashboard = () => {
 
   const closeEditProfileModal = useCallback(() => {
     setShowEditProfileModal(false);
+
+    const returnTo = location.state?.returnTo;
+    const primaryRole = getUserPrimaryRole(user);
+
+    // 1. If valid internal return destination was provided, return the user there
+    if (returnTo && isValidInternalReturnPath(returnTo, user)) {
+      navigate(returnTo, { replace: true });
+      return;
+    }
+
+    // 2. If the authenticated user is NOT a student, navigate to their role-specific dashboard
+    if (primaryRole !== 'student') {
+      navigate(getDashboardRouteForRole(user), { replace: true });
+      return;
+    }
+
+    // 3. If accessed via /profile/edit directly, return to student dashboard
+    if (location.pathname === '/profile/edit') {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
+    // 4. Existing Student behavior on /dashboard: remain on page and cleanly remove ?edit=true
     const params = new URLSearchParams(location.search);
     if (params.get('edit') === 'true') {
       params.delete('edit');
       const newSearch = params.toString();
       navigate(newSearch ? `${location.pathname}?${newSearch}` : location.pathname, { replace: true });
     }
-  }, [location.pathname, location.search, navigate]);
+  }, [location.pathname, location.search, location.state, navigate, user]);
 
-  // Support ?edit=true in URL to open edit profile modal directly & react to route changes
+  // Support ?edit=true in URL or /profile/edit route to open edit profile modal directly & react to route changes
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get('edit') === 'true') {
+    if (params.get('edit') === 'true' || location.pathname === '/profile/edit') {
       openEditProfileModal();
     }
-  }, [location.search, openEditProfileModal]);
+  }, [location.pathname, location.search, openEditProfileModal]);
 
   // Support direct event dispatch for instant responsiveness from shell/layout
   useEffect(() => {
@@ -235,11 +272,56 @@ const Dashboard = () => {
   const [aiData, setAiData] = useState({ insight: null, dna: null, analytics: [] });
   const [generatingAI, setGeneratingAI] = useState(false);
 
-  const placementPendingApproval =
-    user?.role === 'user' &&
-    ['PENDING_ADMIN_APPROVAL', 'PENDING_VERIFICATION'].includes(user.accountStatus);
+  const primaryRole = user ? getUserPrimaryRole(user) : null;
+  const isStudent = primaryRole === 'student';
+
+  const normalizedAccountStatus = String(user?.accountStatus || '').toUpperCase();
+  const placementPendingApproval = Boolean(
+    isStudent &&
+    (
+      ['PENDING_ADMIN_APPROVAL', 'PENDING_VERIFICATION', 'PENDING'].includes(normalizedAccountStatus) ||
+      user?.isPendingVerification === true ||
+      isPendingVerificationContext
+    )
+  );
+
+  // Student placement pipelines request MUST ONLY run for authenticated, approved Students
+  const canFetchPlacementPipelines = Boolean(
+    !authLoading &&
+    user &&
+    isStudent &&
+    !placementPendingApproval
+  );
+
+  // Route non-student users away from /dashboard to their role-specific dashboards
+  // (unless currently in the edit profile flow on /profile/edit or ?edit=true)
+  useEffect(() => {
+    if (!authLoading && user) {
+      const isEditFlow =
+        (location.pathname === '/dashboard' && location.search.includes('edit=true')) ||
+        location.pathname === '/profile/edit';
+      if (!isStudent && !isEditFlow && location.pathname === '/dashboard') {
+        navigate(getDashboardRouteForRole(user), { replace: true });
+      }
+    }
+  }, [authLoading, user, isStudent, location.pathname, location.search, navigate]);
 
   const fetchDashboardData = useCallback(async () => {
+    // 1. Guard against unauthenticated execution / execution before auth finishes
+    if (authLoading || !user) {
+      return;
+    }
+
+    // 2. Guard against non-Student roles executing Student-only dashboard endpoints
+    if (!isStudent) {
+      setLoading(false);
+      setLoadingDNA(false);
+      setScoreStatus({ loading: false, error: false });
+      setApplicationsStatus({ loading: false, error: false });
+      setJobsStatus({ loading: false, error: false });
+      return;
+    }
+
     const placementUnavailableMessage =
       'Placement applications are available after your institution approves your account.';
 
@@ -279,12 +361,12 @@ const Dashboard = () => {
         api.get('/career/insights').catch(() => emptyFallback),
         api.get('/career/dna').catch(() => emptyFallback),
         api.get('/ai/analytics').catch(() => arrayFallback),
-        placementPendingApproval
-          ? Promise.resolve(null)
+        !canFetchPlacementPipelines
+          ? Promise.resolve(arrayFallback)
           : api.get('/placement/student/pipelines').catch((err) => {
               console.warn('Failed to fetch pipelines:', err.message);
               setApplicationsStatus({ loading: false, error: true });
-              return null;
+              return arrayFallback;
             }),
         api.get('/projects').catch(() => ({ data: { data: [], count: 0 } })),
         api.get('/announcements/my-college').catch(() => arrayFallback),
@@ -301,8 +383,11 @@ const Dashboard = () => {
         analytics: analyticsRes.data.data || []
       });
 
-      if (pipelineRes?.data?.data !== undefined) {
+      if (canFetchPlacementPipelines && pipelineRes?.data?.data !== undefined) {
         setPipelines(pipelineRes.data.data || []);
+        setApplicationsStatus({ loading: false, error: false });
+      } else if (!placementPendingApproval) {
+        setPipelines([]);
         setApplicationsStatus({ loading: false, error: false });
       }
       setProjectsCount(projectRes.data.count || projectRes.data.data?.length || 0);
@@ -318,11 +403,13 @@ const Dashboard = () => {
       setLoading(false);
       setLoadingDNA(false);
     }
-  }, [placementPendingApproval]);
+  }, [authLoading, user, isStudent, canFetchPlacementPipelines, placementPendingApproval]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    if (!authLoading && user) {
+      fetchDashboardData();
+    }
+  }, [authLoading, user, fetchDashboardData]);
 
   // Real-time update via Socket.IO
   useEffect(() => {

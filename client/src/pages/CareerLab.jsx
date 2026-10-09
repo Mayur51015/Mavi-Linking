@@ -472,7 +472,7 @@ const CareerLab = () => {
 
         {/* ─── TAB 1: SIMULATOR ────────────────────────────────────────── */}
         {activeTab === 'simulator' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem', alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(340px, 100%), 1fr))', gap: '1.75rem', alignItems: 'start' }}>
             {/* Left Column: What-If Builder */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {/* Target Role Selector */}

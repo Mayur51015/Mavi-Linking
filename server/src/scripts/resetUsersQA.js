@@ -238,11 +238,10 @@ async function resetUsersQA() {
     const seedPass = process.env.SEED_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD || 'AdminPass@123';
     const seedName = process.env.SEED_ADMIN_NAME || process.env.SUPER_ADMIN_NAME || 'Platform Super Admin';
 
-    const hashedPassword = await bcrypt.hash(seedPass, 10);
     await User.create({
       name: seedName,
       email: seedEmail.toLowerCase().trim(),
-      password: hashedPassword,
+      password: seedPass,
       role: 'super_admin',
       roles: ['super_admin', 'admin', 'user'],
       status: 'active',

@@ -433,7 +433,7 @@ const CareerRoadmapPage = () => {
             )}
 
             {/* 2-COLUMN MAIN CONTENT: CURRENT PROFILE & SKILL GAP */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(340px, 100%), 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
               
               {/* CURRENT PROFILE */}
               <div className="glass-card" style={{ padding: '1.75rem' }}>

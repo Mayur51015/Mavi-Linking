@@ -133,19 +133,19 @@ const AdminBilling = () => {
 
   if (loading) {
     return (
-      <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-        <div className="animate-pulse" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--gradient-primary)', margin: '0 auto 1rem' }} />
-        Loading Institutional Billing & Subscription Catalog...
+      <div style={{ padding: '4rem', textAlign: 'center', color: '#6B7280' }}>
+        <div className="animate-spin" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid #E5E7EB', borderTopColor: '#2563EB', margin: '0 auto 1rem' }} />
+        <p style={{ margin: 0, fontSize: '0.875rem' }}>Loading Institutional Billing & Subscription Catalog...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: '3rem', textAlign: 'center', color: '#ef4444' }}>
+      <div style={{ padding: '3rem', textAlign: 'center', color: '#DC2626' }}>
         <AlertTriangle size={36} style={{ margin: '0 auto 1rem' }} />
-        <h3>Access Restricted</h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{error}</p>
+        <h3 style={{ margin: '0 0 0.5rem 0', color: '#111111' }}>Access Restricted</h3>
+        <p style={{ color: '#4B5563', fontSize: '0.875rem' }}>{error}</p>
       </div>
     );
   }
@@ -168,23 +168,23 @@ const AdminBilling = () => {
     const isWarning = !isUnlimited && percentage >= 85;
 
     return (
-      <div className="glass-card" style={{ padding: '1.25rem' }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '1.25rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4B5563', fontSize: '0.875rem' }}>
             {icon}
             <span>{label}</span>
           </div>
-          <span style={{ fontWeight: 'bold', fontSize: '0.9rem', color: isWarning ? '#f59e0b' : 'var(--text-primary)' }}>
+          <span style={{ fontWeight: 600, fontSize: '0.875rem', color: isWarning ? '#D97706' : '#111111' }}>
             {current} / {isUnlimited ? 'Unlimited' : limit}
           </span>
         </div>
-        <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', overflow: 'hidden' }}>
+        <div style={{ width: '100%', height: '6px', background: '#F3F4F6', borderRadius: '3px', overflow: 'hidden' }}>
           <div
             style={{
               width: `${percentage}%`,
               height: '100%',
-              background: isWarning ? 'var(--gradient-amber, #f59e0b)' : 'var(--gradient-primary)',
-              borderRadius: '4px',
+              background: isWarning ? '#D97706' : '#2563EB',
+              borderRadius: '3px',
               transition: 'width 0.3s ease',
             }}
           />
@@ -194,28 +194,28 @@ const AdminBilling = () => {
   };
 
   return (
-    <div style={{ padding: '1.5rem 2rem', color: 'white', maxWidth: '1280px', margin: '0 auto' }}>
+    <div style={{ padding: '1.5rem', color: '#111111', maxWidth: '1280px', margin: '0 auto' }}>
       {/* Header Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '1.25rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <CreditCard className="text-gradient" size={28} />
-            <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0 }}>Institution Billing & Subscriptions</h1>
+            <CreditCard style={{ color: '#2563EB' }} size={26} />
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: 0, color: '#111111' }}>Institution Billing & Subscriptions</h1>
           </div>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '0.3rem', fontSize: '0.9rem' }}>
-            B2B Institutional SaaS Subscriptions for <strong>{institution?.name}</strong> (Tenant ID: <code>{institution?.tenantId}</code>)
+          <p style={{ color: '#4B5563', marginTop: '0.35rem', fontSize: '0.875rem' }}>
+            B2B Institutional SaaS Subscriptions for <strong>{institution?.name}</strong> (Tenant ID: <code style={{ background: '#F3F4F6', padding: '0.15rem 0.35rem', borderRadius: '4px' }}>{institution?.tenantId}</code>)
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span className="badge badge-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', fontWeight: 'bold' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.35rem 0.75rem', fontSize: '0.8125rem', fontWeight: 600, borderRadius: '4px', background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #DBEAFE' }}>
             Current Plan: {currentPlan} v{currentPlanVersion} (₹{currentPriceSnapshot.amount?.toLocaleString()}/yr)
           </span>
-          <span className="badge badge-success" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', fontWeight: 'bold', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.35rem 0.75rem', fontSize: '0.8125rem', fontWeight: 600, borderRadius: '4px', background: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0' }}>
             Status: {subscription?.status || 'ACTIVE'}
           </span>
           {subscription?.cancelAtPeriodEnd && (
-            <span className="badge badge-warning" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', fontSize: '0.75rem' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.35rem 0.75rem', fontSize: '0.8125rem', fontWeight: 600, borderRadius: '4px', background: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A' }}>
               Cancels at Period End
             </span>
           )}
@@ -223,36 +223,36 @@ const AdminBilling = () => {
       </div>
 
       {statusMessage && (
-        <div style={{ padding: '1rem', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid var(--accent-purple)', borderRadius: '10px', marginBottom: '1.5rem', fontSize: '0.9rem', color: 'white' }}>
+        <div style={{ padding: '0.875rem 1rem', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.875rem', color: '#1E40AF' }}>
           {statusMessage}
         </div>
       )}
 
       {/* Plan Resource Usage Gauges */}
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>
+      <div style={{ marginBottom: '2rem' }}>
+        <h3 style={{ fontSize: '1.0625rem', fontWeight: 600, marginBottom: '0.875rem', color: '#111111' }}>
           Resource Utilization vs Plan Entitlements
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
-          {renderUsageBar('Enrolled Students', <GraduationCap size={18} />, usage?.students?.current || 0, usage?.students?.limit || 0)}
-          {renderUsageBar('Faculty / Teachers', <Users size={18} />, usage?.teachers?.current || 0, usage?.teachers?.limit || 0)}
-          {renderUsageBar('Recruiters / Partners', <Zap size={18} />, usage?.recruiters?.current || 0, usage?.recruiters?.limit || 0)}
-          {renderUsageBar('Academic Departments', <Building size={18} />, usage?.departments?.current || 0, usage?.departments?.limit || 0)}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+          {renderUsageBar('Enrolled Students', <GraduationCap size={16} />, usage?.students?.current || 0, usage?.students?.limit || 0)}
+          {renderUsageBar('Faculty / Teachers', <Users size={16} />, usage?.teachers?.current || 0, usage?.teachers?.limit || 0)}
+          {renderUsageBar('Recruiters / Partners', <Zap size={16} />, usage?.recruiters?.current || 0, usage?.recruiters?.limit || 0)}
+          {renderUsageBar('Academic Departments', <Building size={16} />, usage?.departments?.current || 0, usage?.departments?.limit || 0)}
         </div>
       </div>
 
       {/* Dynamic Backend-Driven Catalog Plans */}
-      <div style={{ marginBottom: '3rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>
+      <div style={{ marginBottom: '2.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.875rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.0625rem', fontWeight: 600, margin: 0, color: '#111111' }}>
             Available SaaS Commercial Plans (Backend Catalog Controlled)
           </h3>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          <span style={{ fontSize: '0.8125rem', color: '#6B7280' }}>
             Official pricing published by Platform Owner
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
           {catalogPlans.map((plan) => {
             const isCurrent = plan.code === currentPlan;
             const priceVal = plan.price?.amount || 0;
@@ -260,36 +260,48 @@ const AdminBilling = () => {
             return (
               <div
                 key={plan._id || plan.code}
-                className="glass-card"
                 style={{
-                  padding: '1.75rem',
-                  border: isCurrent ? '2px solid var(--accent-purple)' : '1px solid rgba(255,255,255,0.08)',
-                  background: plan.code === 'PRO' ? 'rgba(99, 102, 241, 0.04)' : 'transparent',
+                  padding: '1.5rem',
+                  borderRadius: '8px',
+                  border: isCurrent ? '2px solid #2563EB' : '1px solid #E5E7EB',
+                  background: '#FFFFFF',
+                  boxShadow: isCurrent ? '0 4px 6px -1px rgba(37, 99, 235, 0.08)' : 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>{plan.code}</div>
-                  <span className="badge badge-secondary" style={{ fontSize: '0.7rem' }}>v{plan.version || 1}</span>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#111111' }}>{plan.code}</div>
+                    <span style={{ fontSize: '0.75rem', color: '#6B7280', background: '#F3F4F6', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>v{plan.version || 1}</span>
+                  </div>
+                  <div style={{ color: '#4B5563', fontSize: '0.8125rem', marginBottom: '1rem', minHeight: '36px' }}>{plan.description || plan.name}</div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111111', marginBottom: '1.25rem' }}>
+                    ₹{priceVal.toLocaleString()}<span style={{ fontSize: '0.8125rem', color: '#6B7280', fontWeight: 400 }}>/year</span>
+                  </div>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', fontSize: '0.8125rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', color: '#4B5563' }}>
+                    <li>✓ Up to {plan.limits?.maxStudents?.toLocaleString() || 500} Students</li>
+                    <li>✓ Up to {plan.limits?.maxTeachers || 50} Faculty Members</li>
+                    <li>✓ Up to {plan.limits?.maxDepartments || 5} Academic Departments</li>
+                    {plan.features?.developerDNA && <li>✓ AI Developer DNA Analysis</li>}
+                    {plan.features?.placementEngine && <li>✓ AI Placement Engine</li>}
+                    {plan.features?.customDomain && <li>✓ Priority SLA & Custom Branding</li>}
+                  </ul>
                 </div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>{plan.description || plan.name}</div>
-                <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--accent-purple)', marginBottom: '1.25rem' }}>
-                  ₹{priceVal.toLocaleString()}<span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/year</span>
-                </div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', color: 'var(--text-secondary)' }}>
-                  <li>✓ Up to {plan.limits?.maxStudents?.toLocaleString() || 500} Students</li>
-                  <li>✓ Up to {plan.limits?.maxTeachers || 50} Faculty Members</li>
-                  <li>✓ Up to {plan.limits?.maxDepartments || 5} Academic Departments</li>
-                  {plan.features?.developerDNA && <li>✓ AI Developer DNA Analysis</li>}
-                  {plan.features?.placementEngine && <li>✓ AI Placement Engine</li>}
-                  {plan.features?.customDomain && <li>✓ Priority SLA & Custom Branding</li>}
-                </ul>
                 <button
                   onClick={() => handleCheckout(plan.code)}
                   disabled={isCurrent || upgradingPlan === plan.code}
                   className={isCurrent ? 'btn btn-secondary' : 'btn btn-primary'}
-                  style={{ width: '100%' }}
+                  style={{
+                    width: '100%',
+                    fontSize: '0.875rem',
+                    background: isCurrent ? '#F3F4F6' : undefined,
+                    color: isCurrent ? '#6B7280' : undefined,
+                    borderColor: isCurrent ? '#E5E7EB' : undefined,
+                  }}
                 >
-                  {isCurrent ? 'CURRENT PLAN' : upgradingPlan === plan.code ? 'Opening Razorpay...' : `Pay ₹${priceVal.toLocaleString()} & Select`}
+                  {isCurrent ? 'Current Plan' : upgradingPlan === plan.code ? 'Opening Razorpay...' : `Pay ₹${priceVal.toLocaleString()} & Select`}
                 </button>
               </div>
             );
@@ -298,13 +310,13 @@ const AdminBilling = () => {
       </div>
 
       {/* Payment Ledger & Invoices Table */}
-      <div className="glass-card-static" style={{ padding: '1.5rem', marginBottom: '2.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FileText size={18} /> Official Payment Ledger & Invoices
+      <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '1.25rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.0625rem', fontWeight: 600, margin: 0, color: '#111111', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <FileText size={18} style={{ color: '#2563EB' }} /> Official Payment Ledger & Invoices
           </h3>
-          <button onClick={fetchBillingInfo} className="btn btn-outline" style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <RefreshCw size={14} /> Refresh Status
+          <button onClick={fetchBillingInfo} className="btn btn-outline" style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#FFFFFF', borderColor: '#E5E7EB' }}>
+            <RefreshCw size={12} /> Refresh Status
           </button>
         </div>
 
@@ -312,25 +324,25 @@ const AdminBilling = () => {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>Payment ID</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Order ID</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Date</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Version</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Amount</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                <tr style={{ background: '#F8F9FA', borderBottom: '1px solid #E5E7EB', color: '#4B5563', fontSize: '0.8125rem' }}>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Payment ID</th>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Order ID</th>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Date</th>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Version</th>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Amount</th>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {billingData.paymentHistory.map((item, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-purple)' }}>{item.paymentId}</td>
-                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: 'var(--text-muted)', fontSize: '0.8rem' }}>{item.orderId || '-'}</td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{new Date(item.createdAt).toLocaleDateString()}</td>
-                    <td style={{ padding: '0.75rem 1rem' }}><span className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>v{item.planVersion || 1}</span></td>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 'bold' }}>₹{item.amount?.toLocaleString()} {item.currency}</td>
+                  <tr key={i} style={{ borderBottom: '1px solid #E5E7EB', color: '#111111' }}>
+                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontWeight: 600, color: '#111111' }}>{item.paymentId}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: '#6B7280', fontSize: '0.8125rem' }}>{item.orderId || '-'}</td>
+                    <td style={{ padding: '0.75rem 1rem', color: '#4B5563' }}>{new Date(item.createdAt).toLocaleDateString()}</td>
+                    <td style={{ padding: '0.75rem 1rem' }}><span style={{ fontSize: '0.75rem', color: '#6B7280' }}>v{item.planVersion || 1}</span></td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#111111' }}>₹{item.amount?.toLocaleString()} {item.currency}</td>
                     <td style={{ padding: '0.75rem 1rem' }}>
-                      <span className="badge badge-success" style={{ background: item.status === 'FAILED' ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)', color: item.status === 'FAILED' ? '#ef4444' : '#10b981' }}>
+                      <span style={{ display: 'inline-block', padding: '0.15rem 0.45rem', fontSize: '0.7rem', fontWeight: 600, borderRadius: '4px', background: item.status === 'FAILED' ? '#FEF2F2' : '#ECFDF5', color: item.status === 'FAILED' ? '#991B1B' : '#065F46', border: `1px solid ${item.status === 'FAILED' ? '#FCA5A5' : '#A7F3D0'}` }}>
                         {item.status}
                       </span>
                     </td>
@@ -340,7 +352,7 @@ const AdminBilling = () => {
             </table>
           </div>
         ) : (
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
+          <p style={{ color: '#6B7280', fontSize: '0.875rem', margin: 0 }}>
             No transaction records found for this institution subscription.
           </p>
         )}
@@ -352,9 +364,9 @@ const AdminBilling = () => {
           onClick={handleCancelSubscription}
           disabled={cancelling || subscription?.cancelAtPeriodEnd}
           className="btn btn-outline"
-          style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+          style={{ color: '#DC2626', borderColor: '#FCA5A5', background: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}
         >
-          <XCircle size={16} />
+          <XCircle size={15} />
           {subscription?.cancelAtPeriodEnd ? 'Cancellation Scheduled' : 'Cancel Subscription at Period End'}
         </button>
       </div>

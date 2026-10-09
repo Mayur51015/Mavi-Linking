@@ -14,6 +14,9 @@
  * @param  {...string} roles  Allowed role(s)
  * @returns {Function}        Express middleware
  */
+const roleMigration = { student: 'user', developer: 'user', professor: 'teacher' };
+const adminRoles = ['admin', 'super_admin', 'institution_admin', 'owner', 'platform_owner'];
+
 const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -23,12 +26,30 @@ const requireRole = (...roles) => {
       });
     }
 
+    const userRoles = Array.isArray(req.user.roles) && req.user.roles.length > 0
+      ? req.user.roles
+      : [req.user.role];
+    const normalizedUserRoles = userRoles.map((r) => roleMigration[r] || r);
+    const normalizedReqRole = roleMigration[req.user.role] || req.user.role;
+
     // Admins bypass role checks
-    if (req.user.role === 'admin') {
+    const isAdmin =
+      adminRoles.includes(req.user.role) ||
+      adminRoles.includes(normalizedReqRole) ||
+      normalizedUserRoles.some((r) => adminRoles.includes(r));
+
+    if (isAdmin) {
       return next();
     }
 
-    if (!roles.includes(req.user.role)) {
+    const normalizedAllowedRoles = roles.map((r) => roleMigration[r] || r);
+    const hasAllowedRole =
+      roles.includes(req.user.role) ||
+      normalizedAllowedRoles.includes(normalizedReqRole) ||
+      userRoles.some((r) => roles.includes(r)) ||
+      normalizedUserRoles.some((r) => normalizedAllowedRoles.includes(r));
+
+    if (!hasAllowedRole) {
       return res.status(403).json({
         success: false,
         message: `Access denied. Authorized role (${roles.join(', ')}) required.`,
@@ -36,7 +57,7 @@ const requireRole = (...roles) => {
     }
 
     // If role is pending approval, block access to privileged role endpoints
-    if (req.user.roleStatus === 'pending' && req.user.role !== 'user') {
+    if (req.user.roleStatus === 'pending' && !normalizedUserRoles.includes('user')) {
       return res.status(403).json({
         success: false,
         message: `Access denied. Your ${req.user.role} role verification is pending administrator approval.`,

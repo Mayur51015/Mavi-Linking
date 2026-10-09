@@ -1,121 +1,56 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import LandingNavbar from '../components/landing/LandingNavbar';
 import HeroSection from '../components/landing/HeroSection';
-import ProblemSection from '../components/landing/ProblemSection';
-import SolutionSection from '../components/landing/SolutionSection';
-import LinkingPillarsSection from '../components/landing/LinkingPillarsSection';
-import PlatformModulesSection from '../components/landing/PlatformModulesSection';
-import AIIntelligenceSection from '../components/landing/AIIntelligenceSection';
-import StudentGrowthSection from '../components/landing/StudentGrowthSection';
-import PlacementSection from '../components/landing/PlacementSection';
-import RoleEcosystemSection from '../components/landing/RoleEcosystemSection';
-import AnalyticsPreviewSection from '../components/landing/AnalyticsPreviewSection';
-import InstitutionalManagementSection from '../components/landing/InstitutionalManagementSection';
-import SecuritySection from '../components/landing/SecuritySection';
-import PricingSaaSSection from '../components/landing/PricingSaaSSection';
+import WhatItDoesSection from '../components/landing/WhatItDoesSection';
+import WhoItsForSection from '../components/landing/WhoItsForSection';
+import CareerFlowSection from '../components/landing/CareerFlowSection';
 import FinalCTASection from '../components/landing/FinalCTASection';
 import Footer from '../components/Footer';
-import DemoRequestModal from '../components/landing/DemoRequestModal';
 
 /**
- * Home — EduTalentX Premium Landing Page Component
- * "The Digital Operating Platform for Institutions"
- * "Connecting Institutions. Empowering People. Enabling Intelligence."
+ * Home — EduTalentX Clean, Minimal, Professional Landing Page
+ * Structure:
+ * 1. Navbar
+ * 2. Hero
+ * 3. What EduTalentX Does
+ * 4. Who It's For
+ * 5. Simple Career Flow
+ * 6. Final CTA
+ * 7. Footer
  */
 const Home = () => {
-  const [demoModalOpen, setDemoModalOpen] = useState(false);
-  const observerRef = useRef(null);
-
-  useEffect(() => {
-    // Intersection Observer for performance-friendly scroll reveals
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            observerRef.current?.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        threshold: 0.08,
-        rootMargin: '0px 0px -40px 0px',
-      }
-    );
-
-    const revealElements = document.querySelectorAll('.reveal, .reveal-fade');
-    revealElements.forEach((el) => observerRef.current?.observe(el));
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, []);
-
-  const handleOpenDemoModal = () => {
-    setDemoModalOpen(true);
-  };
-
-  const handleCloseDemoModal = () => {
-    setDemoModalOpen(false);
-  };
-
   return (
-    <div style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', overflowX: 'hidden' }}>
-      {/* Sticky Navigation Bar */}
-      <LandingNavbar onOpenDemoModal={handleOpenDemoModal} />
+    <div
+      style={{
+        background: '#FFFFFF',
+        color: '#111111',
+        minHeight: '100vh',
+        overflowX: 'hidden',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+      }}
+    >
+      {/* 1. Navbar */}
+      <LandingNavbar />
 
-      {/* Main Content Sections */}
       <main>
-        {/* Section 1: Hero & Node Canvas */}
-        <HeroSection onOpenDemoModal={handleOpenDemoModal} />
+        {/* 2. Hero */}
+        <HeroSection />
 
-        {/* Section 2: Problem Section */}
-        <ProblemSection />
+        {/* 3. What EduTalentX Does */}
+        <WhatItDoesSection />
 
-        {/* Section 3: Solution Ecosystem Section */}
-        <SolutionSection />
+        {/* 4. Who It's For */}
+        <WhoItsForSection />
 
-        {/* Section 4: Meaning of "Linking" (4 Pillars) */}
-        <LinkingPillarsSection />
+        {/* 5. Simple Career Flow */}
+        <CareerFlowSection />
 
-        {/* Section 5: Platform Modules */}
-        <PlatformModulesSection />
-
-        {/* Section 6: AI Intelligence Section */}
-        <AIIntelligenceSection />
-
-        {/* Section 7: Student Development & Growth */}
-        <StudentGrowthSection />
-
-        {/* Section 8: Placement Intelligence */}
-        <PlacementSection />
-
-        {/* Section 9: Role-Based Ecosystem */}
-        <RoleEcosystemSection />
-
-        {/* Section 10: Executive Analytics Preview */}
-        <AnalyticsPreviewSection />
-
-        {/* Section 11: Total Institutional Management */}
-        <InstitutionalManagementSection />
-
-        {/* Section 12: Security & Data Trust */}
-        <SecuritySection />
-
-        {/* Section 13: SaaS Scalability & Centralized Billing */}
-        <PricingSaaSSection onOpenDemoModal={handleOpenDemoModal} />
-
-        {/* Section 14: Final Call to Action */}
-        <FinalCTASection onOpenDemoModal={handleOpenDemoModal} />
+        {/* 6. Final CTA */}
+        <FinalCTASection />
       </main>
 
-      {/* Footer */}
+      {/* 7. Footer */}
       <Footer />
-
-      {/* Demo Request Modal */}
-      <DemoRequestModal isOpen={demoModalOpen} onClose={handleCloseDemoModal} />
     </div>
   );
 };

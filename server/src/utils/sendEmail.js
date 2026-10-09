@@ -1,96 +1,332 @@
 const nodemailer = require('nodemailer');
 
 /**
- * Utility to send transactional emails (Password Reset, OTP, Account Verification)
- * 
- * Supports SMTP (Gmail, SendGrid, Mailgun, Amazon SES) via environment variables.
- * Falls back to test Ethereal transport in development if no SMTP pass is provided.
+ * Singleton cached transporter for high-performance connection pooling
  */
-const sendEmail = async ({ to, subject, html, text, templateName }) => {
-  if (process.env.NODE_ENV === 'test') {
-    return { success: true, messageId: 'test_mock_message_id' };
+let cachedTransporter = null;
+
+/**
+ * Resolve client base URL dynamically from request or environment variables
+ */
+const getClientBaseUrl = (req) => {
+  const origin = req?.headers?.origin;
+  if (origin && typeof origin === 'string' && !origin.includes('undefined') && !origin.includes('null')) {
+    return origin.replace(/\/+$/, '');
   }
-  try {
-    console.log(`[EMAIL] Preparing email dispatch`);
-    console.log(`[EMAIL] Recipient: ${to || 'UNKNOWN'}`);
-    if (templateName) console.log(`[EMAIL] Template: ${templateName}`);
-    console.log(`[EMAIL] Subject: ${subject || 'No Subject'}`);
-    console.log(`[EMAIL] Sending...`);
+  return (
+    process.env.CLIENT_URL ||
+    process.env.FRONTEND_URL ||
+    process.env.PUBLIC_APP_URL ||
+    'http://localhost:5173'
+  ).replace(/\/+$/, '');
+};
 
-    if (!to || typeof to !== 'string' || !to.includes('@')) {
-      console.error(`[EMAIL ERROR] Invalid or missing recipient email address: ${to}`);
-      return { success: false, error: 'INVALID_RECIPIENT_EMAIL' };
-    }
+/**
+ * Mask email for safe audit logs (zero token or PII leaks)
+ */
+const maskEmail = (str) => {
+  if (!str || typeof str !== 'string' || !str.includes('@')) return 'invalid-recipient';
+  const [user, domain] = str.split('@');
+  if (!domain) return 'invalid-recipient';
+  const maskedUser = user.length <= 2 ? user[0] + '*' : user[0] + '*'.repeat(Math.min(user.length - 2, 4)) + user[user.length - 1];
+  return `${maskedUser}@${domain}`;
+};
 
-    let transporter;
+/**
+ * Reset and close active cached transporter instance
+ */
+const resetTransporter = () => {
+  if (cachedTransporter && typeof cachedTransporter.close === 'function') {
+    try {
+      cachedTransporter.close();
+    } catch (_) {}
+  }
+  cachedTransporter = null;
+};
 
-    const emailHost = (process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
-    const emailPort = parseInt(process.env.EMAIL_PORT || '587', 10);
-    const emailUser = (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim();
-    const rawPass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').trim();
-    // Normalize app password by stripping enclosing quotes and spaces if Gmail
-    const emailPass = emailHost.includes('gmail')
-      ? rawPass.replace(/^["']|["']$/g, '').replace(/\s+/g, '')
-      : rawPass.replace(/^["']|["']$/g, '');
+/**
+ * Get or initialize Nodemailer transporter.
+ * Uses dedicated SSL connection for Gmail without persistent pooling to prevent idle socket ECONNRESET.
+ */
+const getTransporter = async (forceFresh = false) => {
+  if (!forceFresh && cachedTransporter) {
+    return cachedTransporter;
+  }
 
-    if (emailUser && emailPass) {
-      // Production / Development Gmail / SMTP Transporter
-      const isGmail = emailHost.includes('gmail') || process.env.EMAIL_SERVICE === 'gmail';
-      const transportConfig = isGmail && process.env.EMAIL_USE_SERVICE === 'true'
-        ? {
-            service: 'gmail',
-            auth: { user: emailUser, pass: emailPass },
-          }
-        : {
-            host: emailHost,
-            port: emailPort,
-            secure: emailPort === 465,
-            family: 4, // Force IPv4 to prevent 15-20s connection timeout on dual-stack IPv6 networks
-            connectionTimeout: 8000,
-            greetingTimeout: 8000,
-            socketTimeout: 10000,
-            auth: {
-              user: emailUser,
-              pass: emailPass,
-            },
-            tls: {
-              rejectUnauthorized: false,
-            },
-          };
+  const emailHost = (process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+  const emailPort = parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587', 10);
+  const emailUser = (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim();
+  const rawPass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').trim();
 
-      transporter = nodemailer.createTransport(transportConfig);
-    } else {
-      // Test / Dev Ethereal Account Fallback
-      console.warn('[EMAIL WARNING] SMTP credentials (EMAIL_USER & EMAIL_PASS) not set in .env. Attempting Ethereal test account transport...');
-      try {
-        const testAccount = await nodemailer.createTestAccount();
-        transporter = nodemailer.createTransport({
-          host: 'smtp.ethereal.email',
-          port: 587,
-          secure: false,
-          auth: {
-            user: testAccount.user,
-            pass: testAccount.pass,
+  // Normalize app password by stripping enclosing quotes, spaces, and carriage returns
+  const emailPass = emailHost.includes('gmail') || process.env.EMAIL_SERVICE === 'gmail'
+    ? rawPass.replace(/^["']|["']$/g, '').replace(/\s+/g, '')
+    : rawPass.replace(/^["']|["']$/g, '');
+
+  if (emailUser && emailPass) {
+    const isGmail = emailHost.includes('gmail') || process.env.EMAIL_SERVICE === 'gmail';
+
+    // For Gmail: Port 465 SSL direct connection without persistent pooling.
+    // This completely eliminates stale idle socket timeouts (read ECONNRESET)
+    // while maintaining rapid transactional delivery.
+    const transportConfig = isGmail
+      ? {
+          host: 'smtp.gmail.com',
+          port: 465,
+          secure: true,
+          auth: { user: emailUser, pass: emailPass },
+          connectionTimeout: 15000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
+        }
+      : {
+          host: emailHost,
+          port: emailPort,
+          secure: emailPort === 465 || process.env.SMTP_SECURE === 'true',
+          auth: { user: emailUser, pass: emailPass },
+          connectionTimeout: 15000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
+          tls: {
+            rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
           },
-        });
-      } catch (err) {
-        console.error('[EMAIL ERROR] Failed to create test Ethereal account:', err.message);
-        return { success: false, error: err.message };
+        };
+
+    cachedTransporter = nodemailer.createTransport(transportConfig);
+    return cachedTransporter;
+  }
+
+  // Development/Test fallback to Ethereal if no credentials provided
+  console.warn('[EMAIL WARNING] SMTP credentials not set in environment. Generating Ethereal test account...');
+  const testAccount = await nodemailer.createTestAccount();
+  cachedTransporter = nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    secure: false,
+    auth: { user: testAccount.user, pass: testAccount.pass },
+  });
+  return cachedTransporter;
+};
+
+/**
+ * Verify SMTP connection safely (useful for startup diagnostics)
+ */
+const verifySmtpConnection = async () => {
+  try {
+    const transporter = await getTransporter();
+    await transporter.verify();
+    return { success: true, status: 'SMTP_CONNECTED' };
+  } catch (err) {
+    resetTransporter();
+    let errorCode = 'EMAIL_CONNECTION_ERROR';
+    if (err.code === 'EAUTH' || err.responseCode === 535) errorCode = 'EMAIL_AUTH_ERROR';
+    return { success: false, status: errorCode, error: err.message };
+  }
+};
+
+/**
+ * Resolve recipient email from direct string or target user identifier
+ * Never defaults or falls back to SMTP_USER or Owner email.
+ */
+const resolveRecipientEmail = async ({
+  to,
+  recipientUserId,
+  assignedUserId,
+  userId,
+  studentId,
+  teacherId,
+  recruiterId,
+  user,
+} = {}) => {
+  if (to && typeof to === 'string' && to.includes('@')) {
+    return to.toLowerCase().trim();
+  }
+
+  if (user && user.email && typeof user.email === 'string' && user.email.includes('@')) {
+    return user.email.toLowerCase().trim();
+  }
+
+  const targetId = recipientUserId || assignedUserId || userId || studentId || teacherId || recruiterId;
+  if (targetId) {
+    try {
+      const User = require('../models/User');
+      const targetUser = await User.findById(targetId).select('email name role');
+      if (targetUser && targetUser.email) {
+        return targetUser.email.toLowerCase().trim();
+      }
+    } catch (_) {}
+  }
+
+  return null;
+};
+
+/**
+ * Centralized transactional email dispatch utility with automatic retry on socket reset
+ */
+const sendEmail = async ({
+  to,
+  subject,
+  html,
+  text,
+  templateName,
+  recipientUserId,
+  actorUserId,
+  isOwnerEvent = false,
+}) => {
+  let recipientEmail = to;
+  if (!recipientEmail && recipientUserId) {
+    recipientEmail = await resolveRecipientEmail({ recipientUserId });
+  }
+
+  let cleanRecipient = (recipientEmail || '').toString().trim().toLowerCase();
+  if (!cleanRecipient || !cleanRecipient.includes('@')) {
+    const errMessage = `Cannot send ${templateName || 'email'}: recipient email could not be resolved`;
+    console.error(`[EMAIL ERROR] ${errMessage} (raw to: ${maskEmail(to)}, recipientUserId: ${recipientUserId || 'none'})`);
+    return {
+      success: false,
+      status: 'EMAIL_REJECTED',
+      error: errMessage,
+    };
+  }
+
+  // Prevent accidental fallback to Owner email unless explicitly an Owner-targeted event
+  const ownerEmail = (process.env.OWNER_EMAIL || process.env.EMAIL_USER || process.env.SMTP_USER || '').toLowerCase().trim();
+  if (!isOwnerEvent && cleanRecipient === ownerEmail && recipientUserId) {
+    // If recipientUserId was provided, verify that the target user is indeed the owner
+    try {
+      const User = require('../models/User');
+      const targetUser = await User.findById(recipientUserId).select('email role');
+      if (targetUser && targetUser.email && targetUser.email.toLowerCase().trim() !== ownerEmail) {
+        console.warn(`[EMAIL WARNING] Recipient email mismatch with target user ${recipientUserId}. Correcting to target user email ${maskEmail(targetUser.email)}.`);
+        recipientEmail = targetUser.email.toLowerCase().trim();
+        cleanRecipient = recipientEmail;
+      }
+    } catch (_) {}
+  }
+
+  const emailHost = (process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+  const isGmail = emailHost.includes('gmail') || process.env.EMAIL_SERVICE === 'gmail';
+  const emailUser = (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim();
+  const configuredFrom = (process.env.EMAIL_FROM || process.env.MAIL_FROM || process.env.SMTP_FROM || '').trim();
+
+  let fromAddress;
+  if (isGmail && emailUser) {
+    const nameMatch = configuredFrom.match(/^(?:"?([^"<]+)"?\s*)?/);
+    const displayName = (nameMatch && nameMatch[1] && nameMatch[1].trim()) || 'EduTalentX Security';
+    fromAddress = `"${displayName}" <${emailUser}>`;
+  } else {
+    fromAddress = configuredFrom || `"EduTalentX Security" <${emailUser || 'noreply@edutalentx.com'}>`;
+  }
+
+  const cleanSubject = (subject || 'EduTalentX Notification').trim();
+  const cleanText = (text || html?.replace(/<[^>]*>?/gm, ' ') || cleanSubject).replace(/\s+/g, ' ').trim();
+
+  const mailOptions = {
+    from: fromAddress,
+    to: cleanRecipient,
+    subject: cleanSubject,
+    text: cleanText,
+    html,
+  };
+
+  // Safe structured logging for recipient resolution (Phase 10)
+  console.log('[EMAIL] Sending email', {
+    event: templateName || cleanSubject,
+    recipientUserId: recipientUserId || null,
+    recipientEmail: maskEmail(cleanRecipient),
+    actorUserId: actorUserId || null,
+    smtpUser: maskEmail(emailUser),
+    from: mailOptions.from,
+    to: mailOptions.to,
+  });
+
+  if (process.env.NODE_ENV === 'test') {
+    const mockResult = {
+      success: true,
+      status: 'EMAIL_ACCEPTED',
+      messageId: 'test_mock_message_id',
+      accepted: [cleanRecipient],
+      rejected: [],
+      envelope: { from: fromAddress, to: [cleanRecipient] },
+      response: '250 OK mock',
+    };
+    console.log('[EMAIL SMTP RESULT]', {
+      messageId: mockResult.messageId,
+      accepted: mockResult.accepted,
+      rejected: mockResult.rejected,
+      envelope: mockResult.envelope,
+      response: mockResult.response,
+    });
+    return mockResult;
+  }
+
+  const dispatchOnce = async (transporterInstance) => {
+    return await transporterInstance.sendMail(mailOptions);
+  };
+
+  try {
+    let transporter = await getTransporter();
+    let info;
+
+    try {
+      info = await dispatchOnce(transporter);
+    } catch (firstErr) {
+      const isSocketDrop = ['ECONNRESET', 'ESOCKET', 'ETIMEDOUT', 'ECONNABORTED', 'ECONNREFUSED'].includes(firstErr.code) ||
+        firstErr.message?.includes('ECONNRESET') ||
+        firstErr.message?.includes('socket closed');
+
+      if (isSocketDrop) {
+        console.warn(`[EMAIL RETRY] Socket disconnect detected (${firstErr.message}). Re-establishing fresh SMTP connection...`);
+        resetTransporter();
+        const freshTransporter = await getTransporter(true);
+        info = await dispatchOnce(freshTransporter);
+      } else {
+        throw firstErr;
       }
     }
 
-    const fromAddress = process.env.EMAIL_FROM || `"EduTalentX Security" <${emailUser || 'noreply@edutalentx.com'}>`;
+    const accepted = Array.isArray(info.accepted) ? info.accepted : [];
+    const rejected = Array.isArray(info.rejected) ? info.rejected : [];
 
-    const mailOptions = {
-      from: fromAddress,
-      to,
-      subject,
-      text: text || html.replace(/<[^>]*>?/gm, ''),
-      html,
-    };
+    // Capture and inspect the Nodemailer result (Phase 11)
+    console.log('[EMAIL SMTP RESULT]', {
+      messageId: info.messageId,
+      accepted,
+      rejected,
+      envelope: info.envelope,
+      response: info.response,
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL] Sent successfully (MessageID: ${info.messageId} | Target: ${to})`);
+    // Verify recipient acceptance from the SMTP server
+    if (rejected.length > 0 && accepted.length === 0) {
+      console.error(`[EMAIL REJECTED] Recipient rejected by SMTP: ${rejected.join(', ')} (${info.response || 'No response'})`);
+      return {
+        success: false,
+        status: 'EMAIL_REJECTED',
+        error: 'Recipient rejected by mail server',
+        messageId: info.messageId,
+        accepted,
+        rejected,
+        response: info.response,
+        envelope: info.envelope,
+      };
+    }
+
+    if (accepted.length === 0) {
+      console.warn(`[EMAIL WARNING] No recipients accepted by SMTP for ${maskEmail(cleanRecipient)}`);
+      return {
+        success: false,
+        status: 'EMAIL_DELIVERY_ERROR',
+        error: 'Mail server did not accept recipient',
+        messageId: info.messageId,
+        accepted,
+        rejected,
+        response: info.response,
+        envelope: info.envelope,
+      };
+    }
+
+    console.log(`[EMAIL ACCEPTED] messageId=${info.messageId} recipient=${maskEmail(cleanRecipient)} response="${info.response || '250 OK'}"`);
 
     const previewUrl = nodemailer.getTestMessageUrl(info);
     if (previewUrl) {
@@ -99,14 +335,30 @@ const sendEmail = async ({ to, subject, html, text, templateName }) => {
 
     return {
       success: true,
+      status: 'EMAIL_ACCEPTED',
       messageId: info.messageId,
+      accepted,
+      rejected,
+      response: info.response,
+      envelope: info.envelope,
       previewUrl: previewUrl || null,
     };
   } catch (error) {
-    console.error(`[EMAIL ERROR] Delivery failed for ${to}:`, error.message || error);
+    resetTransporter();
+    let errorStatus = 'EMAIL_DELIVERY_ERROR';
+    if (error.code === 'EAUTH' || error.responseCode === 535) {
+      errorStatus = 'EMAIL_AUTH_ERROR';
+    } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT' || error.code === 'ESOCKET' || error.code === 'ECONNRESET') {
+      errorStatus = 'EMAIL_CONNECTION_ERROR';
+    } else if (error.code === 'EENVELOPE') {
+      errorStatus = 'EMAIL_CONFIGURATION_ERROR';
+    }
+
+    console.error(`[EMAIL ERROR] ${errorStatus} for ${maskEmail(cleanRecipient)}:`, error.message);
     return {
       success: false,
-      error: error.message || 'EMAIL_DELIVERY_FAILED',
+      status: errorStatus,
+      error: error.message || errorStatus,
     };
   }
 };
@@ -572,6 +824,8 @@ const generateAdminInvitationEmailHtml = ({
  */
 const sendAdminInvitationEmail = async ({
   to,
+  recipientUserId,
+  actorUserId,
   name,
   role,
   institutionName,
@@ -581,9 +835,14 @@ const sendAdminInvitationEmail = async ({
   expiresMinutes = 10,
   expiresHours,
 }) => {
-  if (!to || typeof to !== 'string' || !to.includes('@')) {
-    console.error(`[EMAIL ERROR] Recipient email is missing or invalid: ${to}`);
-    return { success: false, error: 'ADMIN_EMAIL_REQUIRED' };
+  let recipientEmail = to;
+  if (!recipientEmail && recipientUserId) {
+    recipientEmail = await resolveRecipientEmail({ recipientUserId });
+  }
+
+  if (!recipientEmail || typeof recipientEmail !== 'string' || !recipientEmail.includes('@')) {
+    console.error(`[EMAIL ERROR] Recipient email is missing or could not be resolved for admin invitation.`);
+    throw new Error('Cannot send admin-invitation: recipient email could not be resolved');
   }
 
   const roleTitle = role ? role.replace(/_/g, ' ') : 'Administrator';
@@ -599,7 +858,9 @@ const sendAdminInvitationEmail = async ({
   });
 
   return await sendEmail({
-    to: to.toLowerCase().trim(),
+    to: recipientEmail.toLowerCase().trim(),
+    recipientUserId,
+    actorUserId,
     subject: `You've been invited to become a EduTalentX Administrator`,
     html,
     templateName: 'admin-invitation',
@@ -686,9 +947,24 @@ const generateAccountLifecycleEmailHtml = ({ type, name, etxId, role, reason, ex
 /**
  * Dispatch Account Lifecycle Notification Email
  */
-const sendAccountLifecycleEmail = async ({ to, name, etxId, role, type, reason, expiresDate }) => {
-  if (!to || typeof to !== 'string' || !to.includes('@')) {
-    return { success: false, error: 'INVALID_EMAIL' };
+const sendAccountLifecycleEmail = async ({
+  to,
+  recipientUserId,
+  actorUserId,
+  name,
+  etxId,
+  role,
+  type,
+  reason,
+  expiresDate,
+}) => {
+  let recipientEmail = to;
+  if (!recipientEmail && recipientUserId) {
+    recipientEmail = await resolveRecipientEmail({ recipientUserId });
+  }
+
+  if (!recipientEmail || typeof recipientEmail !== 'string' || !recipientEmail.includes('@')) {
+    throw new Error(`Cannot send account-lifecycle-${type?.toLowerCase() || 'update'}: recipient email could not be resolved`);
   }
 
   const subjectMap = {
@@ -707,15 +983,148 @@ const sendAccountLifecycleEmail = async ({ to, name, etxId, role, type, reason, 
   });
 
   return await sendEmail({
-    to: to.toLowerCase().trim(),
+    to: recipientEmail.toLowerCase().trim(),
+    recipientUserId,
+    actorUserId,
     subject: subjectMap[type] || `EduTalentX — Account Status Update (${type})`,
     html,
     templateName: `account-lifecycle-${type.toLowerCase()}`,
   });
 };
 
+/**
+ * Dispatch Assignment Notification Email (Owner -> Teacher/Recruiter, Teacher -> Student, Recruiter -> Candidate)
+ * Strictly delivers to the assigned target user's email address.
+ */
+const sendAssignmentNotificationEmail = async ({
+  to,
+  recipientUserId,
+  actorUserId,
+  actorName,
+  actorRole,
+  assignmentTitle,
+  assignmentDetails,
+  assignmentType = 'TASK_ASSIGNMENT',
+  dueDate,
+  actionLink,
+}) => {
+  let recipientEmail = to;
+  if (!recipientEmail && recipientUserId) {
+    recipientEmail = await resolveRecipientEmail({ recipientUserId });
+  }
+
+  if (!recipientEmail || typeof recipientEmail !== 'string' || !recipientEmail.includes('@')) {
+    throw new Error(`Cannot send assignment notification: recipient email could not be resolved`);
+  }
+
+  const title = assignmentTitle || 'New Assignment Notification';
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0d1117; margin: 0; padding: 40px 10px; color: #e6edf3;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background: #161b22; border-radius: 12px; border: 1px solid #30363d; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);">
+    <tr>
+      <td style="padding: 30px; text-align: center; border-bottom: 1px solid #21262d; background: linear-gradient(135deg, rgba(79, 70, 229, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">EDUTALENTX</h1>
+        <p style="margin: 5px 0 0 0; font-size: 13px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px;">Assignment & Workflow Notification</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 35px 30px;">
+        <div style="display: inline-block; padding: 4px 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid #6366f1; border-radius: 20px; font-size: 12px; font-weight: 600; color: #a5b4fc; margin-bottom: 16px;">
+          ${assignmentType}
+        </div>
+        <h2 style="margin: 0 0 15px 0; font-size: 20px; font-weight: 600; color: #f0f6fc;">${title}</h2>
+        <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #c9d1d9;">
+          ${assignmentDetails || 'You have received a new assignment or workflow update on EduTalentX.'}
+        </p>
+
+        <table width="100%" style="background: #0d1117; border: 1px solid #30363d; border-radius: 8px; margin: 20px 0; padding: 15px;">
+          ${actorName ? `<tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px; width: 140px;">Assigned By:</td><td style="padding: 6px 12px; color: #ffffff; font-size: 13px; font-weight: 600;">${actorName}${actorRole ? ` (${actorRole})` : ''}</td></tr>` : ''}
+          ${dueDate ? `<tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px;">Date / Due:</td><td style="padding: 6px 12px; color: #38bdf8; font-size: 13px;">${new Date(dueDate).toDateString()}</td></tr>` : ''}
+          <tr><td style="padding: 6px 12px; color: #8b949e; font-size: 13px;">Recipient:</td><td style="padding: 6px 12px; color: #a78bfa; font-size: 13px;">${recipientEmail}</td></tr>
+        </table>
+
+        ${actionLink ? `
+        <div style="text-align: center; margin: 30px 0 10px 0;">
+          <a href="${actionLink}" style="display: inline-block; padding: 12px 28px; background: #6366f1; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">View Assignment</a>
+        </div>` : ''}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 20px 30px; background: #0d1117; border-top: 1px solid #21262d; text-align: center;">
+        <p style="margin: 0; font-size: 12px; color: #484f58;">&copy; ${new Date().getFullYear()} EduTalentX System. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  return await sendEmail({
+    to: recipientEmail.toLowerCase().trim(),
+    recipientUserId,
+    actorUserId,
+    subject: `EduTalentX: ${title}`,
+    html,
+    templateName: `assignment-${assignmentType.toLowerCase().replace(/_/g, '-')}`,
+  });
+};
+
+/**
+ * Dispatch Legitimate Platform / Security Alert to Platform Owner
+ */
+const sendOwnerAlertEmail = async ({
+  to,
+  subject,
+  title,
+  message,
+  details,
+  alertType = 'PLATFORM_SECURITY_ALERT',
+}) => {
+  const ownerEmail = (to || process.env.OWNER_EMAIL || process.env.EMAIL_USER || '').toLowerCase().trim();
+  if (!ownerEmail || !ownerEmail.includes('@')) {
+    throw new Error('Cannot send owner alert: Owner recipient email is not configured');
+  }
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>${title || 'EduTalentX Platform Alert'}</title></head>
+<body style="font-family: sans-serif; background: #0d1117; color: #f0f6fc; padding: 30px;">
+  <div style="max-width: 600px; margin: 0 auto; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px;">
+    <h2 style="color: #ef4444; margin-top: 0;">${title || 'Platform Alert'}</h2>
+    <p>${message || 'Platform level event requiring owner attention.'}</p>
+    ${details ? `<pre style="background: #0d1117; padding: 12px; border-radius: 6px; font-size: 12px; overflow-x: auto;">${JSON.stringify(details, null, 2)}</pre>` : ''}
+  </div>
+</body>
+</html>
+  `;
+
+  return await sendEmail({
+    to: ownerEmail,
+    subject: subject || `EduTalentX Platform Alert: ${title || alertType}`,
+    html,
+    templateName: `owner-alert-${alertType.toLowerCase().replace(/_/g, '-')}`,
+    isOwnerEvent: true,
+  });
+};
+
 module.exports = {
   sendEmail,
+  resolveRecipientEmail,
+  sendAssignmentNotificationEmail,
+  sendOwnerAlertEmail,
+  verifySmtpConnection,
+  getClientBaseUrl,
+  getTransporter,
+  resetTransporter,
+  maskEmail,
   sendAdminInvitationEmail,
   sendAccountLifecycleEmail,
   generateAccountLifecycleEmailHtml,

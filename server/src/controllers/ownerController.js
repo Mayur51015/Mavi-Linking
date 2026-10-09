@@ -5,7 +5,7 @@ const Department = require('../models/Department');
 const Role = require('../models/Role');
 const ActivityLog = require('../models/ActivityLog');
 const AuditLog = require('../models/AuditLog');
-const { sendEmail, sendAdminInvitationEmail } = require('../utils/sendEmail');
+const { sendEmail, sendAdminInvitationEmail, getClientBaseUrl } = require('../utils/sendEmail');
 const { ALL_PERMISSIONS, SYSTEM_ROLE_PERMISSIONS, checkPermissionDelegation } = require('../utils/permissions');
 const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
@@ -590,16 +590,13 @@ const inviteAdmin = async (req, res, next) => {
     }
 
     // 5. Send Invitation Email
-    const clientUrl = (
-      process.env.CLIENT_URL ||
-      process.env.FRONTEND_URL ||
-      process.env.PUBLIC_APP_URL ||
-      'http://localhost:5173'
-    ).replace(/\/+$/, '');
+    const clientUrl = getClientBaseUrl(req);
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
       to: lowerEmail,
+      recipientUserId: existingUser._id,
+      actorUserId: req.user._id,
       name: existingUser.name,
       role,
       institutionName: targetInst ? targetInst.name : 'Platform Wide',
@@ -850,16 +847,13 @@ const resendAdminInvite = async (req, res, next) => {
     adminUser.invitedAt = new Date();
     await adminUser.save();
 
-    const clientUrl = (
-      process.env.CLIENT_URL ||
-      process.env.FRONTEND_URL ||
-      process.env.PUBLIC_APP_URL ||
-      'http://localhost:5173'
-    ).replace(/\/+$/, '');
+    const clientUrl = getClientBaseUrl(req);
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
       to: adminUser.email,
+      recipientUserId: adminUser._id,
+      actorUserId: req.user._id,
       name: adminUser.name,
       role: adminUser.role,
       institutionName: adminUser.institutionId?.name || 'Platform Wide',
@@ -1498,7 +1492,10 @@ const convertSuperAdminToStudent = async (req, res) => {
     try {
       await sendEmail({
         to: targetUser.email,
+        recipientUserId: targetUser._id,
+        actorUserId: req.user._id,
         subject: 'Your EduTalentX Account Role Has Been Changed',
+        templateName: 'student-role-conversion',
         html: `
           <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
             <h2 style="color: #6366f1;">EduTalentX — Account Role Updated</h2>

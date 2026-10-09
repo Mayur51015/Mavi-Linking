@@ -2,26 +2,22 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
-import ThemeToggle from '../ThemeToggle';
 import BrandLogo from '../BrandLogo';
 
-const LandingNavbar = ({ onOpenDemoModal }) => {
+const LandingNavbar = () => {
   const { user, getDashboardPath } = useContext(AuthContext);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { label: 'Platform', href: '#modules' },
-    { label: 'AI', href: '#ai' },
-    { label: 'Analytics', href: '#analytics' },
-    { label: 'Solutions', href: '#linking' },
+    { label: 'Platform', href: '#what-it-does' },
+    { label: 'Solutions', href: '#who-its-for' },
     { label: 'Security', href: '#security' },
-    { label: 'Pricing', href: '#pricing' },
   ];
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 30);
+      setScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -47,83 +43,218 @@ const LandingNavbar = ({ onOpenDemoModal }) => {
           left: 0,
           right: 0,
           zIndex: 1000,
-          transition: 'all 0.3s ease',
-          background: scrolled ? 'var(--bg-glass)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(16px)' : 'none',
-          WebkitBackdropFilter: scrolled ? 'blur(16px)' : 'none',
-          borderBottom: scrolled ? '1px solid var(--border-color)' : '1px solid transparent',
-          padding: '0.9rem 0',
+          transition: 'box-shadow 0.2s ease',
+          background: '#FFFFFF',
+          borderBottom: '1px solid #E5E7EB',
+          boxShadow: scrolled ? '0 1px 3px rgba(0, 0, 0, 0.05)' : 'none',
+          padding: '0.85rem 0',
         }}
       >
-        <div className="container nav-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div
+          className="container nav-container"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            maxWidth: '1120px',
+            margin: '0 auto',
+            padding: '0 1.5rem',
+          }}
+        >
           {/* Brand Logo */}
-          <BrandLogo variant="full" size={34} linkTo="/" />
+          <BrandLogo variant="full" size={30} linkTo="/" />
 
           {/* Desktop Nav Links */}
-          <div className="nav-links-desktop" style={{ display: 'flex', alignItems: 'center', gap: '1.75rem' }}>
+          <div
+            className="nav-links-desktop"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2rem',
+            }}
+          >
             {navItems.map((item) => (
-              <a key={item.label} href={item.href} className="nav-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600' }}>
+              <a
+                key={item.label}
+                href={item.href}
+                className="nav-link"
+                style={{
+                  color: '#4B5563',
+                  textDecoration: 'none',
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  transition: 'color 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#111111')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#4B5563')}
+              >
                 {item.label}
               </a>
             ))}
           </div>
 
-          {/* Right Side Actions */}
+          {/* Right Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <ThemeToggle />
             {user ? (
-              <Link to={getDashboardPath()} className="btn btn-primary" style={{ padding: '0.6rem 1.25rem', fontSize: '0.875rem' }}>
-                Dashboard <ArrowRight size={16} />
+              <Link
+                to={getDashboardPath()}
+                className="btn btn-primary"
+                style={{
+                  background: '#2563EB',
+                  color: '#FFFFFF',
+                  padding: '0.55rem 1.15rem',
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                }}
+              >
+                Dashboard <ArrowRight size={15} />
               </Link>
             ) : (
               <>
-                <Link to="/login" className="nav-link hide-mobile" style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: '600', textDecoration: 'none' }}>
+                <Link
+                  to="/login"
+                  className="nav-link hide-mobile"
+                  style={{
+                    color: '#111111',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    textDecoration: 'none',
+                    padding: '0.4rem 0.75rem',
+                    transition: 'color 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = '#111111')}
+                >
                   Login
                 </Link>
-                <button onClick={onOpenDemoModal} className="btn btn-primary hide-mobile" style={{ padding: '0.6rem 1.25rem', fontSize: '0.875rem' }}>
-                  Request Demo
-                </button>
+                <Link
+                  to="/register"
+                  className="btn btn-primary hide-mobile"
+                  style={{
+                    background: '#2563EB',
+                    color: '#FFFFFF',
+                    padding: '0.55rem 1.15rem',
+                    borderRadius: '6px',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    textDecoration: 'none',
+                    transition: 'background-color 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1D4ED8')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#2563EB')}
+                >
+                  Get Started
+                </Link>
               </>
             )}
 
-            {/* Mobile Menu Toggle */}
+            {/* Mobile Menu Toggle Button */}
             <button
               onClick={() => setMobileMenuOpen((open) => !open)}
               className="mobile-toggle-btn"
               type="button"
               aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={mobileMenuOpen}
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                borderRadius: '6px',
+                color: '#111111',
+                padding: '0.4rem',
+                cursor: 'pointer',
+              }}
             >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
       </nav>
 
-      <div className={`mobile-nav-panel${mobileMenuOpen ? ' open' : ''}`} role="navigation" aria-label="Mobile navigation">
+      {/* Accessible Mobile Navigation Panel */}
+      <div
+        className={`mobile-nav-panel${mobileMenuOpen ? ' open' : ''}`}
+        role="navigation"
+        aria-label="Mobile navigation"
+        style={{
+          background: '#FFFFFF',
+          borderRight: '1px solid #E5E7EB',
+        }}
+      >
         <div className="mobile-nav-header">
-          <BrandLogo variant="full" size={28} linkTo="/" />
-          <button type="button" onClick={closeMobileMenu} aria-label="Close navigation menu" className="mobile-nav-close">
-            <X size={20} />
+          <BrandLogo variant="full" size={26} linkTo="/" />
+          <button
+            type="button"
+            onClick={closeMobileMenu}
+            aria-label="Close navigation menu"
+            className="mobile-nav-close"
+            style={{ color: '#111111' }}
+          >
+            <X size={18} />
           </button>
         </div>
 
         <div className="mobile-nav-links">
           {navItems.map((item) => (
-            <a key={item.label} href={item.href} onClick={closeMobileMenu} className="mobile-nav-link">
+            <a
+              key={item.label}
+              href={item.href}
+              onClick={closeMobileMenu}
+              className="mobile-nav-link"
+              style={{ color: '#111111' }}
+            >
               {item.label}
             </a>
           ))}
 
           {!user ? (
             <>
-              <Link to="/login" onClick={closeMobileMenu} className="mobile-nav-link">Login</Link>
-              <button type="button" onClick={() => { onOpenDemoModal(); closeMobileMenu(); }} className="btn btn-primary mobile-nav-cta">
-                Request Demo
-              </button>
+              <Link
+                to="/login"
+                onClick={closeMobileMenu}
+                className="mobile-nav-link"
+                style={{ color: '#111111' }}
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                onClick={closeMobileMenu}
+                className="btn btn-primary mobile-nav-cta"
+                style={{
+                  background: '#2563EB',
+                  color: '#FFFFFF',
+                  textAlign: 'center',
+                  padding: '0.65rem 1rem',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  fontWeight: '500',
+                  marginTop: '0.5rem',
+                }}
+              >
+                Get Started
+              </Link>
             </>
           ) : (
-            <Link to={getDashboardPath()} onClick={closeMobileMenu} className="btn btn-primary mobile-nav-cta">
+            <Link
+              to={getDashboardPath()}
+              onClick={closeMobileMenu}
+              className="btn btn-primary mobile-nav-cta"
+              style={{
+                background: '#2563EB',
+                color: '#FFFFFF',
+                textAlign: 'center',
+                padding: '0.65rem 1rem',
+                borderRadius: '6px',
+                textDecoration: 'none',
+                fontWeight: '500',
+                marginTop: '0.5rem',
+              }}
+            >
               Dashboard
             </Link>
           )}

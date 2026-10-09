@@ -119,70 +119,71 @@ const RecruitmentPipelinePage = () => {
 
   return (
     <RecruiterLayout>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+      <header style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <GitPullRequest size={28} /> Recruitment Pipeline
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <GitPullRequest size={22} style={{ color: 'var(--brand-blue)' }} /> Recruitment Pipeline
           </h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Manage candidate hiring workflows from application to placement.</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Manage candidate hiring workflows, stage progressions, and interview schedules.</p>
         </div>
-        <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
-          <Plus size={18} /> New Pipeline
+        <button onClick={() => setShowCreateModal(true)} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+          <Plus size={16} /> New Pipeline
         </button>
       </header>
 
       {/* Stats Bar */}
       {stats && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}
+          style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}
         >
-          {PIPELINE_STATUSES.map(s => (
-            <button
-              key={s}
-              onClick={() => setFilterStatus(filterStatus === s ? '' : s)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 1rem',
-                borderRadius: '9999px',
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                border: `1px solid ${filterStatus === s ? statusColumnColors[s] : 'var(--border-color)'}`,
-                background: filterStatus === s ? `${statusColumnColors[s]}15` : 'transparent',
-                color: filterStatus === s ? statusColumnColors[s] : 'var(--text-secondary)',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              <span style={{
-                width: '8px', height: '8px', borderRadius: '50%',
-                background: statusColumnColors[s],
-              }} />
-              {s}
-              <span style={{
-                background: 'rgba(255,255,255,0.1)',
-                padding: '0.125rem 0.5rem',
-                borderRadius: '9999px',
-                fontSize: '0.7rem',
-              }}>
-                {stats[s] || 0}
-              </span>
-            </button>
-          ))}
+          {PIPELINE_STATUSES.map(s => {
+            const isSelected = filterStatus === s;
+            return (
+              <button
+                key={s}
+                onClick={() => setFilterStatus(isSelected ? '' : s)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  padding: '0.375rem 0.75rem',
+                  borderRadius: '6px',
+                  fontSize: '0.8125rem',
+                  fontWeight: isSelected ? '600' : '500',
+                  border: isSelected ? '1px solid var(--brand-blue)' : '1px solid var(--border-color)',
+                  background: isSelected ? 'rgba(37, 99, 235, 0.08)' : '#FFFFFF',
+                  color: isSelected ? 'var(--brand-blue)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <span>{s}</span>
+                <span style={{
+                  background: isSelected ? 'rgba(37, 99, 235, 0.15)' : 'var(--bg-subtle)',
+                  padding: '0.1rem 0.4rem',
+                  borderRadius: '4px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: isSelected ? 'var(--brand-blue)' : 'var(--text-primary)',
+                }}>
+                  {stats[s] || 0}
+                </span>
+              </button>
+            );
+          })}
         </motion.div>
       )}
 
       {/* Pipeline Cards */}
       {loading ? (
         <div style={{ display: 'grid', gap: '0.75rem' }}>
-          {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: '100px' }} />)}
+          {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: '90px', borderRadius: '8px' }} />)}
         </div>
       ) : pipelines.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
-          {filterStatus ? `No pipelines with status "${filterStatus}".` : 'No pipelines yet. Create one to start tracking candidates.'}
+        <div style={{ background: '#FFFFFF', border: '1px dashed var(--border-color)', borderRadius: '8px', textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+          {filterStatus ? `No candidates found with stage "${filterStatus}".` : 'No active recruitment pipelines. Create one to begin tracking candidate stages.'}
         </div>
       ) : (
         <div style={{ display: 'grid', gap: '0.75rem' }}>
@@ -190,27 +191,26 @@ const RecruitmentPipelinePage = () => {
             {pipelines.map((p, i) => (
               <motion.div
                 key={p._id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: i * 0.03 }}
-                className="glass-card"
-                style={{ padding: '1.25rem' }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ delay: i * 0.02 }}
+                style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                   {/* Student Info */}
-                  <div className="avatar-gradient" style={{ width: '44px', height: '44px', fontSize: '1.1rem', flexShrink: 0 }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(37, 99, 235, 0.08)', color: 'var(--brand-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.95rem', flexShrink: 0 }}>
                     {p.studentId?.name?.charAt(0)}
                   </div>
                   <div style={{ flex: 1, minWidth: '200px' }}>
-                    <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ fontWeight: '600', fontSize: '0.9375rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       {p.studentId?.name || 'Unknown'}
                       {p.studentId?.placementStatus && (
                         <PlacementBadge status={p.studentId.placementStatus} size="sm" showIcon={false} />
                       )}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {p.role} • Score: {p.studentId?.scores?.overall || 0} • {p.studentId?.university?.name || 'N/A'}
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {p.role} • Score: <strong style={{ color: 'var(--text-primary)' }}>{p.studentId?.scores?.overall || 0}</strong> • {p.studentId?.university?.name || 'N/A'}
                     </div>
                   </div>
 
@@ -219,20 +219,21 @@ const RecruitmentPipelinePage = () => {
 
                   {/* Status Transition */}
                   {getNextStatuses(p.status).length > 0 && (
-                    <div style={{ display: 'flex', gap: '0.375rem' }}>
+                    <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
                       {getNextStatuses(p.status).map(ns => (
                         <button
                           key={ns}
                           onClick={() => handleStatusUpdate(p._id, ns)}
-                          className="btn btn-outline btn-sm"
+                          className="btn btn-outline"
                           style={{
-                            fontSize: '0.7rem',
-                            padding: '0.25rem 0.625rem',
-                            borderColor: statusColumnColors[ns],
-                            color: statusColumnColors[ns],
+                            fontSize: '0.75rem',
+                            padding: '0.25rem 0.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
                           }}
                         >
-                          <ArrowRight size={12} /> {ns}
+                          <ArrowRight size={11} /> {ns}
                         </button>
                       ))}
                     </div>
@@ -240,27 +241,28 @@ const RecruitmentPipelinePage = () => {
 
                   {/* View Profile */}
                   {p.studentId?.username && (
-                    <a href={`/u/${p.studentId.username}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">
-                      <Eye size={14} />
+                    <a href={`/u/${p.studentId.username}`} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '0.35rem 0.5rem' }} title="View Profile">
+                      <Eye size={13} />
                     </a>
                   )}
 
-                  <button onClick={() => setShowDetailModal(p)} className="btn btn-ghost btn-sm" style={{ color: 'var(--accent-purple)', fontSize: '0.75rem' }}>
+                  <button onClick={() => setShowDetailModal(p)} className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '0.35rem 0.625rem', color: 'var(--brand-blue)' }}>
                     Manage Details
                   </button>
                 </div>
 
                 {/* Timeline Preview */}
                 {p.timeline?.length > 0 && (
-                  <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
                     {p.timeline.map((t, idx) => (
                       <React.Fragment key={idx}>
                         <span style={{
                           fontSize: '0.7rem',
                           padding: '0.15rem 0.5rem',
-                          borderRadius: '6px',
-                          background: statusColumnColors[t.status] ? `${statusColumnColors[t.status]}15` : 'rgba(255,255,255,0.05)',
-                          color: statusColumnColors[t.status] || 'var(--text-muted)',
+                          borderRadius: '4px',
+                          background: 'var(--bg-subtle)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-secondary)',
                           fontWeight: '500',
                         }}>
                           {t.status}
@@ -274,15 +276,15 @@ const RecruitmentPipelinePage = () => {
                 )}
 
                 {/* Interview / Offer Quick Info */}
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.625rem', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '0.625rem' }}>
                   {p.interviewDetails?.interviewDate && (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--brand-blue)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
                       <Calendar size={12} /> Interview: {new Date(p.interviewDetails.interviewDate).toLocaleDateString()}
                       {p.interviewDetails.interviewMode && ` (${p.interviewDetails.interviewMode})`}
                     </span>
                   )}
                   {p.offerDetails?.ctc && (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#059669', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
                       <DollarSign size={12} /> CTC: {p.offerDetails.ctc}
                     </span>
                   )}
@@ -306,50 +308,52 @@ const RecruitmentPipelinePage = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="modal-content"
             onClick={e => e.stopPropagation()}
-            style={{ maxWidth: '480px' }}
+            style={{ maxWidth: '480px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.75rem' }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem' }}>Create Pipeline</h2>
-              <button onClick={() => setShowCreateModal(false)} className="btn btn-ghost btn-sm"><X size={18} /></button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Create Candidate Pipeline</h2>
+              <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem' }}><X size={20} /></button>
             </div>
 
-            <div className="input-group">
-              <label className="input-label">Student ID</label>
+            <div className="input-group" style={{ marginBottom: '1rem' }}>
+              <label className="input-label" style={{ fontSize: '0.8125rem', fontWeight: 500 }}>Student ID</label>
               <input
                 className="input-field"
                 placeholder="Paste Student ObjectId..."
                 value={newPipeline.studentId}
                 onChange={e => setNewPipeline(p => ({ ...p, studentId: e.target.value }))}
+                style={{ fontSize: '0.875rem' }}
               />
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                Tip: Copy from the search results or bookmarks page
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'block' }}>
+                Tip: Copy from the candidate search results or bookmarks page
               </span>
             </div>
 
-            <div className="input-group">
-              <label className="input-label">Role / Position</label>
+            <div className="input-group" style={{ marginBottom: '1rem' }}>
+              <label className="input-label" style={{ fontSize: '0.8125rem', fontWeight: 500 }}>Role / Position</label>
               <input
                 className="input-field"
                 placeholder="e.g., Frontend Developer"
                 value={newPipeline.role}
                 onChange={e => setNewPipeline(p => ({ ...p, role: e.target.value }))}
+                style={{ fontSize: '0.875rem' }}
               />
             </div>
 
-            <div className="input-group">
-              <label className="input-label">Message (Optional)</label>
+            <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+              <label className="input-label" style={{ fontSize: '0.8125rem', fontWeight: 500 }}>Message (Optional)</label>
               <textarea
                 className="input-field"
                 placeholder="Initial message to the candidate..."
                 rows="3"
                 value={newPipeline.recruiterMessage}
                 onChange={e => setNewPipeline(p => ({ ...p, recruiterMessage: e.target.value }))}
-                style={{ resize: 'vertical' }}
+                style={{ resize: 'vertical', fontSize: '0.875rem' }}
               />
             </div>
 
-            <button onClick={handleCreate} disabled={creating} className="btn btn-primary" style={{ width: '100%' }}>
-              <Send size={16} /> {creating ? 'Creating...' : 'Create Pipeline'}
+            <button onClick={handleCreate} disabled={creating} className="btn btn-primary" style={{ width: '100%', fontSize: '0.875rem', padding: '0.625rem' }}>
+              <Send size={15} /> {creating ? 'Creating...' : 'Create Pipeline'}
             </button>
           </motion.div>
         </div>
@@ -363,31 +367,32 @@ const RecruitmentPipelinePage = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="modal-content"
             onClick={e => e.stopPropagation()}
-            style={{ maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto' }}
+            style={{ maxWidth: '600px', maxHeight: '85vh', overflowY: 'auto', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.75rem' }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem' }}>Manage Candidate Pipeline: {showDetailModal.studentId?.name}</h2>
-              <button onClick={() => setShowDetailModal(null)} className="btn btn-ghost btn-sm"><X size={18} /></button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Manage Pipeline: {showDetailModal.studentId?.name}</h2>
+              <button onClick={() => setShowDetailModal(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem' }}><X size={20} /></button>
             </div>
 
             {/* Stage Selector */}
-            <div className="input-group">
-              <label className="input-label">Current Pipeline Stage</label>
+            <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+              <label className="input-label" style={{ fontSize: '0.8125rem', fontWeight: 500 }}>Current Pipeline Stage</label>
               <select
                 className="input-field"
                 value={showDetailModal.status}
                 onChange={(e) => handleStatusUpdate(showDetailModal._id, e.target.value)}
+                style={{ fontSize: '0.875rem' }}
               >
                 {PIPELINE_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
 
             {/* Interview details form */}
-            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '1.5rem' }}>
-              <h4 style={{ color: 'var(--accent-blue)', marginBottom: '1rem' }}>Interview Scheduling</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="input-group">
-                  <label className="input-label">Interview Date</label>
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem', marginTop: '1.25rem' }}>
+              <h4 style={{ color: 'var(--text-primary)', fontSize: '0.9375rem', fontWeight: 600, marginBottom: '0.875rem' }}>Interview Scheduling</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label" style={{ fontSize: '0.8125rem', fontWeight: 500 }}>Interview Date</label>
                   <input
                     type="datetime-local"
                     className="input-field"
@@ -399,10 +404,11 @@ const RecruitmentPipelinePage = () => {
                         interviewDetails: { ...prev.interviewDetails, interviewDate: date }
                       }));
                     }}
+                    style={{ fontSize: '0.875rem' }}
                   />
                 </div>
-                <div className="input-group">
-                  <label className="input-label">Interview Mode</label>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label" style={{ fontSize: '0.8125rem', fontWeight: 500 }}>Interview Mode</label>
                   <select
                     className="input-field"
                     value={showDetailModal.interviewDetails?.interviewMode || 'Online'}
@@ -413,19 +419,20 @@ const RecruitmentPipelinePage = () => {
                         interviewDetails: { ...prev.interviewDetails, interviewMode: mode }
                       }));
                     }}
+                    style={{ fontSize: '0.875rem' }}
                   >
-                    <option value="Online">Online / meeting link</option>
+                    <option value="Online">Online / video link</option>
                     <option value="In-Person">In-Person</option>
                     <option value="Hybrid">Hybrid</option>
                   </select>
                 </div>
               </div>
-              <div className="input-group">
-                <label className="input-label">Meeting Link / Location</label>
+              <div className="input-group" style={{ marginBottom: '1rem' }}>
+                <label className="input-label" style={{ fontSize: '0.8125rem', fontWeight: 500 }}>Meeting Link / Location</label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="https://zoom.us/j/... or Office HQ Room 402"
+                  placeholder="https://meet.google.com/... or HQ Room 402"
                   value={showDetailModal.interviewDetails?.meetingLink || ''}
                   onChange={(e) => {
                     const link = e.target.value;
@@ -434,6 +441,7 @@ const RecruitmentPipelinePage = () => {
                       interviewDetails: { ...prev.interviewDetails, meetingLink: link }
                     }));
                   }}
+                  style={{ fontSize: '0.875rem' }}
                 />
               </div>
               <button
@@ -445,18 +453,19 @@ const RecruitmentPipelinePage = () => {
                     alert('Failed to save interview details.');
                   }
                 }}
-                className="btn btn-outline btn-sm"
+                className="btn btn-primary"
+                style={{ fontSize: '0.8125rem', padding: '0.45rem 0.875rem' }}
               >
                 Save Interview Schedule
               </button>
             </div>
 
             {/* Offer details form */}
-            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '1.5rem' }}>
-              <h4 style={{ color: 'var(--accent-emerald)', marginBottom: '1rem' }}>Offer & Compensation Details</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="input-group">
-                  <label className="input-label">Package (CTC)</label>
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem', marginTop: '1.25rem' }}>
+              <h4 style={{ color: 'var(--text-primary)', fontSize: '0.9375rem', fontWeight: 600, marginBottom: '0.875rem' }}>Offer & Compensation Details</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label" style={{ fontSize: '0.8125rem', fontWeight: 500 }}>Package (CTC)</label>
                   <input
                     type="text"
                     className="input-field"
@@ -469,10 +478,11 @@ const RecruitmentPipelinePage = () => {
                         offerDetails: { ...prev.offerDetails, ctc: val }
                       }));
                     }}
+                    style={{ fontSize: '0.875rem' }}
                   />
                 </div>
-                <div className="input-group">
-                  <label className="input-label">Joining Date</label>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label" style={{ fontSize: '0.8125rem', fontWeight: 500 }}>Joining Date</label>
                   <input
                     type="date"
                     className="input-field"
@@ -484,11 +494,12 @@ const RecruitmentPipelinePage = () => {
                         offerDetails: { ...prev.offerDetails, joiningDate: date }
                       }));
                     }}
+                    style={{ fontSize: '0.875rem' }}
                   />
                 </div>
               </div>
-              <div className="input-group">
-                <label className="input-label">Offer / Joining Letter Link</label>
+              <div className="input-group" style={{ marginBottom: '1rem' }}>
+                <label className="input-label" style={{ fontSize: '0.8125rem', fontWeight: 500 }}>Offer / Joining Letter Link</label>
                 <input
                   type="text"
                   className="input-field"
@@ -501,6 +512,7 @@ const RecruitmentPipelinePage = () => {
                       offerDetails: { ...prev.offerDetails, offerLetterUrl: url }
                     }));
                   }}
+                  style={{ fontSize: '0.875rem' }}
                 />
               </div>
               <button
@@ -512,7 +524,8 @@ const RecruitmentPipelinePage = () => {
                     alert('Failed to save offer details.');
                   }
                 }}
-                className="btn btn-outline btn-sm"
+                className="btn btn-primary"
+                style={{ fontSize: '0.8125rem', padding: '0.45rem 0.875rem' }}
               >
                 Save Offer Details
               </button>

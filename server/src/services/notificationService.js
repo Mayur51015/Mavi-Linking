@@ -148,6 +148,37 @@ const createNotification = async (data) => {
   } catch (err) {
     // Socket may not be initialized in tests — silently ignore
   }
+
+  // If email dispatch is requested, resolve recipient email server-side and send
+  if (data.sendEmail) {
+    try {
+      const User = require('../models/User');
+      const recipientUser = await User.findById(data.recipientId).select('email name');
+      if (!recipientUser || !recipientUser.email) {
+        throw new Error(`Cannot send notification email: recipient email could not be resolved for user ID ${data.recipientId}`);
+      }
+      const { sendEmail } = require('../utils/sendEmail');
+      await sendEmail({
+        to: recipientUser.email,
+        recipientUserId: data.recipientId,
+        actorUserId: data.senderId,
+        subject: data.title || 'EduTalentX Notification',
+        html: `
+          <div style="font-family: Arial, sans-serif; background: #0d1117; color: #f0f6fc; padding: 24px; border-radius: 8px;">
+            <h2 style="color: #6366f1; margin-top: 0;">${data.title || 'EduTalentX Notification'}</h2>
+            <p>Hello <strong>${recipientUser.name || 'User'}</strong>,</p>
+            <p style="font-size: 15px; line-height: 1.6; color: #c9d1d9;">${data.message || ''}</p>
+            ${data.link ? `<div style="margin-top: 20px;"><a href="${data.link}" style="display: inline-block; padding: 10px 20px; background: #6366f1; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600;">View in Portal</a></div>` : ''}
+          </div>
+        `,
+        templateName: `notification-${data.type || 'general'}`,
+      });
+    } catch (emailErr) {
+      console.error('[NOTIFICATION EMAIL DISPATCH ERROR]', emailErr.message);
+      if (data.throwOnEmailFailure) throw emailErr;
+    }
+  }
+
   return notification;
 };
 

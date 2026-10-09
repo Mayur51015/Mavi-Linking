@@ -11,6 +11,7 @@ import {
   Sliders,
   FileText,
   Settings,
+  Bell,
 } from 'lucide-react';
 
 export const ownerNavItems = [
@@ -22,6 +23,7 @@ export const ownerNavItems = [
   { id: 'subscriptions', name: 'Subscriptions', path: '/owner/subscriptions', icon: <CreditCard size={20} />, category: 'Governance' },
   { id: 'analytics', name: 'Global Analytics', path: '/owner/analytics', icon: <BarChart3 size={20} />, category: 'Governance' },
   { id: 'security', name: 'Security Center', path: '/owner/security', icon: <ShieldAlert size={20} />, category: 'Governance' },
+  { id: 'notifications', name: 'Notifications', path: '/owner/notifications', icon: <Bell size={20} />, category: 'Administration' },
   { id: 'system', name: 'System Configuration', path: '/owner/configuration', icon: <Sliders size={20} />, category: 'Administration' },
   { id: 'audit', name: 'Global Audit Logs', path: '/owner/audit-logs', icon: <FileText size={20} />, category: 'Administration' },
   { id: 'settings', name: 'Owner Settings', path: '/owner/settings', icon: <Settings size={20} />, category: 'Administration' },

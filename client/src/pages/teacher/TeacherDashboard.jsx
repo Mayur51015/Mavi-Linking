@@ -47,188 +47,308 @@ const TeacherDashboard = () => {
 
   return (
     <TeacherLayout>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <GraduationCap size={28} /> Department Overview
+      <header style={{ marginBottom: '1.75rem' }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <GraduationCap size={26} style={{ color: 'var(--brand-blue)' }} /> Department Overview
         </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
           {stats?.scope?.college || 'Your College'} — {stats?.scope?.department || 'Your Department'}
         </p>
       </header>
 
       {/* Stats Cards */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="stats-grid"
-        style={{ marginBottom: '2rem' }}
+        transition={{ duration: 0.3 }}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '1.25rem',
+          marginBottom: '2rem',
+        }}
       >
-        <div className="glass-card" style={{ textAlign: 'center' }}>
-          <Users size={28} style={{ color: 'var(--accent-purple)', marginBottom: '0.75rem' }} />
-          <div style={{ fontSize: '2.5rem', fontWeight: '700', fontFamily: 'Outfit' }}>{stats?.totalStudents || 0}</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Total Students</div>
+        <div style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.25rem 1.5rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500 }}>Total Students</span>
+            <span style={{ width: '36px', height: '36px', borderRadius: '6px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-blue)' }}>
+              <Users size={18} />
+            </span>
+          </div>
+          <div style={{ fontSize: '1.875rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+            {stats?.totalStudents || 0}
+          </div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.35rem' }}>Enrolled in department</div>
         </div>
 
-        <div className="glass-card" style={{ textAlign: 'center' }}>
-          <TrendingUp size={28} style={{ color: 'var(--accent-emerald)', marginBottom: '0.75rem' }} />
-          <div style={{ fontSize: '2.5rem', fontWeight: '700', fontFamily: 'Outfit' }}>{stats?.averageScore || 0}</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Average Score</div>
+        <div style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.25rem 1.5rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500 }}>Average Score</span>
+            <span style={{ width: '36px', height: '36px', borderRadius: '6px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-blue)' }}>
+              <TrendingUp size={18} />
+            </span>
+          </div>
+          <div style={{ fontSize: '1.875rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+            {stats?.averageScore || 0}
+            <span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--text-muted)', marginLeft: '0.25rem' }}>/ 1000</span>
+          </div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.35rem' }}>Across all verified skills</div>
         </div>
 
-        <div className="glass-card" style={{ textAlign: 'center' }}>
-          <Activity size={28} style={{ color: 'var(--accent-cyan)', marginBottom: '0.75rem' }} />
-          <div style={{ fontSize: '2.5rem', fontWeight: '700', fontFamily: 'Outfit' }}>{stats?.activeProfiles || 0}</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Active Profiles</div>
+        <div style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.25rem 1.5rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500 }}>Active Profiles</span>
+            <span style={{ width: '36px', height: '36px', borderRadius: '6px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-blue)' }}>
+              <Activity size={18} />
+            </span>
+          </div>
+          <div style={{ fontSize: '1.875rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+            {stats?.activeProfiles || 0}
+          </div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.35rem' }}>Profiles updated this semester</div>
         </div>
 
-        <div className="glass-card" style={{ textAlign: 'center' }}>
-          <Award size={28} style={{ color: 'var(--accent-amber)', marginBottom: '0.75rem' }} />
-          <div style={{ fontSize: '2.5rem', fontWeight: '700', fontFamily: 'Outfit' }}>
+        <div style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.25rem 1.5rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500 }}>Career Domains</span>
+            <span style={{ width: '36px', height: '36px', borderRadius: '6px', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-blue)' }}>
+              <Award size={18} />
+            </span>
+          </div>
+          <div style={{ fontSize: '1.875rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
             {Object.keys(stats?.domainDistribution || {}).length}
           </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Career Domains</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.35rem' }}>Specialization tracks</div>
         </div>
       </motion.div>
 
-      {/* Charts Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-        {/* Domain Distribution */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="glass-card-static"
-          style={{ padding: '1.5rem' }}
+      {/* Distributions Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+        {/* Career Domain Distribution */}
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.5rem',
+          }}
         >
-          <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <BarChart3 size={20} style={{ color: 'var(--accent-purple)' }} /> Career Domain Distribution
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <BarChart3 size={18} style={{ color: 'var(--brand-blue)' }} /> Career Domain Distribution
           </h3>
-          {stats?.domainDistribution && Object.entries(stats.domainDistribution).map(([domain, count]) => {
-            const pct = stats.totalStudents ? Math.round((count / stats.totalStudents) * 100) : 0;
-            const colors = {
-              'Web Development': 'var(--accent-blue)',
-              'AI/ML': 'var(--accent-purple)',
-              'Competitive Programming': 'var(--accent-amber)',
-              'Cybersecurity': 'var(--accent-red)',
-              'App Development': 'var(--accent-cyan)',
-              'Unspecified': 'var(--text-muted)',
-            };
-            return (
-              <div key={domain} style={{ marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>{domain}</span>
-                  <span>{count} ({pct}%)</span>
+          {stats?.domainDistribution && Object.keys(stats.domainDistribution).length > 0 ? (
+            Object.entries(stats.domainDistribution).map(([domain, count]) => {
+              const pct = stats.totalStudents ? Math.round((count / stats.totalStudents) * 100) : 0;
+              return (
+                <div key={domain} style={{ marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{domain}</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{count} ({pct}%)</span>
+                  </div>
+                  <div style={{ height: '6px', background: 'var(--bg-subtle)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: `${pct}%`, height: '100%', background: 'var(--brand-blue)', borderRadius: '3px', transition: 'width 0.4s ease' }} />
+                  </div>
                 </div>
-                <div className="progress-bar">
-                  <div className="progress-bar-fill" style={{ width: `${pct}%`, background: colors[domain] || 'var(--gradient-primary)' }} />
-                </div>
-              </div>
-            );
-          })}
-          {(!stats?.domainDistribution || Object.keys(stats.domainDistribution).length === 0) && (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No domain data available</div>
+              );
+            })
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No domain data available</div>
           )}
-        </motion.div>
+        </div>
 
         {/* Experience Level Distribution */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="glass-card-static"
-          style={{ padding: '1.5rem' }}
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.5rem',
+          }}
         >
-          <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <TrendingUp size={20} style={{ color: 'var(--accent-emerald)' }} /> Experience Levels
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <TrendingUp size={18} style={{ color: 'var(--brand-blue)' }} /> Experience Levels
           </h3>
-          {stats?.levelDistribution && Object.entries(stats.levelDistribution).map(([level, count]) => {
-            const pct = stats.totalStudents ? Math.round((count / stats.totalStudents) * 100) : 0;
-            const colors = { 'Beginner': 'var(--accent-red)', 'Intermediate': 'var(--accent-amber)', 'Advanced': 'var(--accent-emerald)', 'Unspecified': 'var(--text-muted)' };
-            return (
-              <div key={level} style={{ marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>{level}</span>
-                  <span>{count} ({pct}%)</span>
+          {stats?.levelDistribution && Object.keys(stats.levelDistribution).length > 0 ? (
+            Object.entries(stats.levelDistribution).map(([level, count]) => {
+              const pct = stats.totalStudents ? Math.round((count / stats.totalStudents) * 100) : 0;
+              return (
+                <div key={level} style={{ marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{level}</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{count} ({pct}%)</span>
+                  </div>
+                  <div style={{ height: '6px', background: 'var(--bg-subtle)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: `${pct}%`, height: '100%', background: 'var(--brand-blue)', borderRadius: '3px', transition: 'width 0.4s ease' }} />
+                  </div>
                 </div>
-                <div className="progress-bar">
-                  <div className="progress-bar-fill" style={{ width: `${pct}%`, background: colors[level] || 'var(--gradient-primary)' }} />
-                </div>
-              </div>
-            );
-          })}
-          {(!stats?.levelDistribution || Object.keys(stats.levelDistribution).length === 0) && (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No level data available</div>
+              );
+            })
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No level data available</div>
           )}
-        </motion.div>
+        </div>
       </div>
 
       {/* Top Students and Mentoring Alerts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-        <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className="glass-card-static"
-        style={{ padding: '1.5rem' }}
-      >
-        <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Award size={20} style={{ color: 'var(--accent-amber)' }} /> Top Performers
-        </h3>
-        <div style={{ display: 'grid', gap: '0.5rem' }}>
-          {leaderboard.map((s, i) => (
-            <div key={s._id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.875rem 1.5rem' }}>
-              <div style={{ width: '40px', fontSize: i < 3 ? '1.5rem' : '1rem', textAlign: 'center' }}>
-                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
-              </div>
-              <div className="avatar-gradient" style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}>{s.name?.charAt(0)}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '600' }}>{s.name}</div>
-                {s.preferredDomain && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.preferredDomain}</div>
-                )}
-              </div>
-              <div style={{ fontSize: '1.25rem', fontWeight: '700', fontFamily: 'Outfit' }}>{s.scores?.overall || 0}</div>
-            </div>
-          ))}
-          {leaderboard.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No students found in your department.</div>
-          )}
-        </div>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="glass-card-static"
-        style={{ padding: '1.5rem' }}
-      >
-        <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <AlertCircle size={20} style={{ color: 'var(--accent-red)' }} /> Mentoring Alerts
-        </h3>
-        <div style={{ display: 'grid', gap: '0.5rem' }}>
-          {mentoringAlerts.map(s => (
-            <div key={s._id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.875rem 1.5rem' }}>
-              <div className="avatar-gradient" style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}>{s.name?.charAt(0)}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '600' }}>{s.name}</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--accent-red)' }}>
-                  {s.aiAnalysis?.hiringRecommendation || 'Needs Attention'}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+        {/* Top Performers */}
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.5rem',
+          }}
+        >
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Award size={18} style={{ color: 'var(--brand-blue)' }} /> Top Performers
+          </h3>
+          <div style={{ display: 'grid', gap: '0.6rem' }}>
+            {leaderboard.map((s, i) => (
+              <div
+                key={s._id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.85rem',
+                  padding: '0.75rem 1rem',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <div style={{ width: '28px', fontSize: '0.85rem', fontWeight: 700, color: i < 3 ? 'var(--brand-blue)' : 'var(--text-muted)', textAlign: 'center' }}>
+                  #{i + 1}
+                </div>
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    color: 'var(--text-primary)',
+                    flexShrink: 0,
+                  }}
+                >
+                  {s.name?.charAt(0)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {s.name}
+                  </div>
+                  {s.preferredDomain && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.preferredDomain}</div>
+                  )}
+                </div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {s.scores?.overall || 0}
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)' }}>{s.scores?.overall || 0} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>/ 1000</span></div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Readiness: {s.placementReadinessScore || 0}%</div>
+            ))}
+            {leaderboard.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                No students found in your department.
               </div>
-            </div>
-          ))}
-          {mentoringAlerts.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No alerts. All students are on track!</div>
-          )}
+            )}
+          </div>
         </div>
-      </motion.div>
-    </div>
+
+        {/* Mentoring Alerts */}
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.5rem',
+          }}
+        >
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertCircle size={18} style={{ color: 'var(--accent-red)' }} /> Mentoring Alerts
+          </h3>
+          <div style={{ display: 'grid', gap: '0.6rem' }}>
+            {mentoringAlerts.map((s) => (
+              <div
+                key={s._id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.85rem',
+                  padding: '0.75rem 1rem',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    color: 'var(--text-primary)',
+                    flexShrink: 0,
+                  }}
+                >
+                  {s.name?.charAt(0)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {s.name}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--accent-red)', fontWeight: 500 }}>
+                    {s.aiAnalysis?.hiringRecommendation || 'Requires Academic Guidance'}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {s.scores?.overall || 0} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>/ 1000</span>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                    Readiness: {s.placementReadinessScore || 0}%
+                  </div>
+                </div>
+              </div>
+            ))}
+            {mentoringAlerts.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                No active alerts. All students are meeting department benchmarks.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </TeacherLayout>
   );
 };

@@ -144,13 +144,12 @@ async function resetDemoDatabase() {
 
   // ─── 5. USER CREDENTIALS & SEED PASSWORD CONFIGURATION ──────────────────
   const seedRawPassword = process.env.SEED_INSTITUTION_ADMIN_PASSWORD || 'DemoPass@123';
-  const hashedPassword = await bcrypt.hash(seedRawPassword, 10);
 
   // ─── 6. FRESH INSTITUTION ADMIN ─────────────────────────────────────────
   const freshInstAdmin = await User.create({
     name: 'EduTalentX Demo Institution Admin',
     email: 'admin.demo@edutalentx.com',
-    password: hashedPassword,
+    password: seedRawPassword,
     role: 'institution_admin',
     roles: ['institution_admin', 'admin', 'user'],
     status: 'active',
@@ -175,7 +174,7 @@ async function resetDemoDatabase() {
     const deptAdmin = await User.create({
       name: `${code} Department Admin`,
       email: deptEmail,
-      password: hashedPassword,
+      password: seedRawPassword,
       role: 'department_admin',
       roles: ['department_admin', 'user'],
       status: 'active',
@@ -233,7 +232,7 @@ async function resetDemoDatabase() {
     await User.create({
       name: s.name,
       email: s.email,
-      password: hashedPassword,
+      password: seedRawPassword,
       role: 'user',
       roles: ['user'],
       status: 'active',

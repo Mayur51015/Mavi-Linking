@@ -11,10 +11,12 @@ const { getInstitutionEntitlements, checkPlanLimit } = require('../services/enti
 /**
  * Seed Canonical Active Default SaaS Plans if Catalog is empty
  */
+let isPlansSeeded = false;
 const seedDefaultPlansIfEmpty = async () => {
-  await Plan.collection.dropIndex('code_1').catch(() => {});
+  if (isPlansSeeded) return;
   const count = await Plan.countDocuments();
   if (count === 0) {
+    await Plan.collection.dropIndex('code_1').catch(() => {});
     console.log('[SAAS CATALOG SEED] Seeding canonical SaaS plans (BASIC, PRO, ENTERPRISE)...');
     await Plan.create([
       {
@@ -49,6 +51,7 @@ const seedDefaultPlansIfEmpty = async () => {
       },
     ]);
   }
+  isPlansSeeded = true;
 };
 
 /**
@@ -77,6 +80,7 @@ const getPublishedPlans = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: plans,
+      plans,
     });
   } catch (error) {
     next(error);

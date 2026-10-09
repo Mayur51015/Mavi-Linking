@@ -112,24 +112,24 @@ const BrandLogo = ({
         }}>
           <span
             style={{
-              fontFamily: "'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+              fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
               fontWeight: 800,
               fontSize,
               letterSpacing: '-0.025em',
-              color: 'var(--text-primary, #ffffff)',
+              color: 'var(--text-primary, #111111)',
               display: 'inline-flex',
               alignItems: 'center',
               whiteSpace: 'nowrap',
               ...textStyle,
             }}
           >
-            EduTalent<span style={{ color: 'var(--brand-blue, #3B82F6)', fontWeight: 800 }}>X</span>
+            EduTalent<span style={{ color: 'var(--brand-blue, #2563EB)', fontWeight: 800 }}>X</span>
           </span>
           {showTagline && (
             <span
               style={{
                 fontSize: taglineSize,
-                color: 'var(--text-secondary, #94a3b8)',
+                color: 'var(--text-secondary, #4B5563)',
                 fontWeight: 500,
                 marginTop: isVertical ? '0.35rem' : '0.2rem',
                 letterSpacing: '-0.01em',

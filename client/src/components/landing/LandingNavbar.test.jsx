@@ -4,22 +4,19 @@ import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import LandingNavbar from './LandingNavbar';
 import { AuthContext } from '../../context/AuthContext';
-import { ThemeContext } from '../../context/ThemeContext';
 
 const renderNavbar = (user = null) => {
   render(
-    <ThemeContext.Provider value={{ theme: 'dark', toggleTheme: vi.fn() }}>
-      <AuthContext.Provider
-        value={{
-          user,
-          getDashboardPath: () => '/dashboard',
-        }}
-      >
-        <BrowserRouter>
-          <LandingNavbar onOpenDemoModal={vi.fn()} />
-        </BrowserRouter>
-      </AuthContext.Provider>
-    </ThemeContext.Provider>
+    <AuthContext.Provider
+      value={{
+        user,
+        getDashboardPath: () => '/dashboard',
+      }}
+    >
+      <BrowserRouter>
+        <LandingNavbar />
+      </BrowserRouter>
+    </AuthContext.Provider>
   );
 };
 

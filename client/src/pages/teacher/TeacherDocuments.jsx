@@ -174,22 +174,22 @@ const TeacherDocuments = () => {
 
   return (
     <TeacherLayout>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FolderOpen size={28} className="text-gradient" /> College Document Repository
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <FolderOpen size={24} style={{ color: 'var(--brand-blue)' }} /> College Document Repository
           </h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Upload templates, sample resumes, syllabi, or official college guides for student access.</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Upload templates, sample resumes, syllabi, or official college guides for student access.</p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenUpload} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Plus size={18} /> Upload Document
+        <button className="btn btn-primary" onClick={handleOpenUpload} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', padding: '0.625rem 1rem' }}>
+          <Plus size={16} /> Upload Document
         </button>
       </header>
 
       {/* Search Filter */}
-      <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.875rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <Search size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"
             placeholder="Search documents by name or description..."
@@ -197,12 +197,12 @@ const TeacherDocuments = () => {
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             style={{
               width: '100%',
-              padding: '0.625rem 1rem 0.625rem 2.75rem',
-              background: 'rgba(255,255,255,0.02)',
+              padding: '0.5rem 0.875rem 0.5rem 2.5rem',
+              background: '#FFFFFF',
               border: '1px solid var(--border-color)',
-              borderRadius: '10px',
+              borderRadius: '6px',
               color: 'var(--text-primary)',
-              fontSize: '0.9rem',
+              fontSize: '0.875rem',
               outline: 'none',
               transition: 'border-color 0.2s',
             }}
@@ -212,31 +212,39 @@ const TeacherDocuments = () => {
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-          <Loader2 size={36} className="animate-spin" style={{ color: 'var(--accent-purple)' }} />
+          <Loader2 size={32} className="animate-spin" style={{ color: 'var(--brand-blue)' }} />
         </div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
             {documents.map((doc) => (
               <motion.div
                 key={doc._id}
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="glass-card-static"
-                style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '180px' }}
+                style={{
+                  background: '#FFFFFF',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  minHeight: '180px'
+                }}
               >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'start', gap: '0.75rem', marginBottom: '0.75rem' }}>
                     <div style={{
-                      background: 'rgba(139, 92, 246, 0.1)',
-                      width: '40px', height: '40px', borderRadius: '10px',
+                      background: 'rgba(37, 99, 235, 0.08)',
+                      width: '38px', height: '38px', borderRadius: '8px',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--accent-purple)', flexShrink: 0
+                      color: 'var(--brand-blue)', flexShrink: 0
                     }}>
-                      <FileText size={20} />
+                      <FileText size={18} />
                     </div>
-                    <div>
-                      <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {doc.title}
                       </h3>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -247,33 +255,33 @@ const TeacherDocuments = () => {
 
                   <p style={{
                     color: 'var(--text-secondary)',
-                    fontSize: '0.85rem',
+                    fontSize: '0.8125rem',
                     lineHeight: '1.5',
                     marginBottom: '1rem',
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
                     overflow: 'hidden',
-                    minHeight: '2.5rem'
+                    minHeight: '2.4rem'
                   }}>
                     {doc.description || 'No description provided.'}
                   </p>
                 </div>
 
-                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Calendar size={12} /> {new Date(doc.createdAt).toLocaleDateString()}
+                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.875rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Calendar size={13} /> {new Date(doc.createdAt).toLocaleDateString()}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '6px' }} onClick={() => handleDownload(doc._id, doc.fileName)} title="Download file">
-                      <Download size={14} />
+                  <div style={{ display: 'flex', gap: '0.375rem' }}>
+                    <button className="btn btn-outline" style={{ padding: '0.375rem 0.5rem', borderRadius: '6px' }} onClick={() => handleDownload(doc._id, doc.fileName)} title="Download file">
+                      <Download size={13} />
                     </button>
-                    <button className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '6px' }} onClick={() => handleOpenEdit(doc)} title="Edit details">
-                      <Edit2 size={14} />
+                    <button className="btn btn-outline" style={{ padding: '0.375rem 0.5rem', borderRadius: '6px' }} onClick={() => handleOpenEdit(doc)} title="Edit details">
+                      <Edit2 size={13} />
                     </button>
-                    <button className="btn btn-outline-danger" style={{ padding: '0.4rem', borderRadius: '6px' }} onClick={() => handleDelete(doc._id)} title="Delete file">
-                      <Trash2 size={14} />
+                    <button className="btn btn-outline-danger" style={{ padding: '0.375rem 0.5rem', borderRadius: '6px' }} onClick={() => handleDelete(doc._id)} title="Delete file">
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>
@@ -282,18 +290,18 @@ const TeacherDocuments = () => {
           </div>
 
           {documents.length === 0 && (
-            <div className="glass-card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+            <div style={{ background: '#FFFFFF', border: '1px dashed var(--border-color)', borderRadius: '8px', textAlign: 'center', padding: '3rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
               No shared documents found. Click 'Upload Document' to share materials.
             </div>
           )}
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1.75rem' }}>
               <button className="btn btn-outline" disabled={page === 1} onClick={() => setPage(prev => Math.max(1, prev - 1))}>
                 Prev
               </button>
-              <span style={{ display: 'flex', alignItems: 'center', padding: '0 1rem', color: 'var(--text-secondary)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', padding: '0 0.875rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                 Page {page} of {totalPages}
               </span>
               <button className="btn btn-outline" disabled={page === totalPages} onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}>
@@ -309,53 +317,60 @@ const TeacherDocuments = () => {
         {modalOpen && (
           <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+            background: 'rgba(0,0,0,0.5)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 1000, padding: '1rem'
           }}>
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card-static"
-              style={{ width: '100%', maxWidth: '500px', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              style={{
+                width: '100%', maxWidth: '500px',
+                background: '#FFFFFF',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                padding: '1.75rem',
+                display: 'flex', flexDirection: 'column', gap: '1.25rem'
+              }}
             >
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-primary)' }}>
                 {editingDoc ? 'Edit Document Details' : 'Upload Resource Material'}
               </h2>
 
               {error && (
-                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--accent-red)', padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-red)', fontSize: '0.875rem' }}>
-                  <AlertCircle size={16} /> {error}
+                <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', padding: '0.625rem 0.875rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#DC2626', fontSize: '0.8125rem' }}>
+                  <AlertCircle size={15} /> {error}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Target Department</label>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Target Department</label>
                   <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                     style={{
-                      padding: '0.75rem 1rem',
-                      background: 'var(--bg-input)',
+                      padding: '0.625rem 0.875rem',
+                      background: '#FFFFFF',
                       border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       color: 'var(--text-primary)',
-                      fontSize: '0.95rem',
+                      fontSize: '0.875rem',
                       outline: 'none',
                       cursor: 'pointer',
                     }}
                   >
-                    <option value="All" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>All Departments</option>
+                    <option value="All">All Departments</option>
                     {(user?.university?.department?.split(',') || []).map(d => d.trim()).filter(Boolean).map(d => (
-                      <option key={d} value={d} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{d}</option>
+                      <option key={d} value={d}>{d}</option>
                     ))}
                   </select>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Document Title *</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Document Title *</label>
                   <input
                     type="text"
                     required
@@ -363,31 +378,31 @@ const TeacherDocuments = () => {
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. CSE Final Syllabus / Template Report"
                     style={{
-                      padding: '0.75rem 1rem',
-                      background: 'var(--bg-input)',
+                      padding: '0.625rem 0.875rem',
+                      background: '#FFFFFF',
                       border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       color: 'var(--text-primary)',
-                      fontSize: '0.95rem',
+                      fontSize: '0.875rem',
                       outline: 'none',
                     }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Description</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Description</label>
                   <textarea
                     rows={3}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Describe what resources or templates are included..."
                     style={{
-                      padding: '0.75rem 1rem',
-                      background: 'var(--bg-input)',
+                      padding: '0.625rem 0.875rem',
+                      background: '#FFFFFF',
                       border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       color: 'var(--text-primary)',
-                      fontSize: '0.95rem',
+                      fontSize: '0.875rem',
                       outline: 'none',
                       resize: 'none',
                       fontFamily: 'inherit',
@@ -396,15 +411,15 @@ const TeacherDocuments = () => {
                 </div>
 
                 {!editingDoc && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Select File (Max 10MB)</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                    <label style={{ fontSize: '0.8125rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Select File (Max 10MB)</label>
                     <div style={{
-                      border: '2px dashed var(--border-color)',
-                      borderRadius: '8px',
-                      padding: '1.5rem',
+                      border: '1.5px dashed var(--border-color)',
+                      borderRadius: '6px',
+                      padding: '1.25rem',
                       textAlign: 'center',
                       cursor: 'pointer',
-                      background: 'var(--bg-input)',
+                      background: 'var(--bg-subtle)',
                       position: 'relative',
                     }}>
                       <input
@@ -417,22 +432,22 @@ const TeacherDocuments = () => {
                           opacity: 0, cursor: 'pointer'
                         }}
                       />
-                      <Upload size={24} style={{ color: 'var(--accent-purple)', margin: '0 auto 0.5rem' }} />
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '500' }}>
+                      <Upload size={22} style={{ color: 'var(--brand-blue)', margin: '0 auto 0.375rem' }} />
+                      <div style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: '500' }}>
                         {file ? file.name : 'Drag & drop or click to choose file'}
                       </div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                         Supports PDF, Word, Excel, PPT, Zip, Images
                       </div>
                     </div>
                   </div>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'end', gap: '0.75rem', marginTop: '0.5rem' }}>
-                  <button type="button" className="btn btn-outline" onClick={() => setModalOpen(false)} disabled={saving}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.625rem', marginTop: '0.5rem' }}>
+                  <button type="button" className="btn btn-outline" onClick={() => setModalOpen(false)} disabled={saving} style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
+                  <button type="submit" className="btn btn-primary" disabled={saving} style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
                     {saving ? 'Uploading...' : (editingDoc ? 'Save Changes' : 'Upload Material')}
                   </button>
                 </div>

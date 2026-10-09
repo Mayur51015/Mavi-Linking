@@ -5,7 +5,7 @@ const ActivityLog = require('../models/ActivityLog');
 const AuditLog = require('../models/AuditLog');
 const RecruitmentNotification = require('../models/RecruitmentNotification');
 const crypto = require('crypto');
-const { sendAdminInvitationEmail } = require('../utils/sendEmail');
+const { sendAdminInvitationEmail, getClientBaseUrl } = require('../utils/sendEmail');
 const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
 /**
@@ -236,16 +236,13 @@ const createAdmin = async (req, res, next) => {
     }
 
     // Dispatch Invitation Email
-    const clientUrl = (
-      process.env.CLIENT_URL ||
-      process.env.FRONTEND_URL ||
-      process.env.PUBLIC_APP_URL ||
-      'http://localhost:5173'
-    ).replace(/\/+$/, '');
+    const clientUrl = getClientBaseUrl(req);
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
       to: lowerEmail,
+      recipientUserId: user._id,
+      actorUserId: req.user._id,
       name: user.name,
       role: targetRole,
       institutionName: targetInst?.name || 'Platform Wide',
@@ -540,16 +537,13 @@ const resendAdminInvite = async (req, res, next) => {
     adminUser.invitedAt = new Date();
     await adminUser.save();
 
-    const clientUrl = (
-      process.env.CLIENT_URL ||
-      process.env.FRONTEND_URL ||
-      process.env.PUBLIC_APP_URL ||
-      'http://localhost:5173'
-    ).replace(/\/+$/, '');
+    const clientUrl = getClientBaseUrl(req);
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
       to: adminUser.email,
+      recipientUserId: adminUser._id,
+      actorUserId: req.user._id,
       name: adminUser.name,
       role: adminUser.role,
       institutionName: adminUser.institutionId?.name || 'Platform Wide',

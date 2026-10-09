@@ -1,54 +1,116 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
-const FinalCTASection = ({ onOpenDemoModal }) => {
+const FinalCTASection = () => {
   return (
-    <section className="container reveal" style={{ paddingTop: '4rem', paddingBottom: '6rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
+    <section
+      id="cta"
+      style={{
+        padding: '5rem 0 6rem 0',
+        backgroundColor: '#FFFFFF',
+      }}
+    >
       <div
-        className="gradient-border-card"
+        className="container"
         style={{
-          padding: '4.5rem 2rem',
-          textAlign: 'center',
-          borderRadius: '32px',
-          position: 'relative',
-          overflow: 'hidden',
-          background: 'radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.18) 0%, var(--bg-card) 85%)',
-          border: '1px solid var(--border-glow, rgba(139, 92, 246, 0.4))',
-          boxShadow: 'var(--shadow-glow-strong)',
+          maxWidth: '1120px',
+          margin: '0 auto',
+          padding: '0 1.5rem',
         }}
       >
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          {/* Eyebrow */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1.1rem', borderRadius: '30px', background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', marginBottom: '1.25rem' }}>
-            <Sparkles size={16} color="var(--accent-purple)" />
-            <span style={{ fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--accent-purple)' }}>
-              THE FUTURE OF CONNECTED INSTITUTIONS
-            </span>
-          </div>
-
-          <h2 className="title-xl" style={{ fontSize: 'clamp(2.25rem, 4.5vw, 3.5rem)', marginBottom: '0.5rem', fontWeight: '800', color: 'var(--text-primary)' }}>
-            Your Institution Is Already Connected.
+        <div
+          style={{
+            background: '#F8F9FA',
+            border: '1px solid #E5E7EB',
+            borderRadius: '8px',
+            padding: '3.5rem 2rem',
+            textAlign: 'center',
+            maxWidth: '680px',
+            margin: '0 auto',
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+              fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
+              fontWeight: '600',
+              color: '#111111',
+              letterSpacing: '-0.02em',
+              margin: '0 0 0.85rem 0',
+            }}
+          >
+            Ready to get started?
           </h2>
-          <h3 style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.85rem)', fontWeight: '700', color: 'var(--text-accent)', marginBottom: '1.5rem' }}>
-            The next step is making those connections intelligent.
-          </h3>
 
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '680px', margin: '0 auto 2.5rem auto', lineHeight: 1.65 }}>
-            Join forward-thinking colleges and educational institutions transforming operations, student development, and placement intelligence with EduTalentX.
+          <p
+            style={{
+              fontSize: '1.05rem',
+              lineHeight: 1.6,
+              color: '#4B5563',
+              margin: '0 auto 2rem auto',
+              maxWidth: '460px',
+            }}
+          >
+            Create your EduTalentX profile and take the next step.
           </p>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
-            <Link to="/register" className="btn btn-primary btn-lg" style={{ minWidth: '220px', padding: '0.9rem 2rem', fontSize: '1rem' }}>
-              Get Started <ArrowRight size={18} />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: '0.85rem',
+            }}
+          >
+            <Link
+              to="/register"
+              className="btn btn-primary"
+              style={{
+                background: '#2563EB',
+                color: '#FFFFFF',
+                padding: '0.75rem 1.6rem',
+                borderRadius: '6px',
+                fontSize: '0.925rem',
+                fontWeight: '500',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                border: 'none',
+                transition: 'background-color 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1D4ED8')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#2563EB')}
+            >
+              Get Started <ArrowRight size={15} />
             </Link>
-            <button onClick={onOpenDemoModal} className="btn btn-outline btn-lg" style={{ minWidth: '220px', padding: '0.9rem 2rem', fontSize: '1rem', borderColor: 'rgba(139, 92, 246, 0.4)' }}>
-              Request an Institution Demo
-            </button>
-          </div>
 
-          <div style={{ fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-            EduTalentX — Connecting Institutions. Empowering People. Enabling Intelligence.
+            <Link
+              to="/login"
+              style={{
+                background: '#FFFFFF',
+                color: '#111111',
+                border: '1px solid #E5E7EB',
+                padding: '0.75rem 1.6rem',
+                borderRadius: '6px',
+                fontSize: '0.925rem',
+                fontWeight: '500',
+                textDecoration: 'none',
+                transition: 'background-color 0.15s ease, border-color 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#F8F9FA';
+                e.currentTarget.style.borderColor = '#D1D5DB';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#FFFFFF';
+                e.currentTarget.style.borderColor = '#E5E7EB';
+              }}
+            >
+              Login
+            </Link>
           </div>
         </div>
       </div>

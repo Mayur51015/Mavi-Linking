@@ -8,7 +8,7 @@ const Activity = require('../models/Activity');
 const ActivityLog = require('../models/ActivityLog');
 const AuditLog = require('../models/AuditLog');
 const EmailChangeChallenge = require('../models/EmailChangeChallenge');
-const { sendEmail, generateEmailChangeOtpEmailHtml, generateEmailChangeNotificationOldEmailHtml } = require('../utils/sendEmail');
+const { sendEmail, generateEmailChangeOtpEmailHtml, generateEmailChangeNotificationOldEmailHtml, getClientBaseUrl } = require('../utils/sendEmail');
 const { getIO } = require('../config/socket');
 const { getAdminInvitationExpiryHours } = require('../config/invitationConfig');
 const { getSecurityTokenExpiryMinutes, getSecurityTokenExpiresAt, isTokenExpired } = require('../config/securityTokenConfig');
@@ -40,7 +40,7 @@ const notifyInstitutionAdminsOfStudentVerification = async ({ user, institutionI
       if (admin.email) adminEmails.add(admin.email.toLowerCase().trim());
     });
 
-    if (institution.primaryContact?.email) {
+    if (adminEmails.size === 0 && institution.primaryContact?.email) {
       adminEmails.add(institution.primaryContact.email.toLowerCase().trim());
     }
 
@@ -68,6 +68,9 @@ const notifyInstitutionAdminsOfStudentVerification = async ({ user, institutionI
 
       sendEmail({
         to: adminEmail,
+        recipientUserId: adminObj?._id || null,
+        actorUserId: user._id,
+        templateName: 'student-verification-admin-notice',
         subject: `EduTalentX — ETX ID Verification Request for Student ${user.name} [${user.etxId}]`,
         html: emailHtml,
       }).then(() => {
@@ -275,23 +278,27 @@ const register = async (req, res, next) => {
     const user = await User.create(userData);
 
     // Dispatch Verification Email
-    const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
+    const { sendEmail, generateStudentVerificationEmailHtml, getClientBaseUrl } = require('../utils/sendEmail');
+    const clientUrl = getClientBaseUrl(req);
     const verificationLink = `${clientUrl}/verify/${user.etxId}?t=${rawVerificationToken}`;
 
-    const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
     const emailHtml = generateStudentVerificationEmailHtml({
       name: user.name,
       verificationLink,
       expiresMinutes: getSecurityTokenExpiryMinutes(),
     });
 
-    sendEmail({
+    const emailResult = await sendEmail({
       to: user.email,
+      recipientUserId: user._id,
       subject: 'Verify your EduTalentX account',
       html: emailHtml,
-    }).catch((emailErr) => {
-      console.error('[EMAIL ERROR] Failed to dispatch verification email:', emailErr.message);
+      templateName: 'student-verification',
     });
+
+    if (!emailResult.success) {
+      console.warn(`[REGISTRATION EMAIL WARNING] Verification email delivery status: ${emailResult.status} for ${user.email} (${emailResult.error})`);
+    }
 
     // Notify Institution Admin(s) of new student registration & ETX ID verification request
     notifyInstitutionAdminsOfStudentVerification({ user, institutionId: targetInst?._id || user.institutionId });
@@ -356,8 +363,14 @@ const login = async (req, res, next) => {
     const { password } = req.body;
 
     if (!rawIdentifier || !password) {
+      console.log({
+        event: 'LOGIN_FAILURE',
+        reason: 'INVALID_LOGIN_PAYLOAD',
+        identifier: rawIdentifier ? 'provided' : 'missing',
+      });
       return res.status(401).json({
         success: false,
+        code: 'INVALID_LOGIN_PAYLOAD',
         message: 'Invalid identifier or password',
       });
     }
@@ -380,52 +393,99 @@ const login = async (req, res, next) => {
     }
     // 3. Email address format
     else if (rawIdentifier.includes('@')) {
-      user = await User.findOne({ email: rawIdentifier.toLowerCase() }).select('+password');
-    }
-    // 4. PRN / ZPRN / Faculty ID format
-    else {
-      isPrnAttempt = true;
-      const escapedIdentifier = rawIdentifier.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      // Search for user by PRN or Faculty ID (case-insensitive)
-      const candidateUser = await User.findOne({
+      const cleanEmail = rawIdentifier.toLowerCase().trim();
+      const escapedEmail = cleanEmail.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      user = await User.findOne({
         $or: [
-          { prn: { $regex: `^${escapedIdentifier}$`, $options: 'i' } },
-          { facultyId: { $regex: `^${escapedIdentifier}$`, $options: 'i' } },
+          { email: cleanEmail },
+          { email: { $regex: `^${escapedEmail}$`, $options: 'i' } },
+        ],
+      }).select('+password');
+    }
+    // 4. PRN / ZPRN / Faculty ID / Username format
+    else {
+      const escapedIdentifier = rawIdentifier.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const adminIdentifier = { $regex: `^${escapedIdentifier}$`, $options: 'i' };
+      user = await User.findOne({
+        $or: [
+          { adminId: adminIdentifier },
+          { adminLoginId: adminIdentifier },
+          { username: adminIdentifier },
         ],
       }).select('+password');
 
-      if (candidateUser) {
-        // Disallow PRN login for administrative accounts
-        const adminRoles = ['institution_admin', 'super_admin', 'platform_owner', 'owner', 'admin'];
-        if (adminRoles.includes(candidateUser.role)) {
-          return res.status(403).json({
-            success: false,
-            message: 'Administrative accounts must log in using their Admin ID or official email.',
-          });
-        }
+      if (!user && rawIdentifier.toUpperCase().startsWith('MAVI-')) {
+        const etxId = rawIdentifier.toUpperCase().replace(/^MAVI-/, 'ETX-');
+        user = await User.findOne({ etxId }).select('+password');
+      }
 
-        // Verify PRN approval status
-        if (candidateUser.prnVerificationStatus !== 'approved') {
-          return res.status(403).json({
-            success: false,
-            code: 'PRN_PENDING_APPROVAL',
-            message: 'Your PRN/ZPRN identity is pending institution verification. Please sign in using your ETX ID or email.',
-          });
-        }
+      if (!user) {
+        isPrnAttempt = true;
+        // Search for user by PRN or Faculty ID or Username (case-insensitive)
+        const candidateUser = await User.findOne({
+          $or: [
+            { prn: adminIdentifier },
+            { facultyId: adminIdentifier },
+            { username: adminIdentifier },
+          ],
+        }).select('+password');
 
-        user = candidateUser;
+        if (candidateUser) {
+          // Disallow PRN login for administrative accounts
+          const adminRoles = ['institution_admin', 'super_admin', 'platform_owner', 'owner', 'admin'];
+          if (adminRoles.includes(candidateUser.role)) {
+            console.log({
+              event: 'LOGIN_FAILURE',
+              reason: 'ADMIN_PRN_DISALLOWED',
+              email: candidateUser.email,
+            });
+            return res.status(403).json({
+              success: false,
+              code: 'ADMIN_PRN_DISALLOWED',
+              message: 'Administrative accounts must log in using their Admin ID or official email.',
+            });
+          }
+
+          // Verify PRN approval status
+          if (candidateUser.prnVerificationStatus !== 'approved') {
+            console.log({
+              event: 'LOGIN_FAILURE',
+              reason: 'PRN_PENDING_APPROVAL',
+              email: candidateUser.email,
+            });
+            return res.status(403).json({
+              success: false,
+              code: 'PRN_PENDING_APPROVAL',
+              message: 'Your PRN/ZPRN identity is pending institution verification. Please sign in using your ETX ID or email.',
+            });
+          }
+
+          user = candidateUser;
+        }
       }
     }
 
     if (!user) {
+      const normalizedEmail = rawIdentifier.includes('@') ? rawIdentifier.toLowerCase() : rawIdentifier.toUpperCase();
+      console.log({
+        event: 'LOGIN_FAILURE',
+        reason: 'USER_NOT_FOUND',
+        email: normalizedEmail,
+      });
       return res.status(401).json({
         success: false,
-        message: 'Invalid ETX ID/PRN or password.',
+        code: 'INVALID_CREDENTIALS',
+        message: 'Invalid credentials.',
       });
     }
 
     // Check account status: 1. DEACTIVATED (indefinite block)
     if (user.accountStatus === 'DEACTIVATED' || user.status === 'deactivated') {
+      console.log({
+        event: 'LOGIN_FAILURE',
+        reason: 'ACCOUNT_DEACTIVATED',
+        email: user.email,
+      });
       return res.status(403).json({
         success: false,
         code: 'ACCOUNT_DEACTIVATED',
@@ -449,6 +509,11 @@ const login = async (req, res, next) => {
         user.suspensionReason = '';
         await user.save();
       } else {
+        console.log({
+          event: 'LOGIN_FAILURE',
+          reason: 'ACCOUNT_SUSPENDED',
+          email: user.email,
+        });
         return res.status(403).json({
           success: false,
           code: 'ACCOUNT_SUSPENDED',
@@ -466,9 +531,15 @@ const login = async (req, res, next) => {
     // Compare passwords
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.log({
+        event: 'LOGIN_FAILURE',
+        reason: 'INVALID_CREDENTIALS',
+        email: user.email,
+      });
       return res.status(401).json({
         success: false,
-        message: 'Invalid identifier or password',
+        code: 'INVALID_CREDENTIALS',
+        message: 'Invalid credentials.',
       });
     }
 
@@ -574,6 +645,12 @@ const login = async (req, res, next) => {
     } catch (auditErr) {
       console.error('Audit Log Error:', auditErr.message);
     }
+
+    console.log({
+      event: 'LOGIN_SUCCESS',
+      email: user.email,
+      role: user.role,
+    });
 
     res.status(200).json({
       success: true,
@@ -882,6 +959,8 @@ const verifyEmail = async (req, res, next) => {
     const { sendEmail } = require('../utils/sendEmail');
     sendEmail({
       to: user.email,
+      recipientUserId: user._id,
+      templateName: 'account-activated-confirmation',
       subject: '🎉 Your EduTalentX Account has been Verified & Activated!',
       html: `
         <!DOCTYPE html>
@@ -1030,7 +1109,7 @@ const resendVerification = async (req, res, next) => {
     user.accountStatus = 'PENDING_VERIFICATION';
     await user.save();
 
-    const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = getClientBaseUrl(req);
     const verificationLink = `${clientUrl}/verify/${user.etxId}?t=${rawVerificationToken}`;
 
     const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
@@ -1042,8 +1121,10 @@ const resendVerification = async (req, res, next) => {
 
     const emailResult = await sendEmail({
       to: user.email,
+      recipientUserId: user._id,
       subject: 'Verify your EduTalentX account',
       html: emailHtml,
+      templateName: 'resend-student-verification',
     });
 
     if (!emailResult.success) {
@@ -1153,7 +1234,7 @@ const changeEmailPending = async (req, res, next) => {
 
     await user.save();
 
-    const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = getClientBaseUrl(req);
     const verificationLink = `${clientUrl}/verify/${user.etxId}?t=${rawVerificationToken}`;
 
     const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
@@ -1165,8 +1246,10 @@ const changeEmailPending = async (req, res, next) => {
 
     const emailResult = await sendEmail({
       to: user.email,
+      recipientUserId: user._id,
       subject: 'Verify your EduTalentX account',
       html: emailHtml,
+      templateName: 'resend-student-verification',
     });
 
     if (!emailResult.success) {
@@ -1272,14 +1355,13 @@ const forgotPassword = async (req, res, next) => {
       console.error('Failed to log recovery activity:', err.message);
     }
 
-    // Log securely to server console for simulation/testing
-    console.log(`[RECOVERY DISPATCH] Email: ${user.email} | OTP: ${rawOtp} | Token: ${rawResetToken}`);
+    // Log dispatch event safely (without printing sensitive OTP or token)
+    console.log(`[RECOVERY DISPATCH] Email: ${user.email} | OTP dispatched`);
 
     // Send Real Email via Nodemailer Service
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const { sendEmail, generatePasswordResetEmailHtml, getClientBaseUrl } = require('../utils/sendEmail');
+    const clientUrl = getClientBaseUrl(req);
     const resetLink = `${clientUrl}/reset-password?token=${rawResetToken}`;
-
-    const { sendEmail, generatePasswordResetEmailHtml } = require('../utils/sendEmail');
     const emailHtml = generatePasswordResetEmailHtml({
       name: user.name,
       otp: rawOtp,
@@ -1288,8 +1370,10 @@ const forgotPassword = async (req, res, next) => {
 
     const emailResult = await sendEmail({
       to: user.email,
+      recipientUserId: user._id,
       subject: 'EduTalentX — Password Reset Request & Security OTP',
       html: emailHtml,
+      templateName: 'password-reset-otp',
     });
 
     if (!emailResult.success) {
@@ -2517,8 +2601,10 @@ const requestEmailChange = async (req, res, next) => {
     // 7. Dispatch OTP to NEW email via existing sendEmail utility
     const emailResult = await sendEmail({
       to: canonicalNewEmail,
+      recipientUserId: user._id,
       subject: 'Verify your EduTalentX email change',
       html: generateEmailChangeOtpEmailHtml({ name: user.name, otp, newEmail: canonicalNewEmail }),
+      templateName: 'email-change-otp',
     });
 
     if (!emailResult.success) {
@@ -2676,7 +2762,9 @@ const verifyEmailChange = async (req, res, next) => {
     // Dispatch Security Notification to OLD Email
     await sendEmail({
       to: oldEmail,
+      recipientUserId: user._id,
       subject: 'Your EduTalentX email address was changed',
+      templateName: 'email-change-security-notice',
       html: generateEmailChangeNotificationOldEmailHtml({
         name: user.name,
         oldEmail,
@@ -2763,8 +2851,10 @@ const resendEmailChangeOtp = async (req, res, next) => {
 
     const emailResult = await sendEmail({
       to: challenge.newEmail,
+      recipientUserId: user?._id,
       subject: 'Verify your EduTalentX email change',
       html: generateEmailChangeOtpEmailHtml({ name: user?.name || 'User', otp, newEmail: challenge.newEmail }),
+      templateName: 'email-change-otp-resend',
     });
 
     if (!emailResult.success) {

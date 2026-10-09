@@ -163,6 +163,17 @@ export const NotificationProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, [hasValidSession, fetchUnreadCount]);
 
+  // Clean slate on user identity change or logout to avoid cross-user state leakage
+  useEffect(() => {
+    setNotifications([]);
+    setUnreadCount(0);
+    setError(null);
+    if (user?._id && hasValidSession()) {
+      fetchUnreadCount();
+    }
+  }, [user?._id, hasValidSession, fetchUnreadCount]);
+
+
   const value = useMemo(
     () => ({
       notifications,

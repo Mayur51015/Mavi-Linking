@@ -227,7 +227,7 @@ const sendMessage = async (req, res, next) => {
     }
 
     // Load recipient user to enforce scope rules
-    const recipient = await User.findById(recipientId).select('name role university allowedColleges allowedDepartments');
+    const recipient = await User.findById(recipientId).select('name role university allowedColleges allowedDepartments email');
 
     if (!recipient) {
       return res.status(404).json({ success: false, message: 'Recipient not found' });
@@ -259,6 +259,24 @@ const sendMessage = async (req, res, next) => {
       message: content,
       metadata: { messageId: msg._id },
     });
+
+    // Dispatch email notification directly to verified recipient email
+    if (recipient && recipient.email) {
+      try {
+        const { sendAssignmentNotificationEmail } = require('../utils/sendEmail');
+        sendAssignmentNotificationEmail({
+          to: recipient.email,
+          recipientUserId: recipient._id,
+          actorUserId: req.user.id,
+          actorName: req.user.name || 'EduTalentX User',
+          actorRole: req.user.role === 'recruiter' ? 'Recruiter' : req.user.role === 'teacher' ? 'Teacher' : 'User',
+          assignmentTitle: `New Message from ${req.user.name || 'User'}`,
+          assignmentDetails: content.length > 200 ? `${content.substring(0, 197)}...` : content,
+          assignmentType: 'DIRECT_MESSAGE',
+          actionLink: `${process.env.CLIENT_URL || 'http://localhost:5173'}/messages`,
+        }).catch((err) => console.error('[MESSAGE EMAIL ERROR]', err.message));
+      } catch (_) {}
+    }
 
     // Real-time notification via Socket.io
     try {

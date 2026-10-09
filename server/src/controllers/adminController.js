@@ -9,7 +9,7 @@ const Institution = require('../models/Institution');
 const Department = require('../models/Department');
 const Project = require('../models/Project');
 const crypto = require('crypto');
-const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml, sendAccountLifecycleEmail } = require('../utils/sendEmail');
+const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml, sendAccountLifecycleEmail, getClientBaseUrl } = require('../utils/sendEmail');
 const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
 /**
@@ -518,6 +518,8 @@ const suspendUser = async (req, res, next) => {
     // Email Notification
     sendAccountLifecycleEmail({
       to: user.email,
+      recipientUserId: user._id,
+      actorUserId: req.user._id,
       name: user.name,
       etxId: user.etxId,
       role: user.role,
@@ -612,6 +614,8 @@ const deactivateUser = async (req, res, next) => {
     // Email Notification
     sendAccountLifecycleEmail({
       to: user.email,
+      recipientUserId: user._id,
+      actorUserId: req.user._id,
       name: user.name,
       etxId: user.etxId,
       role: user.role,
@@ -704,6 +708,8 @@ const reactivateUser = async (req, res, next) => {
     // Email Notification
     sendAccountLifecycleEmail({
       to: user.email,
+      recipientUserId: user._id,
+      actorUserId: req.user._id,
       name: user.name,
       etxId: user.etxId,
       role: user.role,
@@ -1471,7 +1477,7 @@ const createStaffUser = async (req, res, next) => {
       }
       await existingUser.save();
 
-      const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
+      const clientUrl = getClientBaseUrl(req);
       const activationLink = `${clientUrl}/activate-account?token=${rawInviteToken}`;
       const emailHtml = generateAccountInvitationEmailHtml({
         name: existingUser.name,
@@ -1481,11 +1487,14 @@ const createStaffUser = async (req, res, next) => {
         expiresHours: getAdminInvitationExpiryHours(),
       });
 
-      sendEmail({
+      const emailResult = await sendEmail({
         to: lowerEmail,
+        recipientUserId: existingUser._id,
+        actorUserId: req.user._id,
         subject: `Account Role Update: You've been assigned as ${lowerRole === 'teacher' ? 'Teacher' : lowerRole === 'department_admin' ? 'Department Admin' : 'Recruiter'}`,
         html: emailHtml,
-      }).catch(err => console.error('[ASYNC EMAIL ERROR]', err));
+        templateName: 'role-assignment',
+      });
 
       const actionType = lowerRole === 'teacher' ? 'TEACHER_ACCOUNT_UPDATED' : lowerRole === 'department_admin' ? 'DEPARTMENT_ADMIN_APPOINTED' : 'RECRUITER_ACCOUNT_UPDATED';
       await ActivityLog.create({
@@ -1501,7 +1510,10 @@ const createStaffUser = async (req, res, next) => {
 
       return res.status(200).json({
         success: true,
-        message: `Successfully appointed ${existingUser.name} (${lowerEmail}) as ${lowerRole.replace('_', ' ')}. Invitation email sent.`,
+        message: emailResult.success
+          ? `Successfully appointed ${existingUser.name} (${lowerEmail}) as ${lowerRole.replace('_', ' ')}. Invitation email sent.`
+          : `Successfully appointed ${existingUser.name} (${lowerEmail}) as ${lowerRole.replace('_', ' ')}, but invitation email delivery failed (${emailResult.error || 'SMTP issue'}).`,
+        emailDelivery: emailResult,
         data: { user: userPayload },
       });
     }
@@ -1558,7 +1570,7 @@ const createStaffUser = async (req, res, next) => {
     });
 
     // 9. Dispatch Invitation Email with Activation Link (Zero Password)
-    const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
+    const clientUrl = getClientBaseUrl(req);
     const activationLink = `${clientUrl}/activate-account?token=${rawInviteToken}`;
     const emailHtml = generateAccountInvitationEmailHtml({
       name: newUser.name,
@@ -1568,11 +1580,14 @@ const createStaffUser = async (req, res, next) => {
       expiresHours: expiryHours,
     });
 
-    sendEmail({
+    const emailResult = await sendEmail({
       to: lowerEmail,
+      recipientUserId: newUser._id,
+      actorUserId: req.user._id,
       subject: `Account Activation: Set Password & Access your EduTalentX ${lowerRole === 'teacher' ? 'Teacher' : lowerRole === 'recruiter' ? 'Recruiter' : 'Department Admin'} Account`,
       html: emailHtml,
-    }).catch(err => console.error('[ASYNC EMAIL ERROR]', err));
+      templateName: 'account-activation',
+    });
 
     // 10. Record Security Audit Log Event
     const actionType = lowerRole === 'teacher' ? 'TEACHER_ACCOUNT_CREATED' : 'RECRUITER_ACCOUNT_CREATED';
@@ -1590,7 +1605,10 @@ const createStaffUser = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: `Account created successfully for ${lowerEmail}. An invitation email has been sent.`,
+      message: emailResult.success
+        ? `Account created successfully for ${lowerEmail}. An invitation email has been sent.`
+        : `Account created successfully for ${lowerEmail}, but the invitation email could not be delivered (${emailResult.error || 'SMTP issue'}).`,
+      emailDelivery: emailResult,
       data: { user: userPayload },
     });
   } catch (error) {
@@ -1645,6 +1663,8 @@ const resendUserInvitation = async (req, res, next) => {
       const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;
       emailResult = await sendAdminInvitationEmail({
         to: user.email,
+        recipientUserId: user._id,
+        actorUserId: req.user._id,
         name: user.name,
         role: user.role,
         institutionName: user.institutionId?.name || 'Platform Wide',
@@ -1665,8 +1685,11 @@ const resendUserInvitation = async (req, res, next) => {
 
       emailResult = await sendEmail({
         to: user.email,
+        recipientUserId: user._id,
+        actorUserId: req.user._id,
         subject: `New Invitation: Activate your EduTalentX ${user.role === 'teacher' ? 'Teacher' : user.role === 'recruiter' ? 'Recruiter' : 'Student'} Account`,
         html: emailHtml,
+        templateName: 'resend-invitation',
       });
     }
 
@@ -2308,7 +2331,10 @@ const approveStudentAccount = async (req, res, next) => {
     const { sendEmail } = require('../utils/sendEmail');
     sendEmail({
       to: student.email,
+      recipientUserId: student._id,
+      actorUserId: req.user._id,
       subject: 'Your EduTalentX account has been approved!',
+      templateName: 'student-approval',
       html: `
         <div style="font-family: Arial, sans-serif; background: #09090b; color: #f4f4f5; padding: 24px; border-radius: 8px;">
           <h2 style="color: #a855f7;">Account Approved 🎉</h2>
@@ -2432,7 +2458,10 @@ const rejectStudentAccount = async (req, res, next) => {
     const { sendEmail } = require('../utils/sendEmail');
     sendEmail({
       to: student.email,
+      recipientUserId: student._id,
+      actorUserId: req.user._id,
       subject: 'Your EduTalentX account registration requires attention',
+      templateName: 'student-rejection',
       html: `
         <div style="font-family: Arial, sans-serif; background: #09090b; color: #f4f4f5; padding: 24px; border-radius: 8px;">
           <h2 style="color: #ef4444;">Registration Decision Notice</h2>

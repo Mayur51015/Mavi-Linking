@@ -23,7 +23,6 @@ import {
 import { AuthContext } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import NotificationBell from '../NotificationBell';
-import ThemeToggle from '../ThemeToggle';
 import VerificationStatusBanner from '../VerificationStatusBanner';
 import VerificationModal from '../VerificationModal';
 import BrandLogo from '../BrandLogo';
@@ -141,9 +140,17 @@ const AppShell = ({
   };
 
   const currentRole = getEffectiveRoleBadge();
+  const isStudentWorkspace = user?.role === 'user' || user?.roles?.includes('student');
+  const studentTopLinks = [
+    { label: 'Overview', path: '/dashboard' },
+    { label: 'Career Match', path: '/dashboard/career-match' },
+    { label: 'Learning & Growth', path: '/student/career-roadmap' },
+    { label: 'Career Lab', path: '/dashboard/career-lab' },
+    { label: 'Applications', path: '/dashboard/jobs' },
+  ];
 
   return (
-    <div className="dashboard-shell" style={{ display: 'flex', height: '100vh', maxHeight: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
+    <div className={`dashboard-shell${isStudentWorkspace ? ' student-workspace' : ''}`} style={{ display: 'flex', height: '100vh', maxHeight: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
       {/* Mobile Backdrop Overlay */}
       <div
         className={`sidebar-overlay${sidebarOpen ? ' active' : ''}`}
@@ -155,14 +162,14 @@ const AppShell = ({
       <aside
         className={`dashboard-sidebar${sidebarOpen ? ' sidebar-open' : ''}`}
         style={{
-          width: collapsed ? '76px' : '260px',
+          width: collapsed ? '72px' : isStudentWorkspace ? '230px' : '260px',
           transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s ease',
           background: 'var(--bg-surface)',
           borderRight: '1px solid var(--border-color)',
           display: 'flex',
           flexDirection: 'column',
           zIndex: 100,
-          padding: '1.25rem 0.85rem',
+          padding: isStudentWorkspace ? '0.85rem 0.65rem' : '1.25rem 0.85rem',
           flexShrink: 0,
         }}
       >
@@ -545,9 +552,31 @@ const AppShell = ({
             </h1>
           </div>
 
-          {/* Center / Search Trigger Button */}
+          {isStudentWorkspace && (
+            <nav className="student-topnav" aria-label="Student workspace">
+              {studentTopLinks.map((item) => {
+                const isActive = item.path === '/dashboard'
+                  ? location.pathname === item.path
+                  : location.pathname.startsWith(item.path);
+
+                return (
+                  <Link
+                    key={item.path}
+                    className="student-topnav-link"
+                    to={item.path}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
+
+          {/* Center / Search Trigger — Desktop: full bar, Mobile: icon only */}
           <button
             onClick={() => setSearchModalOpen(true)}
+            className="hide-mobile"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -582,10 +611,28 @@ const AppShell = ({
               ⌘ K
             </kbd>
           </button>
+          {/* Mobile: compact search icon */}
+          <button
+            onClick={() => setSearchModalOpen(true)}
+            className="show-mobile"
+            aria-label="Search"
+            style={{
+              display: 'none',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              padding: '0.4rem',
+              borderRadius: '8px',
+            }}
+          >
+            <Search size={18} />
+          </button>
 
           {/* Right: Controls & User Avatar Menu */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <ThemeToggle />
             <NotificationBell />
 
             {/* User Dropdown */}
@@ -672,7 +719,9 @@ const AppShell = ({
                         } else if (user?._id) {
                           navigate(`/portfolio/${user._id}`);
                         } else {
-                          navigate('/dashboard?edit=true');
+                          const currentPath = location.pathname + location.search;
+                          const returnTo = (currentPath.includes('edit=true') || currentPath === '/profile/edit') ? undefined : currentPath;
+                          navigate('/dashboard?edit=true', { state: { returnTo } });
                         }
                       }}
                       style={{
@@ -702,7 +751,9 @@ const AppShell = ({
                       onClick={() => {
                         setUserMenuOpen(false);
                         window.dispatchEvent(new CustomEvent('open-edit-profile'));
-                        navigate('/dashboard?edit=true');
+                        const currentPath = location.pathname + location.search;
+                        const returnTo = (currentPath.includes('edit=true') || currentPath === '/profile/edit') ? undefined : currentPath;
+                        navigate('/dashboard?edit=true', { state: { returnTo } });
                       }}
                       style={{
                         display: 'flex',
@@ -797,7 +848,7 @@ const AppShell = ({
         </header>
 
         {/* Content Viewport */}
-        <main className="dashboard-content" style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', padding: '1.5rem 2rem' }}>
+        <main className="dashboard-content" style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', padding: 'clamp(0.75rem, 3vw, 1.5rem) clamp(0.75rem, 3vw, 2rem)' }}>
           {/* Institutional Account Verification Status Banner */}
           <VerificationStatusBanner />
 
@@ -830,8 +881,7 @@ const AppShell = ({
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.7)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(0, 0, 0, 0.4)',
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'center',
@@ -843,7 +893,7 @@ const AppShell = ({
             className="modal-content"
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: '100%',
+              width: 'min(calc(100vw - 1.5rem), 520px)',
               maxWidth: '520px',
               background: 'var(--bg-surface-elevated)',
               border: '1px solid var(--border-color)',

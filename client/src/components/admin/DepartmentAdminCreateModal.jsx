@@ -70,20 +70,20 @@ const DepartmentAdminCreateModal = ({ defaultDepartment, onClose, onSuccess }) =
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '1rem' }}>
-      <div className="glass-card-static" style={{ width: '100%', maxWidth: '580px', background: '#121319', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '16px', overflow: 'hidden', padding: 0 }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '1rem' }}>
+      <div style={{ width: '100%', maxWidth: '580px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)', overflow: 'hidden', padding: 0 }}>
         
         {/* Header */}
-        <div style={{ padding: '1.25rem 1.5rem', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '1.25rem 1.5rem', background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-purple)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--brand-blue)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Shield size={14} /> Account Provisioning & Governance
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'white', margin: '0.2rem 0 0 0' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0.25rem 0 0 0' }}>
               Create Department Admin
             </h3>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem' }}>
             <X size={20} />
           </button>
         </div>
@@ -92,21 +92,21 @@ const DepartmentAdminCreateModal = ({ defaultDepartment, onClose, onSuccess }) =
         <form onSubmit={handleSubmit} style={{ padding: '1.5rem', display: 'grid', gap: '1.1rem' }}>
           
           {/* Locked Institution Scope Badge */}
-          <div style={{ padding: '0.85rem 1rem', background: 'rgba(99, 102, 241, 0.08)', borderRadius: '10px', border: '1px solid rgba(99, 102, 241, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ padding: '0.75rem 1rem', background: '#EFF6FF', borderRadius: '6px', border: '1px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <Building size={18} style={{ color: 'var(--accent-purple)' }} />
+              <Building size={18} style={{ color: 'var(--brand-blue)' }} />
               <div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', uppercase: 'uppercase' }}>Institution Authority</div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'white' }}>{institutionName}</div>
+                <div style={{ fontSize: '0.7rem', color: '#1E40AF', textTransform: 'uppercase', fontWeight: 600 }}>Institution Authority</div>
+                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1E40AF' }}>{institutionName}</div>
               </div>
             </div>
-            <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>Locked Scope 🔒</span>
+            <span style={{ fontSize: '0.75rem', color: '#1E40AF', fontWeight: 500 }}>Locked Scope 🔒</span>
           </div>
 
           {/* Full Name & Email */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="input-group">
-              <label className="input-label">Full Name *</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label className="input-label" style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.875rem' }}>Full Name *</label>
               <input
                 type="text"
                 className="input-field"
@@ -114,10 +114,11 @@ const DepartmentAdminCreateModal = ({ defaultDepartment, onClose, onSuccess }) =
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Dr. Rajesh Sharma"
                 required
+                style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem' }}
               />
             </div>
-            <div className="input-group">
-              <label className="input-label">Email Address *</label>
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label className="input-label" style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.875rem' }}>Email Address *</label>
               <input
                 type="email"
                 className="input-field"
@@ -125,38 +126,41 @@ const DepartmentAdminCreateModal = ({ defaultDepartment, onClose, onSuccess }) =
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="rajesh.sharma@institution.edu"
                 required
+                style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem' }}
               />
             </div>
           </div>
 
           {/* Phone & Employee ID */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="input-group">
-              <label className="input-label">Phone Number (Optional)</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label className="input-label" style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.875rem' }}>Phone Number (Optional)</label>
               <input
                 type="text"
                 className="input-field"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+91 9876543210"
+                style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem' }}
               />
             </div>
-            <div className="input-group">
-              <label className="input-label">Employee / Admin ID</label>
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label className="input-label" style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.875rem' }}>Employee / Admin ID</label>
               <input
                 type="text"
                 className="input-field"
                 value={employeeId}
                 onChange={(e) => setEmployeeId(e.target.value)}
                 placeholder="EMP-CSE-001"
+                style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem' }}
               />
             </div>
           </div>
 
           {/* Department Selection & Designation */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="input-group">
-              <label className="input-label">Assigned Department *</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label className="input-label" style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.875rem' }}>Assigned Department *</label>
               {loadingDepts ? (
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Loading departments...</div>
               ) : (
@@ -165,6 +169,7 @@ const DepartmentAdminCreateModal = ({ defaultDepartment, onClose, onSuccess }) =
                   value={selectedDepartmentId}
                   onChange={(e) => setSelectedDepartmentId(e.target.value)}
                   required
+                  style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem' }}
                 >
                   <option value="">-- Select Department --</option>
                   {departments.map((d) => (
@@ -176,8 +181,8 @@ const DepartmentAdminCreateModal = ({ defaultDepartment, onClose, onSuccess }) =
               )}
             </div>
 
-            <div className="input-group">
-              <label className="input-label">Administrative Designation</label>
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label className="input-label" style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.875rem' }}>Administrative Designation</label>
               <input
                 type="text"
                 className="input-field"
@@ -185,24 +190,25 @@ const DepartmentAdminCreateModal = ({ defaultDepartment, onClose, onSuccess }) =
                 onChange={(e) => setDesignation(e.target.value)}
                 placeholder="Head of Department / Admin"
                 required
+                style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem' }}
               />
             </div>
           </div>
 
           {/* Password Notice */}
-          <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Lock size={14} style={{ color: 'var(--accent-amber)' }} />
+          <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-subtle)', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Lock size={15} style={{ color: 'var(--brand-blue)', flexShrink: 0 }} />
             <span>
-              <strong>Zero Password Setup:</strong> An email with a secure, single-use activation link will be sent to the Department Admin to set their password.
+              <strong>Zero Password Setup:</strong> An invitation email with a secure link will be sent to the administrator to set their password.
             </span>
           </div>
 
           {/* Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-            <button type="button" onClick={onClose} className="btn btn-outline" style={{ padding: '0.6rem 1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+            <button type="button" onClick={onClose} className="btn btn-outline" style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}>
               Cancel
             </button>
-            <button type="submit" disabled={submitting || !selectedDepartmentId} className="btn btn-primary" style={{ padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button type="submit" disabled={submitting || !selectedDepartmentId} className="btn btn-primary" style={{ padding: '0.5rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
               <UserPlus size={16} /> {submitting ? 'Provisioning Account...' : 'Create Department Admin'}
             </button>
           </div>

@@ -4,7 +4,7 @@ const User = require('../models/User');
 const ActivityLog = require('../models/ActivityLog');
 const AuditLog = require('../models/AuditLog');
 const crypto = require('crypto');
-const { sendAdminInvitationEmail } = require('../utils/sendEmail');
+const { sendAdminInvitationEmail, getClientBaseUrl } = require('../utils/sendEmail');
 const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
 /**
@@ -345,16 +345,13 @@ const assignInstitutionAdmin = async (req, res, next) => {
     );
 
     // Dispatch Invitation Email
-    const clientUrl = (
-      process.env.CLIENT_URL ||
-      process.env.FRONTEND_URL ||
-      process.env.PUBLIC_APP_URL ||
-      'http://localhost:5173'
-    ).replace(/\/+$/, '');
+    const clientUrl = getClientBaseUrl(req);
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
       to: targetUser.email,
+      recipientUserId: targetUser._id,
+      actorUserId: req.user._id,
       name: targetUser.name,
       role: 'institution_admin',
       institutionName: institution.name,

@@ -448,25 +448,25 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
   return (
     <InstitutionAdminLayout activeTab={activeTab}>
-      <div style={{ padding: '1rem', maxWidth: '1280px', margin: '0 auto', color: 'white' }}>
+      <div style={{ padding: '1.5rem', maxWidth: '1280px', margin: '0 auto', color: 'var(--text-main)' }}>
         {/* Top Branding Bar */}
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.6rem', margin: 0 }}>
-                <Shield className="text-gradient" size={28} />
+              <h1 style={{ fontSize: '1.625rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.6rem', margin: 0, color: 'var(--text-main)' }}>
+                <Shield size={24} style={{ color: 'var(--color-primary)' }} />
                 {currentUser?.institutionId?.name || currentUser?.university?.name || 'Institution Administration'}
               </h1>
-              <span className="badge badge-primary" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>
+              <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem', borderRadius: '4px', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE', fontWeight: '600' }}>
                 {currentUser?.designation || 'Academic Administrator'}
               </span>
               {currentUser?.tenantId && (
-                <span className="badge badge-outline" style={{ fontSize: '0.75rem', fontFamily: 'monospace', borderColor: 'var(--accent-purple)', color: 'var(--accent-purple)' }}>
+                <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontWeight: '600' }}>
                   Tenant: {currentUser.tenantId}
                 </span>
               )}
             </div>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem', fontSize: '0.85rem' }}>
+            <p style={{ color: 'var(--text-secondary)', marginTop: '0.35rem', fontSize: '0.85rem' }}>
               Multi-Tenant Scoped Portal — Logged in as <strong>{currentUser?.name}</strong> ({currentUser?.email})
             </p>
           </div>
@@ -478,10 +478,10 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
         {/* Global Error Banner */}
         {errorMessage && (
-          <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', borderRadius: '10px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <AlertTriangle size={20} style={{ color: '#ef4444' }} />
+          <div style={{ padding: '1rem', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#991B1B' }}>
+            <AlertTriangle size={20} style={{ color: '#DC2626' }} />
             <div style={{ flex: 1, fontSize: '0.875rem' }}>{errorMessage}</div>
-            <button onClick={loadTabData} className="btn btn-outline" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: '#ef4444', color: '#ef4444' }}>
+            <button onClick={loadTabData} className="btn btn-outline" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: '#FECACA', color: '#DC2626' }}>
               Retry
             </button>
           </div>
@@ -490,8 +490,8 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
         {/* Loading Spinner */}
         {loading ? (
           <div style={{ padding: '4rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            <div className="animate-pulse" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', margin: '0 auto 1rem' }} />
-            <p style={{ fontFamily: 'Outfit, sans-serif' }}>Loading {activeTab.replace('-', ' ')} data...</p>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '3px solid var(--border-color)', borderTopColor: 'var(--color-primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Loading {activeTab.replace('-', ' ')} data...</p>
           </div>
         ) : (
           <>
@@ -499,23 +499,23 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
             {activeTab === 'overview' && (
               <div className="animate-fade-in">
                 {stats && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                     {[
-                      { label: 'Students', value: stats.students || 0, color: 'var(--accent-purple)', icon: <GraduationCap size={20} /> },
-                      { label: 'Teachers', value: stats.teachers || 0, color: 'var(--accent-amber)', icon: <Users size={20} /> },
-                      { label: 'Recruiters', value: stats.recruiters || 0, color: 'var(--accent-cyan)', icon: <Briefcase size={20} /> },
-                      { label: 'Placement Drives', value: stats.drives || 0, color: 'var(--accent-emerald)', icon: <Building size={20} /> },
-                      { label: 'Suspended Accounts', value: stats.suspended || 0, color: '#ef4444', icon: <UserX size={20} /> },
+                      { label: 'Students', value: stats.students || 0, icon: <GraduationCap size={20} /> },
+                      { label: 'Teachers', value: stats.teachers || 0, icon: <Users size={20} /> },
+                      { label: 'Recruiters', value: stats.recruiters || 0, icon: <Briefcase size={20} /> },
+                      { label: 'Placement Drives', value: stats.drives || 0, icon: <Building size={20} /> },
+                      { label: 'Suspended Accounts', value: stats.suspended || 0, icon: <UserX size={20} /> },
                     ].map((item) => (
-                      <div key={item.label} className="glass-card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ padding: '0.75rem', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: item.color }}>
+                      <div key={item.label} style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                        <div style={{ padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-subtle)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           {item.icon}
                         </div>
                         <div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
                             {item.label}
                           </div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: '800', color: item.color }}>{item.value}</div>
+                          <div style={{ fontSize: '1.625rem', fontWeight: '700', color: 'var(--text-main)', marginTop: '0.15rem' }}>{item.value}</div>
                         </div>
                       </div>
                     ))}
@@ -525,22 +525,23 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                 {/* Quick Navigation Cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
                   {[
-                    { title: 'Student Directory', desc: 'View and manage student profiles, PRN identity, and statuses.', path: '/admin/students', icon: <GraduationCap size={24} />, color: 'var(--accent-purple)' },
-                    { title: 'Faculty & Teachers', desc: 'Manage institutional faculty, department allocations, and permissions.', path: '/admin/teachers', icon: <Users size={24} />, color: 'var(--accent-amber)' },
-                    { title: 'Identity Verifications', desc: `${roleRequests.length + prnRequests.length} pending verification requests requiring review.`, path: '/admin/verifications', icon: <CheckSquare size={24} />, color: 'var(--accent-cyan)' },
-                    { title: 'Institution Settings', desc: 'Configure official institution details, domains, and contact profiles.', path: '/admin/settings', icon: <Settings size={24} />, color: 'var(--accent-emerald)' },
+                    { title: 'Student Directory', desc: 'View and manage student profiles, PRN identity, and statuses.', path: '/admin/students', icon: <GraduationCap size={22} /> },
+                    { title: 'Faculty & Teachers', desc: 'Manage institutional faculty, department allocations, and permissions.', path: '/admin/teachers', icon: <Users size={22} /> },
+                    { title: 'Identity Verifications', desc: `${roleRequests.length + prnRequests.length} pending verification requests requiring review.`, path: '/admin/verifications', icon: <CheckSquare size={22} /> },
+                    { title: 'Institution Settings', desc: 'Configure official institution details, domains, and contact profiles.', path: '/admin/settings', icon: <Settings size={22} /> },
                   ].map((card) => (
                     <div
                       key={card.title}
-                      className="glass-card"
                       onClick={() => navigate(card.path)}
-                      style={{ padding: '1.5rem', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.08)', transition: 'transform 0.2s' }}
+                      style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.35rem', cursor: 'pointer', transition: 'box-shadow 0.15s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.08)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'; }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                        <div style={{ color: card.color }}>{card.icon}</div>
-                        <h3 style={{ fontSize: '1.1rem', margin: 0 }}>{card.title}</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                        <div style={{ color: 'var(--color-primary)' }}>{card.icon}</div>
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: '600', margin: 0, color: 'var(--text-main)' }}>{card.title}</h3>
                       </div>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>{card.desc}</p>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.45 }}>{card.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -661,76 +662,84 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
             {/* ─── 5. VERIFICATIONS VIEW ───────────────────────────────────────── */}
             {activeTab === 'verifications' && (
-              <div className="animate-fade-in" style={{ display: 'grid', gap: '2rem' }}>
-                <div className="glass-card-static" style={{ padding: '1.5rem' }}>
-                  <h3 style={{ marginBottom: '1rem', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <CheckSquare size={20} /> Pending Role Requests ({roleRequests.length})
+              <div className="animate-fade-in" style={{ display: 'grid', gap: '1.5rem' }}>
+                <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <h3 style={{ marginBottom: '1rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.05rem', fontWeight: 600 }}>
+                    <CheckSquare size={18} style={{ color: 'var(--color-primary)' }} /> Pending Role Requests ({roleRequests.length})
                   </h3>
                   {roleRequests.length === 0 ? (
-                    <p style={{ color: 'var(--text-muted)' }}>No pending role requests.</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No pending role requests.</p>
                   ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                          <th style={{ padding: '0.75rem' }}>Applicant</th>
-                          <th style={{ padding: '0.75rem' }}>Requested Role</th>
-                          <th style={{ padding: '0.75rem' }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {roleRequests.map((req) => (
-                          <tr key={req._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                            <td style={{ padding: '0.75rem' }}>
-                              <div style={{ fontWeight: '600' }}>{req.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{req.email}</div>
-                            </td>
-                            <td style={{ padding: '0.75rem' }}><span className="badge badge-primary">{req.requestedRole}</span></td>
-                            <td style={{ padding: '0.75rem' }}>
-                              <div style={{ display: 'flex', gap: '0.4rem' }}>
-                                <button onClick={() => handleApproveRole(req._id)} className="btn btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Approve</button>
-                                <button onClick={() => setRejectingUser(req)} className="btn btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444', padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Reject</button>
-                              </div>
-                            </td>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                        <thead>
+                          <tr style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600 }}>
+                            <th style={{ padding: '0.75rem 1rem' }}>Applicant</th>
+                            <th style={{ padding: '0.75rem 1rem' }}>Requested Role</th>
+                            <th style={{ padding: '0.75rem 1rem' }}>Actions</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {roleRequests.map((req) => (
+                            <tr key={req._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                              <td style={{ padding: '0.75rem 1rem' }}>
+                                <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{req.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{req.email}</div>
+                              </td>
+                              <td style={{ padding: '0.75rem 1rem' }}>
+                                <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE', fontWeight: 600 }}>
+                                  {req.requestedRole}
+                                </span>
+                              </td>
+                              <td style={{ padding: '0.75rem 1rem' }}>
+                                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                  <button onClick={() => handleApproveRole(req._id)} className="btn btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}>Approve</button>
+                                  <button onClick={() => setRejectingUser(req)} className="btn btn-outline" style={{ borderColor: '#FCA5A5', color: '#DC2626', padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}>Reject</button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
 
-                <div className="glass-card-static" style={{ padding: '1.5rem' }}>
-                  <h3 style={{ marginBottom: '1rem', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Shield size={20} /> PRN & Identity Verifications ({prnRequests.length})
+                <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <h3 style={{ marginBottom: '1rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.05rem', fontWeight: 600 }}>
+                    <Shield size={18} style={{ color: 'var(--color-primary)' }} /> PRN & Identity Verifications ({prnRequests.length})
                   </h3>
                   {prnRequests.length === 0 ? (
-                    <p style={{ color: 'var(--text-muted)' }}>No pending PRN identity verifications.</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No pending PRN identity verifications.</p>
                   ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                          <th style={{ padding: '0.75rem' }}>Student / ETX ID</th>
-                          <th style={{ padding: '0.75rem' }}>PRN / Faculty ID</th>
-                          <th style={{ padding: '0.75rem' }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {prnRequests.map((req) => (
-                          <tr key={req._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                            <td style={{ padding: '0.75rem' }}>
-                              <div style={{ fontWeight: '600' }}>{req.name}</div>
-                              <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--accent-purple)' }}>{req.etxId}</div>
-                            </td>
-                            <td style={{ padding: '0.75rem', fontFamily: 'monospace', fontWeight: 'bold' }}>{req.prn || req.facultyId || 'Not Provided'}</td>
-                            <td style={{ padding: '0.75rem' }}>
-                              <div style={{ display: 'flex', gap: '0.4rem' }}>
-                                <button onClick={() => handleApprovePrn(req._id)} className="btn btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Verify PRN</button>
-                                <button onClick={() => setRejectingUser(req)} className="btn btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444', padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>Reject</button>
-                              </div>
-                            </td>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                        <thead>
+                          <tr style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600 }}>
+                            <th style={{ padding: '0.75rem 1rem' }}>Student / ETX ID</th>
+                            <th style={{ padding: '0.75rem 1rem' }}>PRN / Faculty ID</th>
+                            <th style={{ padding: '0.75rem 1rem' }}>Actions</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {prnRequests.map((req) => (
+                            <tr key={req._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                              <td style={{ padding: '0.75rem 1rem' }}>
+                                <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{req.name}</div>
+                                <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{req.etxId}</div>
+                              </td>
+                              <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-main)' }}>{req.prn || req.facultyId || 'Not Provided'}</td>
+                              <td style={{ padding: '0.75rem 1rem' }}>
+                                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                  <button onClick={() => handleApprovePrn(req._id)} className="btn btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}>Verify PRN</button>
+                                  <button onClick={() => setRejectingUser(req)} className="btn btn-outline" style={{ borderColor: '#FCA5A5', color: '#DC2626', padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}>Reject</button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </div>
@@ -743,8 +752,8 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                 {/* Department Section Header with Add Department Button */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                   <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <Building className="text-gradient" size={22} />
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
+                      <Building size={20} style={{ color: 'var(--color-primary)' }} />
                       Academic Departments & Technical Branches
                     </h3>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.2rem 0 0 0' }}>
@@ -763,24 +772,28 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
                   {departments.map((d) => (
-                    <div key={d.name} className="glass-card" style={{ padding: '1.5rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                        <div style={{ fontWeight: '700', fontSize: '1.1rem', color: 'var(--accent-purple)' }}>{d.name}</div>
-                        {d.code && <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{d.code}</span>}
+                    <div key={d.name} style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                        <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>{d.name}</div>
+                        {d.code && (
+                          <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '4px', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE', fontWeight: 600 }}>
+                            {d.code}
+                          </span>
+                        )}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                        <span>Students:</span> <span style={{ fontWeight: 'bold', color: 'white' }}>{d.students}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                        <span>Students:</span> <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{d.students}</span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>
-                        <span>Faculty Teachers:</span> <span style={{ fontWeight: 'bold', color: 'white' }}>{d.teachers}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                        <span>Faculty Teachers:</span> <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{d.teachers}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        <span>Dept Admins:</span> <span style={{ fontWeight: 'bold', color: 'var(--accent-emerald)' }}>{d.admins || 0}</span>
+                        <span>Dept Admins:</span> <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{d.admins || 0}</span>
                       </div>
                     </div>
                   ))}
                   {departments.length === 0 && (
-                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
+                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', gridColumn: '1 / -1' }}>
                       No departments configured. Click "+ Add Department / Branch" to add your institution branches.
                     </div>
                   )}
@@ -803,7 +816,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
             {activeTab === 'announcements' && (
               <div className="animate-fade-in">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h3>Institution Announcements</h3>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Institution Announcements</h3>
                   <button onClick={() => setShowCreateAnnouncement(true)} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
                     <Plus size={16} /> New Announcement
                   </button>
@@ -811,21 +824,21 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
                 <div style={{ display: 'grid', gap: '1rem' }}>
                   {announcements.map((a) => (
-                    <div key={a._id} className="glass-card-static" style={{ padding: '1.25rem' }}>
+                    <div key={a._id} style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                        <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--accent-purple)' }}>{a.title}</h4>
-                        <button onClick={() => handleDeleteAnnouncement(a._id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{a.title}</h4>
+                        <button onClick={() => handleDeleteAnnouncement(a._id)} style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', padding: '0.2rem' }}>
                           <Trash2 size={16} />
                         </button>
                       </div>
-                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', whiteSpace: 'pre-wrap' }}>{a.content}</p>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{a.content}</p>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         Posted on {new Date(a.createdAt).toLocaleDateString()} {a.department ? `• Target: ${a.department}` : ''}
                       </div>
                     </div>
                   ))}
                   {announcements.length === 0 && (
-                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
                       No announcements posted yet.
                     </div>
                   )}
@@ -835,17 +848,17 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
             {/* ─── 8. REPORTS VIEW ────────────────────────────────────────────── */}
             {activeTab === 'reports' && (
-              <div className="animate-fade-in glass-card-static" style={{ padding: '2rem', textAlign: 'center' }}>
-                <FileText size={48} style={{ color: 'var(--accent-purple)', marginBottom: '1rem' }} />
-                <h3>Institutional Performance & Placement Reports</h3>
-                <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto 1.5rem' }}>
-                  Generate and download verified institutional performance reports for NAAC accreditation, placement drives, and academic audits.
+              <div className="animate-fade-in" style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '2.5rem', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <FileText size={42} style={{ color: 'var(--color-primary)', marginBottom: '1rem' }} />
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.5rem' }}>Institutional Performance & Placement Reports</h3>
+                <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto 1.5rem', fontSize: '0.875rem', lineHeight: 1.5 }}>
+                  Generate and download verified institutional performance reports for accreditation, placement drives, and academic audits.
                 </p>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-                  <button onClick={() => alert('Exporting Placement & Readiness PDF...')} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <button onClick={() => alert('Exporting Placement & Readiness PDF...')} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
                     <Download size={16} /> Export Readiness Report (PDF)
                   </button>
-                  <button onClick={() => alert('Exporting Student Audit Roster CSV...')} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <button onClick={() => alert('Exporting Student Audit Roster CSV...')} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
                     <Download size={16} /> Export Student Roster (CSV)
                   </button>
                 </div>
@@ -854,23 +867,23 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
             {/* ─── 9. ANALYTICS VIEW ──────────────────────────────────────────── */}
             {activeTab === 'analytics' && (
-              <div className="animate-fade-in glass-card-static" style={{ padding: '2rem' }}>
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <BarChart3 size={22} style={{ color: 'var(--accent-purple)' }} /> Student Skill & Placement Readiness Distribution
+              <div className="animate-fade-in" style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                  <BarChart3 size={20} style={{ color: 'var(--color-primary)' }} /> Student Skill & Placement Readiness Distribution
                 </h3>
                 {stats ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-                    <div className="glass-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
-                      <div style={{ fontSize: '2.25rem', fontWeight: '800', color: 'var(--accent-purple)' }}>{stats.students || 0}</div>
-                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Total Enrolled Students</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+                    <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', textAlign: 'center' }}>
+                      <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--text-main)' }}>{stats.students || 0}</div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>Total Enrolled Students</div>
                     </div>
-                    <div className="glass-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
-                      <div style={{ fontSize: '2.25rem', fontWeight: '800', color: 'var(--accent-emerald)' }}>84%</div>
-                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Placement Readiness Rate</div>
+                    <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', textAlign: 'center' }}>
+                      <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--text-main)' }}>84%</div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>Placement Readiness Rate</div>
                     </div>
-                    <div className="glass-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
-                      <div style={{ fontSize: '2.25rem', fontWeight: '800', color: 'var(--accent-cyan)' }}>{stats.teachers || 0}</div>
-                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Faculty Evaluators</div>
+                    <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', textAlign: 'center' }}>
+                      <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--text-main)' }}>{stats.teachers || 0}</div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>Faculty Evaluators</div>
                     </div>
                   </div>
                 ) : (
@@ -883,7 +896,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
             {activeTab === 'documents' && (
               <div className="animate-fade-in">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h3>Shared Institution Documents</h3>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Shared Institution Documents</h3>
                   <button onClick={() => alert('Document upload modal activated')} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
                     <Upload size={16} /> Upload Document
                   </button>
@@ -891,21 +904,21 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
                 <div style={{ display: 'grid', gap: '0.75rem' }}>
                   {documents.map((doc) => (
-                    <div key={doc._id} className="glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem' }}>
+                    <div key={doc._id} style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <FolderOpen size={20} style={{ color: 'var(--accent-purple)' }} />
+                        <FolderOpen size={20} style={{ color: 'var(--color-primary)' }} />
                         <div>
-                          <div style={{ fontWeight: '600' }}>{doc.title}</div>
+                          <div style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>{doc.title}</div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{doc.category || 'General'}</div>
                         </div>
                       </div>
-                      <a href={doc.fileUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-outline" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', display: 'flex', gap: '0.2rem', alignItems: 'center' }}>
+                      <a href={doc.fileUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-outline" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
                         <ExternalLink size={12} /> View
                       </a>
                     </div>
                   ))}
                   {documents.length === 0 && (
-                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
                       No shared documents available.
                     </div>
                   )}
@@ -915,34 +928,36 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
             {/* ─── 11. AUDIT LOGS VIEW ───────────────────────────────────────── */}
             {activeTab === 'audit-logs' && (
-              <div className="animate-fade-in glass-card-static" style={{ padding: '1rem', overflowX: 'auto' }}>
+              <div className="animate-fade-in" style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', overflowX: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '0.75rem' }}>Timestamp</th>
-                      <th style={{ padding: '0.75rem' }}>User / Actor</th>
-                      <th style={{ padding: '0.75rem' }}>Action & Details</th>
-                      <th style={{ padding: '0.75rem' }}>IP Address</th>
+                    <tr style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600 }}>
+                      <th style={{ padding: '0.75rem 1rem' }}>Timestamp</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>User / Actor</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>Action & Details</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>IP Address</th>
                     </tr>
                   </thead>
                   <tbody>
                     {logs.map((log) => (
-                      <tr key={log._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{new Date(log.createdAt).toLocaleString()}</td>
-                        <td style={{ padding: '0.75rem' }}>
-                          <span style={{ fontWeight: '600' }}>{log.userId?.name || 'System'}</span>
+                      <tr key={log._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{new Date(log.createdAt).toLocaleString()}</td>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{log.userId?.name || 'System'}</span>
                           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{log.userId?.email || ''}</div>
                         </td>
-                        <td style={{ padding: '0.75rem' }}>
-                          <span style={{ color: 'var(--accent-purple)', fontWeight: '600', marginRight: '0.5rem' }}>{log.action}</span>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <span style={{ background: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE', padding: '0.15rem 0.45rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, marginRight: '0.5rem' }}>
+                            {log.action}
+                          </span>
                           <span style={{ color: 'var(--text-secondary)' }}>{log.details}</span>
                         </td>
-                        <td style={{ padding: '0.75rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{log.ipAddress || '127.0.0.1'}</td>
+                        <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{log.ipAddress || '127.0.0.1'}</td>
                       </tr>
                     ))}
                     {logs.length === 0 && (
                       <tr>
-                        <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No audit logs recorded.</td>
+                        <td colSpan={4} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>No audit logs recorded.</td>
                       </tr>
                     )}
                   </tbody>
@@ -955,16 +970,16 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
             {/* ─── 12. INSTITUTION SETTINGS VIEW ─────────────────────────────── */}
             {activeTab === 'settings' && (
-              <div className="animate-fade-in glass-card-static" style={{ padding: '2rem', maxWidth: '720px' }}>
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Settings size={22} style={{ color: 'var(--accent-purple)' }} /> Institution Profile & Configuration
+              <div className="animate-fade-in" style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '2rem', maxWidth: '720px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                  <Settings size={20} style={{ color: 'var(--color-primary)' }} /> Institution Profile & Configuration
                 </h3>
 
                 {/* ─── Student Registration Code Banner ─── */}
                 <div style={{
-                  background: 'rgba(168, 85, 247, 0.08)',
-                  border: '1px solid rgba(168, 85, 247, 0.3)',
-                  borderRadius: '10px',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
                   padding: '1.25rem',
                   marginBottom: '1.5rem',
                   display: 'flex',
@@ -974,11 +989,11 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                   flexWrap: 'wrap',
                 }}>
                   <div>
-                    <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#c084fc', marginBottom: '0.25rem' }}>
-                      🔑 Student Registration Code
+                    <div style={{ fontWeight: '600', fontSize: '0.95rem', color: 'var(--text-main)', marginBottom: '0.2rem' }}>
+                      Student Registration Code
                     </div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      Share this code with your students for fast multi-tenant registration & onboarding.
+                      Share this code with your students for multi-tenant registration & onboarding.
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -996,15 +1011,15 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                       return (
                         <>
                           <code style={{
-                            background: 'rgba(0, 0, 0, 0.4)',
-                            border: '1px solid rgba(168, 85, 247, 0.4)',
-                            padding: '0.5rem 1rem',
+                            background: '#FFFFFF',
+                            border: '1px solid #CBD5E1',
+                            padding: '0.45rem 0.85rem',
                             borderRadius: '6px',
                             fontFamily: 'monospace',
-                            fontSize: '1.1rem',
-                            fontWeight: 'bold',
-                            color: '#38bdf8',
-                            letterSpacing: '1px',
+                            fontSize: '1rem',
+                            fontWeight: '700',
+                            color: '#1E40AF',
+                            letterSpacing: '0.5px',
                           }}>
                             {activeRegistrationCode}
                           </code>
@@ -1019,7 +1034,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                                 alert('No Student Registration Code assigned yet.');
                               }
                             }}
-                            style={{ padding: '0.5rem 0.9rem', fontSize: '0.85rem' }}
+                            style={{ padding: '0.45rem 0.85rem', fontSize: '0.85rem' }}
                           >
                             Copy Code
                           </button>
@@ -1101,7 +1116,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                     </div>
                   </div>
 
-                  <button type="submit" className="btn btn-primary" style={{ justifySelf: 'start', padding: '0.6rem 1.5rem' }}>
+                  <button type="submit" className="btn btn-primary" style={{ justifySelf: 'start', padding: '0.6rem 1.5rem', marginTop: '0.5rem' }}>
                     Save Settings
                   </button>
                 </form>
@@ -1111,39 +1126,39 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
             {/* ─── 13. ADMIN PROFILE VIEW ────────────────────────────────────── */}
             {activeTab === 'profile' && (
               <>
-                <div className="animate-fade-in glass-card-static" style={{ padding: '2rem', maxWidth: '640px' }}>
-                  <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <UserCheck size={22} style={{ color: 'var(--accent-purple)' }} /> Administrator Profile
+                <div className="animate-fade-in" style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '2rem', maxWidth: '640px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    <UserCheck size={20} style={{ color: 'var(--color-primary)' }} /> Administrator Profile
                   </h3>
 
-                  <div style={{ display: 'grid', gap: '1rem', fontSize: '0.9rem' }}>
-                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div style={{ display: 'grid', gap: '1rem', fontSize: '0.875rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-color)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Full Name:</span>
-                      <span style={{ fontWeight: 'bold' }}>{currentUser?.name}</span>
+                      <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{currentUser?.name}</span>
                     </div>
-                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-color)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Official Email:</span>
-                      <span style={{ fontWeight: 'bold' }}>{currentUser?.email}</span>
+                      <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{currentUser?.email}</span>
                     </div>
-                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-color)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Designation:</span>
-                      <span>{currentUser?.designation || 'Academic Administrator'}</span>
+                      <span style={{ color: 'var(--text-main)' }}>{currentUser?.designation || 'Academic Administrator'}</span>
                     </div>
-                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-color)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Admin ID:</span>
-                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-cyan)', fontWeight: 'bold' }}>{currentUser?.adminId || currentUser?.adminLoginId || 'ETX-ADM-001'}</span>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--text-main)', fontWeight: '600' }}>{currentUser?.adminId || currentUser?.adminLoginId || 'ETX-ADM-001'}</span>
                     </div>
-                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-color)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Tenant ID:</span>
-                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)', fontWeight: 'bold' }}>{currentUser?.tenantId || currentUser?.institutionId?.tenantId || 'INST-SCOPED'}</span>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--text-main)', fontWeight: '600' }}>{currentUser?.tenantId || currentUser?.institutionId?.tenantId || 'INST-SCOPED'}</span>
                     </div>
-                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border-color)' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>ETX Identity ID:</span>
-                      <span style={{ fontFamily: 'monospace', color: 'var(--accent-emerald)' }}>{currentUser?.etxId}</span>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--text-main)' }}>{currentUser?.etxId}</span>
                     </div>
-                    <div style={{ display: 'flex', justify: 'space-between', padding: '0.75rem 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Roles & Privileges:</span>
-                      <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{userRoles.join(', ')}</span>
+                      <span style={{ textTransform: 'capitalize', fontWeight: '600', color: 'var(--text-main)' }}>{userRoles.join(', ')}</span>
                     </div>
                   </div>
                 </div>
@@ -1158,9 +1173,9 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
         {/* ─── MODAL: Edit User ────────────────────────────────────────────── */}
         {editUser && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-            <form onSubmit={handleUpdateUser} className="glass-card-static" style={{ width: '420px', padding: '2rem' }}>
-              <h3 style={{ marginBottom: '1.5rem' }}>Modify Account: {editUser.name}</h3>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '1rem' }}>
+            <form onSubmit={handleUpdateUser} style={{ width: '100%', maxWidth: '440px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.75rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)' }}>
+              <h3 style={{ marginBottom: '1.25rem', fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)' }}>Modify Account: {editUser.name}</h3>
               <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div className="input-group">
                   <label className="input-label">Full Name</label>
@@ -1211,13 +1226,13 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
         {/* ─── MODAL: Suspend User ───────────────────────────────────────── */}
         {suspendingUser && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-            <form onSubmit={handleToggleUserStatus} className="glass-card-static" style={{ width: '450px', padding: '2rem' }}>
-              <h3 style={{ color: suspendingUser.status === 'suspended' ? 'var(--accent-emerald)' : '#eab308', marginBottom: '1rem' }}>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '1rem' }}>
+            <form onSubmit={handleToggleUserStatus} style={{ width: '100%', maxWidth: '440px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.75rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)' }}>
+              <h3 style={{ color: suspendingUser.status === 'suspended' ? '#059669' : '#D97706', marginBottom: '0.75rem', fontSize: '1.15rem', fontWeight: 700 }}>
                 {suspendingUser.status === 'suspended' ? 'Reactivate Account' : 'Suspend Account'}
               </h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
-                Target user: <strong>{suspendingUser.name}</strong> ({suspendingUser.email})
+                Target user: <strong style={{ color: 'var(--text-main)' }}>{suspendingUser.name}</strong> ({suspendingUser.email})
               </p>
               {suspendingUser.status !== 'suspended' && (
                 <div className="input-group" style={{ marginBottom: '1.5rem' }}>
@@ -1234,7 +1249,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
               )}
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button type="button" onClick={() => setSuspendingUser(null)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Confirm</button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, background: suspendingUser.status === 'suspended' ? '#059669' : '#D97706', borderColor: suspendingUser.status === 'suspended' ? '#059669' : '#D97706' }}>Confirm</button>
               </div>
             </form>
           </div>
@@ -1242,9 +1257,9 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
         {/* ─── MODAL: Reject Verification ─────────────────────────────────── */}
         {rejectingUser && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-            <form onSubmit={handleRejectRole} className="glass-card-static" style={{ width: '450px', padding: '2rem' }}>
-              <h3 style={{ color: '#ef4444', marginBottom: '1rem' }}>Reject Verification: {rejectingUser.name}</h3>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '1rem' }}>
+            <form onSubmit={handleRejectRole} style={{ width: '100%', maxWidth: '440px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.75rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)' }}>
+              <h3 style={{ color: '#DC2626', marginBottom: '0.75rem', fontSize: '1.15rem', fontWeight: 700 }}>Reject Verification: {rejectingUser.name}</h3>
               <div className="input-group" style={{ marginBottom: '1.5rem' }}>
                 <label className="input-label">Reason for Rejection</label>
                 <textarea
@@ -1258,7 +1273,7 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
               </div>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button type="button" onClick={() => setRejectingUser(null)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#ef4444', borderColor: '#ef4444' }}>Reject</button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#DC2626', borderColor: '#DC2626' }}>Reject</button>
               </div>
             </form>
           </div>
@@ -1266,9 +1281,9 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
         {/* ─── MODAL: Create Announcement ─────────────────────────────────── */}
         {showCreateAnnouncement && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-            <form onSubmit={handleCreateAnnouncement} className="glass-card-static" style={{ width: '480px', padding: '2rem' }}>
-              <h3 style={{ marginBottom: '1.5rem' }}>New Institution Announcement</h3>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '1rem' }}>
+            <form onSubmit={handleCreateAnnouncement} style={{ width: '100%', maxWidth: '480px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.75rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)' }}>
+              <h3 style={{ marginBottom: '1.25rem', fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)' }}>New Institution Announcement</h3>
               <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div className="input-group">
                   <label className="input-label">Title *</label>
@@ -1303,28 +1318,28 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
 
         {/* ─── MODAL: Create Staff Account (Teacher / Recruiter) ─────────────── */}
         {showCreateStaffModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '1rem' }}>
-            <form onSubmit={handleCreateStaffUser} className="glass-card-static" style={{ width: '100%', maxWidth: '520px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <UserPlus className="text-purple-400" size={20} />
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '1rem' }}>
+            <form onSubmit={handleCreateStaffUser} style={{ width: '100%', maxWidth: '520px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.75rem', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
+                  <UserPlus size={18} style={{ color: 'var(--color-primary)' }} />
                   Provision Staff Account
                 </h3>
-                <button type="button" onClick={() => setShowCreateStaffModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.25rem' }}>✕</button>
+                <button type="button" onClick={() => setShowCreateStaffModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.25rem', padding: '0.2rem' }}>✕</button>
               </div>
 
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '1.25rem' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem', lineHeight: 1.45 }}>
                 Provision a staff account. An invitation email with an activation link will be sent to the user. No password is created by the admin.
               </p>
 
               {staffErrorMsg && (
-                <div style={{ padding: '0.75rem', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', borderRadius: '8px', color: '#fca5a5', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                <div style={{ padding: '0.75rem', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '6px', color: '#991B1B', fontSize: '0.8rem', marginBottom: '1rem' }}>
                   {staffErrorMsg}
                 </div>
               )}
 
               {staffSuccessMsg && (
-                <div style={{ padding: '0.75rem', background: 'rgba(16,185,129,0.15)', border: '1px solid #10b981', borderRadius: '8px', color: '#6ee7b7', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                <div style={{ padding: '0.75rem', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: '6px', color: '#065F46', fontSize: '0.8rem', marginBottom: '1rem' }}>
                   {staffSuccessMsg}
                 </div>
               )}

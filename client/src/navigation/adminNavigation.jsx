@@ -14,6 +14,7 @@ import {
   Settings,
   UserCheck,
   CreditCard,
+  Bell,
 } from 'lucide-react';
 
 export const adminNavItems = [
@@ -23,6 +24,7 @@ export const adminNavItems = [
   { id: 'departments', name: 'Departments', path: '/admin/departments', icon: <Building size={20} />, category: 'Academic' },
   { id: 'verifications', name: 'Verification Requests', path: '/admin/verifications', icon: <CheckSquare size={20} />, category: 'Academic' },
   { id: 'recruiters', name: 'Recruiters', path: '/admin/recruiters', icon: <Briefcase size={20} />, category: 'Industry' },
+  { id: 'notifications', name: 'Notifications', path: '/admin/notifications', icon: <Bell size={20} />, category: 'Reports' },
   { id: 'reports', name: 'Reports', path: '/admin/reports', icon: <FileText size={20} />, category: 'Reports' },
   { id: 'analytics', name: 'Analytics', path: '/admin/analytics', icon: <BarChart3 size={20} />, category: 'Reports' },
   { id: 'documents', name: 'Shared Documents', path: '/admin/documents', icon: <FolderOpen size={20} />, category: 'Reports' },

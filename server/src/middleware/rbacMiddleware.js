@@ -62,7 +62,7 @@ const requireOwner = (req, res, next) => {
     req.user.role === 'platform_owner' ||
     req.user.role === 'owner' ||
     req.user.adminId === 'ETX-OWNER-001' ||
-    req.user.email === (process.env.OWNER_EMAIL || 'owner@edutalentx.com').toLowerCase() ||
+    req.user.email === (process.env.OWNER_EMAIL || 'mayur1718khandare@gmail.com').toLowerCase() ||
     String(req.user.adminId || '').toUpperCase().startsWith('MAVI-OWNER') ||
     String(req.user.maviId || '').toUpperCase().startsWith('MAVI-OWNER') ||
     String(req.user.email || '').toLowerCase().startsWith('owner_');

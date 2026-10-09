@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, ArrowRight, ExternalLink } from 'lucide-react';
 import { NOTIFICATION_TYPES } from '../constants/placementConstants';
 import { useNotifications } from '../context/NotificationContext';
+import { AuthContext } from '../context/AuthContext';
+import { getNotificationRouteForRole } from '../utils/roleRouting';
 
 /**
  * NotificationBell — dropdown notification center for all layouts.
@@ -12,6 +14,7 @@ import { useNotifications } from '../context/NotificationContext';
  */
 const NotificationBell = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const {
     notifications,
     unreadCount,
@@ -79,7 +82,8 @@ const NotificationBell = () => {
 
   const handleViewAll = () => {
     setOpen(false);
-    navigate('/dashboard/notifications');
+    const targetRoute = getNotificationRouteForRole(user);
+    navigate(targetRoute);
   };
 
   const formatTime = (dateStr) => {
@@ -105,7 +109,7 @@ const NotificationBell = () => {
             position: 'fixed',
             top: `${dropdownPos.top}px`,
             right: `${dropdownPos.right}px`,
-            width: '380px',
+            width: 'min(calc(100vw - 1.5rem), 380px)',
             maxHeight: '520px',
             background: 'var(--bg-card)',
             border: '1px solid var(--border-color)',
@@ -136,7 +140,7 @@ const NotificationBell = () => {
               {unreadCount > 0 && (
                 <span
                   style={{
-                    background: 'var(--accent-purple, #8b5cf6)',
+                    background: 'var(--brand-blue, #2563EB)',
                     color: 'white',
                     fontSize: '0.68rem',
                     fontWeight: '700',
@@ -155,7 +159,7 @@ const NotificationBell = () => {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: 'var(--accent-cyan, #06b6d4)',
+                  color: 'var(--brand-blue, #2563EB)',
                   cursor: 'pointer',
                   fontSize: '0.8rem',
                   display: 'flex',
@@ -181,7 +185,7 @@ const NotificationBell = () => {
             ) : (
               previewList.map((n) => {
                 const typeConfig = NOTIFICATION_TYPES[n.type] || NOTIFICATION_TYPES.general;
-                const dotColor = typeConfig.color || 'var(--accent-purple)';
+                const dotColor = typeConfig.color || 'var(--brand-blue, #2563EB)';
 
                 return (
                   <div
@@ -189,20 +193,20 @@ const NotificationBell = () => {
                     onClick={() => handleNotificationClick(n)}
                     style={{
                       padding: '0.875rem 1.25rem',
-                      borderBottom: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.05))',
+                      borderBottom: '1px solid var(--border-color, #E5E7EB)',
                       cursor: 'pointer',
-                      background: n.isRead ? 'transparent' : 'rgba(139, 92, 246, 0.04)',
-                      transition: 'background 0.2s',
+                      background: n.isRead ? 'transparent' : 'rgba(37, 99, 235, 0.04)',
+                      transition: 'background 0.15s ease',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = n.isRead
-                        ? 'rgba(255, 255, 255, 0.03)'
-                        : 'rgba(139, 92, 246, 0.08)';
+                        ? '#F8F9FA'
+                        : 'rgba(37, 99, 235, 0.08)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = n.isRead
                         ? 'transparent'
-                        : 'rgba(139, 92, 246, 0.04)';
+                        : 'rgba(37, 99, 235, 0.04)';
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
@@ -213,8 +217,8 @@ const NotificationBell = () => {
                               width: '7px',
                               height: '7px',
                               borderRadius: '50%',
-                              background: n.isRead ? 'rgba(255, 255, 255, 0.2)' : dotColor,
-                              boxShadow: n.isRead ? 'none' : `0 0 6px ${dotColor}`,
+                              background: n.isRead ? '#E5E7EB' : dotColor,
+                              boxShadow: 'none',
                               flexShrink: 0,
                             }}
                           />
@@ -270,17 +274,17 @@ const NotificationBell = () => {
               style={{
                 background: 'none',
                 border: 'none',
-                color: 'var(--accent-purple, #8b5cf6)',
+                color: 'var(--brand-blue, #2563EB)',
                 fontSize: '0.825rem',
                 fontWeight: '600',
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
-                transition: 'color 0.2s',
+                transition: 'color 0.15s ease',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = '#c084fc'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--accent-purple, #8b5cf6)'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--brand-blue-hover, #1D4ED8)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--brand-blue, #2563EB)'; }}
             >
               <span>View All Notifications</span>
               <ArrowRight size={14} />
@@ -297,13 +301,13 @@ const NotificationBell = () => {
         onClick={handleOpen}
         style={{
           position: 'relative',
-          background: open ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+          background: open ? 'var(--brand-blue-light, #EFF6FF)' : 'transparent',
           border: 'none',
           cursor: 'pointer',
           padding: '0.5rem',
           borderRadius: '8px',
-          color: open ? 'var(--accent-purple)' : 'var(--text-secondary)',
-          transition: 'all 0.2s',
+          color: open ? 'var(--brand-blue, #2563EB)' : 'var(--text-secondary)',
+          transition: 'all 0.15s ease',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

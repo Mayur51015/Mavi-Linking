@@ -283,7 +283,7 @@ const verifyStudentItem = async (studentId, itemType, itemId, teacherId) => {
     await student.save();
   }
 
-  // Create notification for student
+  // Create notification & email for student
   const { createNotification } = require('./notificationService');
   await createNotification({
     recipientId: studentId,
@@ -292,6 +292,25 @@ const verifyStudentItem = async (studentId, itemType, itemId, teacherId) => {
     title: 'Verification Approved',
     message: `Your ${itemType} item has been verified by your instructor.`,
   });
+
+  try {
+    const teacher = await User.findById(teacherId).select('name');
+    if (student && student.email) {
+      const { sendAssignmentNotificationEmail } = require('../utils/sendEmail');
+      await sendAssignmentNotificationEmail({
+        to: student.email,
+        recipientUserId: student._id,
+        actorUserId: teacherId,
+        actorName: teacher?.name || 'Faculty Instructor',
+        actorRole: 'Teacher',
+        assignmentTitle: `Credential Verification Approved: ${itemType}`,
+        assignmentDetails: `Your instructor ${teacher?.name || ''} has reviewed and verified your ${itemType} credentials on EduTalentX.`,
+        assignmentType: 'ITEM_VERIFICATION',
+      });
+    }
+  } catch (emailErr) {
+    console.error('[TEACHER VERIFY EMAIL ERROR]', emailErr.message);
+  }
 
   return { success: true };
 };
@@ -315,6 +334,24 @@ const recommendStudent = async (studentId, recruiterId, teacherId) => {
     message: `${teacher.name} has recommended candidate ${student.name} (${student.preferredDomain || 'Software Developer'}) for recruitment.`,
     metadata: { studentId: student._id },
   });
+
+  try {
+    if (recruiter && recruiter.email) {
+      const { sendAssignmentNotificationEmail } = require('../utils/sendEmail');
+      await sendAssignmentNotificationEmail({
+        to: recruiter.email,
+        recipientUserId: recruiter._id,
+        actorUserId: teacherId,
+        actorName: teacher?.name || 'Faculty Instructor',
+        actorRole: 'Teacher',
+        assignmentTitle: `Candidate Recommendation: ${student.name}`,
+        assignmentDetails: `Instructor ${teacher?.name} has officially recommended candidate ${student.name} (${student.preferredDomain || 'Software Developer'}) for your consideration.`,
+        assignmentType: 'CANDIDATE_RECOMMENDATION',
+      });
+    }
+  } catch (emailErr) {
+    console.error('[TEACHER RECOMMEND EMAIL ERROR]', emailErr.message);
+  }
 
   return { success: true };
 };

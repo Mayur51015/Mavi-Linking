@@ -3,7 +3,7 @@ const User = require('../models/User');
 const Department = require('../models/Department');
 const Institution = require('../models/Institution');
 const AuditLog = require('../models/AuditLog');
-const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml } = require('../utils/sendEmail');
+const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml, getClientBaseUrl } = require('../utils/sendEmail');
 const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
 /**
@@ -52,7 +52,7 @@ const createDepartmentAdmin = async (req, res, next) => {
       }
     }
 
-    const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
+    const clientUrl = getClientBaseUrl(req);
 
     // 3. Handle Existing User Appointment or Re-Invitation
     const existingUser = await User.findOne({ email: lowerEmail });
@@ -113,6 +113,8 @@ const createDepartmentAdmin = async (req, res, next) => {
       const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;
       const emailResult = await sendAdminInvitationEmail({
         to: lowerEmail,
+        recipientUserId: existingUser._id,
+        actorUserId: req.user._id,
         name: existingUser.name,
         role: 'department_admin',
         institutionName: institution?.name || 'Authorized Institution',
@@ -256,6 +258,8 @@ const createDepartmentAdmin = async (req, res, next) => {
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;
     const emailResult = await sendAdminInvitationEmail({
       to: lowerEmail,
+      recipientUserId: newDeptAdmin._id,
+      actorUserId: req.user._id,
       name: newDeptAdmin.name,
       role: 'department_admin',
       institutionName: institution?.name || 'Authorized Institution',
@@ -598,11 +602,13 @@ const resendDepartmentAdminInvite = async (req, res, next) => {
     deptAdmin.invitedAt = new Date();
     await deptAdmin.save();
 
-    const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
+    const clientUrl = getClientBaseUrl(req);
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
       to: deptAdmin.email,
+      recipientUserId: deptAdmin._id,
+      actorUserId: req.user._id,
       name: deptAdmin.name,
       role: 'department_admin',
       institutionName: deptAdmin.institutionId?.name || 'Authorized Institution',

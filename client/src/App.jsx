@@ -9,7 +9,7 @@ const PageLoader = () => (
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'var(--bg-primary, #09090b)',
+    background: 'var(--bg-primary, #FFFFFF)',
   }}>
     <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <img
@@ -22,19 +22,18 @@ const PageLoader = () => (
           height: '52px',
           objectFit: 'contain',
           marginBottom: '1rem',
-          animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         }}
       />
       <div style={{
-        fontFamily: "'Outfit', 'Inter', sans-serif",
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
         fontWeight: 800,
         fontSize: '1.2rem',
-        color: 'var(--text-primary, #ffffff)',
+        color: 'var(--text-primary, #111111)',
         letterSpacing: '-0.02em',
       }}>
-        EduTalent<span style={{ color: 'var(--brand-blue, #3B82F6)' }}>X</span>
+        EduTalent<span style={{ color: 'var(--brand-blue, #2563EB)' }}>X</span>
       </div>
-      <p style={{ color: 'var(--text-secondary, #a1a1aa)', fontSize: '0.8rem', marginTop: '0.35rem' }}>
+      <p style={{ color: 'var(--text-secondary, #4B5563)', fontSize: '0.8rem', marginTop: '0.35rem' }}>
         Education, Skills, Intelligence &amp; Hiring
       </p>
     </div>
@@ -142,6 +141,11 @@ const App = () => {
                 <Dashboard />
               </ProtectedRoute>
             } />
+            <Route path="/profile/edit" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/link" element={
               <ProtectedRoute roles={['user', 'admin']}>
                 <AccountLinking />
@@ -203,12 +207,12 @@ const App = () => {
               </ProtectedRoute>
             } />
             <Route path="/dashboard/notifications" element={
-              <ProtectedRoute roles={['user', 'admin']}>
+              <ProtectedRoute>
                 <Notifications />
               </ProtectedRoute>
             } />
             <Route path="/notifications" element={
-              <ProtectedRoute roles={['user', 'admin']}>
+              <ProtectedRoute>
                 <Notifications />
               </ProtectedRoute>
             } />
@@ -290,6 +294,11 @@ const App = () => {
                 <RecruitmentPipelinePage />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/recruiter/notifications" element={
+              <ProtectedRoute roles={['recruiter', 'admin', 'super_admin', 'platform_owner']}>
+                <Notifications />
+              </ProtectedRoute>
+            } />
 
             {/* ─── Teacher Dashboard ─────────────────────────────── */}
             <Route path="/dashboard/teacher" element={
@@ -332,6 +341,11 @@ const App = () => {
                 <TeacherDocuments />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/teacher/notifications" element={
+              <ProtectedRoute roles={['teacher', 'admin', 'super_admin', 'platform_owner']}>
+                <Notifications />
+              </ProtectedRoute>
+            } />
 
             <Route path="/department-admin" element={
               <ProtectedRoute roles={['department_admin', 'institution_admin', 'super_admin', 'platform_owner', 'admin']}>
@@ -341,6 +355,16 @@ const App = () => {
             <Route path="/dashboard/department-admin" element={
               <ProtectedRoute roles={['department_admin', 'institution_admin', 'super_admin', 'platform_owner', 'admin']}>
                 <DepartmentAdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/department-admin/notifications" element={
+              <ProtectedRoute roles={['department_admin', 'institution_admin', 'super_admin', 'platform_owner', 'admin']}>
+                <Notifications />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/department-admin/notifications" element={
+              <ProtectedRoute roles={['department_admin', 'institution_admin', 'super_admin', 'platform_owner', 'admin']}>
+                <Notifications />
               </ProtectedRoute>
             } />
 
@@ -369,6 +393,7 @@ const App = () => {
             <Route path="/admin/audit" element={<AdminRoute><AdminDashboard activeTab="audit-logs" /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminDashboard activeTab="settings" /></AdminRoute>} />
             <Route path="/admin/profile" element={<AdminRoute><AdminDashboard activeTab="profile" /></AdminRoute>} />
+            <Route path="/admin/notifications" element={<AdminRoute><Notifications /></AdminRoute>} />
             <Route path="/dashboard/admin" element={<AdminRoute><AdminDashboard activeTab="overview" /></AdminRoute>} />
 
             {/* ─── Super Admin Portal ───────────────────────────────────── */}
@@ -388,6 +413,7 @@ const App = () => {
             <Route path="/super-admin/audit" element={<SuperAdminRoute><SuperAdminDashboard activeTab="audit-logs" /></SuperAdminRoute>} />
             <Route path="/super-admin/settings" element={<SuperAdminRoute><SuperAdminDashboard activeTab="settings" /></SuperAdminRoute>} />
             <Route path="/super-admin/profile" element={<SuperAdminRoute><SuperAdminDashboard activeTab="profile" /></SuperAdminRoute>} />
+            <Route path="/super-admin/notifications" element={<SuperAdminRoute><Notifications /></SuperAdminRoute>} />
 
             {/* ─── Platform Owner Portal ─────────────────────────────────── */}
             <Route path="/owner/login" element={<OwnerLogin />} />
@@ -408,6 +434,7 @@ const App = () => {
             <Route path="/owner/audit" element={<OwnerRoute><PlatformOwnerDashboard activeTab="audit" /></OwnerRoute>} />
             <Route path="/owner/settings" element={<OwnerRoute><PlatformOwnerDashboard activeTab="settings" /></OwnerRoute>} />
             <Route path="/owner/profile" element={<OwnerRoute><PlatformOwnerDashboard activeTab="settings" /></OwnerRoute>} />
+            <Route path="/owner/notifications" element={<OwnerRoute><Notifications /></OwnerRoute>} />
 
             {/* ─── Communication Inbox ────────────────────────────── */}
             <Route path="/dashboard/messages" element={

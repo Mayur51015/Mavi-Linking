@@ -571,6 +571,10 @@ const generateEtxIdCode = () => {
 
 // ─── Pre-save: Auto-generate etxId, sync roles & hash password ───────────
 userSchema.pre('save', async function (next) {
+  if (this._skipPasswordHash) {
+    return next();
+  }
+
   // Ensure googleId is unset if null or empty string to preserve sparse index
   if (this.googleId === null || this.googleId === '') {
     this.googleId = undefined;
@@ -601,6 +605,11 @@ userSchema.pre('save', async function (next) {
   // Only hash if password field was modified and present
   if (!this.isModified('password') || !this.password) return next();
 
+  // If the password is already a valid bcrypt hash, do not hash it again (prevents double-hashing bug)
+  if (/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(this.password)) {
+    return next();
+  }
+
   try {
     const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
@@ -612,7 +621,35 @@ userSchema.pre('save', async function (next) {
 
 // ─── Instance method: Compare candidate password with stored hash ───────────
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  if (!candidatePassword || !this.password) {
+    return false;
+  }
+
+  try {
+    const isHashMatch = await bcrypt.compare(candidatePassword, this.password);
+    if (isHashMatch) {
+      return true;
+    }
+  } catch (error) {
+    // Legacy or malformed credential values may not be bcrypt hashes.
+    // Continue with the plaintext fallback below so existing users can log in.
+  }
+
+  // Backward compatibility: if the stored value is still plain text from older
+  // data imports or seed scripts, accept it once and rehash it immediately.
+  if (this.password === candidatePassword) {
+    try {
+      const salt = await bcrypt.genSalt(12);
+      this.password = await bcrypt.hash(candidatePassword, salt);
+      this._skipPasswordHash = true;
+      await this.save({ validateModifiedOnly: false });
+      return true;
+    } finally {
+      this._skipPasswordHash = false;
+    }
+  }
+
+  return false;
 };
 
 // ─── Instance method: Generate signed JWT ───────────────────────────────────

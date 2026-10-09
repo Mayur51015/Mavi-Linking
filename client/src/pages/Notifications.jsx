@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell,
@@ -19,19 +19,11 @@ import {
   Filter,
   RotateCw,
 } from 'lucide-react';
-import UserLayout from '../layouts/UserLayout';
+import RoleBasedDashboardLayout from '../components/shell/RoleBasedDashboardLayout';
 import { useNotifications } from '../context/NotificationContext';
+import { AuthContext } from '../context/AuthContext';
+import { getUserPrimaryRole, getRoleDisplayInfo, getRoleCategoryTabs } from '../utils/roleRouting';
 
-const CATEGORY_TABS = [
-  { id: 'all', label: 'All', icon: <Filter size={15} /> },
-  { id: 'unread', label: 'Unread', icon: <Bell size={15} /> },
-  { id: 'account', label: 'Account', icon: <ShieldCheck size={15} /> },
-  { id: 'institution', label: 'Institution', icon: <Building2 size={15} /> },
-  { id: 'career', label: 'Career', icon: <Compass size={15} /> },
-  { id: 'platform', label: 'Platform', icon: <GitBranch size={15} /> },
-  { id: 'placement', label: 'Placement', icon: <Briefcase size={15} /> },
-  { id: 'system', label: 'System', icon: <Info size={15} /> },
-];
 
 const getCategoryIcon = (category, type) => {
   switch (category) {
@@ -83,6 +75,10 @@ const getDateGroup = (dateStr) => {
 
 const Notifications = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const userRole = getUserPrimaryRole(user);
+  const roleDisplay = getRoleDisplayInfo(user);
+
   const {
     notifications,
     unreadCount,
@@ -99,6 +95,43 @@ const Notifications = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
+
+  // Role-scoped category tabs
+  const categoryTabs = useMemo(() => {
+    const rawTabs = getRoleCategoryTabs(userRole);
+    return rawTabs.map((tab) => {
+      let icon = <Filter size={15} />;
+      if (tab.id === 'unread') icon = <Bell size={15} />;
+      else if (tab.id === 'account') icon = <ShieldCheck size={15} />;
+      else if (tab.id === 'institution') icon = <Building2 size={15} />;
+      else if (tab.id === 'career') icon = <Compass size={15} />;
+      else if (tab.id === 'platform') icon = <GitBranch size={15} />;
+      else if (tab.id === 'placement') icon = <Briefcase size={15} />;
+      else if (tab.id === 'system') icon = <Info size={15} />;
+      return { ...tab, icon };
+    });
+  }, [userRole]);
+
+  // Role-tailored subtitle
+  const subtitle = useMemo(() => {
+    switch (userRole) {
+      case 'owner':
+        return 'Platform-wide security events, institutional tenant alerts, licensing, and system audit logs.';
+      case 'super_admin':
+        return 'Multi-tenant alerts, institution verifications, license allocations, and governance notifications.';
+      case 'institution_admin':
+        return 'Institution operations, faculty and department updates, placement drives, and compliance notices.';
+      case 'department_admin':
+        return 'Department verifications, student approvals, drive participation, and academic notices.';
+      case 'teacher':
+        return 'Student verification requests, placement drive updates, department notices, and student readiness alerts.';
+      case 'recruiter':
+        return 'Candidate job applications, shortlisted talent, interview requests, and placement drive schedules.';
+      case 'student':
+      default:
+        return 'Stay updated with your applications, drive invitations, career milestones, and verified credentials.';
+    }
+  }, [userRole]);
 
   // Debounce search input
   useEffect(() => {
@@ -178,7 +211,7 @@ const Notifications = () => {
   }, [notifications]);
 
   return (
-    <UserLayout>
+    <RoleBasedDashboardLayout>
       <div className="notifications-container" style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '3rem' }}>
         {/* Page Header */}
         <div
@@ -192,7 +225,7 @@ const Notifications = () => {
           }}
         >
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
               <div
                 style={{
                   width: '38px',
@@ -211,11 +244,21 @@ const Notifications = () => {
               <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white', margin: 0 }}>
                 Notifications
               </h1>
+              <span
+                className={`badge ${roleDisplay.badgeColor || 'badge-primary'}`}
+                style={{
+                  fontSize: '0.75rem',
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '999px',
+                }}
+              >
+                {roleDisplay.badgeLabel}
+              </span>
               {unreadCount > 0 && (
                 <span
                   className="badge badge-primary"
                   style={{
-                    background: 'var(--accent-purple)',
+                    background: 'var(--brand-blue, #2563EB)',
                     color: 'white',
                     fontWeight: '700',
                     fontSize: '0.75rem',
@@ -228,7 +271,7 @@ const Notifications = () => {
               )}
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
-              Stay updated with your account, career progress, platform activity, and important EduTalentX updates.
+              {subtitle}
             </p>
           </div>
 
@@ -246,7 +289,7 @@ const Notifications = () => {
                   padding: '0.5rem 0.9rem',
                 }}
               >
-                <CheckCheck size={16} style={{ color: 'var(--accent-cyan)' }} />
+                <CheckCheck size={16} style={{ color: 'var(--brand-blue, #2563EB)' }} />
                 <span>Mark all as read</span>
               </button>
             )}
@@ -260,7 +303,7 @@ const Notifications = () => {
                 gap: '0.4rem',
                 fontSize: '0.85rem',
                 padding: '0.5rem 0.9rem',
-                borderColor: 'var(--border-subtle)',
+                borderColor: 'var(--border-color)',
                 color: 'var(--text-muted)',
               }}
             >
@@ -273,9 +316,9 @@ const Notifications = () => {
         {/* Controls: Category Filter Tabs & Search Bar */}
         <div
           style={{
-            background: 'var(--bg-card, rgba(24, 24, 27, 0.7))',
-            borderRadius: '16px',
-            border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+            background: 'var(--bg-card, #FFFFFF)',
+            borderRadius: 'var(--radius-md, 8px)',
+            border: '1px solid var(--border-color, #E5E7EB)',
             padding: '1rem 1.25rem',
             marginBottom: '1.5rem',
             display: 'flex',
@@ -303,9 +346,9 @@ const Notifications = () => {
               style={{
                 width: '100%',
                 padding: '0.625rem 1rem 0.625rem 2.5rem',
-                borderRadius: '10px',
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm, 6px)',
+                background: 'var(--bg-input, #FFFFFF)',
+                border: '1px solid var(--border-color, #E5E7EB)',
                 color: 'var(--text-primary)',
                 fontSize: '0.875rem',
                 outline: 'none',
@@ -323,7 +366,7 @@ const Notifications = () => {
               paddingBottom: '0.25rem',
             }}
           >
-            {CATEGORY_TABS.map((tab) => {
+            {categoryTabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
@@ -338,15 +381,15 @@ const Notifications = () => {
                     fontSize: '0.8rem',
                     fontWeight: isActive ? '600' : '400',
                     background: isActive
-                      ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(236, 72, 153, 0.25) 100%)'
-                      : 'var(--bg-card-hover)',
-                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      ? 'var(--brand-blue-light, #EFF6FF)'
+                      : 'var(--bg-card, #FFFFFF)',
+                    color: isActive ? 'var(--brand-blue, #2563EB)' : 'var(--text-secondary)',
                     border: isActive
-                      ? '1px solid var(--accent-purple)'
-                      : '1px solid var(--border-color)',
+                      ? '1px solid var(--brand-blue, #2563EB)'
+                      : '1px solid var(--border-color, #E5E7EB)',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   {tab.icon}
@@ -416,12 +459,12 @@ const Notifications = () => {
                 width: '64px',
                 height: '64px',
                 borderRadius: '50%',
-                background: 'rgba(139, 92, 246, 0.1)',
+                background: 'var(--brand-blue-light, #EFF6FF)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 1.25rem',
-                color: 'var(--accent-purple)',
+                color: 'var(--brand-blue, #2563EB)',
               }}
             >
               <BellOff size={28} />
@@ -476,29 +519,25 @@ const Notifications = () => {
                           alignItems: 'flex-start',
                           gap: '1rem',
                           padding: '1rem 1.25rem',
-                          borderRadius: '12px',
+                          borderRadius: 'var(--radius-md, 8px)',
                           background: item.isRead
-                            ? 'var(--bg-card)'
-                            : 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, var(--bg-card) 100%)',
+                            ? 'var(--bg-card, #FFFFFF)'
+                            : 'var(--bg-subtle, #F8F9FA)',
                           border: item.isRead
-                            ? '1px solid var(--border-color)'
-                            : '1px solid var(--accent-purple)',
-                          boxShadow: item.isRead
-                            ? 'none'
-                            : '0 4px 20px rgba(139, 92, 246, 0.08)',
+                            ? '1px solid var(--border-color, #E5E7EB)'
+                            : '1px solid var(--border-hover, #D1D5DB)',
+                          boxShadow: 'none',
                           cursor: hasLink || !item.isRead ? 'pointer' : 'default',
-                          transition: 'all 0.2s ease',
+                          transition: 'border-color 0.15s ease',
                           position: 'relative',
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-1px)';
-                          e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+                          e.currentTarget.style.borderColor = 'var(--brand-blue, #2563EB)';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
                           e.currentTarget.style.borderColor = item.isRead
-                            ? 'var(--border-color)'
-                            : 'var(--accent-purple)';
+                            ? 'var(--border-color, #E5E7EB)'
+                            : 'var(--border-hover, #D1D5DB)';
                         }}
                       >
                         {/* Category Icon */}
@@ -506,7 +545,7 @@ const Notifications = () => {
                           style={{
                             width: '40px',
                             height: '40px',
-                            borderRadius: '10px',
+                            borderRadius: '6px',
                             background: bg,
                             color: color,
                             display: 'flex',
@@ -537,8 +576,7 @@ const Notifications = () => {
                                     width: '7px',
                                     height: '7px',
                                     borderRadius: '50%',
-                                    background: 'var(--accent-cyan, #06b6d4)',
-                                    boxShadow: '0 0 8px #06b6d4',
+                                    background: 'var(--brand-blue, #2563EB)',
                                     flexShrink: 0,
                                   }}
                                 />
@@ -587,7 +625,7 @@ const Notifications = () => {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '0.3rem',
-                                color: 'var(--accent-purple)',
+                                color: 'var(--brand-blue, #2563EB)',
                                 fontSize: '0.75rem',
                                 fontWeight: '600',
                                 marginTop: '0.4rem',
@@ -627,7 +665,7 @@ const Notifications = () => {
           </div>
         )}
       </div>
-    </UserLayout>
+    </RoleBasedDashboardLayout>
   );
 };
 

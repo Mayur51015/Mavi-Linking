@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Project = require('../models/Project');
 const Insight = require('../models/Insight');
@@ -8,19 +9,27 @@ const Analytics = require('../models/Analytics');
 const normalizeUsername = (s) => (s || '').toString().trim().toLowerCase();
 
 const findUserByHandle = async (username) => {
-  const usernameRegex = new RegExp(`^${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+  const cleanUsername = (username || '').toString().trim();
+  const usernameRegex = new RegExp(`^${cleanUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
   
+  const searchConditions = [
+    { etxId: usernameRegex },
+    { maviId: usernameRegex },
+    { username: usernameRegex },
+    { email: usernameRegex },
+    { 'platforms.github.username': usernameRegex },
+    { 'platforms.leetcode.username': usernameRegex },
+    { 'platforms.codeforces.username': usernameRegex },
+    { 'platforms.stackoverflow.username': usernameRegex },
+  ];
+
+  if (mongoose.Types.ObjectId.isValid(cleanUsername)) {
+    searchConditions.push({ _id: new mongoose.Types.ObjectId(cleanUsername) });
+  }
+
   const user = await User.findOne({
     isPublic: { $ne: false },
-    $or: [
-      { etxId: usernameRegex },
-      { username: usernameRegex },
-      { email: usernameRegex },
-      { 'platforms.github.username': usernameRegex },
-      { 'platforms.leetcode.username': usernameRegex },
-      { 'platforms.codeforces.username': usernameRegex },
-      { 'platforms.stackoverflow.username': usernameRegex },
-    ],
+    $or: searchConditions,
   }).select('-password -__v');
 
   return user;

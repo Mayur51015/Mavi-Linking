@@ -27,7 +27,7 @@ import {
   X
 } from 'lucide-react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../api/axios';
 import RecentOpportunitiesTable from '../components/RecentOpportunitiesTable';
 import RecentApplicationsCard from '../components/RecentApplicationsCard';
@@ -923,16 +923,28 @@ const Dashboard = () => {
             Track your growth, skills, and opportunities.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={openEditProfileModal}
-          className="btn btn-secondary btn-sm"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1rem', fontSize: '0.8125rem' }}
-          title="Edit Profile"
-        >
-          <Edit2 size={14} style={{ color: 'var(--brand-blue)' }} />
-          <span>Edit Profile</span>
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <Link
+            to={`/u/${user?.username || user?.etxId || user?.platforms?.github?.username || user?._id || 'me'}`}
+            target="_blank"
+            className="btn btn-outline btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 0.85rem', fontSize: '0.8125rem' }}
+            title="View Public Profile"
+          >
+            <Eye size={14} />
+            <span>View Public Profile</span>
+          </Link>
+          <button
+            type="button"
+            onClick={openEditProfileModal}
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1rem', fontSize: '0.8125rem' }}
+            title="Edit Profile"
+          >
+            <Edit2 size={14} style={{ color: 'var(--brand-blue)' }} />
+            <span>Edit Profile</span>
+          </button>
+        </div>
       </header>
 
       {/* Tabs (only shown if not on overview) */}

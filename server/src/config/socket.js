@@ -30,8 +30,8 @@ module.exports = {
       if (!origin) return true;
       const cleanOrigin = origin.replace(/\/+$/, '');
       if (allowedOrigins.some((o) => o.replace(/\/+$/, '') === cleanOrigin)) return true;
-      if (/^https:\/\/mavi-linking(-[a-z0-9-]+)?-mayur-khandares-projects\.vercel\.app$/i.test(cleanOrigin)) return true;
-      if (/^https:\/\/mavi-linking(-[a-z0-9-]+)?\.vercel\.app$/i.test(cleanOrigin)) return true;
+      if (/^https:\/\/(mavi-linking|edutalentx)(-[a-z0-9-]+)?-mayur-khandares-projects\.vercel\.app$/i.test(cleanOrigin)) return true;
+      if (/^https:\/\/(mavi-linking|edutalentx)(-[a-z0-9-]+)?\.vercel\.app$/i.test(cleanOrigin)) return true;
       return false;
     };
 

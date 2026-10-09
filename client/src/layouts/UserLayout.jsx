@@ -12,7 +12,7 @@ const UserLayout = ({ children }) => {
   const location = useLocation();
   const [showVerify, setShowVerify] = useState(false);
 
-  const publicUsername = user?.username || user?.platforms?.github?.username;
+  const publicUsername = user?.username || user?.etxId || user?.platforms?.github?.username || user?._id;
 
   const quickActions = [
     {

@@ -23,8 +23,12 @@ const QRModal = ({ username, onClose }) => {
   }, [username]);
 
   const handleCopyLink = () => {
-    if (qrData?.targetUrl) {
-      navigator.clipboard.writeText(qrData.targetUrl);
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const shareUrl = origin
+      ? `${origin}/u/${encodeURIComponent(username)}?ref=qr`
+      : (qrData?.targetUrl || '');
+    if (shareUrl) {
+      navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

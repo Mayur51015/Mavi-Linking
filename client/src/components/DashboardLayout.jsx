@@ -30,7 +30,7 @@ const DashboardLayout = ({ children }) => {
     { name: 'College Mode', path: '/dashboard/college', icon: <GraduationCap size={20} /> },
   ];
 
-  const publicUsername = user?.username || user?.platforms?.github?.username;
+  const publicUsername = user?.username || user?.etxId || user?.platforms?.github?.username || user?._id;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>

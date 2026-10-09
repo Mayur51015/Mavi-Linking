@@ -12,7 +12,7 @@ const UserSidebar = ({ sidebarOpen, setSidebarOpen, onOpenVerify }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const publicUsername = user?.username || user?.platforms?.github?.username;
+  const publicUsername = user?.username || user?.etxId || user?.platforms?.github?.username || user?._id;
   const etxIdDisplay = user?.etxId || (user?._id ? `ETX-${user._id.slice(-8).toUpperCase()}` : '');
 
 

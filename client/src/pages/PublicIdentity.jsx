@@ -38,16 +38,25 @@ const PublicIdentity = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await api.get(`/public/u/${username}`);
+        const handle = (username === 'me' && user)
+          ? (user.username || user.etxId || user.platforms?.github?.username || user._id)
+          : username;
+        if (!handle) {
+          setError('Developer profile not found.');
+          setLoading(false);
+          return;
+        }
+        const res = await api.get(`/public/u/${handle}`);
         setData(res.data.data);
-      } catch {
-        setError('Developer profile not found.');
+      } catch (err) {
+        console.error('Error fetching public profile:', err);
+        setError(err.response?.data?.message || 'Developer profile not found.');
       } finally {
         setLoading(false);
       }
     };
     fetchProfile();
-  }, [username]);
+  }, [username, user]);
 
 
 if (loading) return (
@@ -366,7 +375,7 @@ if (loading) return (
         {/* Projects Tab */}
         {activeTab === 'projects' && (
           <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.4 }}>
-            {projects.length === 0 ? (
+            {(!projects || projects.length === 0) ? (
               <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)', border: '1px dashed var(--border-color)', borderRadius: '12px' }}>
                 <Briefcase size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
                 <p>No projects showcased yet.</p>
@@ -378,7 +387,7 @@ if (loading) return (
                     <h3 style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>{proj.title}</h3>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', flex: 1 }}>{proj.description}</p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '1rem' }}>
-                      {proj.technologies.map((tech, idx) => (
+                      {(proj.technologies || []).map((tech, idx) => (
                         <span key={idx} className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{tech}</span>
                       ))}
                     </div>

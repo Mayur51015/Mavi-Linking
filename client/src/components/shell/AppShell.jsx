@@ -106,7 +106,7 @@ const AppShell = ({
     navigate('/login');
   };
 
-  const publicUsername = user?.username || user?.platforms?.github?.username;
+  const publicUsername = user?.username || user?.etxId || user?.platforms?.github?.username || user?._id;
   const etxIdDisplay = user?.etxId || (user?._id ? `ETX-${user._id.slice(-8).toUpperCase()}` : '');
 
   // Filter navigation items for search palette
@@ -713,11 +713,9 @@ const AppShell = ({
                     <button
                       onClick={() => {
                         setUserMenuOpen(false);
-                        const publicUser = user?.username || user?.platforms?.github?.username;
+                        const publicUser = user?.username || user?.etxId || user?.platforms?.github?.username || user?._id;
                         if (publicUser) {
                           navigate(`/u/${publicUser}`);
-                        } else if (user?._id) {
-                          navigate(`/portfolio/${user._id}`);
                         } else {
                           const currentPath = location.pathname + location.search;
                           const returnTo = (currentPath.includes('edit=true') || currentPath === '/profile/edit') ? undefined : currentPath;

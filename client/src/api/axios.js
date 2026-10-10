@@ -44,9 +44,15 @@ const api = axios.create({
   withCredentials: true,
 });
 
+let isAuthRedirecting = false;
+
 // ─── Request Interceptor — Attach JWT ───────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
+    // Strip leading /api if baseURL already ends with /api to avoid /api/api double-prefix
+    if (config.url && config.url.startsWith('/api/') && config.baseURL?.endsWith('/api')) {
+      config.url = config.url.substring(4);
+    }
     const isPublicAuthEndpoint = config.url && (
       config.url.endsWith('/auth/login') ||
       config.url.endsWith('/auth/register') ||
@@ -108,17 +114,20 @@ api.interceptors.response.use(
         ];
         const isAuthPage = authPages.some((p) => path === p || path.startsWith('/public/'));
 
-        if (hadToken && !isAuthPage && typeof window !== 'undefined') {
+        if (hadToken && !isAuthPage && !error.config?.skipAuthRedirect && typeof window !== 'undefined' && !isAuthRedirecting) {
+          isAuthRedirecting = true;
           notify('warning', 'Your session has expired. Please log in again.');
-          if (path.startsWith('/owner')) {
-            window.location.href = '/owner/login';
-          } else if (path.startsWith('/super-admin')) {
-            window.location.href = '/super-admin/login';
-          } else if (path.startsWith('/admin')) {
-            window.location.href = '/admin/login';
-          } else {
-            window.location.href = '/login';
-          }
+          setTimeout(() => {
+            if (path.startsWith('/owner')) {
+              window.location.href = '/owner/login';
+            } else if (path.startsWith('/super-admin')) {
+              window.location.href = '/super-admin/login';
+            } else if (path.startsWith('/admin')) {
+              window.location.href = '/admin/login';
+            } else {
+              window.location.href = '/login';
+            }
+          }, 300);
         }
       }
     } else if (status === 403) {

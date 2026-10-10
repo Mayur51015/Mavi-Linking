@@ -9,10 +9,11 @@ import UserLayout from '../layouts/UserLayout';
 import PlacementBadge from '../components/PlacementBadge';
 import { PLACEMENT_STATUSES } from '../constants/placementConstants';
 import { AuthContext } from '../context/AuthContext';
+import { getUserPrimaryRole } from '../utils/roleRouting';
 import api from '../api/axios';
 
 const StudentAvailability = () => {
-  const { refreshUser } = useContext(AuthContext);
+  const { user, refreshUser } = useContext(AuthContext);
   const [availability, setAvailability] = useState(null);
   const [pipelines, setPipelines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,9 +24,23 @@ const StudentAvailability = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const primaryRole = user ? getUserPrimaryRole(user) : null;
+        const isStudent = primaryRole === 'student';
+        const normalizedAccountStatus = String(user?.accountStatus || '').toUpperCase();
+        const isApprovedStudent = Boolean(
+          user &&
+          isStudent &&
+          !['PENDING_ADMIN_APPROVAL', 'PENDING_VERIFICATION', 'PENDING', 'REJECTED'].includes(normalizedAccountStatus) &&
+          user?.emailVerified !== false
+        );
+
+        const pipelinePromise = isApprovedStudent
+          ? api.get('/placement/student/pipelines').catch(() => ({ data: { data: [] } }))
+          : Promise.resolve({ data: { data: [] } });
+
         const [avRes, plRes] = await Promise.all([
           api.get('/placement/availability'),
-          api.get('/placement/student/pipelines'),
+          pipelinePromise,
         ]);
         const data = avRes.data.data;
         setAvailability(data);
@@ -39,7 +54,7 @@ const StudentAvailability = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [user]);
 
   const handleSave = async () => {
     setSaving(true);

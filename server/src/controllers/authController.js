@@ -54,31 +54,36 @@ const notifyInstitutionAdminsOfStudentVerification = async ({ user, institutionI
 
     const { sendEmail, generateInstitutionAdminStudentVerificationEmailHtml } = require('../utils/sendEmail');
 
-    for (const adminEmail of adminEmails) {
-      const adminObj = admins.find((a) => a.email.toLowerCase().trim() === adminEmail);
-      const emailHtml = generateInstitutionAdminStudentVerificationEmailHtml({
-        adminName: adminObj?.name || 'Institution Administrator',
-        studentName: user.name,
-        studentEmail: user.email,
-        etxId: user.etxId,
-        prn: user.prn,
-        institutionName: institution.name,
-        verificationLink: adminVerificationLink,
-      });
+    await Promise.allSettled(
+      Array.from(adminEmails).map(async (adminEmail) => {
+        const adminObj = admins.find((a) => a.email.toLowerCase().trim() === adminEmail);
+        const emailHtml = generateInstitutionAdminStudentVerificationEmailHtml({
+          adminName: adminObj?.name || 'Institution Administrator',
+          studentName: user.name,
+          studentEmail: user.email,
+          etxId: user.etxId,
+          prn: user.prn,
+          institutionName: institution.name,
+          verificationLink: adminVerificationLink,
+        });
 
-      sendEmail({
-        to: adminEmail,
-        recipientUserId: adminObj?._id || null,
-        actorUserId: user._id,
-        templateName: 'student-verification-admin-notice',
-        subject: `EduTalentX — ETX ID Verification Request for Student ${user.name} [${user.etxId}]`,
-        html: emailHtml,
-      }).then(() => {
-        console.log(`[INSTITUTION ADMIN NOTIFIED] Dispatched verification request to admin ${adminEmail} for student ETX ID ${user.etxId}`);
-      }).catch((err) => {
-        console.error(`[EMAIL ERROR] Failed to send admin verification notice to ${adminEmail}:`, err.message);
-      });
-    }
+        try {
+          const res = await sendEmail({
+            to: adminEmail,
+            recipientUserId: adminObj?._id || null,
+            actorUserId: user._id,
+            templateName: 'student-verification-admin-notice',
+            subject: `EduTalentX — ETX ID Verification Request for Student ${user.name} [${user.etxId}]`,
+            html: emailHtml,
+          });
+          if (res.success) {
+            console.log(`[INSTITUTION ADMIN NOTIFIED] Dispatched verification request to admin ${adminEmail} for student ETX ID ${user.etxId}`);
+          }
+        } catch (err) {
+          console.error(`[EMAIL ERROR] Failed to send admin verification notice to ${adminEmail}:`, err.message);
+        }
+      })
+    );
   } catch (err) {
     console.error('[INSTITUTION ADMIN NOTIFICATION ERROR]', err.message);
   }
@@ -957,12 +962,13 @@ const verifyEmail = async (req, res, next) => {
     // Send confirmation email to student that account is verified and active
     const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
     const { sendEmail } = require('../utils/sendEmail');
-    sendEmail({
-      to: user.email,
-      recipientUserId: user._id,
-      templateName: 'account-activated-confirmation',
-      subject: '🎉 Your EduTalentX Account has been Verified & Activated!',
-      html: `
+    try {
+      const emailRes = await sendEmail({
+        to: user.email,
+        recipientUserId: user._id,
+        templateName: 'account-activated-confirmation',
+        subject: '🎉 Your EduTalentX Account has been Verified & Activated!',
+        html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -1001,9 +1007,13 @@ const verifyEmail = async (req, res, next) => {
         </body>
         </html>
       `,
-    }).catch((emailErr) => {
+      });
+      if (!emailRes.success) {
+        console.warn(`[ACTIVATION EMAIL WARNING] Confirmation email delivery status: ${emailRes.status} for ${user.email} (${emailRes.error})`);
+      }
+    } catch (emailErr) {
       console.error('[EMAIL ERROR] Failed to send activation confirmation to student:', emailErr.message);
-    });
+    }
 
     try {
       await AuditLog.create({

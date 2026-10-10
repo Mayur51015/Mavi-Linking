@@ -5,6 +5,15 @@ dotenv.config({
   path: path.resolve(__dirname, '..', '.env'),
 });
 
+// Process-level crash guards to prevent unhandled background task rejections from terminating the process
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err.message, err.stack);
+});
+
 
 const express = require('express');
 const cors = require('cors');
@@ -91,6 +100,8 @@ const defaultAllowedOrigins = [
   'http://127.0.0.1:3000',
   'https://mavi-linking-mq7d.vercel.app',
   'https://mavi-linking-mq7d-hcv3uvrk7-mayur-khandares-projects.vercel.app',
+  'https://edutalentx.com',
+  'https://www.edutalentx.com',
 ];
 
 const envAllowedOrigins = [
@@ -109,9 +120,10 @@ const isOriginAllowed = (origin) => {
   if (!origin) return true; // Allow direct server-to-server, health checks, postman, webhooks
   const cleanOrigin = origin.replace(/\/+$/, '');
   if (allowedOrigins.some((o) => o.replace(/\/+$/, '') === cleanOrigin)) return true;
-  // Support explicit project-specific Vercel preview URLs
+  // Support explicit project-specific Vercel preview and production URLs
   if (/^https:\/\/(mavi-linking|edutalentx)(-[a-z0-9-]+)?-mayur-khandares-projects\.vercel\.app$/i.test(cleanOrigin)) return true;
   if (/^https:\/\/(mavi-linking|edutalentx)(-[a-z0-9-]+)?\.vercel\.app$/i.test(cleanOrigin)) return true;
+  if (/^https:\/\/([a-z0-9-]+\.)?edutalentx\.com$/i.test(cleanOrigin)) return true;
   return false;
 };
 
@@ -161,14 +173,17 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/public', express.static(path.join(__dirname, '..', 'public')));
 
 // ─── Health Check ───────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
+const healthHandler = (req, res) => {
   res.status(200).json({
     success: true,
+    status: 'ok',
     message: 'EduTalentX API is running',
-    environment: process.env.NODE_ENV,
+    environment: process.env.NODE_ENV || 'production',
     timestamp: new Date().toISOString(),
   });
-});
+};
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 // ─── API Routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
@@ -495,10 +510,12 @@ const startServer = async () => {
       process.exit(1);
     });
 
-    // Listen on PORT without restricting to IPv4 '0.0.0.0' so dual-stack (IPv6 [::1] and IPv4 127.0.0.1) both work seamlessly
-    server.listen(PORT, () => {
+    // Listen on PORT and bind to HOST (0.0.0.0 by default in containers/Render)
+    const HOST = process.env.HOST || '0.0.0.0';
+    server.listen(PORT, HOST, () => {
       console.log(`\n🚀 MaVi Linking API Server`);
       console.log(`   Environment: ${process.env.NODE_ENV}`);
+      console.log(`   Host:        ${HOST}`);
       console.log(`   Port:        ${PORT}`);
       console.log(`   Health:      http://localhost:${PORT}/api/health\n`);
 

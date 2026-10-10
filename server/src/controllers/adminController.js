@@ -2329,13 +2329,14 @@ const approveStudentAccount = async (req, res, next) => {
 
     // Dispatch Email Notification to Student
     const { sendEmail } = require('../utils/sendEmail');
-    sendEmail({
-      to: student.email,
-      recipientUserId: student._id,
-      actorUserId: req.user._id,
-      subject: 'Your EduTalentX account has been approved!',
-      templateName: 'student-approval',
-      html: `
+    try {
+      const emailRes = await sendEmail({
+        to: student.email,
+        recipientUserId: student._id,
+        actorUserId: req.user._id,
+        subject: 'Your EduTalentX account has been approved!',
+        templateName: 'student-approval',
+        html: `
         <div style="font-family: Arial, sans-serif; background: #09090b; color: #f4f4f5; padding: 24px; border-radius: 8px;">
           <h2 style="color: #a855f7;">Account Approved 🎉</h2>
           <p>Hello <strong>${student.name}</strong>,</p>
@@ -2346,7 +2347,13 @@ const approveStudentAccount = async (req, res, next) => {
           </div>
         </div>
       `,
-    }).catch((err) => console.error('[EMAIL ERROR]', err.message));
+      });
+      if (!emailRes.success) {
+        console.warn(`[STUDENT APPROVAL EMAIL WARNING] Email delivery status: ${emailRes.status} for ${student.email} (${emailRes.error})`);
+      }
+    } catch (err) {
+      console.error('[EMAIL ERROR]', err.message);
+    }
 
     res.status(200).json({
       success: true,
@@ -2456,13 +2463,14 @@ const rejectStudentAccount = async (req, res, next) => {
 
     // Email Notification
     const { sendEmail } = require('../utils/sendEmail');
-    sendEmail({
-      to: student.email,
-      recipientUserId: student._id,
-      actorUserId: req.user._id,
-      subject: 'Your EduTalentX account registration requires attention',
-      templateName: 'student-rejection',
-      html: `
+    try {
+      const emailRes = await sendEmail({
+        to: student.email,
+        recipientUserId: student._id,
+        actorUserId: req.user._id,
+        subject: 'Your EduTalentX account registration requires attention',
+        templateName: 'student-rejection',
+        html: `
         <div style="font-family: Arial, sans-serif; background: #09090b; color: #f4f4f5; padding: 24px; border-radius: 8px;">
           <h2 style="color: #ef4444;">Registration Decision Notice</h2>
           <p>Hello <strong>${student.name}</strong>,</p>
@@ -2473,7 +2481,13 @@ const rejectStudentAccount = async (req, res, next) => {
           <p>If you believe this is an error, please contact your department or institution administrator.</p>
         </div>
       `,
-    }).catch((err) => console.error('[EMAIL ERROR]', err.message));
+      });
+      if (!emailRes.success) {
+        console.warn(`[STUDENT REJECTION EMAIL WARNING] Email delivery status: ${emailRes.status} for ${student.email} (${emailRes.error})`);
+      }
+    } catch (err) {
+      console.error('[EMAIL ERROR]', err.message);
+    }
 
     res.status(200).json({
       success: true,

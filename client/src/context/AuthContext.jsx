@@ -23,7 +23,12 @@ export const AuthProvider = ({ children }) => {
         setUser(res.data.data.user);
       } catch (error) {
         console.error('Error fetching user', error);
-        localStorage.removeItem('token');
+        // Only discard token if the server explicitly rejected the authentication (401 or 403)
+        // Do NOT wipe token on transient network errors, cold starts, or timeouts
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+        }
       } finally {
         setLoading(false);
       }

@@ -66,34 +66,33 @@ const getTransporter = async (forceFresh = false) => {
   if (emailUser && emailPass) {
     const isGmail = emailHost.includes('gmail') || process.env.EMAIL_SERVICE === 'gmail';
 
-    // For Gmail: Port 465 SSL direct connection without persistent pooling.
-    // This completely eliminates stale idle socket timeouts (read ECONNRESET)
-    // while maintaining rapid transactional delivery.
-    const transportConfig = isGmail
-      ? {
-          host: 'smtp.gmail.com',
-          port: 465,
-          secure: true,
-          auth: { user: emailUser, pass: emailPass },
-          connectionTimeout: 15000,
-          greetingTimeout: 10000,
-          socketTimeout: 15000,
-        }
-      : {
-          host: emailHost,
-          port: emailPort,
-          secure: emailPort === 465 || process.env.SMTP_SECURE === 'true',
-          auth: { user: emailUser, pass: emailPass },
-          connectionTimeout: 15000,
-          greetingTimeout: 10000,
-          socketTimeout: 15000,
-          tls: {
-            rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
-          },
-        };
+    // If an explicit port is set (e.g. SMTP_PORT=587 or EMAIL_PORT=587), respect it.
+    // Otherwise, default Gmail to port 465 (direct SSL) and generic SMTP to emailPort (default 587)
+    const explicitPort = process.env.EMAIL_PORT || process.env.SMTP_PORT;
+    const targetPort = explicitPort ? parseInt(explicitPort, 10) : (isGmail ? 465 : emailPort);
+    const isSecure = targetPort === 465 || process.env.SMTP_SECURE === 'true';
+
+    const transportConfig = {
+      host: isGmail ? 'smtp.gmail.com' : emailHost,
+      port: targetPort,
+      secure: isSecure,
+      auth: { user: emailUser, pass: emailPass },
+      connectionTimeout: 15000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+      ...(isSecure ? {} : {
+        tls: {
+          rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
+        },
+      }),
+    };
 
     cachedTransporter = nodemailer.createTransport(transportConfig);
     return cachedTransporter;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ [EMAIL CONFIG ERROR] Missing SMTP credentials! Set SMTP_USER / EMAIL_USER and SMTP_PASS / EMAIL_PASS in Render environment variables for email delivery.');
   }
 
   // Development/Test fallback to Ethereal if no credentials provided
@@ -113,6 +112,16 @@ const getTransporter = async (forceFresh = false) => {
  */
 const verifySmtpConnection = async () => {
   try {
+    const emailUser = (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim();
+    const emailPass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').trim();
+    if (!emailUser || !emailPass) {
+      return {
+        success: false,
+        status: 'EMAIL_NOT_CONFIGURED',
+        code: 'MISSING_CREDENTIALS',
+        error: 'SMTP credentials missing: configure SMTP_USER and SMTP_PASS (or EMAIL_USER and EMAIL_PASS)',
+      };
+    }
     const transporter = await getTransporter();
     await transporter.verify();
     return { success: true, status: 'SMTP_CONNECTED' };

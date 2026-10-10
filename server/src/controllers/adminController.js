@@ -406,7 +406,79 @@ const updateUser = async (req, res, next) => {
     if (name) updateFields.name = name.trim();
     if (email) updateFields.email = email.toLowerCase().trim();
     if (status) updateFields.status = status;
-    if (departmentId !== undefined) updateFields.departmentId = departmentId;
+
+    if (departmentId !== undefined) {
+      const isClearing =
+        departmentId === null ||
+        departmentId === '' ||
+        departmentId === 'unassigned' ||
+        departmentId === 'None';
+
+      if (isClearing) {
+        updateFields.departmentId = null;
+        updateFields['university.department'] = '';
+      } else {
+        const mongoose = require('mongoose');
+        if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+          return res.status(400).json({
+            success: false,
+            code: 'INVALID_DEPARTMENT_ID',
+            message: 'Invalid department ID format.',
+          });
+        }
+
+        const Department = require('../models/Department');
+        const department = await Department.findById(departmentId);
+        if (!department) {
+          return res.status(404).json({
+            success: false,
+            code: 'DEPARTMENT_NOT_FOUND',
+            message: 'Department not found.',
+          });
+        }
+
+        // Institution-level data boundary verification
+        const actorInstId = req.institutionScope?.institutionId || req.user.institutionId;
+        const actorIsSuper =
+          req.isSuperAdmin ||
+          req.user.role === 'super_admin' ||
+          req.user.role === 'platform_owner' ||
+          req.user.role === 'owner' ||
+          (Array.isArray(req.user.roles) && (req.user.roles.includes('super_admin') || req.user.roles.includes('platform_owner')));
+
+        if (!actorIsSuper && actorInstId) {
+          const actorInstStr = actorInstId.toString();
+          if (department.institutionId.toString() !== actorInstStr) {
+            return res.status(403).json({
+              success: false,
+              code: 'CROSS_INSTITUTION_DEPARTMENT_DENIED',
+              message: 'Forbidden. Department belongs to another institution.',
+            });
+          }
+          if (userToUpdate.institutionId && userToUpdate.institutionId.toString() !== actorInstStr) {
+            return res.status(403).json({
+              success: false,
+              code: 'CROSS_INSTITUTION_ACCESS_DENIED',
+              message: 'Forbidden. Target user belongs to another institution.',
+            });
+          }
+        }
+
+        if (department.status === 'archived') {
+          return res.status(400).json({
+            success: false,
+            code: 'DEPARTMENT_ARCHIVED',
+            message: 'Cannot assign user to an archived department.',
+          });
+        }
+
+        updateFields.departmentId = department._id;
+        updateFields['university.department'] = department.name;
+        if (!userToUpdate.institutionId && actorInstId) {
+          updateFields.institutionId = actorInstId;
+        }
+      }
+    }
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
@@ -414,8 +486,8 @@ const updateUser = async (req, res, next) => {
       { new: true, runValidators: true }
     )
       .select('-password')
-      .populate('institutionId', 'name code')
-      .populate('departmentId', 'name code');
+      .populate('institutionId', 'name code domain tenantId')
+      .populate('departmentId', 'name code description status');
 
     await ActivityLog.create({
       userId: req.user._id,
@@ -429,6 +501,183 @@ const updateUser = async (req, res, next) => {
       success: true,
       message: 'User updated successfully',
       data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Assign or Reassign a faculty member to a department within the admin's institution
+ * @route   PUT /api/admin/users/:id/department
+ * @route   POST /api/admin/faculty/assign-department
+ * @access  Private (Institution Admin, Super Admin, Platform Owner)
+ */
+const assignFacultyDepartment = async (req, res, next) => {
+  try {
+    const facultyId = req.params.id || req.body.facultyId || req.body.userId;
+    const { departmentId } = req.body;
+
+    if (!facultyId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Faculty member ID is required.',
+      });
+    }
+
+    // 1. Verify Administrative Authority
+    const actorRole = req.user.role;
+    const actorRoles = req.user.roles || [actorRole];
+    const isOwnerOrSuper =
+      actorRoles.includes('platform_owner') ||
+      actorRoles.includes('owner') ||
+      actorRoles.includes('super_admin') ||
+      req.isSuperAdmin;
+    const isInstAdmin =
+      isOwnerOrSuper ||
+      actorRoles.includes('institution_admin') ||
+      actorRoles.includes('admin') ||
+      req.isInstitutionAdmin;
+
+    if (!isInstAdmin) {
+      return res.status(403).json({
+        success: false,
+        code: 'UNAUTHORIZED_FACULTY_ASSIGNMENT',
+        message: 'Forbidden. You do not have authorization to assign faculty members.',
+      });
+    }
+
+    // 2. Derive Permitted Institution Scope from Authenticated Actor (Never trust client input)
+    let actorInstId = req.institutionScope?.institutionId || req.user.institutionId;
+    if (typeof actorInstId === 'object' && actorInstId?._id) {
+      actorInstId = actorInstId._id;
+    }
+
+    if (!isOwnerOrSuper && !actorInstId) {
+      return res.status(403).json({
+        success: false,
+        code: 'NO_INSTITUTION_SCOPE',
+        message: 'Forbidden. You are not assigned to an active institution scope.',
+      });
+    }
+
+    // 3. Load Target Faculty User
+    const faculty = await User.findById(facultyId);
+    if (!faculty) {
+      return res.status(404).json({
+        success: false,
+        message: 'Faculty member not found.',
+      });
+    }
+
+    // 4. Verify Faculty Belongs to Actor's Institution (Tenant Boundary)
+    if (!isOwnerOrSuper) {
+      const facultyInstId = faculty.institutionId?.toString();
+      const actorInstIdStr = actorInstId.toString();
+
+      if (facultyInstId && facultyInstId !== actorInstIdStr) {
+        return res.status(403).json({
+          success: false,
+          code: 'CROSS_INSTITUTION_ACCESS_DENIED',
+          message: 'Forbidden. Faculty member belongs to another institution.',
+        });
+      }
+
+      // If faculty didn't have institutionId set yet, associate with admin's institution
+      if (!faculty.institutionId) {
+        faculty.institutionId = actorInstId;
+        faculty.tenantId = req.institutionScope?.tenantId || req.user.tenantId || '';
+      }
+    }
+
+    // 5. Handle Department Assignment or Unassignment
+    let assignedDepartment = null;
+    const isClearing =
+      departmentId === null ||
+      departmentId === '' ||
+      departmentId === 'unassigned' ||
+      departmentId === 'None';
+
+    if (isClearing) {
+      faculty.departmentId = null;
+      if (faculty.university) {
+        faculty.university.department = '';
+      }
+    } else {
+      // Validate ObjectId format
+      const mongoose = require('mongoose');
+      if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+        return res.status(400).json({
+          success: false,
+          code: 'INVALID_DEPARTMENT_ID',
+          message: 'Invalid department ID format.',
+        });
+      }
+
+      const Department = require('../models/Department');
+      assignedDepartment = await Department.findById(departmentId);
+      if (!assignedDepartment) {
+        return res.status(404).json({
+          success: false,
+          code: 'DEPARTMENT_NOT_FOUND',
+          message: 'Department not found.',
+        });
+      }
+
+      // Validate Department Belongs to the Same Institution
+      if (!isOwnerOrSuper) {
+        const deptInstIdStr = assignedDepartment.institutionId?.toString();
+        const actorInstIdStr = actorInstId.toString();
+
+        if (deptInstIdStr !== actorInstIdStr) {
+          return res.status(403).json({
+            success: false,
+            code: 'CROSS_INSTITUTION_DEPARTMENT_DENIED',
+            message: 'Forbidden. Department belongs to another institution.',
+          });
+        }
+      }
+
+      // Check eligibility (not archived)
+      if (assignedDepartment.status === 'archived') {
+        return res.status(400).json({
+          success: false,
+          code: 'DEPARTMENT_ARCHIVED',
+          message: 'Cannot assign faculty to an archived department.',
+        });
+      }
+
+      faculty.departmentId = assignedDepartment._id;
+      faculty.university = faculty.university || {};
+      faculty.university.department = assignedDepartment.name;
+    }
+
+    await faculty.save();
+
+    // Populate for response
+    await faculty.populate('institutionId', 'name code domain tenantId');
+    await faculty.populate('departmentId', 'name code description status');
+
+    // Audit Logging
+    try {
+      const ActivityLog = require('../models/ActivityLog');
+      await ActivityLog.create({
+        userId: req.user._id,
+        action: 'FACULTY_DEPARTMENT_ASSIGNED',
+        details: `Admin ${req.user.email} assigned faculty ${faculty.email} (${faculty.name}) to department ${assignedDepartment ? assignedDepartment.name : 'Unassigned'}`,
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+      });
+    } catch (_) {}
+
+    res.status(200).json({
+      success: true,
+      message: assignedDepartment
+        ? `Faculty member ${faculty.name} successfully assigned to ${assignedDepartment.name}.`
+        : `Faculty member ${faculty.name} department assignment cleared.`,
+      data: {
+        user: faculty,
+      },
     });
   } catch (error) {
     next(error);
@@ -1422,19 +1671,30 @@ const createStaffUser = async (req, res, next) => {
       }
     }
 
-    // Handle Department validation for Department Admin role
+    // Handle Department validation for Department Admin or Teacher role
     let selectedDepartment = null;
+    const targetDeptId = req.body.departmentId || req.body.department;
     if (lowerRole === 'department_admin') {
-      const targetDeptId = req.body.departmentId;
       if (!targetDeptId) {
         return res.status(400).json({ success: false, message: 'Department selection is required for Department Admin account.' });
       }
+    }
+
+    if (targetDeptId) {
       const Department = require('../models/Department');
-      selectedDepartment = await Department.findById(targetDeptId);
-      if (!selectedDepartment) {
+      const mongoose = require('mongoose');
+      if (mongoose.Types.ObjectId.isValid(targetDeptId)) {
+        selectedDepartment = await Department.findById(targetDeptId);
+      } else {
+        selectedDepartment = await Department.findOne({
+          name: { $regex: new RegExp(`^${targetDeptId.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+          ...(targetInstId ? { institutionId: targetInstId } : {}),
+        });
+      }
+      if (!selectedDepartment && lowerRole === 'department_admin') {
         return res.status(404).json({ success: false, message: 'Selected department not found.' });
       }
-      if (targetInstId && selectedDepartment.institutionId.toString() !== targetInstId.toString()) {
+      if (selectedDepartment && targetInstId && selectedDepartment.institutionId.toString() !== targetInstId.toString()) {
         return res.status(403).json({ success: false, message: 'Forbidden. Department does not belong to your authorized institution.' });
       }
     }
@@ -1450,7 +1710,11 @@ const createStaffUser = async (req, res, next) => {
 
       if (targetInst?._id) existingUser.institutionId = targetInst._id;
       if (targetInst?.tenantId) existingUser.tenantId = targetInst.tenantId;
-      if (selectedDepartment?._id) existingUser.departmentId = selectedDepartment._id;
+      if (selectedDepartment?._id) {
+        existingUser.departmentId = selectedDepartment._id;
+        existingUser.university = existingUser.university || {};
+        existingUser.university.department = selectedDepartment.name;
+      }
       if (designation) existingUser.designation = designation.trim();
       if (phone) existingUser.phone = phone.trim();
       if (companyName && lowerRole === 'recruiter') existingUser.companyName = companyName.trim();
@@ -2527,5 +2791,6 @@ module.exports = {
   getPendingStudentApprovals,
   approveStudentAccount,
   rejectStudentAccount,
+  assignFacultyDepartment,
 };
 

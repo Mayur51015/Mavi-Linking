@@ -43,6 +43,8 @@ import { AuthContext } from '../../context/AuthContext';
 import StudentProfileEditorModal from '../../components/admin/StudentProfileEditorModal';
 import DepartmentAdminManager from '../../components/admin/DepartmentAdminManager';
 import CreateDepartmentModal from '../../components/admin/CreateDepartmentModal';
+import EditDepartmentModal from '../../components/admin/EditDepartmentModal';
+import FacultyDepartmentAssignModal from '../../components/admin/FacultyDepartmentAssignModal';
 import UserLifecycleTable from '../../components/admin/UserLifecycleTable';
 import AdminBilling from './AdminBilling';
 
@@ -50,6 +52,8 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
   const { user: currentUser } = useContext(AuthContext);
   const [selectedStudentForProfileEdit, setSelectedStudentForProfileEdit] = useState(null);
   const [showCreateDeptModal, setShowCreateDeptModal] = useState(false);
+  const [editingDept, setEditingDept] = useState(null);
+  const [showAssignFacultyModal, setShowAssignFacultyModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -94,12 +98,17 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
   const [institutionData, setInstitutionData] = useState(null);
   const [allInstitutions, setAllInstitutions] = useState([]);
 
-  // Fetch all institutions for administrative dropdowns
+  // Fetch all institutions and departments for administrative dropdowns
   useEffect(() => {
     api.get('/admin/institutions')
       .then(res => {
         const list = Array.isArray(res.data?.data?.institutions) ? res.data.data.institutions : Array.isArray(res.data?.data) ? res.data.data : [];
         setAllInstitutions(list);
+      })
+      .catch(() => {});
+    api.get('/admin/departments')
+      .then(res => {
+        setDepartments(res.data?.data || []);
       })
       .catch(() => {});
   }, []);
@@ -181,16 +190,28 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
         const deptParam = filterDepartment ? `&department=${filterDepartment}` : '';
         const statusParam = filterStatus ? `&status=${filterStatus}` : '';
         const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
-        const res = await api.get(`/admin/users?role=user&page=${page}&limit=20${deptParam}${statusParam}${searchParam}`);
-        setStudents(res.data?.data?.users || []);
-        setPagination(res.data?.data?.pagination || { page: 1, pages: 1, total: 0 });
+        const [usersRes, deptsRes] = await Promise.all([
+          api.get(`/admin/users?role=user&page=${page}&limit=20${deptParam}${statusParam}${searchParam}`),
+          api.get('/admin/departments').catch(() => null),
+        ]);
+        setStudents(usersRes.data?.data?.users || []);
+        setPagination(usersRes.data?.data?.pagination || { page: 1, pages: 1, total: 0 });
+        if (deptsRes?.data?.data) {
+          setDepartments(deptsRes.data.data);
+        }
       } else if (activeTab === 'teachers') {
         const deptParam = filterDepartment ? `&department=${filterDepartment}` : '';
         const statusParam = filterStatus ? `&status=${filterStatus}` : '';
         const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
-        const res = await api.get(`/admin/users?role=teacher&page=${page}&limit=20${deptParam}${statusParam}${searchParam}`);
-        setTeachers(res.data?.data?.users || []);
-        setPagination(res.data?.data?.pagination || { page: 1, pages: 1, total: 0 });
+        const [usersRes, deptsRes] = await Promise.all([
+          api.get(`/admin/users?role=teacher&page=${page}&limit=20${deptParam}${statusParam}${searchParam}`),
+          api.get('/admin/departments').catch(() => null),
+        ]);
+        setTeachers(usersRes.data?.data?.users || []);
+        setPagination(usersRes.data?.data?.pagination || { page: 1, pages: 1, total: 0 });
+        if (deptsRes?.data?.data) {
+          setDepartments(deptsRes.data.data);
+        }
       } else if (activeTab === 'recruiters') {
         const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
         const res = await api.get(`/admin/users?role=recruiter&page=${page}&limit=20${searchParam}`);
@@ -606,16 +627,32 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                     <h2 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>Faculty & Teacher Provisioning</h2>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0 }}>Teacher accounts are admin-provisioned via secure email invitations</p>
                   </div>
-                  <button
-                    onClick={() => {
-                      setStaffForm((prev) => ({ ...prev, role: 'teacher', identifierType: 'FACULTY_ID' }));
-                      setShowCreateStaffModal(true);
-                    }}
-                    className="btn btn-primary"
-                    style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.85rem' }}
-                  >
-                    <UserPlus size={16} /> Provision Teacher Account
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => setShowAssignFacultyModal(true)}
+                      className="btn btn-outline"
+                      style={{
+                        display: 'flex',
+                        gap: '0.4rem',
+                        alignItems: 'center',
+                        fontSize: '0.85rem',
+                        borderColor: 'var(--brand-blue, #2563EB)',
+                        color: 'var(--brand-blue, #2563EB)',
+                      }}
+                    >
+                      <Building size={15} /> Assign Faculty to Dept
+                    </button>
+                    <button
+                      onClick={() => {
+                        setStaffForm((prev) => ({ ...prev, role: 'teacher', identifierType: 'FACULTY_ID' }));
+                        setShowCreateStaffModal(true);
+                      }}
+                      className="btn btn-primary"
+                      style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.85rem' }}
+                    >
+                      <UserPlus size={16} /> Provision Teacher Account
+                    </button>
+                  </div>
                 </div>
 
                 <UserLifecycleTable
@@ -626,6 +663,18 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                   loading={loading}
                   currentUserRole="institution_admin"
                 />
+
+                {showAssignFacultyModal && (
+                  <FacultyDepartmentAssignModal
+                    facultyList={teachers}
+                    departments={departments}
+                    onClose={() => setShowAssignFacultyModal(false)}
+                    onSuccess={() => {
+                      setShowAssignFacultyModal(false);
+                      loadTabData();
+                    }}
+                  />
+                )}
               </div>
             )}
 
@@ -770,31 +819,103 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                   </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
                   {departments.map((d) => (
-                    <div key={d.name} style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                        <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>{d.name}</div>
-                        {d.code && (
-                          <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '4px', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE', fontWeight: 600 }}>
-                            {d.code}
-                          </span>
-                        )}
+                    <div key={d._id || d.name} style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                          <div>
+                            <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>{d.name}</div>
+                            {d.description && (
+                              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem', lineHeight: '1.3' }}>
+                                {d.description}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                            {d.code && (
+                              <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '4px', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE', fontWeight: 600 }}>
+                                {d.code}
+                              </span>
+                            )}
+                            {d.status && d.status !== 'active' && (
+                              <span style={{ fontSize: '0.68rem', padding: '0.15rem 0.35rem', borderRadius: '4px', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', fontWeight: 600, textTransform: 'capitalize' }}>
+                                {d.status}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '1rem 0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Enrolled Students:</span>
+                            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{d.students || 0}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Faculty Teachers:</span>
+                            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{d.teachers || 0}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Department Admins:</span>
+                            <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{d.admins || 0}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-                        <span>Students:</span> <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{d.students}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-                        <span>Faculty Teachers:</span> <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{d.teachers}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        <span>Dept Admins:</span> <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{d.admins || 0}</span>
+
+                      {/* Card Actions: Edit, View Faculty, View Students (No Delete) */}
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)', marginTop: '0.5rem' }}>
+                        <button
+                          onClick={() => setEditingDept(d)}
+                          className="btn btn-outline"
+                          title="Edit Department Details"
+                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                        >
+                          <Edit size={12} /> Edit
+                        </button>
+                        <button
+                          onClick={() => {
+                            setFilterDepartment(d.name);
+                            navigate('/admin/teachers');
+                          }}
+                          className="btn btn-outline"
+                          title="View Faculty in this Department"
+                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', borderColor: 'var(--brand-blue, #2563EB)', color: 'var(--brand-blue, #2563EB)' }}
+                        >
+                          <GraduationCap size={12} /> Faculty ({d.teachers || 0})
+                        </button>
+                        <button
+                          onClick={() => {
+                            setFilterDepartment(d.name);
+                            navigate('/admin/students');
+                          }}
+                          className="btn btn-outline"
+                          title="View Students in this Department"
+                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                        >
+                          <Users size={12} /> Students ({d.students || 0})
+                        </button>
                       </div>
                     </div>
                   ))}
+
                   {departments.length === 0 && (
-                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', gridColumn: '1 / -1' }}>
-                      No departments configured. Click "+ Add Department / Branch" to add your institution branches.
+                    <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center', background: '#FFFFFF', border: '1px dashed var(--border-color)', borderRadius: '10px', gridColumn: '1 / -1' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--bg-subtle, #F8FAFC)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                        <Building size={24} style={{ color: 'var(--text-muted)' }} />
+                      </div>
+                      <h4 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                        No Departments Configured
+                      </h4>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: '460px', margin: '0 auto 1.25rem' }}>
+                        Your institution currently has no academic departments or technical branches registered. Add your first department to start organizing faculty and students.
+                      </p>
+                      <button
+                        onClick={() => setShowCreateDeptModal(true)}
+                        className="btn btn-primary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem' }}
+                      >
+                        <Plus size={16} /> Add First Department / Branch
+                      </button>
                     </div>
                   )}
                 </div>
@@ -807,6 +928,17 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                   <CreateDepartmentModal
                     onClose={() => setShowCreateDeptModal(false)}
                     onSuccess={loadTabData}
+                    existingDepartments={departments}
+                  />
+                )}
+
+                {/* Modal for editing an existing Department */}
+                {editingDept && (
+                  <EditDepartmentModal
+                    department={editingDept}
+                    onClose={() => setEditingDept(null)}
+                    onSuccess={loadTabData}
+                    existingDepartments={departments}
                   />
                 )}
               </div>

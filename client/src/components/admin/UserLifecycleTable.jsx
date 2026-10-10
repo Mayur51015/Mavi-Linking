@@ -15,6 +15,7 @@ import {
   Filter,
 } from 'lucide-react';
 import UserLifecycleModal from './UserLifecycleModal';
+import FacultyDepartmentAssignModal from './FacultyDepartmentAssignModal';
 import api from '../../api/axios';
 
 /**
@@ -31,6 +32,7 @@ export default function UserLifecycleTable({
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalType, setModalType] = useState(null); // 'view' | 'edit' | 'suspend' | 'deactivate' | 'reactivate' | 'permanent_delete'
   const [actionLoading, setActionLoading] = useState(false);
+  const [assigningFacultyUser, setAssigningFacultyUser] = useState(null);
 
   const openModal = (user, type) => {
     setSelectedUser(user);
@@ -274,7 +276,9 @@ export default function UserLifecycleTable({
                     {u.institutionId?.name || u.institutionId?.code || 'Platform-wide'}
                   </td>
                   <td style={{ padding: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                    {u.departmentId?.name || u.departmentId?.code || 'All Depts'}
+                    {u.departmentId?.name || u.departmentId?.code || u.university?.department || (
+                      <span style={{ color: '#9CA3AF', fontStyle: 'italic' }}>Unassigned</span>
+                    )}
                   </td>
                   <td style={{ padding: '0.75rem' }}>
                     {getStatusBadge(u.accountStatus, u.status, u.invitationExpires)}
@@ -287,6 +291,26 @@ export default function UserLifecycleTable({
                   </td>
                   <td style={{ padding: '0.85rem 0.75rem', textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: '0.35rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      {/* Assign Department Action (For Faculty / Teachers) */}
+                      {(u.role === 'teacher' || u.role === 'professor') && (
+                        <button
+                          onClick={() => setAssigningFacultyUser(u)}
+                          className="btn btn-outline"
+                          title="Assign Faculty to Department"
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.75rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.2rem',
+                            borderColor: 'var(--brand-blue, #2563EB)',
+                            color: 'var(--brand-blue, #2563EB)',
+                          }}
+                        >
+                          <Building2 size={13} /> Assign Dept
+                        </button>
+                      )}
+
                       {/* View Action */}
                       <button
                         onClick={() => openModal(u, 'view')}
@@ -428,6 +452,19 @@ export default function UserLifecycleTable({
           loading={actionLoading}
           departments={departments}
           institutions={institutions}
+        />
+      )}
+
+      {/* Faculty Department Assignment Modal */}
+      {assigningFacultyUser && (
+        <FacultyDepartmentAssignModal
+          facultyMember={assigningFacultyUser}
+          departments={departments}
+          onClose={() => setAssigningFacultyUser(null)}
+          onSuccess={() => {
+            setAssigningFacultyUser(null);
+            if (onRefresh) onRefresh();
+          }}
         />
       )}
     </>

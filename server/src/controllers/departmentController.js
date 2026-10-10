@@ -81,7 +81,7 @@ const getDepartments = async (req, res, next) => {
 
     const deptMap = {};
 
-    // Initialize with DB departments
+    // Initialize with actual DB departments only
     dbDepts.forEach((d) => {
       deptMap[d._id.toString()] = {
         _id: d._id,
@@ -98,6 +98,9 @@ const getDepartments = async (req, res, next) => {
       };
     });
 
+    let unassignedStudents = 0;
+    let unassignedTeachers = 0;
+
     // Populate user counts
     users.forEach((u) => {
       let dKey = u.departmentId ? u.departmentId.toString() : null;
@@ -108,21 +111,17 @@ const getDepartments = async (req, res, next) => {
         if (matched) dKey = matched._id.toString();
       }
 
-      if (!dKey) {
-        dKey = 'unassigned';
-        if (!deptMap[dKey]) {
-          deptMap[dKey] = { _id: 'unassigned', id: 'unassigned', name: 'General / Unassigned', code: 'GEN', students: 0, teachers: 0, admins: 0, total: 0, adminUsers: [] };
-        }
-      }
-
-      if (deptMap[dKey]) {
-        if (u.role === 'user') deptMap[dKey].students += 1;
-        if (u.role === 'teacher') deptMap[dKey].teachers += 1;
+      if (dKey && deptMap[dKey]) {
+        if (u.role === 'user' || u.role === 'student') deptMap[dKey].students += 1;
+        if (u.role === 'teacher' || u.role === 'professor') deptMap[dKey].teachers += 1;
         if (u.role === 'department_admin') {
           deptMap[dKey].admins += 1;
           deptMap[dKey].adminUsers.push({ id: u._id, name: u.name, email: u.email });
         }
         deptMap[dKey].total += 1;
+      } else {
+        if (u.role === 'user' || u.role === 'student') unassignedStudents += 1;
+        if (u.role === 'teacher' || u.role === 'professor') unassignedTeachers += 1;
       }
     });
 
@@ -131,6 +130,10 @@ const getDepartments = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: departmentsList,
+      unassigned: {
+        students: unassignedStudents,
+        teachers: unassignedTeachers,
+      },
     });
   } catch (error) {
     next(error);
@@ -176,12 +179,30 @@ const updateDepartment = async (req, res, next) => {
 };
 
 /**
- * @desc    Delete/Archive a department
+ * @desc    Delete a department (Platform Super Admin / Owner only; forbidden for Institution Admin)
  * @route   DELETE /api/admin/departments/:id
- * @access  Private (Owner, Super Admin, Institution Admin)
+ * @access  Private (Platform Owner, Super Admin only)
  */
 const deleteDepartment = async (req, res, next) => {
   try {
+    const userRoles = req.user?.roles && req.user.roles.length > 0 ? req.user.roles : [req.user?.role];
+    const isSuperAdmin =
+      userRoles.includes('super_admin') ||
+      userRoles.includes('platform_owner') ||
+      userRoles.includes('owner') ||
+      req.user?.role === 'super_admin' ||
+      req.user?.role === 'platform_owner' ||
+      req.user?.role === 'owner' ||
+      req.isSuperAdmin;
+
+    if (!isSuperAdmin) {
+      return res.status(403).json({
+        success: false,
+        code: 'DEPARTMENT_DELETE_FORBIDDEN',
+        message: 'Forbidden. Institution admins are not permitted to delete departments. Department deletion is restricted to platform super administrators.',
+      });
+    }
+
     const { id } = req.params;
 
     const department = await Department.findById(id);

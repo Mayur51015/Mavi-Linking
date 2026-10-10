@@ -545,26 +545,29 @@ export default function UserLifecycleModal({
                     </select>
                   </div>
 
-                  {departments.length > 0 && (
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.3rem', color: 'var(--text-main)' }}>
-                        Department
-                      </label>
-                      <select
-                        className="input-field"
-                        value={editForm.departmentId}
-                        onChange={(e) => setEditForm({ ...editForm, departmentId: e.target.value })}
-                        style={{ width: '100%' }}
-                      >
-                        <option value="">None / Unassigned</option>
-                        {departments.map((d) => (
-                          <option key={d._id} value={d._id}>
-                            {d.name} {d.code ? `(${d.code})` : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.3rem', color: 'var(--text-main)' }}>
+                      Department
+                    </label>
+                    <select
+                      className="input-field"
+                      value={editForm.departmentId}
+                      onChange={(e) => setEditForm({ ...editForm, departmentId: e.target.value })}
+                      style={{ width: '100%' }}
+                    >
+                      <option value="">None / Unassigned</option>
+                      {departments.map((d) => (
+                        <option key={d._id || d.id} value={d._id || d.id}>
+                          {d.name} {d.code ? `(${d.code})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {departments.length === 0 && (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                        No departments configured
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

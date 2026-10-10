@@ -4,17 +4,35 @@ import api from '../../api/axios';
 import { useToast } from '../../context/ToastContext';
 import { getErrorMessage } from '../../utils/errorMessage';
 
-const CreateDepartmentModal = ({ onClose, onSuccess }) => {
+const CreateDepartmentModal = ({ onClose, onSuccess, existingDepartments = [] }) => {
   const toast = useToast();
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [duplicateError, setDuplicateError] = useState('');
+
+  const handleNameChange = (val) => {
+    setName(val);
+    const trimmed = val.trim().toLowerCase();
+    if (trimmed && existingDepartments.some((d) => (d.name || '').trim().toLowerCase() === trimmed)) {
+      setDuplicateError(`Department '${val.trim()}' already exists in your institution.`);
+    } else {
+      setDuplicateError('');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
       toast.error('Department / Branch name is required.');
+      return;
+    }
+
+    const trimmed = name.trim().toLowerCase();
+    if (existingDepartments.some((d) => (d.name || '').trim().toLowerCase() === trimmed)) {
+      setDuplicateError(`Department '${name.trim()}' already exists in your institution.`);
+      toast.error(`Department '${name.trim()}' already exists in your institution.`);
       return;
     }
 
@@ -30,7 +48,11 @@ const CreateDepartmentModal = ({ onClose, onSuccess }) => {
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to create department.'));
+      const msg = getErrorMessage(err, 'Failed to create department.');
+      toast.error(msg);
+      if (msg.toLowerCase().includes('already exists')) {
+        setDuplicateError(msg);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -64,11 +86,16 @@ const CreateDepartmentModal = ({ onClose, onSuccess }) => {
               type="text"
               className="input-field"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => handleNameChange(e.target.value)}
               placeholder="e.g. Artificial Intelligence & Data Science"
               required
-              style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem' }}
+              style={{ background: '#FFFFFF', border: duplicateError ? '1px solid #EF4444' : '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem' }}
             />
+            {duplicateError && (
+              <div style={{ color: '#EF4444', fontSize: '0.78rem', marginTop: '0.35rem', fontWeight: 500 }}>
+                {duplicateError}
+              </div>
+            )}
           </div>
 
           <div className="input-group" style={{ marginBottom: 0 }}>

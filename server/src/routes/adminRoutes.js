@@ -35,6 +35,7 @@ const {
   getPendingStudentApprovals,
   approveStudentAccount,
   rejectStudentAccount,
+  assignFacultyDepartment,
 } = require('../controllers/adminController');
 
 const {
@@ -92,11 +93,15 @@ router.get('/students/:studentId/profile', enforceInstitutionScope, requirePermi
 router.patch('/students/:studentId/profile', enforceInstitutionScope, requirePermission('STUDENT_PROFILE_MANAGE'), updateStudentProfileForAdmin);
 router.put('/students/:studentId/profile', enforceInstitutionScope, requirePermission('STUDENT_PROFILE_MANAGE'), updateStudentProfileForAdmin);
 
-// Department Management CRUD & Governance
+// Department Management CRUD & Governance (Delete restricted to Platform Super Admin / Owner)
 router.post('/departments', enforceInstitutionScope, createDepartment);
 router.get('/departments', enforceInstitutionScope, getDepartmentsList);
 router.put('/departments/:id', enforceInstitutionScope, updateDepartment);
-router.delete('/departments/:id', enforceInstitutionScope, deleteDepartment);
+router.delete('/departments/:id', requireSuperAdmin, deleteDepartment);
+
+// Faculty & User Department Assignment & Governance
+router.put('/users/:id/department', enforceInstitutionScope, assignFacultyDepartment);
+router.post('/faculty/assign-department', enforceInstitutionScope, assignFacultyDepartment);
 
 // Department Admin Appointment & Governance
 router.post('/departments/:departmentId/admins', enforceInstitutionScope, requirePermission('DEPARTMENT_ADMIN_APPOINT'), appointDepartmentAdmin);
@@ -139,7 +144,6 @@ router.put('/users/:userId/institution', updateUserInstitution);
 router.patch('/users/:id/institution', updateUserInstitution);
 router.put('/users/:id/institution', updateUserInstitution);
 router.get('/logs', enforceInstitutionScope, getAuditLogs);
-router.get('/departments', enforceInstitutionScope, getDepartments);
 router.put('/my-institution', enforceInstitutionScope, updateMyInstitutionSettings);
 
 // Role Requests & Verifications

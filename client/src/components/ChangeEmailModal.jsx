@@ -24,6 +24,13 @@ const ChangeEmailModal = ({ isOpen, onClose, onSuccess }) => {
   // Resend Cooldown Timer (60s)
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  // 10-Minute OTP Expiry State (persisted in sessionStorage across page refreshes)
+  const [otpExpiresAt, setOtpExpiresAt] = useState(() => {
+    const saved = sessionStorage.getItem('edutalentx_email_change_otp_expires_at');
+    return saved ? parseInt(saved, 10) : null;
+  });
+  const [otpTimeRemaining, setOtpTimeRemaining] = useState(0);
+
   useEffect(() => {
     let timer;
     if (resendCooldown > 0) {
@@ -31,6 +38,21 @@ const ChangeEmailModal = ({ isOpen, onClose, onSuccess }) => {
     }
     return () => clearInterval(timer);
   }, [resendCooldown]);
+
+  // 10-Minute Countdown Timer Effect
+  useEffect(() => {
+    if (!otpExpiresAt || step !== 2) {
+      setOtpTimeRemaining(0);
+      return;
+    }
+    const updateTime = () => {
+      const remaining = Math.max(0, Math.floor((otpExpiresAt - Date.now()) / 1000));
+      setOtpTimeRemaining(remaining);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [otpExpiresAt, step]);
 
   if (!isOpen) return null;
 
@@ -42,6 +64,8 @@ const ChangeEmailModal = ({ isOpen, onClose, onSuccess }) => {
     setLoading(false);
     setError(null);
     setStatusMessage('');
+    sessionStorage.removeItem('edutalentx_email_change_otp_expires_at');
+    setOtpExpiresAt(null);
     onClose();
   };
 
@@ -66,6 +90,9 @@ const ChangeEmailModal = ({ isOpen, onClose, onSuccess }) => {
 
       if (res.data?.success) {
         setStatusMessage(res.data.message || `Verification code sent to ${newEmail}`);
+        const expiry = Date.now() + 10 * 60 * 1000;
+        sessionStorage.setItem('edutalentx_email_change_otp_expires_at', String(expiry));
+        setOtpExpiresAt(expiry);
         setStep(2);
         setResendCooldown(60);
       }
@@ -97,6 +124,8 @@ const ChangeEmailModal = ({ isOpen, onClose, onSuccess }) => {
 
       if (res.data?.success) {
         setStatusMessage('🎉 Your email address has been successfully updated!');
+        sessionStorage.removeItem('edutalentx_email_change_otp_expires_at');
+        setOtpExpiresAt(null);
         if (res.data.data?.token) {
           localStorage.setItem('token', res.data.data.token);
         }
@@ -119,7 +148,7 @@ const ChangeEmailModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
-  // Resend OTP Handler
+  // Resend OTP Handler (Issues fresh 10-minute OTP)
   const handleResendOtp = async () => {
     if (resendCooldown > 0) return;
     setLoading(true);
@@ -131,8 +160,12 @@ const ChangeEmailModal = ({ isOpen, onClose, onSuccess }) => {
       });
 
       if (res.data?.success) {
-        setStatusMessage(`A new 6-digit code was sent to ${newEmail}`);
+        setStatusMessage(`A new 6-digit code was sent to ${newEmail} (valid for 10 minutes).`);
+        const expiry = Date.now() + 10 * 60 * 1000;
+        sessionStorage.setItem('edutalentx_email_change_otp_expires_at', String(expiry));
+        setOtpExpiresAt(expiry);
         setResendCooldown(60);
+        setOtp('');
       }
     } catch (err) {
       console.error('Resend OTP error:', err);
@@ -311,6 +344,32 @@ const ChangeEmailModal = ({ isOpen, onClose, onSuccess }) => {
         {/* STEP 2: VERIFY OTP FORM */}
         {step === 2 && (
           <form onSubmit={handleVerifySubmit}>
+            {/* 10-Minute Countdown Timer Banner */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.6rem 0.85rem',
+              borderRadius: '8px',
+              background: otpTimeRemaining > 0 ? 'rgba(168, 85, 247, 0.08)' : 'rgba(239, 68, 68, 0.1)',
+              border: `1px solid ${otpTimeRemaining > 0 ? 'rgba(168, 85, 247, 0.25)' : 'rgba(239, 68, 68, 0.3)'}`,
+              marginBottom: '1rem',
+              fontSize: '0.8rem',
+            }}>
+              {otpTimeRemaining > 0 ? (
+                <>
+                  <span style={{ color: 'var(--text-secondary)' }}>Code Validity:</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#c084fc', letterSpacing: '1px' }}>
+                    ⏱️ {Math.floor(otpTimeRemaining / 60).toString().padStart(2, '0')}:{(otpTimeRemaining % 60).toString().padStart(2, '0')} remaining
+                  </span>
+                </>
+              ) : (
+                <span style={{ color: '#fca5a5', fontWeight: 600, width: '100%', textAlign: 'center' }}>
+                  ⚠️ Your verification code has expired. Please request a new code below.
+                </span>
+              )}
+            </div>
+
             <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
               <label className="input-label" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.75rem' }}>
                 6-Digit Verification Code *
@@ -338,7 +397,7 @@ const ChangeEmailModal = ({ isOpen, onClose, onSuccess }) => {
               <button type="button" onClick={() => setStep(1)} className="btn btn-outline" style={{ flex: 1 }}>
                 Back
               </button>
-              <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading || otp.length !== 6}>
+              <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading || otp.length !== 6 || otpTimeRemaining === 0}>
                 {loading ? 'Verifying OTP...' : 'Verify & Update Email'}
               </button>
             </div>

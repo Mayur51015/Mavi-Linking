@@ -10,8 +10,15 @@ const AuditLog = require('../models/AuditLog');
 const EmailChangeChallenge = require('../models/EmailChangeChallenge');
 const { sendEmail, generateEmailChangeOtpEmailHtml, generateEmailChangeNotificationOldEmailHtml, getClientBaseUrl } = require('../utils/sendEmail');
 const { getIO } = require('../config/socket');
-const { getAdminInvitationExpiryHours } = require('../config/invitationConfig');
-const { getSecurityTokenExpiryMinutes, getSecurityTokenExpiresAt, isTokenExpired } = require('../config/securityTokenConfig');
+const {
+  getSecurityTokenExpiryMinutes,
+  getSecurityTokenExpiresAt,
+  isTokenExpired,
+  OTP_EXPIRY_MINUTES,
+  getOtpExpiryMinutes,
+  getOtpExpiresAt,
+  isOtpExpired,
+} = require('../config/securityTokenConfig');
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 const oauth2Client = new OAuth2Client(googleClientId);
@@ -1351,17 +1358,33 @@ const forgotPassword = async (req, res, next) => {
       });
     }
 
+    // Enforce 60-second cooldown between resends for existing users (skip in test mode unless x-test-rate-limit is set)
+    const isTestMode = process.env.NODE_ENV === 'test' && !req.headers['x-test-rate-limit'] && process.env.TEST_RATE_LIMIT !== 'true';
+    if (!isTestMode && user.resetPasswordExpires) {
+      const lastIssuedTime = new Date(user.resetPasswordExpires.getTime() - OTP_EXPIRY_MINUTES * 60 * 1000);
+      const elapsedSeconds = (Date.now() - lastIssuedTime.getTime()) / 1000;
+      if (elapsedSeconds >= 0 && elapsedSeconds < 60) {
+        const remaining = Math.ceil(60 - elapsedSeconds);
+        return res.status(429).json({
+          success: false,
+          code: 'RESEND_RATE_LIMITED',
+          message: `Please wait ${remaining} seconds before requesting another recovery code.`,
+        });
+      }
+    }
+
     // Generate cryptographic reset token (for link) & 6-digit OTP (for OTP input)
     const rawResetToken = crypto.randomBytes(32).toString('hex');
     const rawOtp = String(crypto.randomInt(100000, 999999));
 
-    // Hash tokens before storing in database
+    // Hash tokens before storing in database (overwrites and invalidates any previous OTP)
     const hashedToken = crypto.createHash('sha256').update(rawResetToken).digest('hex');
     const hashedOtp = crypto.createHash('sha256').update(rawOtp).digest('hex');
 
+    // Exactly 10 minutes lifetime for every role
     user.resetPasswordToken = hashedToken;
     user.resetPasswordOtp = hashedOtp;
-    user.resetPasswordExpires = getSecurityTokenExpiresAt(); // 10 minutes
+    user.resetPasswordExpires = getOtpExpiresAt(); // expiresAt = generatedAt + 10 minutes
     await user.save();
 
     // Log recovery request event
@@ -1369,7 +1392,7 @@ const forgotPassword = async (req, res, next) => {
       await ActivityLog.create({
         userId: user._id,
         action: 'PASSWORD_RECOVERY_REQUESTED',
-        details: `Password recovery token/OTP generated for recovery channel ${user.email}`,
+        details: `Password recovery token/OTP generated for recovery channel ${user.email} (Role: ${user.role})`,
         ipAddress: req.ip || '',
         userAgent: req.headers['user-agent'] || '',
       });
@@ -1378,7 +1401,7 @@ const forgotPassword = async (req, res, next) => {
     }
 
     // Log dispatch event safely (without printing sensitive OTP or token)
-    console.log(`[RECOVERY DISPATCH] Email: ${user.email} | OTP dispatched`);
+    console.log(`[RECOVERY DISPATCH] Email: ${user.email} | Role: ${user.role} | OTP dispatched (10-minute expiry)`);
 
     // Send Real Email via Nodemailer Service
     const { sendEmail, generatePasswordResetEmailHtml, getClientBaseUrl } = require('../utils/sendEmail');
@@ -1444,30 +1467,80 @@ const resetPassword = async (req, res, next) => {
       const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
       user = await User.findOne({
         resetPasswordToken: hashedToken,
-        resetPasswordExpires: { $gt: Date.now() },
       }).select('+resetPasswordToken +resetPasswordOtp +resetPasswordExpires +refreshToken');
+
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          code: 'RECOVERY_TOKEN_INVALID',
+          message: 'Invalid or expired recovery proof token/OTP. Please request a new recovery link.',
+        });
+      }
+
+      if (isOtpExpired(user.resetPasswordExpires)) {
+        user.resetPasswordToken = null;
+        user.resetPasswordOtp = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+
+        return res.status(400).json({
+          success: false,
+          code: 'RECOVERY_TOKEN_EXPIRED',
+          message: 'Your recovery link has expired. Please request a new password reset.',
+        });
+      }
     } else if (otp && (email || phone)) {
-      // Recovery via Verified OTP
-      const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
-      const query = {
-        resetPasswordOtp: hashedOtp,
-        resetPasswordExpires: { $gt: Date.now() },
-      };
+      // Recovery via Verified 6-Digit OTP (Role-Agnostic)
+      const query = {};
       if (email) query.email = email.toLowerCase().trim();
       else if (phone) query.phone = phone.trim();
 
       user = await User.findOne(query).select('+resetPasswordToken +resetPasswordOtp +resetPasswordExpires +refreshToken');
+
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          code: 'USER_NOT_FOUND',
+          message: 'Invalid or expired recovery proof token/OTP. Please request a new recovery link.',
+        });
+      }
+
+      // Check that OTP exists and has not already been consumed/invalidated
+      if (!user.resetPasswordOtp || !user.resetPasswordExpires) {
+        return res.status(400).json({
+          success: false,
+          code: 'OTP_NOT_FOUND',
+          message: 'No active password recovery OTP found or code already consumed. Please request a new code.',
+        });
+      }
+
+      // Enforce strict 10-minute expiration: current server time >= expiresAt rejects
+      if (isOtpExpired(user.resetPasswordExpires)) {
+        user.resetPasswordOtp = null;
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+
+        return res.status(400).json({
+          success: false,
+          code: 'OTP_EXPIRED',
+          message: 'The recovery OTP code has expired. Please request a new recovery code.',
+        });
+      }
+
+      // Verify OTP hash against stored SHA-256 hash
+      const submittedHash = crypto.createHash('sha256').update(String(otp).trim()).digest('hex');
+      if (submittedHash !== user.resetPasswordOtp) {
+        return res.status(400).json({
+          success: false,
+          code: 'OTP_INVALID',
+          message: 'Invalid 6-digit recovery OTP code.',
+        });
+      }
     } else {
       return res.status(400).json({
         success: false,
         message: 'Please provide either a valid recovery token from your email link or a 6-digit OTP with your verified recovery channel.',
-      });
-    }
-
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid or expired recovery proof token/OTP. Please request a new recovery link.',
       });
     }
 
@@ -1481,6 +1554,7 @@ const resetPassword = async (req, res, next) => {
     user.refreshToken = null; // Revoke active session refresh tokens
 
     await user.save();
+
 
     try {
       await ActivityLog.create({
@@ -2609,13 +2683,13 @@ const requestEmailChange = async (req, res, next) => {
 
     console.log(`[EMAIL CHANGE OTP DISPATCHED] User: ${user.email} -> New Email: ${canonicalNewEmail} | 6-Digit OTP: ${otp}`);
 
-    // 6. Create EmailChangeChallenge document (valid for 10 minutes)
+    // 6. Create EmailChangeChallenge document (valid for strictly 10 minutes)
     await EmailChangeChallenge.create({
       userId: user._id,
       newEmail: canonicalNewEmail,
       hashedOtp,
       purpose: 'EMAIL_CHANGE',
-      expiresAt: getSecurityTokenExpiresAt(), // 10 minutes
+      expiresAt: getOtpExpiresAt(), // strictly 10 minutes
       status: 'PENDING',
       lastResendAt: new Date(),
     });
@@ -2651,7 +2725,7 @@ const requestEmailChange = async (req, res, next) => {
       message: `A 6-digit verification code has been sent to ${canonicalNewEmail}. Please verify within 10 minutes.`,
       data: {
         newEmail: canonicalNewEmail,
-        expiresInMinutes: getSecurityTokenExpiryMinutes(),
+        expiresInMinutes: getOtpExpiryMinutes(),
       },
     });
   } catch (error) {
@@ -2694,10 +2768,11 @@ const verifyEmailChange = async (req, res, next) => {
       });
     }
 
-    // Check expiry
-    if (new Date() > new Date(challenge.expiresAt)) {
+    // Check strict 10-minute expiry (server time >= expiresAt)
+    if (isOtpExpired(challenge.expiresAt)) {
       challenge.status = 'EXPIRED';
       await challenge.save();
+
 
       await AuditLog.create({
         actorId: userId,
@@ -2863,7 +2938,7 @@ const resendEmailChangeOtp = async (req, res, next) => {
     console.log(`[RESEND EMAIL CHANGE OTP DISPATCHED] New Email: ${challenge.newEmail} | 6-Digit OTP: ${otp}`);
 
     challenge.hashedOtp = hashedOtp;
-    challenge.expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    challenge.expiresAt = getOtpExpiresAt(); // strictly 10 minutes (overwriting older 15-minute value)
     challenge.lastResendAt = new Date();
     challenge.resendCount += 1;
     challenge.attemptCount = 0; // reset attempt counter on fresh resend

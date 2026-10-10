@@ -21,7 +21,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Forgot / Reset Password States
+  // Forgot / Reset Password States (10-Minute Universal Expiration)
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotOtp, setForgotOtp] = useState('');
@@ -30,10 +30,38 @@ const Login = () => {
   const [sendingForgot, setSendingForgot] = useState(false);
   const [forgotSuccessMsg, setForgotSuccessMsg] = useState('');
   const [forgotError, setForgotError] = useState('');
+  const [forgotOtpExpiresAt, setForgotOtpExpiresAt] = useState(() => {
+    const saved = sessionStorage.getItem('edutalentx_recovery_otp_expires_at');
+    return saved ? parseInt(saved, 10) : null;
+  });
+  const [otpTimeRemaining, setOtpTimeRemaining] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
   const toast = useToast();
+
+  // Update countdown timer every second (does not reset on page refresh)
+  useEffect(() => {
+    if (!forgotOtpExpiresAt || forgotStep !== 2) {
+      setOtpTimeRemaining(0);
+      return;
+    }
+    const updateTime = () => {
+      const remaining = Math.max(0, Math.floor((forgotOtpExpiresAt - Date.now()) / 1000));
+      setOtpTimeRemaining(remaining);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [forgotOtpExpiresAt, forgotStep]);
+
+  // Handle 60s resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const interval = setInterval(() => setResendCooldown((prev) => Math.max(0, prev - 1)), 1000);
+    return () => clearInterval(interval);
+  }, [resendCooldown]);
 
   const handleRequestRecovery = async (e) => {
     e.preventDefault();
@@ -42,10 +70,33 @@ const Login = () => {
     setForgotSuccessMsg('');
     try {
       const res = await api.post('/auth/forgot-password', { email: forgotEmail });
-      setForgotSuccessMsg(res.data?.message || 'OTP sent successfully to your recovery email!');
+      const expiry = Date.now() + 10 * 60 * 1000;
+      sessionStorage.setItem('edutalentx_recovery_otp_expires_at', String(expiry));
+      setForgotOtpExpiresAt(expiry);
+      setResendCooldown(60);
+      setForgotSuccessMsg(res.data?.message || 'A 6-digit recovery OTP has been sent. Code expires in 10 minutes.');
       setForgotStep(2);
     } catch (err) {
       setForgotError(getErrorMessage(err, 'Failed to send recovery OTP. Please check your email.'));
+    } finally {
+      setSendingForgot(false);
+    }
+  };
+
+  const handleResendRecoveryOtp = async () => {
+    if (resendCooldown > 0 || sendingForgot) return;
+    setSendingForgot(true);
+    setForgotError('');
+    try {
+      const res = await api.post('/auth/forgot-password', { email: forgotEmail });
+      const expiry = Date.now() + 10 * 60 * 1000;
+      sessionStorage.setItem('edutalentx_recovery_otp_expires_at', String(expiry));
+      setForgotOtpExpiresAt(expiry);
+      setResendCooldown(60);
+      setForgotSuccessMsg('A fresh 6-digit recovery OTP has been dispatched. Code expires in exactly 10 minutes.');
+      setForgotOtp('');
+    } catch (err) {
+      setForgotError(getErrorMessage(err, 'Failed to resend recovery OTP. Please wait before retrying.'));
     } finally {
       setSendingForgot(false);
     }
@@ -60,9 +111,11 @@ const Login = () => {
       const res = await api.post('/auth/reset-password', {
         email: forgotEmail,
         otp: forgotOtp,
-        newPassword: forgotNewPassword,
+        password: forgotNewPassword,
       });
       toast.success(res.data?.message || 'Password reset successfully! You can now log in.');
+      sessionStorage.removeItem('edutalentx_recovery_otp_expires_at');
+      setForgotOtpExpiresAt(null);
       setShowForgotModal(false);
       setPassword(forgotNewPassword);
     } catch (err) {
@@ -71,6 +124,7 @@ const Login = () => {
       setSendingForgot(false);
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -590,9 +644,35 @@ const Login = () => {
               </form>
             ) : (
               <form onSubmit={handleExecuteReset}>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: '1.5' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.5' }}>
                   Enter the 6-digit OTP sent to <strong style={{ color: 'var(--text-primary)' }}>{forgotEmail}</strong> and specify your new password.
                 </p>
+
+                {/* 10-Minute Countdown Timer & Expiration Display */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.6rem 0.85rem',
+                  borderRadius: '8px',
+                  background: otpTimeRemaining > 0 ? 'rgba(168, 85, 247, 0.08)' : 'rgba(239, 68, 68, 0.1)',
+                  border: `1px solid ${otpTimeRemaining > 0 ? 'rgba(168, 85, 247, 0.25)' : 'rgba(239, 68, 68, 0.3)'}`,
+                  marginBottom: '1.25rem',
+                  fontSize: '0.8rem',
+                }}>
+                  {otpTimeRemaining > 0 ? (
+                    <>
+                      <span style={{ color: 'var(--text-secondary)' }}>Code Validity:</span>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#c084fc', letterSpacing: '1px' }}>
+                        ⏱️ {Math.floor(otpTimeRemaining / 60).toString().padStart(2, '0')}:{(otpTimeRemaining % 60).toString().padStart(2, '0')} remaining
+                      </span>
+                    </>
+                  ) : (
+                    <span style={{ color: '#fca5a5', fontWeight: 600, width: '100%', textAlign: 'center' }}>
+                      ⚠️ Your recovery OTP code has expired. Please request a new code.
+                    </span>
+                  )}
+                </div>
 
                 <div className="input-group">
                   <label className="input-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>6-Digit Recovery OTP</label>
@@ -601,10 +681,20 @@ const Login = () => {
                     className="input-field"
                     placeholder="e.g. 849201"
                     value={forgotOtp}
-                    onChange={(e) => setForgotOtp(e.target.value)}
+                    onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    maxLength={6}
                     required
                     disabled={sendingForgot}
-                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px' }}
+                    style={{
+                      background: 'var(--bg-input)',
+                      borderColor: 'var(--border-color)',
+                      color: 'var(--text-primary)',
+                      borderRadius: '6px',
+                      fontFamily: 'monospace',
+                      fontSize: '1.2rem',
+                      letterSpacing: '4px',
+                      textAlign: 'center',
+                    }}
                   />
                 </div>
 
@@ -622,7 +712,7 @@ const Login = () => {
                   />
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
                   <button
                     type="button"
                     onClick={() => setForgotStep(1)}
@@ -635,9 +725,29 @@ const Login = () => {
                     type="submit"
                     className="btn btn-primary"
                     style={{ flex: 1 }}
-                    disabled={sendingForgot}
+                    disabled={sendingForgot || forgotOtp.length !== 6 || otpTimeRemaining === 0}
                   >
                     {sendingForgot ? 'Updating...' : 'Update Password'}
+                  </button>
+                </div>
+
+                {/* Resend OTP Action */}
+                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                  <button
+                    type="button"
+                    onClick={handleResendRecoveryOtp}
+                    disabled={sendingForgot || resendCooldown > 0}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: resendCooldown > 0 ? 'var(--text-muted)' : '#a855f7',
+                      fontSize: '0.8rem',
+                      cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer',
+                      fontWeight: 500,
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    {resendCooldown > 0 ? `Resend OTP code in ${resendCooldown}s` : 'Resend Recovery OTP (10 min)'}
                   </button>
                 </div>
               </form>

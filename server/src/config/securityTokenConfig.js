@@ -58,10 +58,22 @@ const getResendRateLimitConfig = () => {
   };
 };
 
+const {
+  OTP_EXPIRY_MINUTES,
+  getOtpExpiryMinutes,
+  getOtpExpiresAt,
+  isOtpExpired,
+} = require('./otpConfig');
+
 module.exports = {
   DEFAULT_SECURITY_TOKEN_EXPIRY_MINUTES,
   getSecurityTokenExpiryMinutes,
   getSecurityTokenExpiresAt,
   isTokenExpired,
   getResendRateLimitConfig,
+  OTP_EXPIRY_MINUTES,
+  getOtpExpiryMinutes,
+  getOtpExpiresAt,
+  isOtpExpired,
 };
+

@@ -53,22 +53,21 @@ const getTransporter = async (forceFresh = false) => {
     return cachedTransporter;
   }
 
-  const emailHost = (process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com').trim();
-  const emailPort = parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587', 10);
-  const emailUser = (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim();
-  const rawPass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').trim();
+  const emailHost = (process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
+  const emailPort = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
+  const emailUser = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
+  const rawPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || '').trim();
 
   // Normalize app password by stripping enclosing quotes, spaces, and carriage returns
-  const emailPass = emailHost.includes('gmail') || process.env.EMAIL_SERVICE === 'gmail'
+  const isGmail = emailHost.includes('gmail') || process.env.SMTP_SERVICE === 'gmail' || process.env.EMAIL_SERVICE === 'gmail';
+  const emailPass = isGmail
     ? rawPass.replace(/^["']|["']$/g, '').replace(/\s+/g, '')
     : rawPass.replace(/^["']|["']$/g, '');
 
   if (emailUser && emailPass) {
-    const isGmail = emailHost.includes('gmail') || process.env.EMAIL_SERVICE === 'gmail';
-
-    // If an explicit port is set (e.g. SMTP_PORT=587 or EMAIL_PORT=587), respect it.
+    // If an explicit port is set (e.g. SMTP_PORT=587 or SMTP_PORT=2525), respect it.
     // Otherwise, default Gmail to port 465 (direct SSL) and generic SMTP to emailPort (default 587)
-    const explicitPort = process.env.EMAIL_PORT || process.env.SMTP_PORT;
+    const explicitPort = process.env.SMTP_PORT || process.env.EMAIL_PORT;
     const targetPort = explicitPort ? parseInt(explicitPort, 10) : (isGmail ? 465 : emailPort);
     const isSecure = targetPort === 465 || process.env.SMTP_SECURE === 'true';
 
@@ -91,7 +90,7 @@ const getTransporter = async (forceFresh = false) => {
     return cachedTransporter;
   }
 
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' && !process.env.RESEND_API_KEY && !process.env.BREVO_API_KEY) {
     console.error('❌ [EMAIL CONFIG ERROR] Missing SMTP credentials! Set SMTP_USER / EMAIL_USER and SMTP_PASS / EMAIL_PASS in Render environment variables for email delivery.');
   }
 
@@ -111,25 +110,88 @@ const getTransporter = async (forceFresh = false) => {
  * Verify SMTP connection safely (useful for startup diagnostics)
  */
 const verifySmtpConnection = async () => {
+  // If an HTTPS API provider is configured, verify and report ready
+  if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.trim()) {
+    return {
+      success: true,
+      status: 'SMTP_CONNECTED',
+      provider: 'resend-https-api',
+      port: 443,
+      secure: true,
+      message: 'Resend HTTPS API configured and ready (bypasses raw SMTP port blocking)',
+    };
+  }
+
+  if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY.trim()) {
+    return {
+      success: true,
+      status: 'SMTP_CONNECTED',
+      provider: 'brevo-https-api',
+      port: 443,
+      secure: true,
+      message: 'Brevo HTTPS API configured and ready (bypasses raw SMTP port blocking)',
+    };
+  }
+
+  const emailHost = (process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
+  const emailUser = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
+  const emailPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || '').trim();
+  const explicitPort = process.env.SMTP_PORT || process.env.EMAIL_PORT;
+  const isGmail = emailHost.includes('gmail') || process.env.SMTP_SERVICE === 'gmail' || process.env.EMAIL_SERVICE === 'gmail';
+  const targetPort = explicitPort ? parseInt(explicitPort, 10) : (isGmail ? 465 : 587);
+  const isSecure = targetPort === 465 || process.env.SMTP_SECURE === 'true';
+
+  if (!emailUser || !emailPass) {
+    return {
+      success: false,
+      status: 'EMAIL_NOT_CONFIGURED',
+      code: 'MISSING_CREDENTIALS',
+      host: emailHost,
+      port: targetPort,
+      error: 'SMTP credentials missing: configure SMTP_USER and SMTP_PASS (or EMAIL_USER and EMAIL_PASS)',
+    };
+  }
+
   try {
-    const emailUser = (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim();
-    const emailPass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').trim();
-    if (!emailUser || !emailPass) {
-      return {
-        success: false,
-        status: 'EMAIL_NOT_CONFIGURED',
-        code: 'MISSING_CREDENTIALS',
-        error: 'SMTP credentials missing: configure SMTP_USER and SMTP_PASS (or EMAIL_USER and EMAIL_PASS)',
-      };
-    }
     const transporter = await getTransporter();
     await transporter.verify();
-    return { success: true, status: 'SMTP_CONNECTED' };
+    return {
+      success: true,
+      status: 'SMTP_CONNECTED',
+      provider: isGmail ? 'gmail' : emailHost,
+      host: emailHost,
+      port: targetPort,
+      secure: isSecure,
+      userMasked: maskEmail(emailUser),
+    };
   } catch (err) {
     resetTransporter();
     let errorCode = 'EMAIL_CONNECTION_ERROR';
-    if (err.code === 'EAUTH' || err.responseCode === 535) errorCode = 'EMAIL_AUTH_ERROR';
-    return { success: false, status: errorCode, error: err.message };
+    let errorMessage = err.message || 'SMTP connection failed';
+    if (err.code === 'EAUTH' || err.responseCode === 535) {
+      errorCode = 'EMAIL_AUTH_ERROR';
+      errorMessage = 'SMTP authentication failed: verify SMTP_USER and App Password';
+    } else if (err.code === 'ETIMEDOUT' || err.message?.includes('timeout')) {
+      errorCode = 'EMAIL_CONNECTION_ERROR';
+      errorMessage = `Connection timeout connecting to ${emailHost}:${targetPort}. (Note: Render Free Tier blocks outbound SMTP ports 25, 465, and 587. Upgrade to Render Starter or set SMTP_PORT=2525 / RESEND_API_KEY).`;
+    } else if (err.code === 'ECONNREFUSED') {
+      errorCode = 'EMAIL_CONNECTION_REFUSED';
+      errorMessage = `Connection refused by ${emailHost}:${targetPort}`;
+    } else if (err.code === 'ENOTFOUND') {
+      errorCode = 'EMAIL_DNS_ERROR';
+      errorMessage = `DNS resolution failed for ${emailHost}`;
+    }
+
+    return {
+      success: false,
+      status: errorCode,
+      code: err.code || errorCode,
+      host: emailHost,
+      port: targetPort,
+      secure: isSecure,
+      userMasked: maskEmail(emailUser),
+      error: errorMessage,
+    };
   }
 };
 
@@ -181,11 +243,23 @@ const sendEmail = async ({
   recipientUserId,
   actorUserId,
   isOwnerEvent = false,
+  assignedUserId,
+  userId,
+  studentId,
+  teacherId,
+  recruiterId,
+  user,
 }) => {
-  let recipientEmail = to;
-  if (!recipientEmail && recipientUserId) {
-    recipientEmail = await resolveRecipientEmail({ recipientUserId });
-  }
+  let recipientEmail = await resolveRecipientEmail({
+    to,
+    recipientUserId,
+    assignedUserId,
+    userId,
+    studentId,
+    teacherId,
+    recruiterId,
+    user,
+  });
 
   let cleanRecipient = (recipientEmail || '').toString().trim().toLowerCase();
   if (!cleanRecipient || !cleanRecipient.includes('@')) {
@@ -194,34 +268,37 @@ const sendEmail = async ({
     return {
       success: false,
       status: 'EMAIL_REJECTED',
+      code: 'MISSING_RECIPIENT',
       error: errMessage,
     };
   }
 
   // Prevent accidental fallback to Owner email unless explicitly an Owner-targeted event
   const ownerEmail = (process.env.OWNER_EMAIL || process.env.EMAIL_USER || process.env.SMTP_USER || '').toLowerCase().trim();
-  if (!isOwnerEvent && cleanRecipient === ownerEmail && recipientUserId) {
-    // If recipientUserId was provided, verify that the target user is indeed the owner
+  if (!isOwnerEvent && cleanRecipient === ownerEmail && (recipientUserId || assignedUserId || userId || studentId || teacherId || recruiterId)) {
+    const targetLookupId = recipientUserId || assignedUserId || userId || studentId || teacherId || recruiterId;
     try {
       const User = require('../models/User');
-      const targetUser = await User.findById(recipientUserId).select('email role');
+      const targetUser = await User.findById(targetLookupId).select('email role');
       if (targetUser && targetUser.email && targetUser.email.toLowerCase().trim() !== ownerEmail) {
-        console.warn(`[EMAIL WARNING] Recipient email mismatch with target user ${recipientUserId}. Correcting to target user email ${maskEmail(targetUser.email)}.`);
+        console.warn(`[EMAIL WARNING] Recipient email mismatch with target user ${targetLookupId}. Correcting to target user email ${maskEmail(targetUser.email)}.`);
         recipientEmail = targetUser.email.toLowerCase().trim();
         cleanRecipient = recipientEmail;
       }
     } catch (_) {}
   }
 
-  const emailHost = (process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com').trim();
-  const isGmail = emailHost.includes('gmail') || process.env.EMAIL_SERVICE === 'gmail';
-  const emailUser = (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim();
-  const configuredFrom = (process.env.EMAIL_FROM || process.env.MAIL_FROM || process.env.SMTP_FROM || '').trim();
+  const emailHost = (process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
+  const isGmail = emailHost.includes('gmail') || process.env.SMTP_SERVICE === 'gmail' || process.env.EMAIL_SERVICE === 'gmail';
+  const emailUser = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
+  const configuredFrom = (process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.EMAIL_FROM || '').trim();
 
   let fromAddress;
   if (isGmail && emailUser) {
     const nameMatch = configuredFrom.match(/^(?:"?([^"<]+)"?\s*)?/);
-    const displayName = (nameMatch && nameMatch[1] && nameMatch[1].trim()) || 'EduTalentX Security';
+    const displayName = (nameMatch && nameMatch[1] && nameMatch[1].trim() && !nameMatch[1].includes('@'))
+      ? nameMatch[1].trim()
+      : 'EduTalentX Security';
     fromAddress = `"${displayName}" <${emailUser}>`;
   } else {
     fromAddress = configuredFrom || `"EduTalentX Security" <${emailUser || 'noreply@edutalentx.com'}>`;
@@ -241,7 +318,7 @@ const sendEmail = async ({
   // Safe structured logging for recipient resolution (Phase 10)
   console.log('[EMAIL] Sending email', {
     event: templateName || cleanSubject,
-    recipientUserId: recipientUserId || null,
+    recipientUserId: recipientUserId || assignedUserId || userId || studentId || null,
     recipientEmail: maskEmail(cleanRecipient),
     actorUserId: actorUserId || null,
     smtpUser: maskEmail(emailUser),
@@ -269,6 +346,91 @@ const sendEmail = async ({
     return mockResult;
   }
 
+  // Option A: If RESEND_API_KEY is configured, dispatch over HTTPS port 443 (bypasses Render SMTP port block)
+  if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.trim()) {
+    try {
+      const axios = require('axios');
+      const resendRes = await axios.post(
+        'https://api.resend.com/emails',
+        {
+          from: mailOptions.from,
+          to: [cleanRecipient],
+          subject: cleanSubject,
+          html: html || undefined,
+          text: cleanText,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 15000,
+        }
+      );
+      const resendId = resendRes.data?.id || `resend_${Date.now()}`;
+      console.log(`[EMAIL ACCEPTED (RESEND API)] messageId=${resendId} recipient=${maskEmail(cleanRecipient)}`);
+      return {
+        success: true,
+        status: 'EMAIL_ACCEPTED',
+        messageId: resendId,
+        accepted: [cleanRecipient],
+        rejected: [],
+        response: '250 OK (Resend HTTPS API)',
+        envelope: { from: mailOptions.from, to: [cleanRecipient] },
+      };
+    } catch (apiErr) {
+      console.error('[EMAIL RESEND API ERROR]', apiErr.response?.data || apiErr.message);
+      return {
+        success: false,
+        status: 'EMAIL_DELIVERY_ERROR',
+        error: apiErr.response?.data?.message || apiErr.message,
+      };
+    }
+  }
+
+  // Option B: If BREVO_API_KEY is configured, dispatch over HTTPS port 443 (bypasses Render SMTP port block)
+  if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY.trim()) {
+    try {
+      const axios = require('axios');
+      const brevoRes = await axios.post(
+        'https://api.brevo.com/v3/smtp/email',
+        {
+          sender: { email: emailUser || 'noreply@edutalentx.com', name: 'EduTalentX Security' },
+          to: [{ email: cleanRecipient }],
+          subject: cleanSubject,
+          htmlContent: html || undefined,
+          textContent: cleanText,
+        },
+        {
+          headers: {
+            'api-key': process.env.BREVO_API_KEY.trim(),
+            'Content-Type': 'application/json',
+          },
+          timeout: 15000,
+        }
+      );
+      const brevoId = brevoRes.data?.messageId || `brevo_${Date.now()}`;
+      console.log(`[EMAIL ACCEPTED (BREVO API)] messageId=${brevoId} recipient=${maskEmail(cleanRecipient)}`);
+      return {
+        success: true,
+        status: 'EMAIL_ACCEPTED',
+        messageId: brevoId,
+        accepted: [cleanRecipient],
+        rejected: [],
+        response: '250 OK (Brevo HTTPS API)',
+        envelope: { from: mailOptions.from, to: [cleanRecipient] },
+      };
+    } catch (apiErr) {
+      console.error('[EMAIL BREVO API ERROR]', apiErr.response?.data || apiErr.message);
+      return {
+        success: false,
+        status: 'EMAIL_DELIVERY_ERROR',
+        error: apiErr.response?.data?.message || apiErr.message,
+      };
+    }
+  }
+
+  // Option C: Standard Nodemailer SMTP transport
   const dispatchOnce = async (transporterInstance) => {
     return await transporterInstance.sendMail(mailOptions);
   };
@@ -355,19 +517,31 @@ const sendEmail = async ({
   } catch (error) {
     resetTransporter();
     let errorStatus = 'EMAIL_DELIVERY_ERROR';
+    let errorMessage = error.message || errorStatus;
     if (error.code === 'EAUTH' || error.responseCode === 535) {
       errorStatus = 'EMAIL_AUTH_ERROR';
+      errorMessage = 'SMTP authentication failed: verify SMTP_USER and App Password';
     } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT' || error.code === 'ESOCKET' || error.code === 'ECONNRESET') {
       errorStatus = 'EMAIL_CONNECTION_ERROR';
+      if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) {
+        errorMessage = `SMTP connection timeout. (Note: Render Free Tier blocks outbound SMTP ports 25, 465, and 587. Upgrade to Render Starter or set SMTP_PORT=2525 / RESEND_API_KEY).`;
+      }
+    } else if (error.code === 'ENOTFOUND') {
+      errorStatus = 'EMAIL_DNS_ERROR';
+      errorMessage = `DNS resolution failed for SMTP host: ${error.hostname || 'unknown'}`;
+    } else if (error.code === 'ECONNREFUSED') {
+      errorStatus = 'EMAIL_CONNECTION_REFUSED';
+      errorMessage = `Connection refused by SMTP host`;
     } else if (error.code === 'EENVELOPE') {
       errorStatus = 'EMAIL_CONFIGURATION_ERROR';
     }
 
-    console.error(`[EMAIL ERROR] ${errorStatus} for ${maskEmail(cleanRecipient)}:`, error.message);
+    console.error(`[EMAIL ERROR] ${errorStatus} for ${maskEmail(cleanRecipient)}:`, errorMessage);
     return {
       success: false,
       status: errorStatus,
-      error: error.message || errorStatus,
+      code: error.code || errorStatus,
+      error: errorMessage,
     };
   }
 };

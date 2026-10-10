@@ -306,7 +306,11 @@ const register = async (req, res, next) => {
     }
 
     // Notify Institution Admin(s) of new student registration & ETX ID verification request
-    notifyInstitutionAdminsOfStudentVerification({ user, institutionId: targetInst?._id || user.institutionId });
+    try {
+      await notifyInstitutionAdminsOfStudentVerification({ user, institutionId: targetInst?._id || user.institutionId });
+    } catch (adminNotifyErr) {
+      console.error('[INSTITUTION ADMIN NOTIFY ERROR]', adminNotifyErr.message);
+    }
 
     // Log Activity Feed
     try {
@@ -1146,7 +1150,11 @@ const resendVerification = async (req, res, next) => {
     }
 
     // Notify Institution Admin(s) of student verification resend request
-    notifyInstitutionAdminsOfStudentVerification({ user, institutionId: user.institutionId });
+    try {
+      await notifyInstitutionAdminsOfStudentVerification({ user, institutionId: user.institutionId });
+    } catch (adminNotifyErr) {
+      console.error('[INSTITUTION ADMIN NOTIFY ERROR]', adminNotifyErr.message);
+    }
 
     try {
       await AuditLog.create({
@@ -1271,7 +1279,11 @@ const changeEmailPending = async (req, res, next) => {
     }
 
     // Notify Institution Admin(s) of student verification request
-    notifyInstitutionAdminsOfStudentVerification({ user, institutionId: user.institutionId });
+    try {
+      await notifyInstitutionAdminsOfStudentVerification({ user, institutionId: user.institutionId });
+    } catch (adminNotifyErr) {
+      console.error('[INSTITUTION ADMIN NOTIFY ERROR]', adminNotifyErr.message);
+    }
 
     try {
       await AuditLog.create({
@@ -1390,7 +1402,7 @@ const forgotPassword = async (req, res, next) => {
       console.error('[EMAIL ERROR] Failed to dispatch password reset email:', emailResult.error);
       return res.status(500).json({
         success: false,
-        message: `Failed to send password reset OTP email (${emailResult.error || 'SMTP delivery failure'}). Please check email configuration or try again.`,
+        message: 'Unable to deliver password reset email at this moment. Please try again later or contact platform support.',
       });
     }
 

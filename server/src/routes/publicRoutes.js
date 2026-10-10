@@ -21,35 +21,44 @@ router.get('/public/qr/:username/download', downloadQr);
 
 router.get('/public/meta/:username', getMetaByUsername);
 
-// Development-only SMTP & Email test endpoint
-if (process.env.NODE_ENV !== 'production') {
-  router.post('/public/test-email', async (req, res) => {
-    const { sendAdminInvitationEmail } = require('../utils/sendEmail');
-    const { to, name, role, institutionName, departmentName } = req.body;
-    if (!to || typeof to !== 'string' || !to.includes('@')) {
-      return res.status(400).json({
-        success: false,
-        message: 'Valid recipient email ("to") is required. Fallback to Owner email is strictly prohibited.',
-      });
-    }
-    const cleanRecipient = to.toLowerCase().trim();
-    try {
-      const result = await sendAdminInvitationEmail({
-        to: cleanRecipient,
-        name: name || 'Test Admin',
-        role: role || 'institution_admin',
-        institutionName: institutionName || 'Zeal College of Engineering and Research',
-        departmentName: departmentName || 'Computer Science and Engineering',
-        managementScope: departmentName ? 'DEPARTMENT' : 'INSTITUTION',
-        invitationLink: `${process.env.CLIENT_URL || 'http://localhost:5173'}/admin/accept-invite?token=test_token_12345`,
-        expiresHours: 48,
-      });
-      return res.status(result.success ? 200 : 500).json(result);
-    } catch (err) {
-      return res.status(500).json({ success: false, message: err.message });
-    }
-  });
-}
+// SMTP Diagnostics & Health endpoint
+router.get('/public/smtp-status', async (req, res) => {
+  const { verifySmtpConnection } = require('../utils/sendEmail');
+  try {
+    const result = await verifySmtpConnection();
+    return res.status(result.success ? 200 : 503).json(result);
+  } catch (err) {
+    return res.status(500).json({ success: false, status: 'EMAIL_ERROR', error: err.message });
+  }
+});
+
+// Designated test-email endpoint
+router.post('/public/test-email', async (req, res) => {
+  const { sendAdminInvitationEmail } = require('../utils/sendEmail');
+  const { to, name, role, institutionName, departmentName } = req.body;
+  if (!to || typeof to !== 'string' || !to.includes('@')) {
+    return res.status(400).json({
+      success: false,
+      message: 'Valid recipient email ("to") is required. Fallback to Owner email is strictly prohibited.',
+    });
+  }
+  const cleanRecipient = to.toLowerCase().trim();
+  try {
+    const result = await sendAdminInvitationEmail({
+      to: cleanRecipient,
+      name: name || 'Test Admin',
+      role: role || 'institution_admin',
+      institutionName: institutionName || 'Zeal College of Engineering and Research',
+      departmentName: departmentName || 'Computer Science and Engineering',
+      managementScope: departmentName ? 'DEPARTMENT' : 'INSTITUTION',
+      invitationLink: `${process.env.CLIENT_URL || 'http://localhost:5173'}/admin/accept-invite?token=test_token_12345`,
+      expiresHours: 48,
+    });
+    return res.status(result.success ? 200 : 500).json(result);
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 module.exports = router;
 

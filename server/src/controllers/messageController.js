@@ -264,7 +264,7 @@ const sendMessage = async (req, res, next) => {
     if (recipient && recipient.email) {
       try {
         const { sendAssignmentNotificationEmail } = require('../utils/sendEmail');
-        sendAssignmentNotificationEmail({
+        await sendAssignmentNotificationEmail({
           to: recipient.email,
           recipientUserId: recipient._id,
           actorUserId: req.user.id,
@@ -274,8 +274,10 @@ const sendMessage = async (req, res, next) => {
           assignmentDetails: content.length > 200 ? `${content.substring(0, 197)}...` : content,
           assignmentType: 'DIRECT_MESSAGE',
           actionLink: `${process.env.CLIENT_URL || 'http://localhost:5173'}/messages`,
-        }).catch((err) => console.error('[MESSAGE EMAIL ERROR]', err.message));
-      } catch (_) {}
+        });
+      } catch (err) {
+        console.error('[MESSAGE EMAIL ERROR]', err.message);
+      }
     }
 
     // Real-time notification via Socket.io

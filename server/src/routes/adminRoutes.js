@@ -162,4 +162,26 @@ router.put('/institutions/:id', requireSuperAdmin, updateInstitution);
 router.post('/institutions/:id/assign-admin', requireSuperAdmin, assignInstitutionAdmin);
 router.post('/institutions/:id/remove-admin', requireSuperAdmin, removeInstitutionAdmin);
 
+// System & SMTP Health Diagnostic (Super Admin / Platform Owner)
+router.get('/system/smtp-status', requireSuperAdmin, async (req, res) => {
+  const { verifySmtpConnection } = require('../utils/sendEmail');
+  const result = await verifySmtpConnection();
+  return res.status(result.success ? 200 : 500).json(result);
+});
+
+router.post('/system/test-email', requireSuperAdmin, async (req, res) => {
+  const { sendEmail } = require('../utils/sendEmail');
+  const { to } = req.body;
+  if (!to || typeof to !== 'string' || !to.includes('@')) {
+    return res.status(400).json({ success: false, message: 'Valid recipient email ("to") is required.' });
+  }
+  const result = await sendEmail({
+    to,
+    subject: 'EduTalentX — Administrative SMTP Diagnostic Test',
+    html: '<p>This is a test email dispatched from the EduTalentX administration diagnostic utility.</p>',
+    templateName: 'admin-diagnostic-test',
+  });
+  return res.status(result.success ? 200 : 500).json(result);
+});
+
 module.exports = router;

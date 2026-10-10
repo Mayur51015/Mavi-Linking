@@ -300,29 +300,37 @@ const assignStudentsToDrive = async (req, res, next) => {
 
       const assignedStudents = await User.find({ _id: { $in: studentIds } }).select('email name');
 
-      for (const student of assignedStudents) {
-        if (student && student.email) {
-          sendAssignmentNotificationEmail({
-            to: student.email,
-            recipientUserId: student._id,
-            actorUserId: req.user._id,
-            actorName: req.user.name || 'Faculty Instructor',
-            actorRole: 'Teacher',
-            assignmentTitle: `Assigned to Placement Drive: ${drive.title}`,
-            assignmentDetails: `You have been nominated and assigned to the ${drive.title} placement drive with ${drive.companyId?.name || 'participating company'}.`,
-            assignmentType: 'PLACEMENT_DRIVE_ASSIGNMENT',
-            dueDate: drive.date,
-          }).catch((err) => console.error(`[DRIVE ASSIGN EMAIL ERROR] ${student.email}:`, err.message));
+      const emailPromises = assignedStudents
+        .filter((student) => student && student.email)
+        .map(async (student) => {
+          try {
+            await sendAssignmentNotificationEmail({
+              to: student.email,
+              recipientUserId: student._id,
+              actorUserId: req.user._id,
+              actorName: req.user.name || 'Faculty Instructor',
+              actorRole: 'Teacher',
+              assignmentTitle: `Assigned to Placement Drive: ${drive.title}`,
+              assignmentDetails: `You have been nominated and assigned to the ${drive.title} placement drive with ${drive.companyId?.name || 'participating company'}.`,
+              assignmentType: 'PLACEMENT_DRIVE_ASSIGNMENT',
+              dueDate: drive.date,
+            });
+          } catch (err) {
+            console.error(`[DRIVE ASSIGN EMAIL ERROR] ${student.email}:`, err.message);
+          }
 
-          createNotification({
-            recipientId: student._id,
-            senderId: req.user._id,
-            type: 'pipeline_started',
-            title: `Assigned to Placement Drive: ${drive.title}`,
-            message: `Your instructor ${req.user.name} has assigned you to the ${drive.title} drive.`,
-          }).catch(() => {});
-        }
-      }
+          try {
+            await createNotification({
+              recipientId: student._id,
+              senderId: req.user._id,
+              type: 'pipeline_started',
+              title: `Assigned to Placement Drive: ${drive.title}`,
+              message: `Your instructor ${req.user.name} has assigned you to the ${drive.title} drive.`,
+            });
+          } catch (_) {}
+        });
+
+      await Promise.allSettled(emailPromises);
     }
 
     res.status(200).json({ success: true, data: drive });

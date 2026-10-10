@@ -54,6 +54,23 @@ const institutionSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    logoStoragePath: {
+      type: String,
+      default: '',
+    },
+    verificationDocuments: [
+      {
+        title: { type: String, default: '' },
+        fileUrl: { type: String, default: '' },
+        storagePath: { type: String, default: '' },
+        bucket: { type: String, default: 'institution-documents' },
+        originalName: { type: String, default: '' },
+        mimeType: { type: String, default: '' },
+        fileSize: { type: Number, default: 0 },
+        uploadedAt: { type: Date, default: Date.now },
+        status: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
+      }
+    ],
     type: {
       type: String,
       enum: ['University', 'College', 'Institute', 'School', 'Organization'],

@@ -42,6 +42,7 @@ const {
   updatePortfolioDoc,
   deletePortfolioDoc,
   getPortfolioDocFile,
+  uploadAvatar,
 } = require('../controllers/userDocumentController');
 
 const router = express.Router();
@@ -137,6 +138,7 @@ router.post('/google', (req, res) => {
 
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateProfileValidation, validate, updateProfile);
+router.post('/avatar', protect, upload.single('file'), uploadAvatar);
 router.post('/logout', protect, logout);
 router.post('/change-password', protect, changePassword);
 router.post('/request-role-upgrade', protect, authLimiter, requestRoleUpgrade);

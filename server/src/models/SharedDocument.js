@@ -19,6 +19,14 @@ const sharedDocumentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    storagePath: {
+      type: String,
+      default: '',
+    },
+    bucket: {
+      type: String,
+      default: 'institution-documents',
+    },
     fileSize: {
       type: Number,
       required: true,

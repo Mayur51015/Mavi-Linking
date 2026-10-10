@@ -45,7 +45,10 @@ const {
   updateInstitution,
   assignInstitutionAdmin,
   removeInstitutionAdmin,
+  uploadInstitutionLogo,
 } = require('../controllers/institutionController');
+const { uploadLogo } = require('../middleware/uploadMiddleware');
+
 
 const {
   appointDepartmentAdmin,
@@ -145,6 +148,7 @@ router.patch('/users/:id/institution', updateUserInstitution);
 router.put('/users/:id/institution', updateUserInstitution);
 router.get('/logs', enforceInstitutionScope, getAuditLogs);
 router.put('/my-institution', enforceInstitutionScope, updateMyInstitutionSettings);
+router.post('/my-institution/logo', enforceInstitutionScope, uploadLogo, uploadInstitutionLogo);
 
 // Role Requests & Verifications
 router.get('/role-requests', enforceInstitutionScope, getRoleRequests);
@@ -163,8 +167,10 @@ router.get('/institutions/:id', enforceInstitutionScope, getInstitutionById);
 // Super Admin Only Institution Control Routes
 router.post('/institutions', requireSuperAdmin, createInstitution);
 router.put('/institutions/:id', requireSuperAdmin, updateInstitution);
+router.post('/institutions/:id/logo', requireSuperAdmin, uploadLogo, uploadInstitutionLogo);
 router.post('/institutions/:id/assign-admin', requireSuperAdmin, assignInstitutionAdmin);
 router.post('/institutions/:id/remove-admin', requireSuperAdmin, removeInstitutionAdmin);
+
 
 // System & SMTP Health Diagnostic (Super Admin / Platform Owner)
 router.get('/system/smtp-status', requireSuperAdmin, async (req, res) => {

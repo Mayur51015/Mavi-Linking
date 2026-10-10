@@ -6,6 +6,16 @@ const AuditLog = require('../models/AuditLog');
 const crypto = require('crypto');
 const { sendAdminInvitationEmail, getClientBaseUrl } = require('../utils/sendEmail');
 const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
+const {
+  STORAGE_BUCKETS,
+  validateFile,
+  generateStoragePath,
+} = require('../utils/fileValidation');
+const {
+  getPublicUrl,
+  replaceFile,
+  cleanupOrphan,
+} = require('../services/supabaseStorageService');
 
 /**
  * @desc    Create a new Institution (College / University)
@@ -472,6 +482,111 @@ const removeInstitutionAdmin = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Upload institution official logo
+ * @route   POST /api/admin/my-institution/logo
+ * @route   POST /api/admin/institutions/:id/logo
+ * @access  Private (Institution Admin for own institution, or Super Admin)
+ */
+const uploadInstitutionLogo = async (req, res, next) => {
+  let uploadedStoragePath = null;
+  const bucket = STORAGE_BUCKETS.INSTITUTION_LOGOS;
+
+  try {
+    const file = req.file || (req.files && (req.files.logo?.[0] || req.files.file?.[0]));
+    if (!file) {
+      return res.status(400).json({ success: false, message: 'Please select a logo image file to upload.' });
+    }
+
+    // Determine target institution ID
+    let institutionId = req.params.id;
+    if (!institutionId) {
+      institutionId = req.institutionScope?.institutionId || req.user.institutionId;
+      if (typeof institutionId === 'object' && institutionId?._id) {
+        institutionId = institutionId._id;
+      }
+    }
+
+    if (!institutionId && (req.user.role === 'admin' || req.isSuperAdmin) && req.body.institutionId) {
+      institutionId = req.body.institutionId;
+    }
+
+    if (!institutionId) {
+      return res.status(400).json({ success: false, message: 'Institution ID is required.' });
+    }
+
+    // Tenant authorization boundary check:
+    const isSuper = req.user.role === 'admin' || req.isSuperAdmin;
+    const actorInstId = (req.institutionScope?.institutionId || req.user.institutionId)?.toString();
+
+    if (!isSuper && actorInstId && actorInstId !== institutionId.toString()) {
+      return res.status(403).json({
+        success: false,
+        code: 'CROSS_INSTITUTION_ACCESS_DENIED',
+        message: 'Forbidden. You do not have permission to modify this institution logo.',
+      });
+    }
+
+    const institution = await Institution.findById(institutionId);
+    if (!institution) {
+      return res.status(404).json({ success: false, message: 'Institution not found.' });
+    }
+
+    // Validate file (mime, ext, size, magic numbers)
+    const validation = validateFile(file, bucket);
+    if (!validation.valid) {
+      return res.status(400).json({ success: false, message: validation.message });
+    }
+
+    uploadedStoragePath = generateStoragePath('logos', institution._id.toString(), file.originalname);
+
+    const oldStoragePath = institution.logoStoragePath;
+    const uploadResult = await replaceFile({
+      bucket,
+      oldPath: oldStoragePath,
+      newPath: uploadedStoragePath,
+      buffer: file.buffer,
+      mimeType: file.mimetype,
+    });
+
+
+    if (!uploadResult.success) {
+      return res.status(502).json({
+        success: false,
+        message: `Failed to upload logo to storage: ${uploadResult.error}`,
+      });
+    }
+
+    const publicUrl = getPublicUrl(bucket, uploadedStoragePath);
+    institution.logo = publicUrl;
+    institution.logoStoragePath = uploadedStoragePath;
+    await institution.save();
+
+    await ActivityLog.create({
+      userId: req.user._id,
+      action: 'ADMIN_UPDATED_INSTITUTION_LOGO',
+      details: `Updated official logo for ${institution.name}`,
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Institution logo updated successfully.',
+      data: {
+        logo: publicUrl,
+        logoStoragePath: uploadedStoragePath,
+        institution,
+      },
+    });
+  } catch (error) {
+    if (uploadedStoragePath) {
+      await cleanupOrphan({ bucket, objectPath: uploadedStoragePath });
+    }
+    next(error);
+  }
+};
+
 module.exports = {
   createInstitution,
   getInstitutions,
@@ -479,4 +594,6 @@ module.exports = {
   updateInstitution,
   assignInstitutionAdmin,
   removeInstitutionAdmin,
+  uploadInstitutionLogo,
 };
+

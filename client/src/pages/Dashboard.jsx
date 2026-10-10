@@ -211,8 +211,42 @@ const Dashboard = () => {
     }
   };
 
+  // Avatar upload state and handler
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef(null);
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('error', 'Avatar image must be under 5MB.');
+      e.target.value = '';
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/auth/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data?.data?.user) {
+        setUser(res.data.data.user);
+      } else if (res.data?.data?.avatar) {
+        setUser((prev) => ({ ...prev, avatar: res.data.data.avatar }));
+      }
+      showToast('success', 'Profile picture updated successfully!');
+    } catch (err) {
+      showToast('error', err.response?.data?.message || 'Failed to upload profile picture.');
+    } finally {
+      setUploadingAvatar(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
   // Custom states for new modules
   const [pipelines, setPipelines] = useState([]);
+
   const [projectsCount, setProjectsCount] = useState(0);
   const [announcements, setAnnouncements] = useState([]);
   const [uploadStatus, setUploadStatus] = useState({});
@@ -1925,8 +1959,43 @@ const Dashboard = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '70vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
+              {/* Profile Avatar Upload Section */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1rem', background: 'var(--bg-subtle, #F8FAFC)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                <div style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid var(--brand-blue, #2563EB)' }}>
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div className="avatar-gradient" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                      {user?.name?.charAt(0) || 'U'}
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>Profile Picture</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>JPG, PNG or WebP up to 5MB</div>
+                  <input
+                    type="file"
+                    ref={avatarInputRef}
+                    onChange={handleAvatarChange}
+                    accept="image/jpeg,image/png,image/webp"
+                    style={{ display: 'none' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="btn btn-secondary btn-sm"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
+                  >
+                    <Upload size={13} />
+                    <span>{uploadingAvatar ? 'Uploading...' : 'Change Photo'}</span>
+                  </button>
+                </div>
+              </div>
+
               <div className="input-group">
                 <label className="input-label">Full Name</label>
+
                 <input
                   type="text"
                   className="input-field"

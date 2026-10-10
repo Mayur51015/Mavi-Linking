@@ -42,6 +42,8 @@ const projectSchema = new mongoose.Schema(
     forks: { type: Number, default: 0 },
     contributors: { type: Number, default: 1 },
     complexityScore: { type: Number, default: 0 },
+    screenshot: { type: String, default: '' },
+    storagePath: { type: String, default: '' },
   },
   {
     timestamps: true,

@@ -3,26 +3,53 @@ const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const {
+  STORAGE_BUCKETS,
+  validateFile,
+  generateStoragePath,
+} = require('../utils/fileValidation');
+const {
+  uploadFile,
+  getSignedUrl,
+  getPublicUrl,
+  deleteFile,
+  replaceFile,
+  cleanupOrphan,
+} = require('../services/supabaseStorageService');
 
-// Multer Memory Storage config (stores file in memory buffer, avoiding local disk writes)
+// Multer in-memory storage config (prevents ephemeral disk leaks on Render)
 const storage = multer.memoryStorage();
-
-// File Type Validation: PDF, JPG, JPEG, PNG
-const fileFilter = (req, file, cb) => {
-  const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png'];
-  const ext = path.extname(file.originalname).toLowerCase();
-  if (allowedExtensions.includes(ext)) {
-    cb(null, true);
-  } else {
-    cb(new Error(`Invalid file type. Allowed files: ${allowedExtensions.join(', ')}`), false);
-  }
-};
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB absolute ceiling; bucket-specific limits enforced in validation
 });
+
+/**
+ * Determine default bucket for document type
+ */
+const getBucketForDocType = (type) => {
+  if (type === 'resume') {
+    return STORAGE_BUCKETS.RESUMES;
+  }
+  if (['transcript', 'marksheet', 'certificate', 'internshipCompletion'].includes(type)) {
+    return STORAGE_BUCKETS.CERTIFICATES;
+  }
+  return STORAGE_BUCKETS.INSTITUTION_DOCUMENTS;
+};
+
+/**
+ * Determine bucket for portfolio doc category
+ */
+const getBucketForPortfolioCategory = (category) => {
+  if (category === 'Resume') {
+    return STORAGE_BUCKETS.RESUMES;
+  }
+  if (category === 'Certificate' || category === 'Marksheet') {
+    return STORAGE_BUCKETS.CERTIFICATES;
+  }
+  return STORAGE_BUCKETS.PROJECT_ASSETS;
+};
 
 /**
  * @desc    Upload profile document (resume, transcript, projectReport, internshipOffer, etc.)
@@ -30,6 +57,9 @@ const upload = multer({
  * @access  Private (Student/User)
  */
 const uploadProfileDocument = async (req, res, next) => {
+  let uploadedStoragePath = null;
+  let targetBucket = null;
+
   try {
     const { type } = req.params;
     const { title, description } = req.body;
@@ -45,15 +75,54 @@ const uploadProfileDocument = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'No file uploaded or file rejected by validator.' });
     }
 
+    targetBucket = getBucketForDocType(type);
+
+    // Validate file extension, MIME type, size, and magic bytes
+    const validation = validateFile(req.file, targetBucket);
+    if (!validation.valid) {
+      return res.status(400).json({ success: false, message: validation.message });
+    }
+
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
-    // Convert file buffer to Base64 Data URL for database storage
-    const mimeType = req.file.mimetype || 'application/octet-stream';
-    const base64Data = req.file.buffer.toString('base64');
-    const fileUrl = `data:${mimeType};base64,${base64Data}`;
+    // Generate secure storage path
+    uploadedStoragePath = generateStoragePath(type, req.user.id, req.file.originalname);
+
+    // Check for previous storage path to replace
+    let oldStoragePath = null;
+    let oldBucket = targetBucket;
+    if (user.documents?.list) {
+      const existing = user.documents.list.find(item => item.type === type);
+      if (existing?.storagePath) {
+        oldStoragePath = existing.storagePath;
+        oldBucket = existing.bucket || targetBucket;
+      }
+    }
+
+    // Upload to Supabase Storage
+    const uploadResult = await uploadFile({
+      bucket: targetBucket,
+      objectPath: uploadedStoragePath,
+      buffer: req.file.buffer,
+      mimeType: req.file.mimetype,
+    });
+
+    if (!uploadResult.success) {
+      return res.status(502).json({
+        success: false,
+        message: `Failed to upload file to storage: ${uploadResult.error}`,
+      });
+    }
+
+    // Clean up old file if replacing
+    if (oldStoragePath && oldStoragePath !== uploadedStoragePath) {
+      await deleteFile(oldBucket, oldStoragePath);
+    }
+
+    const fileUrl = uploadedStoragePath;
 
     // 1. Keep legacy fields in sync for backward compatibility
     if (!user.documents) {
@@ -63,15 +132,14 @@ const uploadProfileDocument = async (req, res, next) => {
       user.documents[type] = fileUrl;
     }
     if (type === 'transcript') {
-      user.documents.marksheet = fileUrl; // sync transcript with marksheet
+      user.documents.marksheet = fileUrl;
     }
 
-    // 2. Save in the documents.list array
+    // 2. Save in documents.list array with Supabase metadata
     if (!user.documents.list) {
       user.documents.list = [];
     }
 
-    // Replace existing item of same type if present
     const existingIndex = user.documents.list.findIndex(item => item.type === type);
     if (existingIndex !== -1) {
       user.documents.list.splice(existingIndex, 1);
@@ -95,36 +163,47 @@ const uploadProfileDocument = async (req, res, next) => {
       title: title || defaultTitles[type] || 'Document',
       type,
       fileUrl,
+      storagePath: uploadedStoragePath,
+      bucket: targetBucket,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      fileSize: req.file.size,
       description: description || '',
-      uploadedAt: new Date()
+      uploadedAt: new Date(),
     });
 
     await user.save();
 
     // Log timeline event
-    const { logTimelineEvent } = require('../utils/timelineLogger');
-    await logTimelineEvent(
-      req.user.id,
-      'DOCUMENT',
-      `Uploaded required document: ${type.toUpperCase()}`,
-      description || '',
-      { type }
-    );
+    try {
+      const { logTimelineEvent } = require('../utils/timelineLogger');
+      await logTimelineEvent(
+        req.user.id,
+        'DOCUMENT',
+        `Uploaded required document: ${type.toUpperCase()}`,
+        description || '',
+        { type }
+      );
+    } catch (_) {}
 
     // Re-evaluate intelligence
-    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
-    const updatedUser = await evaluateUserIntelligence(req.user.id);
+    try {
+      const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
+      await evaluateUserIntelligence(req.user.id);
+    } catch (_) {}
 
     res.status(200).json({
       success: true,
       message: `${type.toUpperCase()} uploaded successfully`,
-      data: { user: updatedUser || user }
+      data: {
+        user,
+        storagePath: uploadedStoragePath,
+        bucket: targetBucket,
+      },
     });
   } catch (error) {
-    if (req.file && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (err) {}
+    if (uploadedStoragePath && targetBucket) {
+      await cleanupOrphan({ bucket: targetBucket, objectPath: uploadedStoragePath });
     }
     next(error);
   }
@@ -153,17 +232,17 @@ const deleteProfileDocument = async (req, res, next) => {
       }
     }
 
-    // 2. Remove from documents.list array and delete file
+    // 2. Remove from documents.list array and delete from Supabase/disk
     if (user.documents?.list) {
       const idx = user.documents.list.findIndex(item => item.type === type);
       if (idx !== -1) {
-        const fileUrl = user.documents.list[idx].fileUrl;
-        if (fileUrl) {
-          const filepath = path.join(__dirname, '..', '..', fileUrl);
+        const item = user.documents.list[idx];
+        if (item.storagePath) {
+          await deleteFile(item.bucket || getBucketForDocType(type), item.storagePath);
+        } else if (item.fileUrl && !item.fileUrl.startsWith('data:')) {
+          const filepath = path.join(__dirname, '..', '..', item.fileUrl);
           if (fs.existsSync(filepath)) {
-            try {
-              fs.unlinkSync(filepath);
-            } catch (err) {}
+            try { fs.unlinkSync(filepath); } catch (_) {}
           }
         }
         user.documents.list.splice(idx, 1);
@@ -173,23 +252,21 @@ const deleteProfileDocument = async (req, res, next) => {
     await user.save();
 
     // Log timeline event
-    const { logTimelineEvent } = require('../utils/timelineLogger');
-    await logTimelineEvent(
-      req.user.id,
-      'DOCUMENT',
-      `Deleted required document: ${type.toUpperCase()}`,
-      '',
-      { type }
-    );
-
-    // Re-evaluate intelligence
-    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
-    const updatedUser = await evaluateUserIntelligence(req.user.id);
+    try {
+      const { logTimelineEvent } = require('../utils/timelineLogger');
+      await logTimelineEvent(
+        req.user.id,
+        'DOCUMENT',
+        `Deleted required document: ${type.toUpperCase()}`,
+        '',
+        { type }
+      );
+    } catch (_) {}
 
     res.status(200).json({
       success: true,
       message: 'Document deleted successfully',
-      data: { user: updatedUser || user }
+      data: { user },
     });
   } catch (error) {
     next(error);
@@ -204,7 +281,7 @@ const deleteProfileDocument = async (req, res, next) => {
 const getProfileDocument = async (req, res, next) => {
   try {
     const { type } = req.params;
-    const { download } = req.query;
+    const { download, format } = req.query;
 
     let targetUserId = req.user.id;
     if (req.query.userId && req.user.role !== 'user') {
@@ -226,30 +303,53 @@ const getProfileDocument = async (req, res, next) => {
       }
     }
 
-    // Try finding the fileUrl from list first, fallback to legacy field
-    let fileUrl = '';
+    let docItem = null;
     if (user.documents?.list) {
-      const item = user.documents.list.find(d => d.type === type);
-      if (item) fileUrl = item.fileUrl;
-    }
-    if (!fileUrl && user.documents) {
-      fileUrl = user.documents[type];
+      docItem = user.documents.list.find(d => d.type === type);
     }
 
-    if (!fileUrl) {
+    const rawFileUrl = docItem?.fileUrl || user.documents?.[type];
+    const storagePath = docItem?.storagePath;
+    const bucket = docItem?.bucket || getBucketForDocType(type);
+
+    if (!storagePath && !rawFileUrl) {
       return res.status(404).json({ success: false, message: 'Document not found.' });
     }
 
-    const filepath = path.join(__dirname, '..', '..', fileUrl);
-    if (!fs.existsSync(filepath)) {
-      return res.status(404).json({ success: false, message: 'Physical file is missing.' });
+    // 1. Supabase Storage flow
+    if (storagePath) {
+      const signedUrl = await getSignedUrl(bucket, storagePath, 3600);
+      if (signedUrl) {
+        if (format === 'json' || req.query.signedUrl === 'true') {
+          return res.status(200).json({ success: true, url: signedUrl, data: { signedUrl }, download: download === 'true' });
+        }
+        return res.redirect(signedUrl);
+      }
     }
 
-    if (download === 'true') {
-      res.download(filepath, `${type}-${user.name.replace(/\s+/g, '_')}${path.extname(filepath)}`);
-    } else {
-      res.sendFile(filepath);
+    // 2. Base64 Data URL fallback
+    if (rawFileUrl && rawFileUrl.startsWith('data:')) {
+      const matches = rawFileUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const mime = matches[1];
+        const buffer = Buffer.from(matches[2], 'base64');
+        res.setHeader('Content-Type', mime);
+        const disposition = download === 'true' ? 'attachment' : 'inline';
+        res.setHeader('Content-Disposition', `${disposition}; filename="${type}-${user.name.replace(/\s+/g, '_')}.pdf"`);
+        return res.send(buffer);
+      }
     }
+
+    // 3. Local disk fallback
+    const filepath = path.join(__dirname, '..', '..', rawFileUrl);
+    if (fs.existsSync(filepath)) {
+      if (download === 'true') {
+        return res.download(filepath, `${type}-${user.name.replace(/\s+/g, '_')}${path.extname(filepath)}`);
+      }
+      return res.sendFile(filepath);
+    }
+
+    return res.status(404).json({ success: false, message: 'Document file is no longer available.' });
   } catch (error) {
     next(error);
   }
@@ -261,38 +361,72 @@ const getProfileDocument = async (req, res, next) => {
  * @access  Private (Student/User)
  */
 const createCertificate = async (req, res, next) => {
+  let uploadedStoragePath = null;
+  const bucket = STORAGE_BUCKETS.CERTIFICATES;
+
   try {
     const { title, issuer, category, issueDate, expiryDate, credentialId, verificationUrl, description } = req.body;
-    if (!title) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    if (!title || !title.trim()) {
       return res.status(400).json({ success: false, message: 'Certificate title is required.' });
     }
 
     const user = await User.findById(req.user.id);
     if (!user) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
     let fileUrl = '';
+    let originalName = '';
+    let mimeType = '';
+    let fileSize = 0;
+
     if (req.file) {
-      fileUrl = `/public/uploads/${req.file.filename}`;
+      const validation = validateFile(req.file, bucket);
+      if (!validation.valid) {
+        return res.status(400).json({ success: false, message: validation.message });
+      }
+
+      uploadedStoragePath = generateStoragePath('certificates', req.user.id, req.file.originalname);
+      originalName = req.file.originalname;
+      mimeType = req.file.mimetype;
+      fileSize = req.file.size;
+
+      const uploadResult = await uploadFile({
+        bucket,
+        objectPath: uploadedStoragePath,
+        buffer: req.file.buffer,
+        mimeType: req.file.mimetype,
+      });
+
+      if (!uploadResult.success) {
+        return res.status(502).json({
+          success: false,
+          message: `Failed to upload certificate file: ${uploadResult.error}`,
+        });
+      }
+
+      fileUrl = uploadedStoragePath;
     }
 
     const newCert = {
-      title,
-      issuer: issuer || '',
-      category: category || '',
-      date: issueDate ? new Date(issueDate) : null, // sync date with issueDate
+      title: title.trim(),
+      issuer: issuer ? issuer.trim() : '',
+      category: category ? category.trim() : '',
+      date: issueDate ? new Date(issueDate) : null,
       issueDate: issueDate ? new Date(issueDate) : null,
       expiryDate: expiryDate ? new Date(expiryDate) : null,
-      credentialId: credentialId || '',
-      verificationUrl: verificationUrl || '',
-      description: description || '',
+      credentialId: credentialId ? credentialId.trim() : '',
+      verificationUrl: verificationUrl ? verificationUrl.trim() : '',
+      description: description ? description.trim() : '',
       fileUrl,
+      storagePath: uploadedStoragePath || '',
+      bucket,
+      originalName,
+      mimeType,
+      fileSize,
       uploadedAt: new Date(),
       isVerified: false,
-      verifiedBy: null
+      verifiedBy: null,
     };
 
     if (!user.certificates) {
@@ -302,29 +436,26 @@ const createCertificate = async (req, res, next) => {
     await user.save();
 
     // Log timeline event
-    const { logTimelineEvent } = require('../utils/timelineLogger');
-    await logTimelineEvent(
-      req.user.id,
-      'CERTIFICATE',
-      `Added Certificate: ${title}`,
-      description || '',
-      { title, issuer }
-    );
+    try {
+      const { logTimelineEvent } = require('../utils/timelineLogger');
+      await logTimelineEvent(
+        req.user.id,
+        'CERTIFICATE',
+        `Added Certificate: ${title}`,
+        description || '',
+        { title, issuer }
+      );
+    } catch (_) {}
 
-    // Re-evaluate intelligence
-    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
-    const updatedUser = await evaluateUserIntelligence(req.user.id);
-
+    const createdCert = user.certificates[user.certificates.length - 1];
     res.status(201).json({
       success: true,
       message: 'Certificate uploaded successfully',
-      data: { user: updatedUser || user }
+      data: { user, certificate: createdCert },
     });
   } catch (error) {
-    if (req.file && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (err) {}
+    if (uploadedStoragePath) {
+      await cleanupOrphan({ bucket, objectPath: uploadedStoragePath });
     }
     next(error);
   }
@@ -336,75 +467,80 @@ const createCertificate = async (req, res, next) => {
  * @access  Private (Student/User)
  */
 const updateCertificate = async (req, res, next) => {
+  let uploadedStoragePath = null;
+  const bucket = STORAGE_BUCKETS.CERTIFICATES;
+
   try {
     const { id } = req.params;
     const { title, issuer, category, issueDate, expiryDate, credentialId, verificationUrl, description } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
-    const certIndex = user.certificates.findIndex(c => c._id.toString() === id);
+    const certIndex = (user.certificates || []).findIndex(c => c._id.toString() === id);
     if (certIndex === -1) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(404).json({ success: false, message: 'Certificate not found.' });
     }
 
     const cert = user.certificates[certIndex];
 
-    if (title) cert.title = title;
-    if (issuer !== undefined) cert.issuer = issuer;
-    if (category !== undefined) cert.category = category;
+    if (title) cert.title = title.trim();
+    if (issuer !== undefined) cert.issuer = issuer.trim();
+    if (category !== undefined) cert.category = category.trim();
     if (issueDate !== undefined) {
       cert.issueDate = issueDate ? new Date(issueDate) : null;
       cert.date = issueDate ? new Date(issueDate) : null;
     }
     if (expiryDate !== undefined) cert.expiryDate = expiryDate ? new Date(expiryDate) : null;
-    if (credentialId !== undefined) cert.credentialId = credentialId;
-    if (verificationUrl !== undefined) cert.verificationUrl = verificationUrl;
-    if (description !== undefined) cert.description = description;
+    if (credentialId !== undefined) cert.credentialId = credentialId.trim();
+    if (verificationUrl !== undefined) cert.verificationUrl = verificationUrl.trim();
+    if (description !== undefined) cert.description = description.trim();
 
-    // If new file is uploaded, replace the old one
     if (req.file) {
-      if (cert.fileUrl) {
-        const oldFilepath = path.join(__dirname, '..', '..', cert.fileUrl);
-        if (fs.existsSync(oldFilepath)) {
-          try {
-            fs.unlinkSync(oldFilepath);
-          } catch (err) {}
-        }
+      const validation = validateFile(req.file, bucket);
+      if (!validation.valid) {
+        return res.status(400).json({ success: false, message: validation.message });
       }
-      cert.fileUrl = `/public/uploads/${req.file.filename}`;
+
+      uploadedStoragePath = generateStoragePath('certificates', req.user.id, req.file.originalname);
+
+      // Safe replacement
+      const oldStoragePath = cert.storagePath;
+      const uploadResult = await replaceFile({
+        bucket,
+        oldPath: oldStoragePath,
+        newPath: uploadedStoragePath,
+        buffer: req.file.buffer,
+        mimeType: req.file.mimetype,
+      });
+
+      if (!uploadResult.success) {
+        return res.status(502).json({
+          success: false,
+          message: `Failed to replace certificate file: ${uploadResult.error}`,
+        });
+      }
+
+      cert.fileUrl = uploadedStoragePath;
+      cert.storagePath = uploadedStoragePath;
+      cert.bucket = bucket;
+      cert.originalName = req.file.originalname;
+      cert.mimeType = req.file.mimetype;
+      cert.fileSize = req.file.size;
     }
 
     await user.save();
 
-    // Log timeline event
-    const { logTimelineEvent } = require('../utils/timelineLogger');
-    await logTimelineEvent(
-      req.user.id,
-      'CERTIFICATE',
-      `Updated Certificate: ${cert.title}`,
-      cert.description || '',
-      { title: cert.title, issuer: cert.issuer }
-    );
-
-    // Re-evaluate intelligence
-    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
-    const updatedUser = await evaluateUserIntelligence(req.user.id);
-
     res.status(200).json({
       success: true,
       message: 'Certificate updated successfully',
-      data: { user: updatedUser || user }
+      data: { user },
     });
   } catch (error) {
-    if (req.file && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (err) {}
+    if (uploadedStoragePath) {
+      await cleanupOrphan({ bucket, objectPath: uploadedStoragePath });
     }
     next(error);
   }
@@ -423,42 +559,28 @@ const deleteCertificate = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
-    const certIndex = user.certificates.findIndex(c => c._id.toString() === id);
+    const certIndex = (user.certificates || []).findIndex(c => c._id.toString() === id);
     if (certIndex === -1) {
       return res.status(404).json({ success: false, message: 'Certificate not found.' });
     }
 
     const cert = user.certificates[certIndex];
-    if (cert.fileUrl) {
+    if (cert.storagePath) {
+      await deleteFile(cert.bucket || STORAGE_BUCKETS.CERTIFICATES, cert.storagePath);
+    } else if (cert.fileUrl && !cert.fileUrl.startsWith('data:')) {
       const filepath = path.join(__dirname, '..', '..', cert.fileUrl);
       if (fs.existsSync(filepath)) {
-        try {
-          fs.unlinkSync(filepath);
-        } catch (err) {}
+        try { fs.unlinkSync(filepath); } catch (_) {}
       }
     }
 
-    const deletedTitle = cert.title;
     user.certificates.splice(certIndex, 1);
     await user.save();
-
-    // Log timeline event
-    const { logTimelineEvent } = require('../utils/timelineLogger');
-    await logTimelineEvent(
-      req.user.id,
-      'CERTIFICATE',
-      `Removed Certificate: ${deletedTitle}`,
-      ''
-    );
-
-    // Re-evaluate intelligence
-    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
-    const updatedUser = await evaluateUserIntelligence(req.user.id);
 
     res.status(200).json({
       success: true,
       message: 'Certificate deleted successfully',
-      data: { user: updatedUser || user }
+      data: { user },
     });
   } catch (error) {
     next(error);
@@ -473,7 +595,7 @@ const deleteCertificate = async (req, res, next) => {
 const getCertificateFile = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { download } = req.query;
+    const { download, format } = req.query;
 
     let targetUserId = req.user.id;
     if (req.query.userId && req.user.role !== 'user') {
@@ -495,27 +617,34 @@ const getCertificateFile = async (req, res, next) => {
       }
     }
 
-    const cert = user.certificates.find(c => c._id.toString() === id);
-    if (!cert || !cert.fileUrl) {
+    const cert = (user.certificates || []).find(c => c._id.toString() === id);
+    if (!cert || (!cert.storagePath && !cert.fileUrl)) {
       return res.status(404).json({ success: false, message: 'Certificate file not found.' });
     }
 
-    const filepath = path.join(__dirname, '..', '..', cert.fileUrl);
-    if (!fs.existsSync(filepath)) {
-      return res.status(404).json({ success: false, message: 'Physical file is missing.' });
+    if (cert.storagePath) {
+      const signedUrl = await getSignedUrl(cert.bucket || STORAGE_BUCKETS.CERTIFICATES, cert.storagePath, 3600);
+      if (signedUrl) {
+        if (format === 'json' || req.query.signedUrl === 'true') {
+          return res.status(200).json({ success: true, url: signedUrl, data: { signedUrl }, download: download === 'true' });
+        }
+        return res.redirect(signedUrl);
+      }
     }
 
-    if (download === 'true') {
-      res.download(filepath, `${cert.title.replace(/\s+/g, '_')}${path.extname(filepath)}`);
-    } else {
-      res.sendFile(filepath);
+    const filepath = path.join(__dirname, '..', '..', cert.fileUrl);
+    if (fs.existsSync(filepath)) {
+      if (download === 'true') {
+        return res.download(filepath, `${cert.title.replace(/\s+/g, '_')}${path.extname(filepath)}`);
+      }
+      return res.sendFile(filepath);
     }
+
+    return res.status(404).json({ success: false, message: 'Certificate file is no longer available.' });
   } catch (error) {
     next(error);
   }
 };
-
-// ─── Portfolio Documents (dynamic, unified) ──────────────────────────────────
 
 /**
  * @desc    Create a new portfolio document
@@ -523,28 +652,64 @@ const getCertificateFile = async (req, res, next) => {
  * @access  Private (Student/User)
  */
 const createPortfolioDoc = async (req, res, next) => {
+  let uploadedStoragePath = null;
+  let bucket = STORAGE_BUCKETS.PROJECT_ASSETS;
+
   try {
     const { title, category, description } = req.body;
     if (!title || !title.trim()) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(400).json({ success: false, message: 'Document title is required.' });
     }
 
     const user = await User.findById(req.user.id);
     if (!user) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
     const allowedCategories = ['Resume', 'Certificate', 'Marksheet', 'Project Report', 'Internship', 'Achievement', 'Research Paper', 'Other'];
     const safeCategory = allowedCategories.includes(category) ? category : 'Other';
+    bucket = getBucketForPortfolioCategory(safeCategory);
+
+    let originalName = '';
+    let mimeType = '';
+    let fileSize = 0;
+
+    if (req.file) {
+      const validation = validateFile(req.file, bucket);
+      if (!validation.valid) {
+        return res.status(400).json({ success: false, message: validation.message });
+      }
+
+      uploadedStoragePath = generateStoragePath('portfolio', req.user.id, req.file.originalname);
+      originalName = req.file.originalname;
+      mimeType = req.file.mimetype;
+      fileSize = req.file.size;
+
+      const uploadResult = await uploadFile({
+        bucket,
+        objectPath: uploadedStoragePath,
+        buffer: req.file.buffer,
+        mimeType: req.file.mimetype,
+      });
+
+      if (!uploadResult.success) {
+        return res.status(502).json({
+          success: false,
+          message: `Failed to upload portfolio document: ${uploadResult.error}`,
+        });
+      }
+    }
 
     const newDoc = {
       title: title.trim(),
       category: safeCategory,
       description: description?.trim() || '',
-      fileUrl: req.file ? `/public/uploads/${req.file.filename}` : '',
-      originalName: req.file ? req.file.originalname : '',
+      fileUrl: uploadedStoragePath || '',
+      storagePath: uploadedStoragePath || '',
+      bucket,
+      originalName,
+      mimeType,
+      fileSize,
       uploadedAt: new Date(),
     };
 
@@ -552,24 +717,10 @@ const createPortfolioDoc = async (req, res, next) => {
     user.portfolioDocs.push(newDoc);
     await user.save();
 
-    // Log timeline event
-    const { logTimelineEvent } = require('../utils/timelineLogger');
-    await logTimelineEvent(
-      req.user.id,
-      'DOCUMENT',
-      `Uploaded ${safeCategory}: ${title}`,
-      description?.substring(0, 50),
-      { category: safeCategory }
-    );
-
-    // Re-evaluate intelligence asynchronously
-    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
-    evaluateUserIntelligence(req.user.id).catch(err => console.error('AI Eval Error:', err));
-
     res.status(201).json({ success: true, message: 'Document added successfully.', data: { user } });
   } catch (error) {
-    if (req.file && fs.existsSync(req.file.path)) {
-      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    if (uploadedStoragePath) {
+      await cleanupOrphan({ bucket, objectPath: uploadedStoragePath });
     }
     next(error);
   }
@@ -581,58 +732,68 @@ const createPortfolioDoc = async (req, res, next) => {
  * @access  Private (Student/User)
  */
 const updatePortfolioDoc = async (req, res, next) => {
+  let uploadedStoragePath = null;
+  let bucket = STORAGE_BUCKETS.PROJECT_ASSETS;
+
   try {
     const { id } = req.params;
     const { title, category, description } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
     const doc = (user.portfolioDocs || []).find(d => d._id.toString() === id);
     if (!doc) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(404).json({ success: false, message: 'Document not found.' });
     }
 
     const allowedCategories = ['Resume', 'Certificate', 'Marksheet', 'Project Report', 'Internship', 'Achievement', 'Research Paper', 'Other'];
-
     if (title?.trim()) doc.title = title.trim();
     if (category && allowedCategories.includes(category)) doc.category = category;
     if (description !== undefined) doc.description = description?.trim() || '';
 
+    bucket = getBucketForPortfolioCategory(doc.category);
+
     if (req.file) {
-      // Delete old file
-      if (doc.fileUrl) {
-        const oldPath = path.join(__dirname, '..', '..', doc.fileUrl);
-        if (fs.existsSync(oldPath)) { try { fs.unlinkSync(oldPath); } catch (_) {} }
+      const validation = validateFile(req.file, bucket);
+      if (!validation.valid) {
+        return res.status(400).json({ success: false, message: validation.message });
       }
-      doc.fileUrl = `/public/uploads/${req.file.filename}`;
+
+      uploadedStoragePath = generateStoragePath('portfolio', req.user.id, req.file.originalname);
+
+      const oldPath = doc.storagePath;
+      const uploadResult = await replaceFile({
+        bucket,
+        oldPath,
+        newPath: uploadedStoragePath,
+        buffer: req.file.buffer,
+        mimeType: req.file.mimetype,
+      });
+
+      if (!uploadResult.success) {
+        return res.status(502).json({
+          success: false,
+          message: `Failed to replace document: ${uploadResult.error}`,
+        });
+      }
+
+      doc.fileUrl = uploadedStoragePath;
+      doc.storagePath = uploadedStoragePath;
+      doc.bucket = bucket;
       doc.originalName = req.file.originalname;
+      doc.mimeType = req.file.mimetype;
+      doc.fileSize = req.file.size;
     }
 
     await user.save();
 
-    // Log timeline event
-    const { logTimelineEvent } = require('../utils/timelineLogger');
-    await logTimelineEvent(
-      req.user.id,
-      'DOCUMENT',
-      `Updated ${doc.category}: ${doc.title}`,
-      doc.description || '',
-      { category: doc.category }
-    );
-
-    // Re-evaluate intelligence
-    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
-    const updatedUser = await evaluateUserIntelligence(req.user.id);
-
-    res.status(200).json({ success: true, message: 'Document updated successfully.', data: { user: updatedUser || user } });
+    res.status(200).json({ success: true, message: 'Document updated successfully.', data: { user } });
   } catch (error) {
-    if (req.file && fs.existsSync(req.file.path)) {
-      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    if (uploadedStoragePath) {
+      await cleanupOrphan({ bucket, objectPath: uploadedStoragePath });
     }
     next(error);
   }
@@ -653,30 +814,17 @@ const deletePortfolioDoc = async (req, res, next) => {
     if (idx === -1) return res.status(404).json({ success: false, message: 'Document not found.' });
 
     const doc = user.portfolioDocs[idx];
-    if (doc.fileUrl) {
+    if (doc.storagePath) {
+      await deleteFile(doc.bucket || STORAGE_BUCKETS.PROJECT_ASSETS, doc.storagePath);
+    } else if (doc.fileUrl && !doc.fileUrl.startsWith('data:')) {
       const filepath = path.join(__dirname, '..', '..', doc.fileUrl);
       if (fs.existsSync(filepath)) { try { fs.unlinkSync(filepath); } catch (_) {} }
     }
 
-    const deletedTitle = doc.title;
-    const deletedCat = doc.category;
     user.portfolioDocs.splice(idx, 1);
     await user.save();
 
-    // Log timeline event
-    const { logTimelineEvent } = require('../utils/timelineLogger');
-    await logTimelineEvent(
-      req.user.id,
-      'DOCUMENT',
-      `Deleted ${deletedCat}: ${deletedTitle}`,
-      ''
-    );
-
-    // Re-evaluate intelligence
-    const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
-    const updatedUser = await evaluateUserIntelligence(req.user.id);
-
-    res.status(200).json({ success: true, message: 'Document deleted successfully.', data: { user: updatedUser || user } });
+    res.status(200).json({ success: true, message: 'Document deleted successfully.', data: { user } });
   } catch (error) {
     next(error);
   }
@@ -690,7 +838,7 @@ const deletePortfolioDoc = async (req, res, next) => {
 const getPortfolioDocFile = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { download } = req.query;
+    const { download, format } = req.query;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, code: 'INVALID_DOCUMENT_ID', message: 'Invalid document ID format.' });
@@ -716,91 +864,132 @@ const getPortfolioDocFile = async (req, res, next) => {
       }
     }
 
-    // 1. Search in portfolioDocs
     let doc = (user.portfolioDocs || []).find(d => d._id && d._id.toString() === id);
 
-    // 2. Fallback search in certificates
     if (!doc && user.certificates) {
       const cert = user.certificates.find(c => c._id && c._id.toString() === id);
-      if (cert) {
-        doc = { title: cert.title, fileUrl: cert.fileUrl, originalName: cert.title };
-      }
+      if (cert) doc = cert;
     }
 
-    // 3. Fallback search in documents.list
     if (!doc && user.documents?.list) {
       const dList = user.documents.list.find(d => d._id && d._id.toString() === id);
-      if (dList) {
-        doc = { title: dList.title, fileUrl: dList.fileUrl, originalName: dList.title };
-      }
+      if (dList) doc = dList;
     }
 
-    if (!doc || !doc.fileUrl) {
-      console.error(`[DOCUMENT DEBUG] Document ID ${id} not found in user ${targetUserId} arrays. portfolioDocs len: ${user.portfolioDocs?.length}, certs len: ${user.certificates?.length}`);
+    if (!doc || (!doc.storagePath && !doc.fileUrl)) {
       return res.status(404).json({ success: false, code: 'DOCUMENT_NOT_FOUND', message: 'Document not found.' });
     }
 
-    // Multi-path file resolution strategy for local and production environments
-    const rawFileUrl = doc.fileUrl;
-    const basename = path.basename(rawFileUrl);
-    const cleanRelativeUrl = rawFileUrl.replace(/^[\/\\]+/, '');
+    // 1. Supabase Storage flow
+    if (doc.storagePath) {
+      const bucket = doc.bucket || getBucketForPortfolioCategory(doc.category);
+      const signedUrl = await getSignedUrl(bucket, doc.storagePath, 3600);
+      if (signedUrl) {
+        if (format === 'json') {
+          return res.status(200).json({ success: true, url: signedUrl, download: download === 'true' });
+        }
+        return res.redirect(signedUrl);
+      }
+    }
 
+    // 2. Base64 fallback
+    const rawFileUrl = doc.fileUrl;
+    if (rawFileUrl && rawFileUrl.startsWith('data:')) {
+      const matches = rawFileUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const mime = matches[1];
+        const buffer = Buffer.from(matches[2], 'base64');
+        res.setHeader('Content-Type', mime);
+        const disposition = download === 'true' ? 'attachment' : 'inline';
+        res.setHeader('Content-Disposition', `${disposition}; filename="${(doc.title || 'document').replace(/\s+/g, '_')}.pdf"`);
+        return res.send(buffer);
+      }
+    }
+
+    // 3. Local disk fallback
     const candidatePaths = [
-      path.join(__dirname, '..', '..', cleanRelativeUrl),
-      path.join(__dirname, '..', '..', 'public', 'uploads', basename),
-      path.join(__dirname, '..', '..', 'public', cleanRelativeUrl),
-      path.join(process.cwd(), cleanRelativeUrl),
-      path.join(process.cwd(), 'public', 'uploads', basename),
-      path.join(process.cwd(), 'server', 'public', 'uploads', basename),
+      path.join(__dirname, '..', '..', rawFileUrl.replace(/^[\/\\]+/, '')),
+      path.join(__dirname, '..', '..', 'public', 'uploads', path.basename(rawFileUrl)),
+      path.join(process.cwd(), rawFileUrl.replace(/^[\/\\]+/, '')),
       path.resolve(rawFileUrl),
     ];
 
     const filepath = candidatePaths.find(p => fs.existsSync(p));
-
-    if (!filepath) {
-      console.error(`[DOCUMENT 404] Physical file missing for doc ID '${id}'. DB FileUrl: '${rawFileUrl}'. Tested paths:`, candidatePaths);
-      return res.status(404).json({
-        success: false,
-        code: 'FILE_NOT_FOUND',
-        message: 'The document file is no longer available.',
-      });
+    if (filepath) {
+      const safeName = (doc.title || doc.originalName || 'document').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `${safeName}${path.extname(filepath)}`;
+      if (download === 'true') {
+        return res.download(filepath, filename);
+      }
+      return res.sendFile(filepath);
     }
 
-    const ext = path.extname(filepath).toLowerCase();
-    const contentType = ext === '.pdf' ? 'application/pdf' :
-                        ext === '.png' ? 'image/png' :
-                        (ext === '.jpg' || ext === '.jpeg') ? 'image/jpeg' :
-                        'application/octet-stream';
-
-    const safeName = (doc.title || doc.originalName || 'document').replace(/[^a-zA-Z0-9_-]/g, '_');
-    const filename = `${safeName}${ext}`;
-
-    res.setHeader('Content-Type', contentType);
-
-    if (download === 'true') {
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.download(filepath, filename, (err) => {
-        if (err && !res.headersSent) {
-          next(err);
-        }
-      });
-    } else {
-      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-      res.sendFile(filepath, (err) => {
-        if (err && !res.headersSent) {
-          next(err);
-        }
-      });
-    }
+    return res.status(404).json({ success: false, code: 'FILE_NOT_FOUND', message: 'The document file is no longer available.' });
   } catch (error) {
-    console.error('[DOCUMENT] Server error reading document:', error);
-    if (!res.headersSent) {
-      return res.status(500).json({
+    next(error);
+  }
+};
+
+/**
+ * @desc    Upload avatar profile picture (Students, Faculty, Recruiters)
+ * @route   POST /api/auth/avatar
+ * @access  Private
+ */
+const uploadAvatar = async (req, res, next) => {
+  let uploadedStoragePath = null;
+  const bucket = STORAGE_BUCKETS.PROFILE_IMAGES;
+
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please select an image file to upload.' });
+    }
+
+    const validation = validateFile(req.file, bucket);
+    if (!validation.valid) {
+      return res.status(400).json({ success: false, message: validation.message });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    uploadedStoragePath = generateStoragePath('avatars', req.user.id, req.file.originalname);
+
+    const oldStoragePath = user.avatarStoragePath;
+    const uploadResult = await replaceFile({
+      bucket,
+      oldPath: oldStoragePath,
+      newPath: uploadedStoragePath,
+      buffer: req.file.buffer,
+      mimeType: req.file.mimetype,
+    });
+
+    if (!uploadResult.success) {
+      return res.status(502).json({
         success: false,
-        code: 'DOCUMENT_READ_FAILED',
-        message: 'Unable to retrieve the document.',
+        message: `Failed to upload avatar to storage: ${uploadResult.error}`,
       });
     }
+
+    const publicUrl = getPublicUrl(bucket, uploadedStoragePath);
+    user.avatar = publicUrl;
+    user.avatarStoragePath = uploadedStoragePath;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile picture updated successfully.',
+      data: {
+        avatar: publicUrl,
+        user,
+      },
+    });
+  } catch (error) {
+    if (uploadedStoragePath) {
+      await cleanupOrphan({ bucket, objectPath: uploadedStoragePath });
+    }
+    next(error);
   }
 };
 
@@ -817,4 +1006,5 @@ module.exports = {
   updatePortfolioDoc,
   deletePortfolioDoc,
   getPortfolioDocFile,
+  uploadAvatar,
 };

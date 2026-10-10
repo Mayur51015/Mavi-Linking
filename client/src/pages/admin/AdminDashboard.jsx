@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+
 import { motion } from 'framer-motion';
 import {
   Shield,
@@ -396,7 +397,38 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
     }
   };
 
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef(null);
+
+  const handleLogoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Logo image must be under 5MB.');
+      e.target.value = '';
+      return;
+    }
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('logo', file);
+      const res = await api.post('/admin/my-institution/logo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data?.data?.logo) {
+        setInstitutionData((prev) => ({ ...prev, logo: res.data.data.logo }));
+      }
+      alert('Institution official logo updated successfully!');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to upload institution logo.');
+    } finally {
+      setUploadingLogo(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
   const handleCreateAnnouncement = async (e) => {
+
     e.preventDefault();
     try {
       await api.post('/teacher/announcements', newAnnouncement);
@@ -1177,8 +1209,41 @@ const AdminDashboard = ({ activeTab: propActiveTab }) => {
                 </div>
 
                 <form onSubmit={handleSaveSettings} style={{ display: 'grid', gap: '1.25rem' }}>
+                  {/* Institution Official Logo Upload Section */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.25rem', background: '#F8FAFC', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#FFFFFF', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {institutionData?.logo ? (
+                        <img src={institutionData.logo} alt="Institution Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      ) : (
+                        <Building size={32} style={{ color: 'var(--text-secondary)' }} />
+                      )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: '0.2rem' }}>Official Institution Logo</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>PNG, JPG, WebP, or SVG up to 5MB</div>
+                      <input
+                        type="file"
+                        ref={logoInputRef}
+                        onChange={handleLogoChange}
+                        accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        disabled={uploadingLogo}
+                        className="btn btn-outline"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.775rem', padding: '0.35rem 0.8rem' }}
+                      >
+                        <Upload size={14} />
+                        <span>{uploadingLogo ? 'Uploading Logo...' : 'Upload Official Logo'}</span>
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="input-group">
                     <label className="input-label">Institution Legal Name</label>
+
                     <input
                       type="text"
                       className="input-field"

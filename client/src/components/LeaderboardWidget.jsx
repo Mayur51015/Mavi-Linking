@@ -68,11 +68,11 @@ const LeaderboardWidget = () => {
           <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(251, 191, 36, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F59E0B' }}>
             <Trophy size={16} />
           </div>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111111', fontFamily: 'Inter, sans-serif' }}>
             Global Leaderboard
           </h3>
         </div>
-        <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>
+        <span style={{ fontSize: '0.72rem', color: '#6B7280' }}>
           {leaderboard.length} Ranked
         </span>
       </div>
@@ -107,7 +107,7 @@ const LeaderboardWidget = () => {
             const rank = item.rank || (index + 1);
             const medal = item.medal || (rank === 1 ? 'GOLD' : rank === 2 ? 'SILVER' : rank === 3 ? 'BRONZE' : null);
             const scoreTier = item.scoreTier || item.tier || 'Beginner';
-            const isSelf = currentUser && (userObj._id === currentUser._id || userObj.maviId === currentUser.maviId);
+            const isSelf = currentUser && (userObj._id === currentUser._id || userObj.etxId === currentUser.etxId);
 
             return (
               <div
@@ -117,28 +117,28 @@ const LeaderboardWidget = () => {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '0.85rem 1rem',
-                  background: isSelf ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.02)',
-                  border: isSelf ? '1px solid var(--accent-purple)' : '1px solid transparent',
+                  background: isSelf ? '#EFF6FF' : '#F8F9FA',
+                  border: isSelf ? '1px solid #BFDBFE' : '1px solid #E5E7EB',
                   marginBottom: '0.5rem',
                   borderRadius: '8px'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: rank <= 3 ? '#fbbf24' : 'var(--text-secondary)', width: '24px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: rank <= 3 ? '#fbbf24' : '#4B5563', width: '24px', textAlign: 'center' }}>
                     #{rank}
                   </span>
-                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: isSelf ? 'var(--gradient-primary)' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'white' }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: isSelf ? '#2563EB' : '#F3F4F6', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: isSelf ? '#FFFFFF' : '#111111' }}>
                     {userObj.name?.charAt(0) || '?'}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 'bold', color: isSelf ? 'var(--accent-purple)' : 'white', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <div style={{ fontWeight: 'bold', color: isSelf ? '#2563EB' : '#111111', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                       <span>{userObj.name || 'Developer'}</span>
-                      {userObj.maviId && (
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                          ({userObj.maviId})
+                      {userObj.etxId && (
+                        <span style={{ fontSize: '0.7rem', color: '#6B7280', fontFamily: 'monospace' }}>
+                          ({userObj.etxId})
                         </span>
                       )}
-                      {isSelf && <span className="badge badge-purple" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>You</span>}
+                      {isSelf && <span className="badge badge-blue" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>You</span>}
                       {renderMedalBadge(medal)}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: getScoreTierColor(scoreTier), fontWeight: '600', marginTop: '0.1rem' }}>

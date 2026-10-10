@@ -201,7 +201,7 @@ const ChangeEmailModal = ({ isOpen, onClose, onSuccess }) => {
           >
             <Mail size={24} />
           </div>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: '800', margin: 0, color: '#ffffff' }}>
+          <h2 style={{ fontSize: '1.35rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
             {step === 1 ? 'Change Registered Email' : 'Verify New Email Address'}
           </h2>
           <p style={{ color: 'var(--text-muted, #a1a1aa)', fontSize: '0.85rem', marginTop: '0.35rem' }}>

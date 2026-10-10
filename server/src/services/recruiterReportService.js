@@ -182,14 +182,14 @@ const writeRecruiterReportPdf = async (report, res) => {
   const doc = new PDFDocument({ size: 'A4', margin: 45 });
   doc.pipe(res);
 
-  doc.fontSize(25).fillColor('#111').text('MAVI-Linking', { align: 'center' });
+  doc.fontSize(25).fillColor('#111').text('EduTalentX', { align: 'center' });
   doc.fontSize(18).fillColor('#333').text('Recruiter AI Candidate Report', { align: 'center' });
   doc.fontSize(9).fillColor('#777').text(`Generated: ${report.generatedAt.toLocaleString()}`, { align: 'center' });
   doc.moveDown();
 
   writeSection(doc, 'Candidate Information', [
     `Name: ${toText(candidate.name)}`,
-    `MAVI ID: ${toText(candidate.maviId || `MAVI-${candidate._id.toString().slice(-8).toUpperCase()}`)}`,
+    `ETX ID: ${toText(candidate.etxId || `ETX-${candidate._id.toString().slice(-8).toUpperCase()}`)}`,
     `Email: ${toText(candidate.email)}`,
     `Username: ${toText(candidate.username)}`,
     `University: ${toText(candidate.university?.name)}`,

@@ -134,7 +134,7 @@ const AdminAcceptInvite = () => {
         if (!err.response) {
           setErrorDetails({
             title: 'Connection Error',
-            message: 'Unable to connect to MAVI Linking. Please check your internet connection and try again.',
+            message: 'Unable to connect to EduTalentX. Please check your internet connection and try again.',
             showLoginBtn: false,
           });
         } else {
@@ -200,47 +200,47 @@ const AdminAcceptInvite = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', color: 'var(--text-primary)', padding: '1.5rem' }}>
-      <div className="glass-card-static animate-fade-in" style={{ width: '100%', maxWidth: '520px', padding: '2.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', backdropFilter: 'blur(16px)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8F9FA', color: '#111111', padding: '1.5rem' }}>
+      <div style={{ width: '100%', maxWidth: '500px', padding: '2.25rem', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#FFFFFF', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)' }}>
         {/* Brand Header */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-          <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--text-primary)', fontWeight: '800', fontSize: '1.3rem' }}>
-            <Terminal size={30} style={{ color: 'var(--accent-purple, #a855f7)' }} />
-            <span>MAVI Linking</span>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: '#111111', fontWeight: '700', fontSize: '1.25rem' }}>
+            <Terminal size={26} style={{ color: '#2563EB' }} />
+            <span>EduTalentX</span>
           </Link>
         </div>
 
         {/* ─── STAGE: LOADING ─── */}
         {stage === 'LOADING' && (
           <div style={{ padding: '3rem 1rem', textAlign: 'center' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '3px solid rgba(168, 85, 247, 0.2)', borderTopColor: 'var(--accent-purple, #a855f7)', animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem' }} />
-            <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Verifying your invitation...</h3>
-            <p style={{ color: 'var(--text-secondary, #a1a1aa)', fontSize: '0.875rem' }}>Validating cryptographic security credentials...</p>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #E5E7EB', borderTopColor: '#2563EB', animation: 'spin 0.8s linear infinite', margin: '0 auto 1.25rem' }} />
+            <h3 style={{ fontSize: '1.15rem', fontWeight: '600', marginBottom: '0.35rem', color: '#111111' }}>Verifying your invitation...</h3>
+            <p style={{ color: '#6B7280', fontSize: '0.875rem' }}>Validating administrator security credentials...</p>
           </div>
         )}
 
         {/* ─── STAGE: ERROR ─── */}
         {stage === 'ERROR' && (
           <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
-              <AlertTriangle size={30} />
+            <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+              <AlertTriangle size={26} />
             </div>
 
-            <h3 style={{ fontSize: '1.3rem', fontWeight: '700', color: '#dc2626', marginBottom: '0.75rem' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#991B1B', marginBottom: '0.5rem' }}>
               {errorDetails.title}
             </h3>
 
-            <p style={{ color: 'var(--text-secondary, #a1a1aa)', fontSize: '0.9rem', marginBottom: '1.75rem', lineHeight: '1.6' }}>
+            <p style={{ color: '#4B5563', fontSize: '0.875rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
               {errorDetails.message}
             </p>
 
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               {errorDetails.showLoginBtn ? (
-                <Link to="/admin/login" className="btn btn-primary" style={{ padding: '0.7rem 1.5rem', fontSize: '0.875rem', fontWeight: '700' }}>
+                <Link to="/admin/login" className="btn btn-primary" style={{ padding: '0.65rem 1.25rem', fontSize: '0.875rem', fontWeight: '600' }}>
                   Go to Administrator Login
                 </Link>
               ) : (
-                <Link to="/" className="btn btn-outline" style={{ padding: '0.7rem 1.5rem', fontSize: '0.875rem' }}>
+                <Link to="/" className="btn btn-outline" style={{ padding: '0.65rem 1.25rem', fontSize: '0.875rem' }}>
                   Return to Home
                 </Link>
               )}
@@ -251,32 +251,32 @@ const AdminAcceptInvite = () => {
         {/* ─── STAGE: SUCCESS ─── */}
         {stage === 'SUCCESS' && (
           <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
-              <CheckCircle size={36} />
+            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+              <CheckCircle size={30} />
             </div>
 
-            <h3 style={{ fontSize: '1.45rem', fontWeight: '800', color: '#10b981', marginBottom: '0.5rem' }}>
-              ✓ Account Activated
+            <h3 style={{ fontSize: '1.35rem', fontWeight: '700', color: '#065F46', marginBottom: '0.35rem' }}>
+              Account Activated
             </h3>
 
-            <p style={{ color: 'var(--text-secondary, #a1a1aa)', fontSize: '0.92rem', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-              Your MAVI Linking administrator account has been successfully activated.
+            <p style={{ color: '#4B5563', fontSize: '0.875rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+              Your EduTalentX administrator account has been successfully activated.
             </p>
 
             {inviteData && (
-              <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '1rem', marginBottom: '1.75rem', textAlign: 'left', fontSize: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Role:</span>
-                  <strong style={{ color: 'var(--accent-purple)' }}>{formatRoleTitle(inviteData.role)}</strong>
+              <div style={{ background: '#F8F9FA', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem', textAlign: 'left', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.3rem 0', borderBottom: '1px solid #E5E7EB' }}>
+                  <span style={{ color: '#6B7280' }}>Role:</span>
+                  <strong style={{ color: '#1E40AF' }}>{formatRoleTitle(inviteData.role)}</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Institution:</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{inviteData.institution?.name || 'Platform Wide'}</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.3rem 0', borderBottom: inviteData.department ? '1px solid #E5E7EB' : 'none' }}>
+                  <span style={{ color: '#6B7280' }}>Institution:</span>
+                  <strong style={{ color: '#111111' }}>{inviteData.institution?.name || 'Platform Wide'}</strong>
                 </div>
                 {inviteData.department && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Department:</span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{inviteData.department?.name || inviteData.department}</strong>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.3rem 0' }}>
+                    <span style={{ color: '#6B7280' }}>Department:</span>
+                    <strong style={{ color: '#111111' }}>{inviteData.department?.name || inviteData.department}</strong>
                   </div>
                 )}
               </div>
@@ -285,9 +285,9 @@ const AdminAcceptInvite = () => {
             <Link
               to="/admin/login"
               className="btn btn-primary"
-              style={{ width: '100%', padding: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontWeight: '700', textDecoration: 'none' }}
+              style={{ width: '100%', padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontWeight: '600', textDecoration: 'none' }}
             >
-              Continue to Login <ArrowRight size={18} />
+              Continue to Login <ArrowRight size={16} />
             </Link>
           </div>
         )}
@@ -295,43 +295,43 @@ const AdminAcceptInvite = () => {
         {/* ─── STAGE: VERIFIED / ACTIVATING ─── */}
         {(stage === 'VERIFIED' || stage === 'ACTIVATING') && inviteData && (
           <div>
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.35rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
-                <Shield style={{ color: '#a855f7' }} size={22} />
+            <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.35rem', color: '#111111' }}>
+                <Shield style={{ color: '#2563EB' }} size={20} />
                 Administrator Invitation
               </h2>
-              <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.4)', fontSize: '0.75rem', padding: '0.25rem 0.65rem', borderRadius: '20px' }}>
-                ✓ Invitation Verified
+              <span style={{ background: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0', fontSize: '0.75rem', padding: '0.2rem 0.6rem', borderRadius: '4px', fontWeight: 600 }}>
+                Verified Invitation
               </span>
             </div>
 
             {/* Welcome & Scope Card */}
-            <div style={{ background: 'rgba(168, 85, 247, 0.06)', border: '1px solid rgba(168, 85, 247, 0.25)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '8px', padding: '1.15rem', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '1rem', fontWeight: '600', color: '#111111', marginBottom: '0.35rem' }}>
                 Welcome, {inviteData.name}
               </div>
 
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                You have been invited as:
+              <div style={{ fontSize: '0.75rem', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                Invited Role
               </div>
-              <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--accent-purple)', marginTop: '0.15rem' }}>
+              <div style={{ fontWeight: '700', fontSize: '0.95rem', color: '#1E40AF', marginTop: '0.1rem' }}>
                 {formatRoleTitle(inviteData.role)}
               </div>
 
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                Institution: <strong style={{ color: 'var(--text-primary)' }}>{inviteData.institution?.name || 'Platform Wide'}</strong>
+              <div style={{ fontSize: '0.85rem', color: '#4B5563', marginTop: '0.4rem' }}>
+                Institution: <strong style={{ color: '#111111' }}>{inviteData.institution?.name || 'Platform Wide'}</strong>
               </div>
 
               {inviteData.department && (
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                  Department: <strong style={{ color: 'var(--text-primary)' }}>{inviteData.department?.name || inviteData.department}</strong>
+                <div style={{ fontSize: '0.85rem', color: '#4B5563', marginTop: '0.2rem' }}>
+                  Department: <strong style={{ color: '#111111' }}>{inviteData.department?.name || inviteData.department}</strong>
                 </div>
               )}
 
-              <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(168, 85, 247, 0.2)', fontSize: '0.8rem', color: 'var(--accent-purple)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
-                <span>⏱️ This invitation is valid for 10 minutes.</span>
+              <div style={{ marginTop: '0.65rem', paddingTop: '0.65rem', borderTop: '1px solid #DBEAFE', fontSize: '0.8rem', color: '#1E40AF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
+                <span>This invitation is valid for 10 minutes.</span>
                 {inviteData.expiresAt && (
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                  <span style={{ color: '#6B7280', fontSize: '0.75rem' }}>
                     Expires: {new Date(inviteData.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, {new Date(inviteData.expiresAt).toLocaleDateString()}
                   </span>
                 )}
@@ -339,20 +339,20 @@ const AdminAcceptInvite = () => {
             </div>
 
             {/* Form Header */}
-            <div style={{ marginBottom: '1rem', fontWeight: '600', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-              Create Your Permanent Password
+            <div style={{ marginBottom: '0.85rem', fontWeight: '600', fontSize: '0.9rem', color: '#111111' }}>
+              Create Your Password
             </div>
 
             {formError && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', color: '#dc2626', fontSize: '0.85rem' }}>
+              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '6px', padding: '0.65rem 0.85rem', marginBottom: '1rem', color: '#991B1B', fontSize: '0.85rem' }}>
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
               {/* Password Field */}
-              <div className="input-group" style={{ marginBottom: '1rem' }}>
-                <label className="input-label" style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+              <div className="input-group" style={{ marginBottom: '0.85rem' }}>
+                <label className="input-label" style={{ display: 'block', fontSize: '0.85rem', color: '#111111', marginBottom: '0.35rem' }}>
                   Password *
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -365,22 +365,22 @@ const AdminAcceptInvite = () => {
                     required
                     disabled={stage === 'ACTIVATING'}
                     autoComplete="new-password"
-                    style={{ width: '100%', padding: '0.75rem 2.5rem 0.75rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.9rem' }}
+                    style={{ width: '100%', padding: '0.65rem 2.5rem 0.65rem 0.75rem', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '6px', color: '#111111', fontSize: '0.875rem' }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '4px' }}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
               {/* Confirm Password Field */}
-              <div className="input-group" style={{ marginBottom: '1.25rem' }}>
-                <label className="input-label" style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+              <div className="input-group" style={{ marginBottom: '1rem' }}>
+                <label className="input-label" style={{ display: 'block', fontSize: '0.85rem', color: '#111111', marginBottom: '0.35rem' }}>
                   Confirm Password *
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -393,36 +393,36 @@ const AdminAcceptInvite = () => {
                     required
                     disabled={stage === 'ACTIVATING'}
                     autoComplete="new-password"
-                    style={{ width: '100%', padding: '0.75rem 2.5rem 0.75rem 0.85rem', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.9rem' }}
+                    style={{ width: '100%', padding: '0.65rem 2.5rem 0.65rem 0.75rem', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '6px', color: '#111111', fontSize: '0.875rem' }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     tabIndex={-1}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '4px' }}
                   >
-                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
               {/* Password Requirements Live Checklist */}
-              <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.5rem', fontSize: '0.8rem' }}>
-                <div style={{ color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: '600' }}>Password requirements:</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasMinLength ? '#10b981' : '#71717a' }}>
+              <div style={{ background: '#F8F9FA', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '0.75rem', marginBottom: '1.25rem', fontSize: '0.8rem' }}>
+                <div style={{ color: '#4B5563', marginBottom: '0.35rem', fontWeight: '600' }}>Password requirements:</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.3rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasMinLength ? '#059669' : '#6B7280' }}>
                     {hasMinLength ? <Check size={13} /> : <X size={13} />} At least 6 characters
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasUppercase ? '#10b981' : '#71717a' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasUppercase ? '#059669' : '#6B7280' }}>
                     {hasUppercase ? <Check size={13} /> : <X size={13} />} 1 Uppercase letter
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasLowercase ? '#10b981' : '#71717a' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasLowercase ? '#059669' : '#6B7280' }}>
                     {hasLowercase ? <Check size={13} /> : <X size={13} />} 1 Lowercase letter
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasNumber ? '#10b981' : '#71717a' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasNumber ? '#059669' : '#6B7280' }}>
                     {hasNumber ? <Check size={13} /> : <X size={13} />} 1 Number (0-9)
                   </div>
-                  <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: '0.35rem', color: passwordsMatch ? '#10b981' : '#71717a' }}>
+                  <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: '0.35rem', color: passwordsMatch ? '#059669' : '#6B7280' }}>
                     {passwordsMatch ? <Check size={13} /> : <X size={13} />} Passwords match
                   </div>
                 </div>
@@ -431,11 +431,11 @@ const AdminAcceptInvite = () => {
               <button
                 type="submit"
                 className="btn btn-primary"
-                style={{ width: '100%', padding: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontWeight: '700', cursor: isFormValid ? 'pointer' : 'not-allowed', opacity: isFormValid ? 1 : 0.65 }}
+                style={{ width: '100%', padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontWeight: '600', cursor: isFormValid ? 'pointer' : 'not-allowed', opacity: isFormValid ? 1 : 0.65 }}
                 disabled={!isFormValid || stage === 'ACTIVATING'}
               >
                 <Key size={16} />
-                {stage === 'ACTIVATING' ? 'Activating My Account...' : 'Activate My Account'}
+                {stage === 'ACTIVATING' ? 'Activating Account...' : 'Activate Account'}
               </button>
             </form>
           </div>

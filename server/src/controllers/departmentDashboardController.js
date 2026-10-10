@@ -133,7 +133,7 @@ const getDepartmentStudents = async (req, res, next) => {
       query.$or = [
         { name: { $regex: clean, $options: 'i' } },
         { email: { $regex: clean, $options: 'i' } },
-        { maviId: { $regex: clean, $options: 'i' } },
+        { etxId: { $regex: clean, $options: 'i' } },
         { prn: { $regex: clean, $options: 'i' } },
       ];
     }
@@ -142,7 +142,7 @@ const getDepartmentStudents = async (req, res, next) => {
 
     const [students, total] = await Promise.all([
       User.find(query)
-        .select('name email maviId prn avatar university scores status accountStatus skillsList platforms createdAt academicInfo')
+        .select('name email etxId prn avatar university scores status accountStatus skillsList platforms createdAt academicInfo')
         .sort({ name: 1 })
         .skip(skip)
         .limit(parseInt(limit, 10)),
@@ -301,7 +301,7 @@ const getDepartmentTeachers = async (req, res, next) => {
     const query = buildScopeQuery(req, { role: { $in: ['teacher', 'professor'] } });
 
     const teachers = await User.find(query)
-      .select('name email maviId designation status avatar createdAt departmentId institutionId')
+      .select('name email etxId designation status avatar createdAt departmentId institutionId')
       .sort({ name: 1 });
 
     res.status(200).json({
@@ -415,12 +415,12 @@ const getDepartmentLeaderboard = async (req, res, next) => {
     });
 
     const students = await User.find(query)
-      .select('name avatar maviId scores role status platforms')
+      .select('name avatar etxId scores role status platforms')
       .sort({
         'scores.overall': -1,
         'scores.problemSolving': -1,
         'scores.development': -1,
-        maviId: 1,
+        etxId: 1,
       });
 
     const leaderboard = students.map((std, index) => {
@@ -437,7 +437,7 @@ const getDepartmentLeaderboard = async (req, res, next) => {
           _id: std._id,
           name: std.name,
           avatar: std.avatar,
-          maviId: std.maviId,
+          etxId: std.etxId,
           role: std.role,
         },
       };

@@ -27,7 +27,7 @@ const OwnerLogin = () => {
   useEffect(() => {
     if (user) {
       const userRoles = Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [user.role];
-      const isOwner = userRoles.includes('platform_owner') || userRoles.includes('owner') || userRoles.includes('super_admin') || user.adminId === 'MAVI-OWNER-001';
+      const isOwner = userRoles.includes('platform_owner') || userRoles.includes('owner') || userRoles.includes('super_admin') || user.adminId === 'ETX-OWNER-001';
       if (isOwner) {
         navigate('/owner', { replace: true });
       }
@@ -58,44 +58,62 @@ const OwnerLogin = () => {
 
   return (
     <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'var(--bg-primary)', padding: '1.5rem', position: 'relative',
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#F8F9FA',
+      padding: '1.5rem',
+      position: 'relative',
     }}>
-      <div className="glass-card-static" style={{ maxWidth: '440px', width: '100%', padding: '2.5rem', borderRadius: '16px', border: '1px solid rgba(234, 179, 8, 0.4)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+      <div style={{ maxWidth: '440px', width: '100%', padding: '2.25rem', borderRadius: '8px', background: '#FFFFFF', border: '1px solid #E5E7EB', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div style={{
-            width: '68px', height: '68px', borderRadius: '18px',
-            background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.25) 0%, rgba(236, 72, 153, 0.25) 100%)',
-            border: '1px solid rgba(234, 179, 8, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem',
+            width: '48px',
+            height: '48px',
+            borderRadius: '8px',
+            background: '#EFF6FF',
+            border: '1px solid #BFDBFE',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1rem',
           }}>
-            <Crown size={40} style={{ color: '#eab308' }} />
+            <Crown size={26} style={{ color: '#2563EB' }} />
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 0.5rem', color: 'var(--text-primary)' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 0.35rem', color: '#111111' }}>
             Platform Owner Portal
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+          <p style={{ color: '#4B5563', fontSize: '0.875rem', margin: 0 }}>
             Master Platform Ownership & Global Licensing Console
           </p>
         </div>
 
         {error && (
           <div style={{
-            background: 'rgba(234, 179, 8, 0.12)', border: '1px solid #eab308', color: '#b45309',
-            padding: '0.85rem 1rem', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '1.5rem',
-            display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
+            background: '#FEF2F2',
+            border: '1px solid #FECACA',
+            color: '#991B1B',
+            padding: '0.75rem 1rem',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.5rem',
           }}>
-            <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
           <div className="input-group">
-            <label className="input-label" style={{ color: 'var(--text-secondary)' }}>Owner Email / Owner ID</label>
+            <label className="input-label" style={{ color: '#111111', fontWeight: 500 }}>Owner Email / Owner ID</label>
             <input
               type="text"
               className="input-field"
-              placeholder="owner@mavilinking.com or MAVI-OWNER-001"
+              placeholder="Mayur1718khandare@gmail.com or ETX-OWNER-001"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               required
@@ -103,7 +121,7 @@ const OwnerLogin = () => {
           </div>
 
           <div className="input-group">
-            <label className="input-label" style={{ color: 'var(--text-secondary)' }}>Master Password</label>
+            <label className="input-label" style={{ color: '#111111', fontWeight: 500 }}>Master Password</label>
             <PasswordInput
               className="input-field"
               placeholder="••••••••"
@@ -120,9 +138,13 @@ const OwnerLogin = () => {
             disabled={submitting}
             className="btn btn-primary"
             style={{
-              width: '100%', padding: '0.85rem', fontWeight: '700',
-              background: 'linear-gradient(135deg, #eab308 0%, #ec4899 100%)',
-              borderColor: '#eab308', color: '#09090b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              width: '100%',
+              padding: '0.75rem',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
             }}
           >
             <Lock size={16} />
@@ -130,10 +152,10 @@ const OwnerLogin = () => {
           </button>
         </form>
 
-        <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
+        <div style={{ marginTop: '1.75rem', textAlign: 'center', borderTop: '1px solid #E5E7EB', paddingTop: '1rem' }}>
           <Link
             to="/login"
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none' }}
+            style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none' }}
           >
             <ArrowLeft size={14} /> Return to Public Portal
           </Link>

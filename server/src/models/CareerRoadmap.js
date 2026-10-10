@@ -85,7 +85,7 @@ const careerRoadmapSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    maviId: {
+    etxId: {
       type: String,
       default: '',
     },

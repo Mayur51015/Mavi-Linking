@@ -1,5 +1,5 @@
 /**
- * MAVI Career Match — Role Requirements Configuration
+ * EduTalentX Career Match — Role Requirements Configuration
  *
  * Defines structured technical criteria, required skills, preferred skills,
  * project indicators, and problem-solving thresholds for canonical career roles.

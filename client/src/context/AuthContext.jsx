@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { io } from 'socket.io-client';
 import api, { getBackendBaseUrl } from '../api/axios';
+import { getDashboardRouteForRole } from '../utils/roleRouting';
 
 export const AuthContext = createContext();
 
@@ -22,7 +23,12 @@ export const AuthProvider = ({ children }) => {
         setUser(res.data.data.user);
       } catch (error) {
         console.error('Error fetching user', error);
-        localStorage.removeItem('token');
+        // Only discard token if the server explicitly rejected the authentication (401 or 403)
+        // Do NOT wipe token on transient network errors, cold starts, or timeouts
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+        }
       } finally {
         setLoading(false);
       }
@@ -195,18 +201,7 @@ export const AuthProvider = ({ children }) => {
    */
   const getDashboardPath = useCallback(() => {
     if (!user) return '/login';
-    switch (user.role) {
-      case 'department_admin': return '/department-admin';
-      case 'institution_admin':
-      case 'admin': return '/admin';
-      case 'super_admin': return '/super-admin';
-      case 'owner':
-      case 'platform_owner': return '/owner';
-      case 'recruiter': return '/dashboard/recruiter';
-      case 'teacher':
-      case 'professor': return '/dashboard/teacher';
-      default: return '/dashboard';
-    }
+    return getDashboardRouteForRole(user);
   }, [user]);
 
   const isPendingVerification = useMemo(() => {

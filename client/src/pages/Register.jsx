@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
 import api from '../api/axios';
 import PasswordInput from '../components/ui/PasswordInput';
+import BrandLogo from '../components/BrandLogo';
 
 const Register = () => {
   // Step 1: Institution Code | Step 2: Department & PRN | Step 3: Account Details | Step 4: Verification
@@ -182,10 +183,10 @@ const Register = () => {
 
       if (res?.code === 'EMAIL_VERIFICATION_REQUIRED') {
         toast.success(`🎉 Account created! Please check ${registeredEmail} to verify your address.`);
-        navigate(`/verify/${res?.user?.maviId || 'account'}`, { state: { email: registeredEmail } });
+        navigate(`/verify/${res?.user?.etxId || 'account'}`, { state: { email: registeredEmail } });
       } else {
         toast.success('Account created successfully!');
-        navigate(`/verify/${res?.user?.maviId || 'account'}`, { state: { email: registeredEmail } });
+        navigate(`/verify/${res?.user?.etxId || 'account'}`, { state: { email: registeredEmail } });
       }
     } catch (err) {
       setError(getErrorMessage(err, 'Account registration failed. Please try again.'));
@@ -209,12 +210,16 @@ const Register = () => {
       <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '580px', padding: '2.5rem', borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-xl)' }}>
         
         {/* Header Branding */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-            <Terminal size={32} style={{ color: 'var(--brand-blue)' }} />
-            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>MaVi Linking</span>
-          </Link>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Verified Student Registration & Multi-Tenant Onboarding</p>
+        <div style={{ textAlign: 'center', marginBottom: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <BrandLogo
+            variant="full"
+            size={44}
+            linkTo="/"
+            showTagline={true}
+            style={{ flexDirection: 'column', textAlign: 'center', gap: '0.65rem' }}
+            taglineStyle={{ textAlign: 'center', maxWidth: '300px' }}
+          />
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.75rem' }}>Verified Student Registration &amp; Institutional Onboarding</p>
         </div>
 
         {/* Progress Stepper Bar */}

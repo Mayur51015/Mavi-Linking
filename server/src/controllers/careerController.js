@@ -95,12 +95,12 @@ exports.getScore = async (req, res, next) => {
         status: { $ne: 'suspended' },
         'scores.overall': { $gt: 0 }
       })
-      .select('maviId scores')
+      .select('etxId scores')
       .sort({
         'scores.overall': -1,
         'scores.problemSolving': -1,
         'scores.development': -1,
-        'maviId': 1,
+        'etxId': 1,
         '_id': 1
       });
 
@@ -508,7 +508,7 @@ exports.analyze = async (req, res, next) => {
 exports.syncProfiles = exports.recalculate;
 
 /**
- * @desc    Get student's active MAVI Career Roadmap
+ * @desc    Get student's active EduTalentX Career Roadmap
  * @route   GET /api/career/roadmap (and /api/student/career-roadmap)
  * @access  Private (Authenticated student)
  */
@@ -534,7 +534,7 @@ exports.getRoadmap = async (req, res, next) => {
 };
 
 /**
- * @desc    Generate or regenerate student's MAVI Career Roadmap
+ * @desc    Generate or regenerate student's EduTalentX Career Roadmap
  * @route   POST /api/career/roadmap/generate (and /api/student/career-roadmap/generate)
  * @access  Private (Authenticated student)
  */
@@ -547,7 +547,7 @@ exports.generateRoadmap = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'Your personalized MAVI Career Roadmap has been generated.',
+      message: 'Your personalized EduTalentX Career Roadmap has been generated.',
       data: roadmap,
     });
   } catch (error) {

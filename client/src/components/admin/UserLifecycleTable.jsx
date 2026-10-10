@@ -143,9 +143,9 @@ export default function UserLifecycleTable({
         <span
           className="badge"
           style={{
-            background: 'rgba(16, 185, 129, 0.15)',
-            color: '#10b981',
-            border: '1px solid #10b981',
+            background: '#ECFDF5',
+            color: '#059669',
+            border: '1px solid #A7F3D0',
             fontWeight: '600',
             fontSize: '0.75rem',
           }}
@@ -159,9 +159,9 @@ export default function UserLifecycleTable({
         <span
           className="badge"
           style={{
-            background: 'rgba(245, 158, 11, 0.15)',
-            color: '#f59e0b',
-            border: '1px solid #f59e0b',
+            background: '#FEF3C7',
+            color: '#D97706',
+            border: '1px solid #FDE68A',
             fontWeight: '600',
             fontSize: '0.75rem',
           }}
@@ -175,9 +175,9 @@ export default function UserLifecycleTable({
         <span
           className="badge"
           style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            color: '#ef4444',
-            border: '1px solid #ef4444',
+            background: '#F3F4F6',
+            color: '#4B5563',
+            border: '1px solid #E5E7EB',
             fontWeight: '600',
             fontSize: '0.75rem',
           }}
@@ -191,9 +191,9 @@ export default function UserLifecycleTable({
         <span
           className="badge"
           style={{
-            background: 'rgba(168, 85, 247, 0.15)',
-            color: '#c084fc',
-            border: '1px solid #a855f7',
+            background: '#EFF6FF',
+            color: '#2563EB',
+            border: '1px solid #BFDBFE',
             fontWeight: '600',
             fontSize: '0.75rem',
           }}
@@ -207,10 +207,11 @@ export default function UserLifecycleTable({
         <span
           className="badge"
           style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            color: '#ef4444',
-            border: '1px solid #ef4444',
+            background: '#FEF2F2',
+            color: '#DC2626',
+            border: '1px solid #FECACA',
             fontSize: '0.75rem',
+            fontWeight: '600',
           }}
         >
           REJECTED
@@ -222,20 +223,20 @@ export default function UserLifecycleTable({
 
   return (
     <>
-      <div className="glass-card-static" style={{ overflowX: 'auto', borderRadius: '12px' }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-              <th style={{ padding: '1rem 0.75rem' }}>Name</th>
-              <th style={{ padding: '1rem 0.75rem' }}>Email</th>
-              <th style={{ padding: '1rem 0.75rem' }}>MAVI ID</th>
-              <th style={{ padding: '1rem 0.75rem' }}>Role</th>
-              <th style={{ padding: '1rem 0.75rem' }}>Institution</th>
-              <th style={{ padding: '1rem 0.75rem' }}>Department</th>
-              <th style={{ padding: '1rem 0.75rem' }}>Status</th>
-              <th style={{ padding: '1rem 0.75rem' }}>Created Date</th>
-              <th style={{ padding: '1rem 0.75rem' }}>Last Login</th>
-              <th style={{ padding: '1rem 0.75rem', textAlign: 'right' }}>Actions</th>
+            <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
+              <th style={{ padding: '0.75rem', fontWeight: 600 }}>Name</th>
+              <th style={{ padding: '0.75rem', fontWeight: 600 }}>Email</th>
+              <th style={{ padding: '0.75rem', fontWeight: 600 }}>ETX ID</th>
+              <th style={{ padding: '0.75rem', fontWeight: 600 }}>Role</th>
+              <th style={{ padding: '0.75rem', fontWeight: 600 }}>Institution</th>
+              <th style={{ padding: '0.75rem', fontWeight: 600 }}>Department</th>
+              <th style={{ padding: '0.75rem', fontWeight: 600 }}>Status</th>
+              <th style={{ padding: '0.75rem', fontWeight: 600 }}>Created Date</th>
+              <th style={{ padding: '0.75rem', fontWeight: 600 }}>Last Login</th>
+              <th style={{ padding: '0.75rem', textAlign: 'right', fontWeight: 600 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -248,40 +249,40 @@ export default function UserLifecycleTable({
                 <tr
                   key={u._id}
                   style={{
-                    borderBottom: '1px solid var(--border-subtle)',
+                    borderBottom: '1px solid var(--border-color)',
                     verticalAlign: 'middle',
                     transition: 'background-color 0.15s ease',
                   }}
                 >
-                  <td style={{ padding: '0.85rem 0.75rem', fontWeight: '600', color: '#ffffff' }}>
+                  <td style={{ padding: '0.75rem', fontWeight: '600', color: 'var(--text-primary)' }}>
                     {u.name}
                   </td>
-                  <td style={{ padding: '0.85rem 0.75rem', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>
                     {u.email}
                   </td>
-                  <td style={{ padding: '0.85rem 0.75rem' }}>
-                    <span style={{ fontFamily: 'monospace', color: '#c084fc', fontWeight: '600', fontSize: '0.8rem' }}>
-                      {u.maviId || '—'}
+                  <td style={{ padding: '0.75rem' }}>
+                    <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '0.8rem' }}>
+                      {u.etxId || '—'}
                     </span>
                   </td>
-                  <td style={{ padding: '0.85rem 0.75rem' }}>
+                  <td style={{ padding: '0.75rem' }}>
                     <span className="badge badge-outline" style={{ fontSize: '0.75rem', textTransform: 'capitalize' }}>
                       {u.role ? u.role.replace(/_/g, ' ') : 'User'}
                     </span>
                   </td>
-                  <td style={{ padding: '0.85rem 0.75rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                  <td style={{ padding: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                     {u.institutionId?.name || u.institutionId?.code || 'Platform-wide'}
                   </td>
-                  <td style={{ padding: '0.85rem 0.75rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                  <td style={{ padding: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                     {u.departmentId?.name || u.departmentId?.code || 'All Depts'}
                   </td>
-                  <td style={{ padding: '0.85rem 0.75rem' }}>
+                  <td style={{ padding: '0.75rem' }}>
                     {getStatusBadge(u.accountStatus, u.status, u.invitationExpires)}
                   </td>
-                  <td style={{ padding: '0.85rem 0.75rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                  <td style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                     {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}
                   </td>
-                  <td style={{ padding: '0.85rem 0.75rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                  <td style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                     {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'Never'}
                   </td>
                   <td style={{ padding: '0.85rem 0.75rem', textAlign: 'right' }}>

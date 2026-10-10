@@ -78,10 +78,10 @@ const StudentDocuments = () => {
             style={{
               width: '100%',
               padding: '0.625rem 1rem 0.625rem 2.75rem',
-              background: 'rgba(255,255,255,0.02)',
+              background: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
-              borderRadius: '10px',
-              color: 'white',
+              borderRadius: '8px',
+              color: 'var(--text-primary)',
               fontSize: '0.9rem',
               outline: 'none',
             }}
@@ -93,10 +93,10 @@ const StudentDocuments = () => {
           onChange={(e) => { setDeptFilter(e.target.value); setPage(1); }}
           style={{
             padding: '0.625rem 1rem',
-            background: 'rgba(255,255,255,0.02)',
+            background: 'var(--bg-card)',
             border: '1px solid var(--border-color)',
-            borderRadius: '10px',
-            color: 'white',
+            borderRadius: '8px',
+            color: 'var(--text-primary)',
             fontSize: '0.9rem',
             outline: 'none',
             cursor: 'pointer',
@@ -115,7 +115,7 @@ const StudentDocuments = () => {
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-          <Loader2 size={36} className="animate-spin" style={{ color: 'var(--accent-purple)' }} />
+          <Loader2 size={36} className="animate-spin" style={{ color: 'var(--brand-blue)' }} />
         </div>
       ) : (
         <>
@@ -131,15 +131,15 @@ const StudentDocuments = () => {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'start', gap: '0.75rem', marginBottom: '0.75rem' }}>
                     <div style={{
-                      background: 'rgba(139, 92, 246, 0.1)',
-                      width: '40px', height: '40px', borderRadius: '10px',
+                      background: 'var(--brand-blue-light)',
+                      width: '40px', height: '40px', borderRadius: '8px',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--accent-purple)', flexShrink: 0
+                      color: 'var(--brand-blue)', flexShrink: 0
                     }}>
                       <FileText size={20} />
                     </div>
                     <div>
-                      <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'white', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {doc.title}
                       </h3>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>

@@ -73,58 +73,58 @@ const SuperAdminLogin = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'var(--bg-primary)',
+      background: '#F8F9FA',
       padding: '1.5rem',
       position: 'relative',
     }}>
-      <div className="glass-card-static" style={{ maxWidth: '440px', width: '100%', padding: '2.5rem', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+      <div style={{ maxWidth: '440px', width: '100%', padding: '2.25rem', borderRadius: '8px', background: '#FFFFFF', border: '1px solid #E5E7EB', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(236, 72, 153, 0.25) 100%)',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
+            width: '48px',
+            height: '48px',
+            borderRadius: '8px',
+            background: '#FEF2F2',
+            border: '1px solid #FECACA',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 1.25rem',
+            margin: '0 auto 1rem',
           }}>
-            <ShieldAlert size={36} style={{ color: '#ef4444' }} />
+            <ShieldAlert size={26} style={{ color: '#DC2626' }} />
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 0.5rem', color: 'var(--text-primary)' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 0.35rem', color: '#111111' }}>
             Super Admin Portal
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+          <p style={{ color: '#4B5563', fontSize: '0.875rem', margin: 0 }}>
             Restricted Platform Governance Console — Authorized Personnel Only
           </p>
         </div>
 
         {error && (
           <div style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid #ef4444',
-            color: '#dc2626',
-            padding: '0.85rem 1rem',
-            borderRadius: '8px',
+            background: '#FEF2F2',
+            border: '1px solid #FECACA',
+            color: '#991B1B',
+            padding: '0.75rem 1rem',
+            borderRadius: '6px',
             fontSize: '0.85rem',
-            marginBottom: '1.5rem',
+            marginBottom: '1.25rem',
             display: 'flex',
             alignItems: 'flex-start',
-            gap: '0.6rem',
+            gap: '0.5rem',
           }}>
-            <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
           <div className="input-group">
-            <label className="input-label" style={{ color: 'var(--text-secondary)' }}>Super Admin ID / Email</label>
+            <label className="input-label" style={{ color: '#111111', fontWeight: 500 }}>Super Admin ID / Email</label>
             <input
               type="text"
               className="input-field"
-              placeholder="e.g. MAVI-SA-001 or email@mavilinking.com"
+              placeholder="e.g. ETX-SA-001 or email@edutalentx.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -132,7 +132,7 @@ const SuperAdminLogin = () => {
           </div>
 
           <div className="input-group">
-            <label className="input-label" style={{ color: 'var(--text-secondary)' }}>Master Credentials</label>
+            <label className="input-label" style={{ color: '#111111', fontWeight: 500 }}>Master Credentials</label>
             <PasswordInput
               className="input-field"
               placeholder="••••••••"
@@ -150,10 +150,8 @@ const SuperAdminLogin = () => {
             className="btn btn-primary"
             style={{
               width: '100%',
-              padding: '0.85rem',
-              fontWeight: '700',
-              background: 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)',
-              borderColor: '#ef4444',
+              padding: '0.75rem',
+              fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -165,10 +163,10 @@ const SuperAdminLogin = () => {
           </button>
         </form>
 
-        <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
+        <div style={{ marginTop: '1.75rem', textAlign: 'center', borderTop: '1px solid #E5E7EB', paddingTop: '1rem' }}>
           <button
             onClick={() => navigate('/login')}
-            style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
           >
             <ArrowLeft size={14} /> Return to Public Portal
           </button>

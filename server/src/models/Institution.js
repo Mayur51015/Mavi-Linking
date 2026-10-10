@@ -27,6 +27,12 @@ const institutionSchema = new mongoose.Schema(
       uppercase: true,
       trim: true,
     },
+    code: {
+      type: String,
+      sparse: true,
+      uppercase: true,
+      trim: true,
+    },
     shortName: {
       type: String,
       trim: true,
@@ -71,18 +77,27 @@ const institutionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['active', 'suspended'],
+      lowercase: true,
+      trim: true,
+      enum: ['active', 'suspended', 'ACTIVE', 'SUSPENDED'],
       default: 'active',
+      set: (v) => (typeof v === 'string' ? v.toLowerCase().trim() : v),
     },
     plan: {
       type: String,
-      enum: ['BASIC', 'PRO', 'ENTERPRISE'],
+      uppercase: true,
+      trim: true,
+      enum: ['BASIC', 'PRO', 'ENTERPRISE', 'basic', 'pro', 'enterprise'],
       default: 'ENTERPRISE',
+      set: (v) => (typeof v === 'string' ? v.toUpperCase().trim() : v),
     },
     licenseStatus: {
       type: String,
-      enum: ['active', 'suspended', 'expired'],
+      lowercase: true,
+      trim: true,
+      enum: ['active', 'suspended', 'expired', 'ACTIVE', 'SUSPENDED', 'EXPIRED'],
       default: 'active',
+      set: (v) => (typeof v === 'string' ? v.toLowerCase().trim() : v),
     },
     subscriptionStatus: {
       type: String,
@@ -111,6 +126,12 @@ const institutionSchema = new mongoose.Schema(
       advancedAnalytics: { type: Boolean, default: true },
       aiCareerGuidance: { type: Boolean, default: true },
     },
+    contactEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: '',
+    },
     primaryContact: {
       name: { type: String, default: '' },
       email: { type: String, default: '' },
@@ -130,17 +151,33 @@ const institutionSchema = new mongoose.Schema(
 // Pre-save hook to ensure permanent, unique tenantId and institutionCode
 institutionSchema.pre('validate', function (next) {
   const crypto = require('crypto');
-  const codePrefix = (this.code || this.shortName || this.name.substring(0, 4)).replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  const codePrefix = (this.code || this.institutionCode || this.shortName || this.name.substring(0, 4)).replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
   
   if (!this.tenantId) {
     this.tenantId = `INST-${codePrefix.substring(0, 6)}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
   }
   
   if (!this.institutionCode) {
-    const cityPrefix = (this.city || 'HQ').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-    const randHex = crypto.randomBytes(3).toString('hex').toUpperCase();
-    this.institutionCode = `${codePrefix.substring(0, 6)}-${cityPrefix.substring(0, 4)}-${randHex}`;
+    if (this.code) {
+      this.institutionCode = this.code;
+    } else {
+      const cityPrefix = (this.city || 'HQ').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      const randHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+      this.institutionCode = `${codePrefix.substring(0, 6)}-${cityPrefix.substring(0, 4)}-${randHex}`;
+    }
   }
+
+  if (!this.code && this.institutionCode) {
+    this.code = this.institutionCode;
+  }
+
+  if (this.contactEmail && (!this.primaryContact || !this.primaryContact.email)) {
+    if (!this.primaryContact) this.primaryContact = {};
+    this.primaryContact.email = this.contactEmail;
+  } else if (this.primaryContact && this.primaryContact.email && !this.contactEmail) {
+    this.contactEmail = this.primaryContact.email;
+  }
+
   next();
 });
 

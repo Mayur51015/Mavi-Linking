@@ -5,12 +5,12 @@ const User = require('../models/User');
  * Bootstrap Super Admin CLI Script
  *
  * Usage:
- *   node server/src/scripts/bootstrapAdmin.js admin@mavi.com SuperSecurePassword123! "Platform Super Admin"
+ *   node server/src/scripts/bootstrapAdmin.js admin@edutalentx.com SuperSecurePassword123! "Platform Super Admin"
  * Or via env variables:
- *   SUPER_ADMIN_EMAIL=admin@mavi.com SUPER_ADMIN_PASSWORD=... node server/src/scripts/bootstrapAdmin.js
+ *   SUPER_ADMIN_EMAIL=admin@edutalentx.com SUPER_ADMIN_PASSWORD=... node server/src/scripts/bootstrapAdmin.js
  */
 const bootstrapAdmin = async () => {
-  const email = process.argv[2] || process.env.SUPER_ADMIN_EMAIL || 'admin@mavilinking.com';
+  const email = process.argv[2] || process.env.SUPER_ADMIN_EMAIL || 'admin@edutalentx.com';
   const password = process.argv[3] || process.env.SUPER_ADMIN_PASSWORD;
   const name = process.argv[4] || process.env.SUPER_ADMIN_NAME || 'Super Administrator';
 
@@ -19,7 +19,7 @@ const bootstrapAdmin = async () => {
     process.exit(1);
   }
 
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/mavi-linking';
+  const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/edutalentx';
   console.log(`Connecting to MongoDB...`);
   await mongoose.connect(mongoUri);
 

@@ -13,6 +13,7 @@ import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
 import api from '../api/axios';
 import PasswordInput from '../components/ui/PasswordInput';
+import BrandLogo from '../components/BrandLogo';
 
 const Login = () => {
   const [identifier, setIdentifier] = useState('');
@@ -75,7 +76,7 @@ const Login = () => {
     e.preventDefault();
     const cleanId = (identifier || '').trim();
     if (!cleanId) {
-      setError('Please enter your Email, MAVI ID, or PRN.');
+      setError('Please enter your Email, ETX ID, or PRN.');
       return;
     }
     if (!password) {
@@ -161,30 +162,8 @@ const Login = () => {
       >
         <div>
           {/* Header Branding */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem' }}>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '8px',
-                background: 'var(--brand-blue)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                boxShadow: '0 2px 4px rgba(59, 130, 246, 0.25)',
-              }}
-            >
-              <Terminal size={22} />
-            </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                MAVI <span style={{ color: 'var(--brand-blue)', fontWeight: 700 }}>Linking</span>
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Enterprise ERP Platform
-              </div>
-            </div>
+          <div style={{ marginBottom: '3rem' }}>
+            <BrandLogo variant="full" size={42} linkTo="/" showTagline={true} />
           </div>
 
           {/* Heading */}
@@ -278,7 +257,7 @@ const Login = () => {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '2.5rem 1.5rem',
+          padding: 'clamp(1rem, 3vw, 2.5rem) clamp(1rem, 3vw, 1.5rem)',
           background: 'var(--bg-primary)',
         }}
       >
@@ -290,44 +269,42 @@ const Login = () => {
             border: '1px solid var(--border-color)',
             borderRadius: '10px',
             boxShadow: 'var(--shadow-xl)',
-            padding: '2.5rem 2.25rem',
+            padding: 'clamp(1.5rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.25rem)',
           }}
         >
-          {/* Mobile Header Branding */}
-          <div className="show-mobile" style={{ display: 'none', textAlign: 'center', marginBottom: '1.5rem' }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '42px',
-                height: '42px',
-                borderRadius: '8px',
-                background: 'var(--brand-blue)',
-                color: '#ffffff',
-                marginBottom: '0.5rem',
+          {/* Card Header Branding — unified vertical brand block */}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 'clamp(1.5rem, 3vw, 2.25rem)' }}>
+            <BrandLogo
+              variant="full"
+              size={48}
+              layout="vertical"
+              linkTo="/"
+              showTagline={true}
+              textStyle={{
+                fontSize: 'clamp(1.65rem, 3vw, 2.1rem)',
+                lineHeight: 1.1,
               }}
-            >
-              <Terminal size={22} />
-            </div>
-            <div style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-primary)' }}>
-              MAVI <span style={{ color: 'var(--brand-blue)' }}>Linking</span>
-            </div>
+              taglineStyle={{
+                fontSize: 'clamp(0.8rem, 1.5vw, 0.9375rem)',
+                lineHeight: 1.4,
+                maxWidth: '100%',
+              }}
+            />
           </div>
 
-          <div style={{ marginBottom: '1.75rem' }}>
+          <div style={{ marginBottom: '1.25rem' }}>
             <h2
               style={{
-                fontSize: '1.5rem',
+                fontSize: '1.35rem',
                 fontWeight: 700,
                 color: 'var(--text-primary)',
                 letterSpacing: '-0.02em',
-                margin: '0 0 0.4rem 0',
+                margin: '0 0 0.35rem 0',
               }}
             >
               Sign In
             </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
               Enter your credentials to access your ERP portal.
             </p>
           </div>
@@ -354,12 +331,12 @@ const Login = () => {
           <form onSubmit={handleSubmit}>
             <div className="input-group" style={{ marginBottom: '1.25rem' }}>
               <label className="input-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                Email Address, PRN, or MAVI ID
+                Email Address, PRN, or ETX ID
               </label>
               <input
                 type="text"
                 className="input-field"
-                placeholder="e.g. rollno@college.edu or MAVI-1024"
+                placeholder="e.g. rollno@college.edu or ETX-1024"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required

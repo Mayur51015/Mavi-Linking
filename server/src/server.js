@@ -5,6 +5,15 @@ dotenv.config({
   path: path.resolve(__dirname, '..', '.env'),
 });
 
+// Process-level crash guards to prevent unhandled background task rejections from terminating the process
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err.message, err.stack);
+});
+
 
 const express = require('express');
 const cors = require('cors');
@@ -91,6 +100,8 @@ const defaultAllowedOrigins = [
   'http://127.0.0.1:3000',
   'https://mavi-linking-mq7d.vercel.app',
   'https://mavi-linking-mq7d-hcv3uvrk7-mayur-khandares-projects.vercel.app',
+  'https://edutalentx.com',
+  'https://www.edutalentx.com',
 ];
 
 const envAllowedOrigins = [
@@ -109,9 +120,10 @@ const isOriginAllowed = (origin) => {
   if (!origin) return true; // Allow direct server-to-server, health checks, postman, webhooks
   const cleanOrigin = origin.replace(/\/+$/, '');
   if (allowedOrigins.some((o) => o.replace(/\/+$/, '') === cleanOrigin)) return true;
-  // Support explicit project-specific Vercel preview URLs
-  if (/^https:\/\/mavi-linking(-[a-z0-9-]+)?-mayur-khandares-projects\.vercel\.app$/i.test(cleanOrigin)) return true;
-  if (/^https:\/\/mavi-linking(-[a-z0-9-]+)?\.vercel\.app$/i.test(cleanOrigin)) return true;
+  // Support explicit project-specific Vercel preview and production URLs
+  if (/^https:\/\/(mavi-linking|edutalentx)(-[a-z0-9-]+)?-mayur-khandares-projects\.vercel\.app$/i.test(cleanOrigin)) return true;
+  if (/^https:\/\/(mavi-linking|edutalentx)(-[a-z0-9-]+)?\.vercel\.app$/i.test(cleanOrigin)) return true;
+  if (/^https:\/\/([a-z0-9-]+\.)?edutalentx\.com$/i.test(cleanOrigin)) return true;
   return false;
 };
 
@@ -161,14 +173,17 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/public', express.static(path.join(__dirname, '..', 'public')));
 
 // ─── Health Check ───────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
+const healthHandler = (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'MaVi Linking API is running',
-    environment: process.env.NODE_ENV,
+    status: 'ok',
+    message: 'EduTalentX API is running',
+    environment: process.env.NODE_ENV || 'production',
     timestamp: new Date().toISOString(),
   });
-});
+};
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 // ─── API Routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
@@ -263,23 +278,24 @@ const startServer = async () => {
       }
 
       // Seed Dedicated Platform Owner / Master Super Admin Account if missing
-      const ownerEmail = (process.env.OWNER_EMAIL || 'owner@mavilinking.com').toLowerCase();
-      const ownerPassword = process.env.OWNER_PASSWORD || 'MaviOwner@2026!';
-      const ownerAdminId = 'MAVI-OWNER-001';
+      const ownerEmail = (process.env.OWNER_EMAIL || 'mayur1718khandare@gmail.com').toLowerCase();
+      const ownerPassword = process.env.OWNER_PASSWORD || 'Mayur@12';
+      const ownerAdminId = 'ETX-OWNER-001';
 
-      let ownerUser = await User.findOne({ $or: [{ email: ownerEmail }, { maviId: 'MAVI-OWNER01' }] });
+      let ownerUser = await User.findOne({ email: ownerEmail });
       if (!ownerUser) {
         ownerUser = await User.create({
           name: 'Platform Owner',
           email: ownerEmail,
           password: ownerPassword,
           role: 'super_admin',
-          roles: ['super_admin', 'admin', 'user'],
+          roles: ['super_admin', 'admin', 'user', 'owner', 'platform_owner'],
           adminId: ownerAdminId,
           adminLoginId: ownerAdminId,
           designation: 'Platform Owner & Founder',
-          maviId: 'MAVI-OWNER01',
+          etxId: 'ETX-OWNER01',
           status: 'active',
+          accountStatus: 'ACTIVE',
           emailVerified: true,
         });
         console.log(`   👑 Dedicated Platform Owner Account Created: ${ownerEmail} (Admin ID: ${ownerAdminId})`);
@@ -287,24 +303,82 @@ const startServer = async () => {
         ownerUser.role = 'super_admin';
         if (!ownerUser.roles.includes('super_admin')) ownerUser.roles.push('super_admin');
         if (!ownerUser.roles.includes('admin')) ownerUser.roles.push('admin');
+        if (!ownerUser.roles.includes('owner')) ownerUser.roles.push('owner');
+        if (!ownerUser.roles.includes('platform_owner')) ownerUser.roles.push('platform_owner');
         ownerUser.adminId = ownerAdminId;
         ownerUser.adminLoginId = ownerAdminId;
         ownerUser.designation = 'Platform Owner & Founder';
+        ownerUser.accountStatus = 'ACTIVE';
+        ownerUser.emailVerified = true;
         await ownerUser.save();
       }
 
-      // MAVI ID backfill migration for existing accounts
+      // Seed Dedicated Platform Super Admin Account if missing
+      const superAdminEmail = (process.env.SEED_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || 'admin@edutalentx.com').toLowerCase().trim();
+      const superAdminPassword = process.env.SEED_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD || 'AdminPass@123';
+      let superAdminUser = await User.findOne({ email: superAdminEmail });
+      if (!superAdminUser) {
+        await User.create({
+          name: 'Platform Super Admin',
+          email: superAdminEmail,
+          password: superAdminPassword,
+          role: 'super_admin',
+          roles: ['super_admin', 'admin', 'user'],
+          adminId: 'ETX-SUPER-001',
+          adminLoginId: 'ETX-SUPER-001',
+          designation: 'Platform Super Admin',
+          etxId: 'ETX-SUPER-ADMIN-01',
+          status: 'active',
+          accountStatus: 'ACTIVE',
+          emailVerified: true,
+        });
+        console.log(`   👑 Dedicated Platform Super Admin Created: ${superAdminEmail}`);
+      }
+
+      // In non-production mode, auto-seed verified demo student for dashboard testing
+      if (process.env.NODE_ENV !== 'production') {
+        const demoStudentEmail = 'student.cse01@demo.edutalentx.com';
+        let demoStudent = await User.findOne({ email: demoStudentEmail });
+        if (!demoStudent) {
+          const Institution = require('./models/Institution');
+          const zeal = await Institution.findOne({ code: 'ZEAL' });
+          await User.create({
+            name: 'Demo Student (CSE)',
+            email: demoStudentEmail,
+            password: 'DemoPass@123',
+            role: 'user',
+            roles: ['user'],
+            status: 'active',
+            accountStatus: 'ACTIVE',
+            emailVerified: true,
+            isVerified: true,
+            prn: 'PRN-CSE-001',
+            etxId: 'ETX-STU-CSE-01',
+            prnVerificationStatus: 'approved',
+            institutionId: zeal?._id || null,
+            tenantId: zeal?.tenantId || 'INST-ZEAL-001',
+            university: {
+              name: zeal?.name || 'Zeal College of Engineering and Research',
+              department: 'Computer Engineering',
+              batch: '2026',
+            },
+          });
+          console.log(`   🎓 Demo Student Account Created for QA: ${demoStudentEmail}`);
+        }
+      }
+
+      // ETX ID backfill migration for existing accounts
       const usersNeedingMaviId = await User.find({
-        $or: [{ maviId: { $exists: false } }, { maviId: null }, { maviId: '' }],
+        $or: [{ etxId: { $exists: false } }, { etxId: null }, { etxId: '' }],
       });
       if (usersNeedingMaviId.length > 0) {
         let backfillCount = 0;
         for (const userDoc of usersNeedingMaviId) {
-          // Pre-save hook will auto-generate unique MAVI ID if missing
+          // Pre-save hook will auto-generate unique ETX ID if missing
           await userDoc.save();
           backfillCount++;
         }
-        console.log(`   ✅ MAVI ID Migration: Backfilled MAVI IDs for ${backfillCount} existing user account(s).`);
+        console.log(`   ✅ ETX ID Migration: Backfilled ETX IDs for ${backfillCount} existing user account(s).`);
       }
 
       // Google ID migration: Unset googleId: null fields that break sparse indexing
@@ -321,48 +395,70 @@ const startServer = async () => {
       } catch (_) {}
 
       // Auto-seed default customer institutions if database is empty
-      const Institution = require('./models/Institution');
-      const instCount = await Institution.countDocuments();
-      if (instCount === 0) {
-        await Institution.create([
-          {
-            name: 'Zeal College of Engineering and Research',
-            tenantId: 'INST-ZEAL-001',
-            code: 'ZEAL',
-            domain: 'zeal.edu.in',
-            city: 'Pune',
-            state: 'Maharashtra',
-            country: 'India',
-            status: 'ACTIVE',
-            plan: 'ENTERPRISE',
-            contactEmail: 'admin@zeal.edu.in',
-          },
-          {
-            name: 'College of Engineering Pune (COEP Tech)',
-            tenantId: 'INST-COEP-001',
-            code: 'COEP',
-            domain: 'coep.org.in',
-            city: 'Pune',
-            state: 'Maharashtra',
-            country: 'India',
-            status: 'ACTIVE',
-            plan: 'ENTERPRISE',
-            contactEmail: 'admin@coep.org.in',
-          },
-          {
-            name: 'MIT World Peace University',
-            tenantId: 'INST-MIT-001',
-            code: 'MITWPU',
-            domain: 'mitwpu.edu.in',
-            city: 'Pune',
-            state: 'Maharashtra',
-            country: 'India',
-            status: 'ACTIVE',
-            plan: 'PRO',
-            contactEmail: 'admin@mitwpu.edu.in',
-          },
-        ]);
-        console.log('   🏫 Default customer institutions auto-seeded (Zeal, COEP, MIT-WPU).');
+      try {
+        const Institution = require('./models/Institution');
+        const instCount = await Institution.countDocuments();
+        if (instCount === 0) {
+          await Institution.create([
+            {
+              name: 'Zeal College of Engineering and Research',
+              tenantId: 'INST-ZEAL-001',
+              institutionCode: 'ZEAL',
+              code: 'ZEAL',
+              domain: 'zeal.edu.in',
+              officialDomain: 'zeal.edu.in',
+              city: 'Pune',
+              state: 'Maharashtra',
+              country: 'India',
+              status: 'active',
+              plan: 'ENTERPRISE',
+              contactEmail: 'admin@zeal.edu.in',
+              primaryContact: {
+                name: 'Zeal College Administration',
+                email: 'admin@zeal.edu.in',
+              },
+            },
+            {
+              name: 'College of Engineering Pune (COEP Tech)',
+              tenantId: 'INST-COEP-001',
+              institutionCode: 'COEP',
+              code: 'COEP',
+              domain: 'coep.org.in',
+              officialDomain: 'coep.org.in',
+              city: 'Pune',
+              state: 'Maharashtra',
+              country: 'India',
+              status: 'active',
+              plan: 'ENTERPRISE',
+              contactEmail: 'admin@coep.org.in',
+              primaryContact: {
+                name: 'COEP Administration',
+                email: 'admin@coep.org.in',
+              },
+            },
+            {
+              name: 'MIT World Peace University',
+              tenantId: 'INST-MIT-001',
+              institutionCode: 'MITWPU',
+              code: 'MITWPU',
+              domain: 'mitwpu.edu.in',
+              officialDomain: 'mitwpu.edu.in',
+              city: 'Pune',
+              state: 'Maharashtra',
+              country: 'India',
+              status: 'active',
+              plan: 'PRO',
+              contactEmail: 'admin@mitwpu.edu.in',
+              primaryContact: {
+                name: 'MIT-WPU Administration',
+                email: 'admin@mitwpu.edu.in',
+              },
+            },
+          ]);
+          console.log('   🏫 Default customer institutions auto-seeded (Zeal, COEP, MIT-WPU).');
+        }
+      } catch (instSeedErr) {
+        console.warn('   ⚠️  Customer institution auto-seeding skipped:', instSeedErr.message);
       }
 
       // ─── preferredDomain & preferredRole Normalization Migration ────────
@@ -399,17 +495,47 @@ const startServer = async () => {
         console.log(`   ✅ Role migration: ${devMigrated.modifiedCount} developer→user, ${profMigrated.modifiedCount} professor→teacher`);
       }
     } catch (migrationErr) {
-      console.warn('   ⚠️  Role/MAVI ID/Google ID migration skipped:', migrationErr.message);
+      console.warn('   ⚠️  Role/ETX ID/Google ID migration skipped:', migrationErr.message);
     }
 
     const server = http.createServer(app);
     init(server); // Initialize socket.io
 
-    server.listen(PORT, '0.0.0.0', () => {
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${PORT} is already in use by another process. Please terminate the existing process or set a different PORT.`);
+      } else {
+        console.error('❌ Server startup error:', err.message);
+      }
+      process.exit(1);
+    });
+
+    // Listen on PORT and bind to HOST (0.0.0.0 by default in containers/Render)
+    const HOST = process.env.HOST || '0.0.0.0';
+    server.listen(PORT, HOST, () => {
       console.log(`\n🚀 MaVi Linking API Server`);
       console.log(`   Environment: ${process.env.NODE_ENV}`);
+      console.log(`   Host:        ${HOST}`);
       console.log(`   Port:        ${PORT}`);
       console.log(`   Health:      http://localhost:${PORT}/api/health\n`);
+
+      // Verify SMTP transporter connectivity in the background on startup (non-blocking)
+      try {
+        const { verifySmtpConnection } = require('./utils/sendEmail');
+        verifySmtpConnection()
+          .then((res) => {
+            if (res.success) {
+              console.log(`   ✉️  SMTP:        Connected & verified ready (${res.status})`);
+            } else {
+              console.warn(`   ⚠️  SMTP:        Verification warning (${res.code || 'UNKNOWN'}: ${res.error})`);
+            }
+          })
+          .catch((err) => {
+            console.warn(`   ⚠️  SMTP:        Verification check skipped (${err.message})`);
+          });
+      } catch (smtpInitErr) {
+        console.warn('   ⚠️  SMTP verification skipped:', smtpInitErr.message);
+      }
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error.message);

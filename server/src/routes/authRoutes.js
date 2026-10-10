@@ -81,9 +81,9 @@ const loginValidation = [
     .withMessage('Password is required'),
   body()
     .custom((_, { req }) => {
-      const id = req.body.identifier || req.body.email || req.body.maviId || req.body.prn;
+      const id = req.body.identifier || req.body.email || req.body.etxId || req.body.prn;
       if (!id || !id.toString().trim()) {
-        throw new Error('Email, MAVI ID, or PRN is required');
+        throw new Error('Email, ETX ID, or PRN is required');
       }
       return true;
     }),
@@ -119,7 +119,7 @@ router.post('/activate-account', authLimiter, activateAccount);
 router.post('/refresh', authLimiter, refreshToken);
 router.post('/verify-email', authLimiter, verifyEmail);
 router.get('/verify-email', authLimiter, verifyEmail);
-router.get('/verify-email/:maviId', authLimiter, verifyEmail);
+router.get('/verify-email/:etxId', authLimiter, verifyEmail);
 router.post('/resend-verification', authLimiter, resendVerification);
 router.post('/change-email-pending', authLimiter, changeEmailPending);
 router.post('/forgot-password', authLimiter, forgotPassword);
@@ -129,7 +129,7 @@ router.post('/github', authLimiter, githubLogin);
 router.post('/google', (req, res) => {
   res.status(410).json({
     success: false,
-    message: 'Google authentication has been removed. Please sign in with your MAVI ID or email and password.',
+    message: 'Google authentication has been removed. Please sign in with your ETX ID or email and password.',
   });
 });
 

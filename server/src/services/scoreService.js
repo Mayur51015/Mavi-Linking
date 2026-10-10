@@ -1,5 +1,5 @@
 /**
- * Unified Canonical Scoring Engine for MAVI Linking
+ * Unified Canonical Scoring Engine for EduTalentX
  * Provides transparent, deterministic, and explainable developer scores (0–1000).
  */
 

@@ -1,5 +1,5 @@
 /**
- * MAVI Career Match Routes
+ * EduTalentX Career Match Routes
  */
 
 const express = require('express');

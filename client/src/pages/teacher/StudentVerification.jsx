@@ -60,56 +60,92 @@ const StudentVerification = () => {
 
   return (
     <TeacherLayout>
-      <header style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <ShieldCheck className="text-gradient" size={32} /> Student Profile Verification
+      <header style={{ marginBottom: '1.75rem' }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <ShieldCheck size={26} style={{ color: 'var(--brand-blue)' }} /> Student Profile Verification
         </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Review and verify student certifications, projects, skills, and links to build a verified talent pool.</p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          Review and verify student certifications, projects, and skills to establish high-trust institutional credentials.
+        </p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) 2fr', gap: '1.5rem', alignItems: 'start' }}>
         {/* Left Column: Student List */}
-        <div className="glass-card-static" style={{ padding: '1.5rem', maxHeight: '600px', overflowY: 'auto' }}>
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.25rem',
+            maxHeight: '680px',
+            overflowY: 'auto',
+          }}
+        >
           <div style={{ position: 'relative', marginBottom: '1rem' }}>
-            <Search size={16} style={{ position: 'absolute', top: '12px', left: '12px', color: 'var(--text-muted)' }} />
+            <Search size={15} style={{ position: 'absolute', top: '12px', left: '12px', color: 'var(--text-muted)' }} />
             <input
               type="text"
               placeholder="Search students..."
               className="input-field"
-              style={{ paddingLeft: '2.25rem', marginBottom: 0 }}
+              style={{ paddingLeft: '2.25rem', marginBottom: 0, fontSize: '0.85rem' }}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
 
-          <div style={{ display: 'grid', gap: '0.5rem' }}>
-            {filteredStudents.map(s => (
-              <div
-                key={s._id}
-                onClick={() => handleSelectStudent(s._id)}
-                className={`glass-card ${selectedStudent?.student?._id === s._id ? 'border-glow' : ''}`}
-                style={{
-                  padding: '0.75rem 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  cursor: 'pointer',
-                  background: selectedStudent?.student?._id === s._id ? 'rgba(139, 92, 246, 0.05)' : '',
-                }}
-              >
-                <div className="avatar-gradient" style={{ width: '32px', height: '32px', fontSize: '0.8rem' }}>
-                  {s.name?.charAt(0)}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '600', fontSize: '0.875rem' }}>
-                    {s.name} {s.isVerified && <span title="Verified identity">✅</span>}
+          <div style={{ display: 'grid', gap: '0.4rem' }}>
+            {filteredStudents.map(s => {
+              const isSelected = selectedStudent?.student?._id === s._id;
+              return (
+                <div
+                  key={s._id}
+                  onClick={() => handleSelectStudent(s._id)}
+                  style={{
+                    padding: '0.75rem 0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    cursor: 'pointer',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid',
+                    borderColor: isSelected ? 'var(--brand-blue)' : 'var(--border-color)',
+                    background: isSelected ? 'var(--brand-blue-light)' : 'var(--bg-card)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: isSelected ? 'var(--brand-blue)' : 'var(--bg-subtle)',
+                      color: isSelected ? '#ffffff' : 'var(--text-primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.825rem',
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {s.name?.charAt(0)}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    Batch: {s.university?.batch || '2025'}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.name}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      Batch {s.university?.batch || '2025'} {s.isVerified && '• Verified'}
+                    </div>
                   </div>
                 </div>
+              );
+            })}
+            {filteredStudents.length === 0 && (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                No students match your query.
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -118,49 +154,83 @@ const StudentVerification = () => {
           {selectedStudent ? (
             <motion.div
               key={selectedStudent.student._id}
-              initial={{ opacity: 0, x: 15 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="glass-card-static"
-              style={{ padding: '2rem' }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.75rem',
+              }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem' }}>
-                <div className="avatar-gradient" style={{ width: '56px', height: '56px', fontSize: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.75rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem' }}>
+                <div
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '1.25rem',
+                    color: 'var(--text-primary)',
+                  }}
+                >
                   {selectedStudent.student.name?.charAt(0)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.25rem', color: 'white' }}>
-                    {selectedStudent.student.name} {selectedStudent.student.isVerified && <span style={{ color: 'var(--accent-emerald)', fontSize: '0.85rem' }}>(Verified Developer)</span>}
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {selectedStudent.student.name}
+                    {selectedStudent.student.isVerified && (
+                      <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>
+                        Verified
+                      </span>
+                    )}
                   </h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                    {selectedStudent.student.university?.name} — {selectedStudent.student.university?.department}
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.2rem 0 0 0' }}>
+                    {selectedStudent.student.university?.name || 'Institution'} — {selectedStudent.student.university?.department || 'Department'}
                   </p>
                 </div>
               </div>
 
               {/* Items List */}
-              <div style={{ display: 'grid', gap: '2rem' }}>
+              <div style={{ display: 'grid', gap: '1.75rem' }}>
                 {/* Certificates Section */}
                 <div>
-                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
-                    <Award size={18} style={{ color: 'var(--accent-amber)' }} /> Uploaded Certifications
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                    <Award size={16} style={{ color: 'var(--brand-blue)' }} /> Uploaded Certifications
                   </h4>
-                  <div style={{ display: 'grid', gap: '0.75rem' }}>
+                  <div style={{ display: 'grid', gap: '0.6rem' }}>
                     {selectedStudent.student.certificates?.map(cert => (
-                      <div key={cert._id} className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem' }}>
+                      <div
+                        key={cert._id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '0.75rem 1rem',
+                          background: 'var(--bg-subtle)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: 'var(--radius-sm)',
+                        }}
+                      >
                         <div>
-                          <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{cert.title}</div>
+                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{cert.title}</div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Issuer: {cert.issuer}</div>
                         </div>
                         {cert.isVerified ? (
-                          <span style={{ color: 'var(--accent-emerald)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <CheckCircle size={14} /> Verified
+                          <span style={{ color: 'var(--accent-emerald)', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <CheckCircle size={15} /> Verified
                           </span>
                         ) : (
                           <button
                             onClick={() => handleVerify('certificates', cert._id)}
                             disabled={verifyingItem === `certificates-${cert._id}`}
-                            className="btn btn-outline"
-                            style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
+                            className="btn btn-primary btn-sm"
+                            style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}
                           >
                             {verifyingItem === `certificates-${cert._id}` ? 'Verifying...' : 'Approve'}
                           </button>
@@ -168,34 +238,39 @@ const StudentVerification = () => {
                       </div>
                     ))}
                     {(!selectedStudent.student.certificates || selectedStudent.student.certificates.length === 0) && (
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No certificates uploaded.</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
+                        No certificates uploaded.
+                      </div>
                     )}
                   </div>
                 </div>
 
-                {/* manual skills list */}
+                {/* Technical Skills List */}
                 <div>
-                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
-                    <Code size={18} style={{ color: 'var(--accent-cyan)' }} /> Technical Skills
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                    <Code size={16} style={{ color: 'var(--brand-blue)' }} /> Technical Skills
                   </h4>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {selectedStudent.student.skillsList?.map(skill => (
-                      <div key={skill._id} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.4rem 0.75rem',
-                        borderRadius: '8px',
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid var(--border-color)',
-                      }}>
-                        <span style={{ fontSize: '0.85rem' }}>{skill.name}</span>
+                      <div
+                        key={skill._id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.35rem 0.75rem',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'var(--bg-subtle)',
+                          border: '1px solid var(--border-color)',
+                        }}
+                      >
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>{skill.name}</span>
                         {skill.isVerified ? (
-                          <span style={{ color: 'var(--accent-emerald)', fontSize: '0.75rem' }}>✓</span>
+                          <span style={{ color: 'var(--accent-emerald)', fontSize: '0.75rem', fontWeight: 700 }}>✓</span>
                         ) : (
                           <button
                             onClick={() => handleVerify('skillsList', skill._id)}
-                            style={{ background: 'none', border: 'none', color: 'var(--accent-purple)', cursor: 'pointer', fontSize: '0.7rem' }}
+                            style={{ background: 'none', border: 'none', color: 'var(--brand-blue)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600, padding: 0 }}
                           >
                             Verify
                           </button>
@@ -203,15 +278,30 @@ const StudentVerification = () => {
                       </div>
                     ))}
                     {(!selectedStudent.student.skillsList || selectedStudent.student.skillsList.length === 0) && (
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No manually entered skills.</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', width: '100%', textAlign: 'center' }}>
+                        No manually declared skills.
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
             </motion.div>
           ) : (
-            <div className="glass-card-static" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-              Select a student from the list to review and verify credentials.
+            <div
+              style={{
+                height: '100%',
+                minHeight: '360px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-muted)',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.9rem',
+              }}
+            >
+              Select a student from the left panel to review and verify credentials.
             </div>
           )}
         </div>

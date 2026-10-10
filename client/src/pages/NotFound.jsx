@@ -1,19 +1,17 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { Terminal, Compass, ArrowLeft } from 'lucide-react';
+import { Compass, ArrowLeft } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
+import BrandLogo from '../components/BrandLogo';
 
 const NotFound = () => {
   const { user, getDashboardPath } = useContext(AuthContext);
 
   return (
     <>
-      <nav className="navbar reveal-fade is-visible">
+      <nav className="navbar reveal-fade is-visible" style={{ padding: '1rem 0' }}>
         <div className="container nav-container">
-          <div className="nav-brand">
-            <Terminal size={28} className="text-gradient" />
-            <span>MaVi Linking</span>
-          </div>
+          <BrandLogo variant="full" size={32} linkTo="/" />
         </div>
       </nav>
 

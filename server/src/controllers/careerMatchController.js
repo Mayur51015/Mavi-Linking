@@ -1,5 +1,5 @@
 /**
- * MAVI Career Match Controller
+ * EduTalentX Career Match Controller
  *
  * Exposes endpoints for calculating match score, listing supported roles,
  * comparing roles, and updating target career goals.

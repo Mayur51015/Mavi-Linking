@@ -147,20 +147,20 @@ const CareerRoadmapPage = () => {
         {/* Top Breadcrumb & Actions */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              <span style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Student Dashboard</span>
-              <ChevronRight size={14} />
-              <span style={{ color: 'var(--accent-purple)', fontWeight: '500' }}>MAVI Career Roadmap</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#6B7280', marginBottom: '0.25rem' }}>
+              <span style={{ cursor: 'pointer', color: '#4B5563', fontWeight: 500 }} onClick={() => navigate('/dashboard')}>Student Dashboard</span>
+              <ChevronRight size={14} color="#9CA3AF" />
+              <span style={{ color: '#2563EB', fontWeight: '600' }}>EduTalentX Career Roadmap</span>
             </div>
-            <h1 style={{ color: 'var(--text-primary)', fontSize: '2rem', fontWeight: '700', fontFamily: 'Outfit, sans-serif', margin: 0 }}>
-              MAVI Career Roadmap
+            <h1 style={{ color: '#111111', fontSize: '1.875rem', fontWeight: '700', fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif', margin: 0, letterSpacing: '-0.02em' }}>
+              EduTalentX Career Roadmap
             </h1>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <button
               onClick={() => setShowGoalModal(true)}
-              className="btn btn-outline"
+              className="btn btn-secondary"
               style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
             >
               <Edit3 size={15} />
@@ -182,9 +182,9 @@ const CareerRoadmapPage = () => {
         {/* Profile Changed Banner */}
         {profileChanged && (
           <div style={{
-            background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%)',
-            border: '1px solid rgba(245, 158, 11, 0.3)',
-            borderRadius: '12px',
+            background: '#FFFBEB',
+            border: '1px solid #FDE68A',
+            borderRadius: '8px',
             padding: '1rem 1.25rem',
             marginBottom: '1.5rem',
             display: 'flex',
@@ -194,12 +194,12 @@ const CareerRoadmapPage = () => {
             flexWrap: 'wrap',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <AlertTriangle size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
+              <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0 }} />
               <div>
-                <div style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem' }}>
+                <div style={{ color: '#111111', fontWeight: '600', fontSize: '0.9rem' }}>
                   Your profile has changed since your roadmap was generated.
                 </div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                <div style={{ color: '#4B5563', fontSize: '0.8125rem' }}>
                   Regenerate your roadmap to synchronize with your newest projects, skills, and coding platform milestones.
                 </div>
               </div>
@@ -207,8 +207,8 @@ const CareerRoadmapPage = () => {
             <button
               onClick={() => handleGenerate()}
               disabled={generating}
-              className="btn btn-sm"
-              style={{ background: '#f59e0b', color: 'black', fontWeight: '600', border: 'none' }}
+              className="btn btn-primary btn-sm"
+              style={{ fontWeight: '600' }}
             >
               Regenerate Roadmap
             </button>
@@ -218,12 +218,12 @@ const CareerRoadmapPage = () => {
         {/* Global Error Banner */}
         {error && (
           <div style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            borderRadius: '12px',
+            background: '#FEF2F2',
+            border: '1px solid #FCA5A5',
+            borderRadius: '8px',
             padding: '1rem',
             marginBottom: '1.5rem',
-            color: 'var(--accent-red)',
+            color: '#DC2626',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
@@ -235,68 +235,74 @@ const CareerRoadmapPage = () => {
         )}
 
         {loading ? (
-          <div className="glass-card" style={{ padding: '4rem', textAlign: 'center' }}>
-            <Loader2 size={48} color="var(--accent-purple)" className="animate-spin" style={{ margin: '0 auto 1.5rem' }} />
-            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.35rem', fontFamily: 'Outfit' }}>
+          <div className="glass-card" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '4rem', textAlign: 'center' }}>
+            <Loader2 size={48} color="#2563EB" className="animate-spin" style={{ margin: '0 auto 1.5rem' }} />
+            <h3 style={{ color: '#111111', fontSize: '1.35rem', fontWeight: 700, fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
               Building your personalized career roadmap...
             </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>
               Analyzing your skills, experience, project history, and platform metrics.
             </p>
           </div>
         ) : (
           <>
             {/* HERO OVERVIEW CARD */}
-            <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem', position: 'relative', overflow: 'hidden' }}>
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                width: '350px',
-                height: '350px',
-                background: 'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%)',
-                pointerEvents: 'none',
-              }} />
-
+            <div className="glass-card" style={{
+              background: '#FFFFFF',
+              border: '1px solid #E5E7EB',
+              borderRadius: '8px',
+              padding: '2rem',
+              marginBottom: '2rem',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', alignItems: 'center' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
-                    <span className="badge badge-primary" style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}>
+                    <span className="badge" style={{
+                      background: '#EFF6FF',
+                      border: '1px solid #BFDBFE',
+                      color: '#1E40AF',
+                      fontWeight: 600,
+                      padding: '0.2rem 0.6rem',
+                      fontSize: '0.75rem',
+                      borderRadius: '4px'
+                    }}>
                       Target Career
                     </span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                    <span style={{ color: '#6B7280', fontSize: '0.8125rem' }}>
                       AI-estimated learning roadmap
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                    <h2 style={{ color: 'var(--text-primary)', fontSize: '2rem', fontWeight: '700', fontFamily: 'Outfit, sans-serif', margin: 0 }}>
+                    <h2 style={{ color: '#111111', fontSize: '1.75rem', fontWeight: '700', fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif', margin: 0, letterSpacing: '-0.02em' }}>
                       {targetRole}
                     </h2>
                     <button
                       onClick={() => setShowGoalModal(true)}
-                      className="btn btn-ghost btn-sm"
+                      className="btn btn-secondary btn-sm"
                       title="Edit target role"
-                      style={{ padding: '0.25rem', color: 'var(--text-muted)' }}
+                      style={{ padding: '0.25rem 0.5rem', minHeight: '28px', color: '#111111' }}
                     >
-                      <Edit3 size={16} />
+                      <Edit3 size={14} />
                     </button>
                   </div>
 
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '540px', lineHeight: '1.5', margin: 0 }}>
-                    Build your personalized path from your current <strong>{currentLevel}</strong> foundation to an industry-ready <strong>{targetRole}</strong>.
+                  <p style={{ color: '#4B5563', fontSize: '0.9rem', maxWidth: '540px', lineHeight: '1.5', margin: 0 }}>
+                    Build your personalized path from your current <strong style={{ color: '#111111' }}>{currentLevel}</strong> foundation to an industry-ready <strong style={{ color: '#111111' }}>{targetRole}</strong>.
                   </p>
 
-                  <div style={{ marginTop: '1.25rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <div style={{ marginTop: '1.25rem', fontSize: '0.8125rem', color: '#6B7280' }}>
                     Roadmap generated: {roadmap?.generatedAt ? new Date(roadmap.generatedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Today'}
                   </div>
                 </div>
 
                 {/* Progress Circle & Metrics */}
                 <div style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '16px',
+                  background: '#F8F9FA',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '8px',
                   padding: '1.5rem',
                   display: 'flex',
                   flexDirection: 'column',
@@ -304,19 +310,19 @@ const CareerRoadmapPage = () => {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <div style={{ color: '#6B7280', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         Roadmap Progress
                       </div>
-                      <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--accent-purple)', fontFamily: 'Outfit' }}>
+                      <div style={{ fontSize: '2rem', fontWeight: '700', color: '#2563EB', fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
                         {progressPercent}%
                       </div>
                     </div>
 
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <div style={{ color: '#6B7280', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         Profile Strength
                       </div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: '700', color: profileStrength >= 75 ? '#10b981' : '#f59e0b', fontFamily: 'Outfit' }}>
+                      <div style={{ fontSize: '1.5rem', fontWeight: '700', color: profileStrength >= 75 ? '#059669' : '#D97706', fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
                         {profileStrength}%
                       </div>
                     </div>
@@ -327,14 +333,14 @@ const CareerRoadmapPage = () => {
                     <div style={{
                       width: '100%',
                       height: '8px',
-                      background: 'rgba(255, 255, 255, 0.06)',
+                      background: '#E5E7EB',
                       borderRadius: '999px',
                       overflow: 'hidden',
                     }}>
                       <div style={{
                         width: `${progressPercent}%`,
                         height: '100%',
-                        background: 'linear-gradient(90deg, #8b5cf6 0%, #3b82f6 50%, #10b981 100%)',
+                        background: '#2563EB',
                         borderRadius: '999px',
                         transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
                       }} />
@@ -342,34 +348,34 @@ const CareerRoadmapPage = () => {
                   </div>
 
                   {missingItems.length > 0 ? (
-                    <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '0.75rem' }}>
+                      <div style={{ fontSize: '0.8125rem', color: '#4B5563', marginBottom: '0.45rem', fontWeight: 500 }}>
                         Improve your roadmap by completing your profile:
                       </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.6rem' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.75rem' }}>
                         {missingItems.map((item, idx) => (
-                          <span key={idx} style={{ fontSize: '0.7rem', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                          <span key={idx} style={{ fontSize: '0.75rem', color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 500 }}>
                             • {item}
                           </span>
                         ))}
                       </div>
                       <button
                         onClick={() => navigate('/dashboard/link')}
-                        className="btn btn-outline btn-sm"
-                        style={{ width: '100%', fontSize: '0.78rem' }}
+                        className="btn btn-secondary btn-sm"
+                        style={{ width: '100%', fontSize: '0.8125rem', fontWeight: 600 }}
                       >
                         Complete Profile
                       </button>
                     </div>
                   ) : (
-                    <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontSize: '0.8rem', fontWeight: '600' }}>
+                    <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#059669', fontSize: '0.8125rem', fontWeight: '600' }}>
                         <CheckCircle2 size={15} /> Your profile is fully complete
                       </div>
                       <button
                         onClick={() => navigate('/dashboard')}
-                        className="btn btn-ghost btn-sm"
-                        style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', color: 'var(--text-secondary)' }}
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}
                       >
                         View Profile
                       </button>
@@ -382,37 +388,38 @@ const CareerRoadmapPage = () => {
             {/* NEXT ACTION HERO CALLOUT */}
             {roadmap?.nextAction && (
               <div style={{
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(59, 130, 246, 0.1) 100%)',
-                border: '1px solid rgba(139, 92, 246, 0.3)',
-                borderRadius: '16px',
-                padding: '1.5rem',
-                marginBottom: '2rem',
+                background: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                borderRadius: '8px',
+                padding: '1.25rem 1.4rem',
+                marginBottom: '1.5rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: '1.5rem',
+                gap: '1.25rem',
                 flexWrap: 'wrap',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '280px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: '280px' }}>
                   <div style={{
-                    background: 'var(--accent-purple)',
-                    borderRadius: '12px',
-                    padding: '0.85rem',
-                    color: 'white',
+                    background: '#EFF6FF',
+                    border: '1px solid #BFDBFE',
+                    borderRadius: '8px',
+                    padding: '0.75rem',
+                    color: '#2563EB',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
-                    <Zap size={24} />
+                    <Zap size={22} />
                   </div>
                   <div>
-                    <div style={{ color: 'var(--accent-cyan)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600', marginBottom: '0.2rem' }}>
+                    <div style={{ color: '#2563EB', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700', marginBottom: '0.2rem' }}>
                       Next Recommended Step (Phase {roadmap.nextAction.phaseNumber || 1})
                     </div>
-                    <h3 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', margin: '0 0 0.25rem 0', fontFamily: 'Outfit' }}>
+                    <h3 style={{ color: '#111111', fontSize: '1.15rem', margin: '0 0 0.25rem 0', fontWeight: '700', fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
                       {roadmap.nextAction.stepTitle}
                     </h3>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                    <p style={{ color: '#4B5563', fontSize: '0.875rem', margin: 0, lineHeight: 1.5 }}>
                       {roadmap.nextAction.description}
                     </p>
                   </div>
@@ -423,7 +430,15 @@ const CareerRoadmapPage = () => {
                     onClick={() => handleStatusChange(roadmap.nextAction.itemId, 'Completed')}
                     disabled={updatingItem === roadmap.nextAction.itemId}
                     className="btn btn-primary"
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      whiteSpace: 'nowrap',
+                      padding: '0.55rem 1.15rem',
+                      fontWeight: 600,
+                      fontSize: '0.875rem'
+                    }}
                   >
                     <CheckCircle2 size={16} />
                     {updatingItem === roadmap.nextAction.itemId ? 'Updating...' : 'Mark as Complete'}
@@ -433,30 +448,32 @@ const CareerRoadmapPage = () => {
             )}
 
             {/* 2-COLUMN MAIN CONTENT: CURRENT PROFILE & SKILL GAP */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(340px, 100%), 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
               
               {/* CURRENT PROFILE */}
-              <div className="glass-card" style={{ padding: '1.75rem' }}>
+              <div className="glass-card" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '1.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-                  <UserCheck size={20} color="var(--accent-purple)" />
-                  <h3 style={{ color: 'var(--text-primary)', fontSize: '1.2rem', fontFamily: 'Outfit', margin: 0 }}>
+                  <UserCheck size={20} color="#2563EB" />
+                  <h3 style={{ color: '#111111', fontSize: '1.15rem', fontWeight: 700, margin: 0, fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
                     Current Profile
                   </h3>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Current Level</span>
-                    <span className="badge badge-primary" style={{ fontWeight: '600' }}>{currentLevel}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.75rem', borderBottom: '1px solid #E5E7EB' }}>
+                    <span style={{ color: '#6B7280', fontSize: '0.85rem' }}>Current Level</span>
+                    <span style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1E40AF', padding: '0.2rem 0.55rem', borderRadius: '4px', fontWeight: 600, fontSize: '0.8125rem' }}>
+                      {currentLevel}
+                    </span>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Overall Score</span>
-                    <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{user?.scores?.overall || 0} / 1000</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.75rem', borderBottom: '1px solid #E5E7EB' }}>
+                    <span style={{ color: '#6B7280', fontSize: '0.85rem' }}>Overall Score</span>
+                    <span style={{ color: '#111111', fontWeight: '700', fontSize: '0.9rem' }}>{user?.scores?.overall || 0} / 1000</span>
                   </div>
 
                   <div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                    <div style={{ color: '#374151', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>
                       Existing Strengths & Technologies:
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
@@ -464,12 +481,16 @@ const CareerRoadmapPage = () => {
                         <span
                           key={idx}
                           style={{
-                            background: 'rgba(59, 130, 246, 0.1)',
-                            border: '1px solid rgba(59, 130, 246, 0.25)',
-                            color: 'var(--accent-blue)',
+                            background: '#EFF6FF',
+                            border: '1px solid #BFDBFE',
+                            color: '#1E40AF',
                             fontSize: '0.78rem',
-                            padding: '0.2rem 0.5rem',
+                            fontWeight: '600',
+                            padding: '0.25rem 0.55rem',
                             borderRadius: '6px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
                           }}
                         >
                           ✓ {skill}
@@ -479,22 +500,22 @@ const CareerRoadmapPage = () => {
                   </div>
 
                   <div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                    <div style={{ color: '#374151', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>
                       Projects & Experience:
                     </div>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                    <p style={{ color: '#4B5563', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
                       {user?.degree ? `${user.degree} student at ${user.university?.name || 'University'}. ` : ''}
-                      Actively building developer portfolio on MAVI Linking.
+                      Actively building developer portfolio on EduTalentX.
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* SKILL GAP ANALYSIS */}
-              <div className="glass-card" style={{ padding: '1.75rem' }}>
+              <div className="glass-card" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '1.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-                  <TrendingUp size={20} color="var(--accent-cyan)" />
-                  <h3 style={{ color: 'var(--text-primary)', fontSize: '1.2rem', fontFamily: 'Outfit', margin: 0 }}>
+                  <TrendingUp size={20} color="#0EA5E9" />
+                  <h3 style={{ color: '#111111', fontSize: '1.15rem', fontWeight: 700, margin: 0, fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
                     Skill Gap Analysis
                   </h3>
                 </div>
@@ -502,48 +523,48 @@ const CareerRoadmapPage = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   {/* Strong Skills */}
                   <div>
-                    <div style={{ color: '#10b981', fontSize: '0.82rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <div style={{ color: '#065F46', fontSize: '0.82rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <Check size={14} /> Strong Skills (Foundational)
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                       {strongGaps.length > 0 ? strongGaps.map((g, idx) => (
-                        <span key={idx} style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#10b981', fontSize: '0.78rem', padding: '0.2rem 0.5rem', borderRadius: '6px' }} title={g.reason}>
+                        <span key={idx} style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', fontSize: '0.78rem', fontWeight: '600', padding: '0.25rem 0.55rem', borderRadius: '6px' }} title={g.reason}>
                           ✓ {g.name}
                         </span>
                       )) : (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>None specified yet</span>
+                        <span style={{ color: '#6B7280', fontSize: '0.8125rem' }}>None specified yet</span>
                       )}
                     </div>
                   </div>
 
                   {/* Skills to Improve */}
                   <div>
-                    <div style={{ color: '#f59e0b', fontSize: '0.82rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <div style={{ color: '#92400E', fontSize: '0.82rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <ArrowRight size={14} /> Skills to Improve
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                       {improveGaps.length > 0 ? improveGaps.map((g, idx) => (
-                        <span key={idx} style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', color: '#f59e0b', fontSize: '0.78rem', padding: '0.2rem 0.5rem', borderRadius: '6px' }} title={g.reason}>
+                        <span key={idx} style={{ background: '#FEF3C7', border: '1px solid #FDE68A', color: '#92400E', fontSize: '0.78rem', fontWeight: '600', padding: '0.25rem 0.55rem', borderRadius: '6px' }} title={g.reason}>
                           → {g.name}
                         </span>
                       )) : (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>None detected</span>
+                        <span style={{ color: '#6B7280', fontSize: '0.8125rem' }}>None detected</span>
                       )}
                     </div>
                   </div>
 
                   {/* Skills to Learn */}
                   <div>
-                    <div style={{ color: 'var(--accent-purple)', fontSize: '0.82rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <div style={{ color: '#1E40AF', fontSize: '0.82rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <Zap size={14} /> Skills to Learn (Priority Gaps)
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                       {learnGaps.length > 0 ? learnGaps.map((g, idx) => (
-                        <span key={idx} style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.25)', color: 'var(--accent-purple)', fontSize: '0.78rem', padding: '0.2rem 0.5rem', borderRadius: '6px' }} title={g.reason}>
+                        <span key={idx} style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1E40AF', fontSize: '0.78rem', fontWeight: '600', padding: '0.25rem 0.55rem', borderRadius: '6px' }} title={g.reason}>
                           → {g.name}
                         </span>
                       )) : (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>None detected</span>
+                        <span style={{ color: '#6B7280', fontSize: '0.8125rem' }}>None detected</span>
                       )}
                     </div>
                   </div>
@@ -552,29 +573,29 @@ const CareerRoadmapPage = () => {
             </div>
 
             {/* INTERACTIVE LEARNING ROADMAP PHASES */}
-            <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
+            <div className="glass-card" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '2rem', marginBottom: '2rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <Layers size={22} color="var(--accent-purple)" />
+                  <Layers size={22} color="#2563EB" />
                   <div>
-                    <h3 style={{ color: 'var(--text-primary)', fontSize: '1.35rem', fontFamily: 'Outfit', margin: 0 }}>
+                    <h3 style={{ color: '#111111', fontSize: '1.25rem', fontWeight: 700, fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif', margin: 0 }}>
                       Interactive Learning Roadmap
                     </h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
+                    <p style={{ color: '#6B7280', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
                       Click any milestone item to update your learning status (Not Started • In Progress • Completed).
                     </p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.75rem' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-muted)' }}>
-                    <Circle size={10} color="var(--text-muted)" /> Not Started
+                <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.78rem', fontWeight: 600 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#4B5563' }}>
+                    <Circle size={10} color="#6B7280" /> Not Started
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#f59e0b' }}>
-                    <Clock size={10} color="#f59e0b" /> In Progress
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#92400E' }}>
+                    <Clock size={10} color="#D97706" /> In Progress
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#10b981' }}>
-                    <CheckCircle2 size={10} color="#10b981" /> Completed
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#065F46' }}>
+                    <CheckCircle2 size={10} color="#059669" /> Completed
                   </span>
                 </div>
               </div>
@@ -592,9 +613,9 @@ const CareerRoadmapPage = () => {
                     <div
                       key={phase.phaseNumber}
                       style={{
-                        background: 'rgba(255, 255, 255, 0.02)',
-                        border: phaseCompleted ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid var(--border-subtle)',
-                        borderRadius: '14px',
+                        background: '#FFFFFF',
+                        border: phaseCompleted ? '1px solid #A7F3D0' : '1px solid #E5E7EB',
+                        borderRadius: '8px',
                         padding: '1.25rem 1.5rem',
                       }}
                     >
@@ -602,25 +623,25 @@ const CareerRoadmapPage = () => {
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <h4 style={{ color: 'var(--text-primary)', fontSize: '1.05rem', margin: 0, fontFamily: 'Outfit' }}>
+                            <h4 style={{ color: '#111111', fontSize: '1.05rem', fontWeight: 700, margin: 0, fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
                               {phase.title}
                             </h4>
                             {phaseCompleted && (
-                              <span style={{ color: '#10b981', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.2rem', background: 'rgba(16, 185, 129, 0.1)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                              <span style={{ color: '#065F46', fontSize: '0.72rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
                                 <Check size={12} /> Phase Completed
                               </span>
                             )}
                           </div>
-                          <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
+                          <p style={{ color: '#6B7280', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
                             {phase.description}
                           </p>
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', background: 'rgba(6, 182, 212, 0.1)', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0369A1', background: '#F0F9FF', border: '1px solid #BAE6FD', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
                             Suggested: {phase.estimatedTimeline}
                           </span>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                          <span style={{ fontSize: '0.8125rem', color: '#111111', fontWeight: '700' }}>
                             {phaseProgress}%
                           </span>
                         </div>
@@ -637,36 +658,36 @@ const CareerRoadmapPage = () => {
                             <div
                               key={item.id}
                               style={{
-                                background: isCompleted ? 'rgba(16, 185, 129, 0.04)' : isInProgress ? 'rgba(245, 158, 11, 0.04)' : 'rgba(255, 255, 255, 0.01)',
-                                border: isCompleted ? '1px solid rgba(16, 185, 129, 0.2)' : isInProgress ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid var(--border-subtle)',
-                                borderRadius: '10px',
+                                background: isCompleted ? '#F0FDF4' : isInProgress ? '#FFFBEB' : '#FFFFFF',
+                                border: isCompleted ? '1px solid #A7F3D0' : isInProgress ? '1px solid #FDE68A' : '1px solid #E5E7EB',
+                                borderRadius: '8px',
                                 padding: '1rem',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 justifyContent: 'space-between',
-                                transition: 'all 0.2s ease',
+                                transition: 'all 0.15s ease',
                               }}
                             >
                               <div>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                                  <div style={{ color: isCompleted ? 'var(--text-muted)' : 'white', fontWeight: '600', fontSize: '0.9rem', textDecoration: isCompleted ? 'line-through' : 'none' }}>
+                                  <div style={{ color: isCompleted ? '#6B7280' : '#111111', fontWeight: '600', fontSize: '0.9rem', textDecoration: isCompleted ? 'line-through' : 'none' }}>
                                     {item.title}
                                   </div>
                                   {item.priority === 'High' && (
-                                    <span style={{ fontSize: '0.65rem', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px', flexShrink: 0 }}>
+                                    <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', padding: '0.1rem 0.4rem', borderRadius: '4px', flexShrink: 0 }}>
                                       High Priority
                                     </span>
                                   )}
                                 </div>
 
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '0 0 0.75rem 0', lineHeight: '1.4' }}>
+                                <p style={{ color: '#4B5563', fontSize: '0.8125rem', margin: '0 0 0.75rem 0', lineHeight: '1.45' }}>
                                   {item.description}
                                 </p>
 
                                 {item.resources?.length > 0 && (
                                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.75rem' }}>
                                     {item.resources.map((res, rIdx) => (
-                                      <span key={rIdx} style={{ fontSize: '0.68rem', color: 'var(--accent-purple)', background: 'rgba(139, 92, 246, 0.08)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                                      <span key={rIdx} style={{ fontSize: '0.72rem', color: '#1E40AF', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 500 }}>
                                         📚 {res}
                                       </span>
                                     ))}
@@ -675,20 +696,22 @@ const CareerRoadmapPage = () => {
                               </div>
 
                               {/* Status Toggle Buttons */}
-                              <div style={{ display: 'flex', gap: '0.35rem', marginTop: 'auto', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.6rem' }}>
+                              <div style={{ display: 'flex', gap: '0.35rem', marginTop: 'auto', borderTop: '1px solid #E5E7EB', paddingTop: '0.6rem' }}>
                                 <button
                                   type="button"
                                   onClick={() => handleStatusChange(item.id, 'Not Started')}
                                   disabled={isUpdating}
                                   style={{
                                     flex: 1,
-                                    padding: '0.3rem 0.4rem',
-                                    fontSize: '0.72rem',
+                                    padding: '0.35rem 0.5rem',
+                                    fontSize: '0.75rem',
                                     borderRadius: '6px',
-                                    border: item.status === 'Not Started' ? '1px solid var(--text-muted)' : '1px solid transparent',
-                                    background: item.status === 'Not Started' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-                                    color: item.status === 'Not Started' ? 'white' : 'var(--text-muted)',
-                                    cursor: 'pointer',
+                                    border: item.status === 'Not Started' ? '1px solid #9CA3AF' : '1px solid #E5E7EB',
+                                    background: item.status === 'Not Started' ? '#F3F4F6' : '#FFFFFF',
+                                    color: item.status === 'Not Started' ? '#111111' : '#6B7280',
+                                    fontWeight: item.status === 'Not Started' ? '600' : '500',
+                                    cursor: isUpdating ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.15s ease',
                                   }}
                                 >
                                   Not Started
@@ -700,14 +723,15 @@ const CareerRoadmapPage = () => {
                                   disabled={isUpdating}
                                   style={{
                                     flex: 1,
-                                    padding: '0.3rem 0.4rem',
-                                    fontSize: '0.72rem',
+                                    padding: '0.35rem 0.5rem',
+                                    fontSize: '0.75rem',
                                     borderRadius: '6px',
-                                    border: item.status === 'In Progress' ? '1px solid #f59e0b' : '1px solid transparent',
-                                    background: item.status === 'In Progress' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                                    color: item.status === 'In Progress' ? '#f59e0b' : 'var(--text-muted)',
-                                    cursor: 'pointer',
-                                    fontWeight: item.status === 'In Progress' ? '600' : '400',
+                                    border: item.status === 'In Progress' ? '1px solid #F59E0B' : '1px solid #E5E7EB',
+                                    background: item.status === 'In Progress' ? '#FEF3C7' : '#FFFFFF',
+                                    color: item.status === 'In Progress' ? '#92400E' : '#6B7280',
+                                    cursor: isUpdating ? 'not-allowed' : 'pointer',
+                                    fontWeight: item.status === 'In Progress' ? '600' : '500',
+                                    transition: 'all 0.15s ease',
                                   }}
                                 >
                                   In Progress
@@ -719,18 +743,19 @@ const CareerRoadmapPage = () => {
                                   disabled={isUpdating}
                                   style={{
                                     flex: 1,
-                                    padding: '0.3rem 0.4rem',
-                                    fontSize: '0.72rem',
+                                    padding: '0.35rem 0.5rem',
+                                    fontSize: '0.75rem',
                                     borderRadius: '6px',
-                                    border: item.status === 'Completed' ? '1px solid #10b981' : '1px solid transparent',
-                                    background: item.status === 'Completed' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                                    color: item.status === 'Completed' ? '#10b981' : 'var(--text-muted)',
-                                    cursor: 'pointer',
-                                    fontWeight: item.status === 'Completed' ? '600' : '400',
+                                    border: item.status === 'Completed' ? '1px solid #10B981' : '1px solid #E5E7EB',
+                                    background: item.status === 'Completed' ? '#ECFDF5' : '#FFFFFF',
+                                    color: item.status === 'Completed' ? '#065F46' : '#6B7280',
+                                    cursor: isUpdating ? 'not-allowed' : 'pointer',
+                                    fontWeight: item.status === 'Completed' ? '600' : '500',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     gap: '0.2rem',
+                                    transition: 'all 0.15s ease',
                                   }}
                                 >
                                   <Check size={11} /> Done
@@ -747,14 +772,14 @@ const CareerRoadmapPage = () => {
             </div>
 
             {/* RECOMMENDED PROJECTS */}
-            <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
+            <div className="glass-card" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '2rem', marginBottom: '2rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-                <Code2 size={22} color="var(--accent-purple)" />
+                <Code2 size={22} color="#2563EB" />
                 <div>
-                  <h3 style={{ color: 'var(--text-primary)', fontSize: '1.35rem', fontFamily: 'Outfit', margin: 0 }}>
+                  <h3 style={{ color: '#111111', fontSize: '1.25rem', fontWeight: 700, fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif', margin: 0 }}>
                     Recommended Practical Projects
                   </h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
+                  <p style={{ color: '#6B7280', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
                     Hands-on portfolio projects crafted to eliminate skill gaps and impress tech recruiters.
                   </p>
                 </div>
@@ -765,9 +790,9 @@ const CareerRoadmapPage = () => {
                   <div
                     key={proj.id}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: '14px',
+                      background: '#FFFFFF',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
                       padding: '1.5rem',
                       display: 'flex',
                       flexDirection: 'column',
@@ -777,30 +802,33 @@ const CareerRoadmapPage = () => {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                         <span className="badge" style={{
-                          background: proj.difficulty === 'Advanced' ? 'rgba(239, 68, 68, 0.1)' : proj.difficulty === 'Intermediate' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                          color: proj.difficulty === 'Advanced' ? '#ef4444' : proj.difficulty === 'Intermediate' ? '#f59e0b' : '#10b981',
-                          border: 'none',
-                          fontSize: '0.7rem'
+                          background: proj.difficulty === 'Advanced' ? '#FEE2E2' : proj.difficulty === 'Intermediate' ? '#FEF3C7' : '#ECFDF5',
+                          color: proj.difficulty === 'Advanced' ? '#991B1B' : proj.difficulty === 'Intermediate' ? '#92400E' : '#065F46',
+                          border: proj.difficulty === 'Advanced' ? '1px solid #FCA5A5' : proj.difficulty === 'Intermediate' ? '1px solid #FDE68A' : '1px solid #A7F3D0',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '4px'
                         }}>
                           {proj.difficulty}
                         </span>
                       </div>
 
-                      <h4 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', margin: '0 0 0.5rem 0', fontFamily: 'Outfit' }}>
+                      <h4 style={{ color: '#111111', fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.5rem 0', fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
                         {proj.title}
                       </h4>
 
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.45', marginBottom: '1rem' }}>
+                      <p style={{ color: '#4B5563', fontSize: '0.85rem', lineHeight: '1.45', marginBottom: '1rem' }}>
                         {proj.description}
                       </p>
 
                       <div style={{ marginBottom: '0.75rem' }}>
-                        <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.3rem' }}>
+                        <div style={{ color: '#374151', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>
                           Skills Practiced:
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                           {(proj.skillsPracticed || []).map((s, sIdx) => (
-                            <span key={sIdx} style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', background: 'rgba(6, 182, 212, 0.08)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                            <span key={sIdx} style={{ fontSize: '0.72rem', fontWeight: 500, color: '#0369A1', background: '#F0F9FF', border: '1px solid #BAE6FD', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
                               {s}
                             </span>
                           ))}
@@ -809,12 +837,12 @@ const CareerRoadmapPage = () => {
 
                       {proj.suggestedTechnologies?.length > 0 && (
                         <div style={{ marginBottom: '1rem' }}>
-                          <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.3rem' }}>
+                          <div style={{ color: '#374151', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>
                             Suggested Tech:
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                             {proj.suggestedTechnologies.map((t, tIdx) => (
-                              <span key={tIdx} style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', background: 'rgba(255, 255, 255, 0.04)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                              <span key={tIdx} style={{ fontSize: '0.72rem', color: '#374151', background: '#F3F4F6', border: '1px solid #E5E7EB', padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 500 }}>
                                 {t}
                               </span>
                             ))}
@@ -823,9 +851,9 @@ const CareerRoadmapPage = () => {
                       )}
                     </div>
 
-                    <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem', marginTop: 'auto' }}>
-                      <div style={{ color: '#10b981', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <Award size={14} /> Expected: {proj.expectedOutcome || 'Production Portfolio Asset'}
+                    <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '0.75rem', marginTop: 'auto' }}>
+                      <div style={{ color: '#065F46', fontSize: '0.8125rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Award size={14} color="#059669" /> Expected: {proj.expectedOutcome || 'Production Portfolio Asset'}
                       </div>
                     </div>
                   </div>
@@ -834,14 +862,14 @@ const CareerRoadmapPage = () => {
             </div>
 
             {/* RECOMMENDED CAREER PATHS & PROFILE ALIGNMENT */}
-            <div className="glass-card" style={{ padding: '2rem' }}>
+            <div className="glass-card" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '2rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-                <TrendingUp size={22} color="var(--accent-purple)" />
+                <TrendingUp size={22} color="#2563EB" />
                 <div>
-                  <h3 style={{ color: 'var(--text-primary)', fontSize: '1.35rem', fontFamily: 'Outfit', margin: 0 }}>
+                  <h3 style={{ color: '#111111', fontSize: '1.25rem', fontWeight: 700, fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif', margin: 0 }}>
                     Recommended Career Paths
                   </h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
+                  <p style={{ color: '#6B7280', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
                     AI-estimated profile alignment with adjacent developer specializations.
                   </p>
                 </div>
@@ -852,9 +880,9 @@ const CareerRoadmapPage = () => {
                   <div
                     key={idx}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: '12px',
+                      background: '#FFFFFF',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
                       padding: '1.25rem',
                       display: 'flex',
                       flexDirection: 'column',
@@ -863,24 +891,23 @@ const CareerRoadmapPage = () => {
                   >
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                        <h4 style={{ color: 'var(--text-primary)', fontSize: '1rem', margin: 0, fontFamily: 'Outfit' }}>
+                        <h4 style={{ color: '#111111', fontSize: '1rem', fontWeight: 700, margin: 0, fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
                           {alignment.role}
                         </h4>
                         <span style={{
-                          color: alignment.alignmentScore >= 85 ? '#10b981' : 'var(--accent-purple)',
+                          color: alignment.alignmentScore >= 85 ? '#065F46' : '#2563EB',
                           fontWeight: '700',
                           fontSize: '1rem',
-                          fontFamily: 'Outfit'
                         }}>
                           {alignment.alignmentScore}%
                         </span>
                       </div>
 
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>
                         AI Profile Alignment
                       </div>
 
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.4', margin: 0 }}>
+                      <p style={{ color: '#4B5563', fontSize: '0.8125rem', lineHeight: '1.45', margin: 0 }}>
                         {alignment.matchReason}
                       </p>
                     </div>
@@ -890,8 +917,8 @@ const CareerRoadmapPage = () => {
                         setCustomGoal(alignment.role);
                         handleGenerate(alignment.role);
                       }}
-                      className="btn btn-ghost btn-sm"
-                      style={{ marginTop: '1rem', width: '100%', fontSize: '0.78rem', color: 'var(--accent-purple)' }}
+                      className="btn btn-secondary btn-sm"
+                      style={{ marginTop: '1rem', width: '100%', fontSize: '0.8125rem', fontWeight: 600 }}
                     >
                       Switch Target to this Role →
                     </button>
@@ -910,30 +937,30 @@ const CareerRoadmapPage = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(6px)',
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
             padding: '1rem',
           }}>
-            <div className="glass-card" style={{ maxWidth: '460px', width: '100%', padding: '2rem' }}>
-              <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem', fontSize: '1.35rem', fontFamily: 'Outfit' }}>
+            <div className="glass-card" style={{ maxWidth: '460px', width: '100%', padding: '2rem', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+              <h3 style={{ color: '#111111', marginBottom: '0.5rem', fontSize: '1.25rem', fontWeight: 700, fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
                 Set Your Target Career Goal
               </h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+              <p style={{ color: '#6B7280', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
                 Enter your target role to recalculate your skill gaps, milestone phases, and practical project recommendations.
               </p>
 
               <form onSubmit={handleGoalSubmit}>
                 <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', color: '#374151', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.4rem' }}>
                     Target Role
                   </label>
                   <input
                     type="text"
-                    className="input"
+                    className="input-field"
                     placeholder="e.g. Full-Stack Developer, AI/ML Engineer, Cloud Architect"
                     value={customGoal}
                     onChange={(e) => setCustomGoal(e.target.value)}
@@ -944,7 +971,7 @@ const CareerRoadmapPage = () => {
                 </div>
 
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
                     Popular Paths:
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
@@ -965,11 +992,15 @@ const CareerRoadmapPage = () => {
                         onClick={() => setCustomGoal(role)}
                         className="badge"
                         style={{
-                          background: customGoal === role ? 'var(--accent-purple)' : 'var(--bg-input)',
-                          color: customGoal === role ? 'white' : 'var(--text-secondary)',
+                          background: customGoal === role ? '#2563EB' : '#FFFFFF',
+                          color: customGoal === role ? '#FFFFFF' : '#374151',
                           cursor: 'pointer',
-                          border: '1px solid var(--border-subtle)',
+                          border: customGoal === role ? '1px solid #1D4ED8' : '1px solid #D1D5DB',
                           padding: '0.35rem 0.65rem',
+                          borderRadius: '6px',
+                          fontSize: '0.78rem',
+                          fontWeight: customGoal === role ? '600' : '500',
+                          transition: 'all 0.15s ease'
                         }}
                       >
                         {role}
@@ -982,7 +1013,7 @@ const CareerRoadmapPage = () => {
                   <button
                     type="button"
                     onClick={() => setShowGoalModal(false)}
-                    className="btn btn-outline"
+                    className="btn btn-secondary"
                   >
                     Cancel
                   </button>

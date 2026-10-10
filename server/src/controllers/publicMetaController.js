@@ -26,7 +26,7 @@ const getMetaByUsername = async (req, res, next) => {
 
     const appBaseUrl = process.env.PUBLIC_APP_URL || process.env.CLIENT_URL || 'http://localhost:5173';
     const url = `${appBaseUrl}/u/${encodeURIComponent(username)}`;
-    const title = `${user.name} • MaVi Linking`;
+    const title = `${user.name} • EduTalentX`;
 
     // Minimal OG data: avatar if available
     const description = user.platformData?.github?.bio

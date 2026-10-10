@@ -124,8 +124,8 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
       {/* Top Header & Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Shield className="text-gradient" size={22} />
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+            <Shield size={20} style={{ color: 'var(--brand-blue)' }} />
             Department Administrator Governance {activeDepartment ? `— ${activeDepartment.name}` : ''}
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.2rem 0 0 0' }}>
@@ -134,16 +134,16 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.2rem' }}>
+          <div style={{ display: 'flex', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.15rem' }}>
             <button
               onClick={() => setActiveTab('admins')}
-              style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.8rem', border: 'none', background: activeTab === 'admins' ? 'var(--accent-purple)' : 'transparent', color: activeTab === 'admins' ? 'white' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: '600' }}
+              style={{ padding: '0.35rem 0.75rem', borderRadius: '4px', fontSize: '0.8125rem', border: 'none', background: activeTab === 'admins' ? 'var(--brand-blue)' : 'transparent', color: activeTab === 'admins' ? '#FFFFFF' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 500 }}
             >
               Active Admins ({departmentAdmins.length})
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.8rem', border: 'none', background: activeTab === 'history' ? 'var(--accent-purple)' : 'transparent', color: activeTab === 'history' ? 'white' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+              style={{ padding: '0.35rem 0.75rem', borderRadius: '4px', fontSize: '0.8125rem', border: 'none', background: activeTab === 'history' ? 'var(--brand-blue)' : 'transparent', color: activeTab === 'history' ? '#FFFFFF' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem' }}
             >
               <History size={13} /> Appointment History
             </button>
@@ -162,28 +162,27 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
       {/* Main View */}
       {loading ? (
         <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <div className="animate-pulse" style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--gradient-primary)', margin: '0 auto 1rem' }} />
           Loading Department Admins...
         </div>
       ) : activeTab === 'admins' ? (
-        <div className="glass-card-static" style={{ overflowX: 'auto' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', overflowX: 'auto' }}>
           {departmentAdmins.length === 0 ? (
             <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <Shield size={36} style={{ marginBottom: '0.5rem' }} />
+              <Shield size={36} style={{ marginBottom: '0.5rem', color: 'var(--text-muted)' }} />
               <p>No Department Administrators provisioned yet for this scope.</p>
-              <button onClick={() => setShowCreateModal(true)} className="btn btn-outline" style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>
+              <button onClick={() => setShowCreateModal(true)} className="btn btn-outline" style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
                 Create First Department Admin
               </button>
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '1rem' }}>Administrator</th>
-                  <th style={{ padding: '1rem' }}>Assigned Department</th>
-                  <th style={{ padding: '1rem' }}>MAVI ID</th>
-                  <th style={{ padding: '1rem' }}>Account Status</th>
-                  <th style={{ padding: '1rem' }}>Actions</th>
+                <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Administrator</th>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Assigned Department</th>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>ETX ID</th>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Account Status</th>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -192,52 +191,55 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
                   const isSuspended = admin.status === 'suspended' || admin.accountStatus === 'SUSPENDED';
 
                   return (
-                    <tr key={admin._id} style={{ borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'middle' }}>
-                      <td style={{ padding: '1rem' }}>
-                        <div style={{ fontWeight: '600', color: 'white' }}>{admin.name}</div>
+                    <tr key={admin._id} style={{ borderBottom: '1px solid var(--border-color)', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{admin.name}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{admin.email}</div>
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <span className="badge badge-outline" style={{ fontSize: '0.75rem' }}>
                           {admin.departmentId?.name || 'Assigned Department'}
                         </span>
                       </td>
-                      <td style={{ padding: '1rem', fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-purple)' }}>
-                        {admin.maviId}
+                      <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--brand-blue)' }}>
+                        {admin.etxId}
                       </td>
-                      <td style={{ padding: '1rem' }}>
+                      <td style={{ padding: '0.85rem 1rem' }}>
                         <span
-                          className={`badge ${isInvited ? 'badge-amber' : isSuspended ? 'badge-outline' : 'badge-primary'}`}
+                          className={`badge ${isInvited ? 'badge-amber' : isSuspended ? 'badge-danger' : 'badge-emerald'}`}
                           style={{
-                            color: isInvited ? '#f59e0b' : isSuspended ? '#ef4444' : '#10b981',
-                            borderColor: isInvited ? '#f59e0b' : isSuspended ? '#ef4444' : '#10b981',
+                            background: isInvited ? '#FEF3C7' : isSuspended ? '#FEF2F2' : '#ECFDF5',
+                            color: isInvited ? '#D97706' : isSuspended ? '#DC2626' : '#059669',
+                            border: `1px solid ${isInvited ? '#FDE68A' : isSuspended ? '#FECACA' : '#A7F3D0'}`,
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
                           }}
                         >
                           {isInvited ? 'INVITED' : isSuspended ? 'SUSPENDED' : 'ACTIVE'}
                         </span>
                       </td>
-                      <td style={{ padding: '1rem' }}>
+                      <td style={{ padding: '0.85rem 1rem' }}>
                         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                           <button
                             onClick={() => handleResendInvite(admin._id)}
                             disabled={resendingId === admin._id}
                             className="btn btn-outline"
-                            title="Resend 24-Hour Invitation / Setup Email"
-                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', borderColor: 'var(--accent-purple, #a855f7)', color: 'var(--accent-purple, #a855f7)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                            title="Resend 24-Hour Invitation Email"
+                            style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
                           >
                             <RefreshCw size={12} className={resendingId === admin._id ? 'animate-spin' : ''} /> Resend Invite
                           </button>
                           <button
                             onClick={() => setReassigningAdmin(admin)}
                             className="btn btn-outline"
-                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                            style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
                           >
                             <Edit size={12} /> Reassign
                           </button>
                           <button
                             onClick={() => setSuspendingAdmin(admin)}
                             className="btn btn-outline"
-                            style={{ borderColor: isSuspended ? 'var(--accent-emerald)' : '#eab308', color: isSuspended ? 'var(--accent-emerald)' : '#eab308', padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}
+                            style={{ borderColor: isSuspended ? '#059669' : '#D97706', color: isSuspended ? '#059669' : '#D97706', padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
                           >
                             {isSuspended ? 'Reactivate' : 'Suspend'}
                           </button>
@@ -252,19 +254,19 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
         </div>
       ) : (
         /* Appointment / Creation Audit History Tab */
-        <div className="glass-card-static" style={{ padding: '1.5rem' }}>
-          <h4 style={{ color: '#fbbf24', fontSize: '0.95rem', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem' }}>
+          <h4 style={{ color: 'var(--text-primary)', fontSize: '0.95rem', fontWeight: 600, margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <History size={16} /> Department Admin Governance Audit Trail
           </h4>
           {appointmentHistory.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No audit logs recorded yet.</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>No audit logs recorded yet.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {appointmentHistory.map((item) => (
-                <div key={item._id} style={{ padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', borderLeft: '3px solid var(--accent-purple)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={item._id} style={{ padding: '0.75rem 1rem', background: 'var(--bg-subtle)', borderRadius: '6px', borderLeft: '3px solid var(--brand-blue)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '0.85rem', color: 'white', fontWeight: 'bold' }}>
-                      {item.action} — Admin Account: <span style={{ color: 'var(--accent-cyan)' }}>{item.targetUserId?.name || 'User'}</span>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                      {item.action} — Admin Account: <span>{item.targetUserId?.name || 'User'}</span>
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                       Actor: {item.actorId?.name || 'Admin'} ({item.actorRole}) | Role: {item.newRole || 'department_admin'}
@@ -291,19 +293,20 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
 
       {/* Reassignment Modal */}
       {reassigningAdmin && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <form onSubmit={handleReassign} className="glass-card-static" style={{ width: '420px', padding: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Reassign Department Admin</h3>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '1rem' }}>
+          <form onSubmit={handleReassign} style={{ width: '100%', maxWidth: '420px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)', padding: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Reassign Department Admin</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-              Target Admin: <strong>{reassigningAdmin.name}</strong> ({reassigningAdmin.maviId})
+              Target Admin: <strong>{reassigningAdmin.name}</strong> ({reassigningAdmin.etxId})
             </p>
-            <div className="input-group" style={{ marginBottom: '1.5rem' }}>
-              <label className="input-label">Select New Department</label>
+            <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+              <label className="input-label" style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.875rem' }}>Select New Department</label>
               <select
                 className="input-field"
                 value={targetDeptId}
                 onChange={(e) => setTargetDeptId(e.target.value)}
                 required
+                style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem' }}
               >
                 <option value="">-- Choose New Department --</option>
                 {departmentsList.map((d) => (
@@ -314,8 +317,8 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
               </select>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button type="button" onClick={() => setReassigningAdmin(null)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
-              <button type="submit" disabled={reassigning} className="btn btn-primary" style={{ flex: 1 }}>
+              <button type="button" onClick={() => setReassigningAdmin(null)} className="btn btn-outline" style={{ flex: 1, padding: '0.5rem' }}>Cancel</button>
+              <button type="submit" disabled={reassigning} className="btn btn-primary" style={{ flex: 1, padding: '0.5rem' }}>
                 {reassigning ? 'Reassigning...' : 'Confirm Reassign'}
               </button>
             </div>
@@ -325,29 +328,30 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
 
       {/* Suspension Modal */}
       {suspendingAdmin && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <form onSubmit={handleToggleStatus} className="glass-card-static" style={{ width: '450px', padding: '2rem' }}>
-            <h3 style={{ color: suspendingAdmin.status === 'suspended' ? 'var(--accent-emerald)' : '#eab308', marginBottom: '1rem' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '1rem' }}>
+          <form onSubmit={handleToggleStatus} style={{ width: '100%', maxWidth: '450px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)', padding: '1.5rem' }}>
+            <h3 style={{ color: suspendingAdmin.status === 'suspended' ? '#059669' : '#D97706', fontSize: '1.15rem', fontWeight: 600, marginBottom: '0.5rem' }}>
               {suspendingAdmin.status === 'suspended' ? 'Reactivate Department Admin' : 'Suspend Department Admin'}
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
               Target Admin: <strong>{suspendingAdmin.name}</strong> ({suspendingAdmin.email})
             </p>
             {suspendingAdmin.status !== 'suspended' && (
-              <div className="input-group" style={{ marginBottom: '1.5rem' }}>
-                <label className="input-label">Reason for Suspension</label>
+              <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+                <label className="input-label" style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.875rem' }}>Reason for Suspension</label>
                 <textarea
                   className="input-field"
                   rows={2}
                   value={suspensionReason}
                   onChange={(e) => setSuspensionReason(e.target.value)}
                   placeholder="Compliance violation, tenure end..."
+                  style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem', resize: 'vertical' }}
                 />
               </div>
             )}
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button type="button" onClick={() => setSuspendingAdmin(null)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
-              <button type="submit" disabled={suspending} className="btn btn-primary" style={{ flex: 1 }}>
+              <button type="button" onClick={() => setSuspendingAdmin(null)} className="btn btn-outline" style={{ flex: 1, padding: '0.5rem' }}>Cancel</button>
+              <button type="submit" disabled={suspending} className="btn btn-primary" style={{ flex: 1, padding: '0.5rem' }}>
                 {suspending ? 'Updating...' : 'Confirm'}
               </button>
             </div>

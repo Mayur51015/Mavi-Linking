@@ -32,7 +32,7 @@ const OwnerRoute = ({ children }) => {
     user.role === 'platform_owner' ||
     user.role === 'owner' ||
     user.role === 'super_admin' ||
-    user.adminId === 'MAVI-OWNER-001';
+    user.adminId === 'ETX-OWNER-001';
 
   if (!isOwner) {
     return <Navigate to="/owner/login?error=unauthorized" replace />;

@@ -69,20 +69,20 @@ const DepartmentAdminAppointmentModal = ({ department, onClose, onAppointmentSuc
   if (!department) return null;
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '1rem' }}>
-      <div className="glass-card-static" style={{ width: '100%', maxWidth: '600px', background: '#121319', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '16px', overflow: 'hidden', padding: 0 }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '1rem' }}>
+      <div style={{ width: '100%', maxWidth: '600px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)', overflow: 'hidden', padding: 0 }}>
         
         {/* Header */}
-        <div style={{ padding: '1.25rem 1.5rem', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '1.25rem 1.5rem', background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-purple)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--brand-blue)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Shield size={14} /> Identity Governance & Role Appointment
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'white', margin: '0.2rem 0 0 0' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0.25rem 0 0 0' }}>
               Appoint Department Administrator
             </h3>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem' }}>
             <X size={20} />
           </button>
         </div>
@@ -93,23 +93,23 @@ const DepartmentAdminAppointmentModal = ({ department, onClose, onAppointmentSuc
             <form onSubmit={handleProceedToConfirm} style={{ display: 'grid', gap: '1.25rem' }}>
               
               {/* Department Overview Banner */}
-              <div style={{ padding: '1rem', background: 'rgba(99, 102, 241, 0.08)', borderRadius: '10px', border: '1px solid rgba(99, 102, 241, 0.2)', display: 'flex', alignItems: 'center', justifyBetween: 'space-between', gap: '1rem' }}>
+              <div style={{ padding: '0.85rem 1rem', background: '#EFF6FF', borderRadius: '6px', border: '1px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Target Department</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white' }}>{department.name} ({department.code || 'DEPT'})</div>
+                  <div style={{ fontSize: '0.75rem', color: '#1E40AF', textTransform: 'uppercase', fontWeight: 600 }}>Target Department</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1E40AF' }}>{department.name} ({department.code || 'DEPT'})</div>
                 </div>
                 <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-                  <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>Institution Scoped</span>
+                  <span style={{ fontSize: '0.75rem', color: '#1E40AF', fontWeight: 500 }}>Institution Scoped</span>
                 </div>
               </div>
 
               {/* Candidate Selection Dropdown */}
-              <div className="input-group">
-                <label className="input-label">Select Eligible Candidate (Faculty / Staff)</label>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label" style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.875rem' }}>Select Eligible Candidate (Faculty / Staff)</label>
                 {loadingCandidates ? (
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Loading eligible institutional staff...</div>
                 ) : candidates.length === 0 ? (
-                  <div style={{ padding: '0.75rem', background: 'rgba(239,68,68,0.1)', borderRadius: '8px', color: '#ef4444', fontSize: '0.85rem' }}>
+                  <div style={{ padding: '0.75rem', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '6px', color: '#DC2626', fontSize: '0.85rem' }}>
                     No eligible active staff found in this institution for appointment.
                   </div>
                 ) : (
@@ -118,11 +118,12 @@ const DepartmentAdminAppointmentModal = ({ department, onClose, onAppointmentSuc
                     value={selectedCandidateId}
                     onChange={(e) => handleSelectCandidate(e.target.value)}
                     required
+                    style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem' }}
                   >
                     <option value="">-- Choose Candidate from Faculty --</option>
                     {candidates.map((c) => (
                       <option key={c._id} value={c._id}>
-                        {c.name} ({c.email}) — MAVI ID: {c.maviId} — Role: {c.role}
+                        {c.name} ({c.email}) — ETX ID: {c.etxId} — Role: {c.role}
                       </option>
                     ))}
                   </select>
@@ -130,17 +131,17 @@ const DepartmentAdminAppointmentModal = ({ department, onClose, onAppointmentSuc
               </div>
 
               {selectedCandidate && (
-                <div style={{ padding: '0.9rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.85rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                  <div><span style={{ color: 'var(--text-muted)' }}>Candidate:</span> <strong>{selectedCandidate.name}</strong></div>
-                  <div><span style={{ color: 'var(--text-muted)' }}>MAVI ID:</span> <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)' }}>{selectedCandidate.maviId}</span></div>
-                  <div><span style={{ color: 'var(--text-muted)' }}>Current Role:</span> <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{selectedCandidate.role}</span></div>
-                  <div><span style={{ color: 'var(--text-muted)' }}>Email:</span> {selectedCandidate.email}</div>
+                <div style={{ padding: '0.85rem 1rem', background: 'var(--bg-subtle)', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8125rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem' }}>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Candidate:</span> <strong style={{ color: 'var(--text-primary)' }}>{selectedCandidate.name}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>ETX ID:</span> <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)', fontWeight: 600 }}>{selectedCandidate.etxId}</span></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Current Role:</span> <span style={{ textTransform: 'capitalize', fontWeight: 600, color: 'var(--text-primary)' }}>{selectedCandidate.role}</span></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Email:</span> <span style={{ color: 'var(--text-primary)' }}>{selectedCandidate.email}</span></div>
                 </div>
               )}
 
               {/* Designation & Reason */}
-              <div className="input-group">
-                <label className="input-label">Administrative Designation</label>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label" style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.875rem' }}>Administrative Designation</label>
                 <input
                   type="text"
                   className="input-field"
@@ -148,26 +149,28 @@ const DepartmentAdminAppointmentModal = ({ department, onClose, onAppointmentSuc
                   onChange={(e) => setDesignation(e.target.value)}
                   placeholder="e.g. HOD / Department Administrator"
                   required
+                  style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem' }}
                 />
               </div>
 
-              <div className="input-group">
-                <label className="input-label">Appointment Notes / Justification (Optional)</label>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label" style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '0.875rem' }}>Appointment Notes / Justification (Optional)</label>
                 <textarea
                   className="input-field"
                   rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Reason for appointment, tenure notes..."
+                  style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', fontSize: '0.875rem', resize: 'vertical' }}
                 />
               </div>
 
               {/* Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                <button type="button" onClick={onClose} className="btn btn-outline" style={{ padding: '0.6rem 1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+                <button type="button" onClick={onClose} className="btn btn-outline" style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}>
                   Cancel
                 </button>
-                <button type="submit" disabled={!selectedCandidate} className="btn btn-primary" style={{ padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button type="submit" disabled={!selectedCandidate} className="btn btn-primary" style={{ padding: '0.5rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
                   Review & Appoint <ArrowRight size={16} />
                 </button>
               </div>
@@ -175,44 +178,44 @@ const DepartmentAdminAppointmentModal = ({ department, onClose, onAppointmentSuc
           ) : (
             /* PHASE 7 — APPOINTMENT CONFIRMATION STEP */
             <div style={{ display: 'grid', gap: '1.25rem' }}>
-              <div style={{ padding: '1rem', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '10px', border: '1px solid #f59e0b', color: '#fbbf24', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <AlertCircle size={22} />
+              <div style={{ padding: '0.85rem 1rem', background: '#FEF3C7', borderRadius: '6px', border: '1px solid #FDE68A', color: '#92400E', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <AlertCircle size={20} style={{ flexShrink: 0 }} />
                 <div>
                   <strong>Confirm Department Admin Appointment</strong>
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#B45309', marginTop: '0.15rem' }}>
                     This action will elevate the user to <strong>DEPARTMENT_ADMIN</strong> for {department.name}.
                   </div>
                 </div>
               </div>
 
-              <div className="glass-card-static" style={{ padding: '1.25rem', display: 'grid', gap: '0.75rem', fontSize: '0.9rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Candidate Name:</span>
-                  <strong style={{ color: 'white' }}>{selectedCandidate?.name}</strong>
+              <div style={{ padding: '1.25rem', background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '6px', display: 'grid', gap: '0.75rem', fontSize: '0.875rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Candidate Name:</span>
+                  <strong style={{ color: 'var(--text-primary)' }}>{selectedCandidate?.name}</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Permanent MAVI ID:</span>
-                  <span style={{ fontFamily: 'monospace', color: 'var(--accent-purple)', fontWeight: 'bold' }}>{selectedCandidate?.maviId}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Permanent ETX ID:</span>
+                  <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)', fontWeight: 600 }}>{selectedCandidate?.etxId}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Target Department:</span>
-                  <strong style={{ color: 'var(--accent-cyan)' }}>{department.name}</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Target Department:</span>
+                  <strong style={{ color: 'var(--brand-blue)' }}>{department.name}</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Current Role:</span>
-                  <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{selectedCandidate?.role}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Current Role:</span>
+                  <span style={{ textTransform: 'capitalize', fontWeight: 600, color: 'var(--text-primary)' }}>{selectedCandidate?.role}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>New Administrative Role:</span>
-                  <span style={{ color: 'var(--accent-emerald)', fontWeight: 'bold' }}>DEPARTMENT_ADMIN</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>New Administrative Role:</span>
+                  <span style={{ color: '#059669', fontWeight: 600 }}>DEPARTMENT_ADMIN</span>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                <button type="button" onClick={() => setStep('form')} className="btn btn-outline" style={{ padding: '0.6rem 1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+                <button type="button" onClick={() => setStep('form')} className="btn btn-outline" style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}>
                   Back
                 </button>
-                <button type="button" onClick={handleConfirmAppointment} disabled={appointing} className="btn btn-primary" style={{ padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+                <button type="button" onClick={handleConfirmAppointment} disabled={appointing} className="btn btn-primary" style={{ padding: '0.5rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
                   <CheckCircle size={16} /> {appointing ? 'Appointing Admin...' : 'Confirm Appointment'}
                 </button>
               </div>

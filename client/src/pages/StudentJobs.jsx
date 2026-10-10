@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Briefcase,
@@ -15,15 +15,29 @@ import {
   Users
 } from 'lucide-react';
 import UserLayout from '../layouts/UserLayout';
+import { AuthContext } from '../context/AuthContext';
+import { getUserPrimaryRole } from '../utils/roleRouting';
 import api from '../api/axios';
 
 const StudentJobs = () => {
+  const { user } = useContext(AuthContext);
   const [jobs, setJobs] = useState([]);
   const [appliedJobIds, setAppliedJobIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
   const [applyingId, setApplyingId] = useState(null);
   const [message, setMessage] = useState({ text: '', type: '' });
+
+  // Role check: Only approved Students may query student pipelines
+  const primaryRole = user ? getUserPrimaryRole(user) : null;
+  const isStudent = primaryRole === 'student';
+  const normalizedAccountStatus = String(user?.accountStatus || '').toUpperCase();
+  const isApprovedStudent = Boolean(
+    user &&
+    isStudent &&
+    !['PENDING_ADMIN_APPROVAL', 'PENDING_VERIFICATION', 'PENDING', 'REJECTED'].includes(normalizedAccountStatus) &&
+    user?.emailVerified !== false
+  );
 
   // Filter States
   const [search, setSearch] = useState('');
@@ -44,9 +58,13 @@ const StudentJobs = () => {
       if (workMode) params.set('workMode', workMode);
       if (sort) params.set('sort', sort);
 
+      const pipelinePromise = isApprovedStudent
+        ? api.get('/placement/student/pipelines').catch(() => ({ data: { data: [] } }))
+        : Promise.resolve({ data: { data: [] } });
+
       const [jobsRes, pipelineRes] = await Promise.all([
         api.get(`/jobs?${params.toString()}`),
-        api.get('/placement/student/pipelines').catch(() => ({ data: { data: [] } })),
+        pipelinePromise,
       ]);
 
       const fetchedJobs = jobsRes.data?.data || [];

@@ -6,7 +6,7 @@ import AppShell from '../components/shell/AppShell';
 const PlatformOwnerLayout = ({ children }) => {
   const { user } = useContext(AuthContext);
 
-  const ownerId = user?.adminId || 'MAVI-OWNER-001';
+  const ownerId = user?.adminId || 'ETX-OWNER-001';
 
   const quickActions = [
     {

@@ -27,7 +27,7 @@ import {
   X
 } from 'lucide-react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../api/axios';
 import RecentOpportunitiesTable from '../components/RecentOpportunitiesTable';
 import RecentApplicationsCard from '../components/RecentApplicationsCard';
@@ -46,11 +46,25 @@ import { AuthContext } from '../context/AuthContext';
 import UserLayout from '../layouts/UserLayout';
 import Messages from '../pages/Messages';
 import { CANONICAL_DOMAINS } from '../constants/domainOptions';
+import {
+  getUserPrimaryRole,
+  getDashboardRouteForRole,
+  isValidInternalReturnPath,
+} from '../utils/roleRouting';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, setUser, updateProfile, socket, refreshUser, logout } = useContext(AuthContext);
+  const {
+    user,
+    loading: authLoading,
+    setUser,
+    updateProfile,
+    socket,
+    refreshUser,
+    logout,
+    isPendingVerification: isPendingVerificationContext,
+  } = useContext(AuthContext);
   const [showChangeEmailModal, setShowChangeEmailModal] = useState(false);
   const [scores, setScores] = useState(null);
   const [scoreStatus, setScoreStatus] = useState({ loading: true, error: false });
@@ -117,21 +131,44 @@ const Dashboard = () => {
 
   const closeEditProfileModal = useCallback(() => {
     setShowEditProfileModal(false);
+
+    const returnTo = location.state?.returnTo;
+    const primaryRole = getUserPrimaryRole(user);
+
+    // 1. If valid internal return destination was provided, return the user there
+    if (returnTo && isValidInternalReturnPath(returnTo, user)) {
+      navigate(returnTo, { replace: true });
+      return;
+    }
+
+    // 2. If the authenticated user is NOT a student, navigate to their role-specific dashboard
+    if (primaryRole !== 'student') {
+      navigate(getDashboardRouteForRole(user), { replace: true });
+      return;
+    }
+
+    // 3. If accessed via /profile/edit directly, return to student dashboard
+    if (location.pathname === '/profile/edit') {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
+    // 4. Existing Student behavior on /dashboard: remain on page and cleanly remove ?edit=true
     const params = new URLSearchParams(location.search);
     if (params.get('edit') === 'true') {
       params.delete('edit');
       const newSearch = params.toString();
       navigate(newSearch ? `${location.pathname}?${newSearch}` : location.pathname, { replace: true });
     }
-  }, [location.pathname, location.search, navigate]);
+  }, [location.pathname, location.search, location.state, navigate, user]);
 
-  // Support ?edit=true in URL to open edit profile modal directly & react to route changes
+  // Support ?edit=true in URL or /profile/edit route to open edit profile modal directly & react to route changes
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get('edit') === 'true') {
+    if (params.get('edit') === 'true' || location.pathname === '/profile/edit') {
       openEditProfileModal();
     }
-  }, [location.search, openEditProfileModal]);
+  }, [location.pathname, location.search, openEditProfileModal]);
 
   // Support direct event dispatch for instant responsiveness from shell/layout
   useEffect(() => {
@@ -235,11 +272,56 @@ const Dashboard = () => {
   const [aiData, setAiData] = useState({ insight: null, dna: null, analytics: [] });
   const [generatingAI, setGeneratingAI] = useState(false);
 
-  const placementPendingApproval =
-    user?.role === 'user' &&
-    ['PENDING_ADMIN_APPROVAL', 'PENDING_VERIFICATION'].includes(user.accountStatus);
+  const primaryRole = user ? getUserPrimaryRole(user) : null;
+  const isStudent = primaryRole === 'student';
+
+  const normalizedAccountStatus = String(user?.accountStatus || '').toUpperCase();
+  const placementPendingApproval = Boolean(
+    isStudent &&
+    (
+      ['PENDING_ADMIN_APPROVAL', 'PENDING_VERIFICATION', 'PENDING'].includes(normalizedAccountStatus) ||
+      user?.isPendingVerification === true ||
+      isPendingVerificationContext
+    )
+  );
+
+  // Student placement pipelines request MUST ONLY run for authenticated, approved Students
+  const canFetchPlacementPipelines = Boolean(
+    !authLoading &&
+    user &&
+    isStudent &&
+    !placementPendingApproval
+  );
+
+  // Route non-student users away from /dashboard to their role-specific dashboards
+  // (unless currently in the edit profile flow on /profile/edit or ?edit=true)
+  useEffect(() => {
+    if (!authLoading && user) {
+      const isEditFlow =
+        (location.pathname === '/dashboard' && location.search.includes('edit=true')) ||
+        location.pathname === '/profile/edit';
+      if (!isStudent && !isEditFlow && location.pathname === '/dashboard') {
+        navigate(getDashboardRouteForRole(user), { replace: true });
+      }
+    }
+  }, [authLoading, user, isStudent, location.pathname, location.search, navigate]);
 
   const fetchDashboardData = useCallback(async () => {
+    // 1. Guard against unauthenticated execution / execution before auth finishes
+    if (authLoading || !user) {
+      return;
+    }
+
+    // 2. Guard against non-Student roles executing Student-only dashboard endpoints
+    if (!isStudent) {
+      setLoading(false);
+      setLoadingDNA(false);
+      setScoreStatus({ loading: false, error: false });
+      setApplicationsStatus({ loading: false, error: false });
+      setJobsStatus({ loading: false, error: false });
+      return;
+    }
+
     const placementUnavailableMessage =
       'Placement applications are available after your institution approves your account.';
 
@@ -279,12 +361,12 @@ const Dashboard = () => {
         api.get('/career/insights').catch(() => emptyFallback),
         api.get('/career/dna').catch(() => emptyFallback),
         api.get('/ai/analytics').catch(() => arrayFallback),
-        placementPendingApproval
-          ? Promise.resolve(null)
+        !canFetchPlacementPipelines
+          ? Promise.resolve(arrayFallback)
           : api.get('/placement/student/pipelines').catch((err) => {
               console.warn('Failed to fetch pipelines:', err.message);
               setApplicationsStatus({ loading: false, error: true });
-              return null;
+              return arrayFallback;
             }),
         api.get('/projects').catch(() => ({ data: { data: [], count: 0 } })),
         api.get('/announcements/my-college').catch(() => arrayFallback),
@@ -301,8 +383,11 @@ const Dashboard = () => {
         analytics: analyticsRes.data.data || []
       });
 
-      if (pipelineRes?.data?.data !== undefined) {
+      if (canFetchPlacementPipelines && pipelineRes?.data?.data !== undefined) {
         setPipelines(pipelineRes.data.data || []);
+        setApplicationsStatus({ loading: false, error: false });
+      } else if (!placementPendingApproval) {
+        setPipelines([]);
         setApplicationsStatus({ loading: false, error: false });
       }
       setProjectsCount(projectRes.data.count || projectRes.data.data?.length || 0);
@@ -318,11 +403,13 @@ const Dashboard = () => {
       setLoading(false);
       setLoadingDNA(false);
     }
-  }, [placementPendingApproval]);
+  }, [authLoading, user, isStudent, canFetchPlacementPipelines, placementPendingApproval]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    if (!authLoading && user) {
+      fetchDashboardData();
+    }
+  }, [authLoading, user, fetchDashboardData]);
 
   // Real-time update via Socket.IO
   useEffect(() => {
@@ -829,23 +916,35 @@ const Dashboard = () => {
     <UserLayout>
       <header style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h1 className="dashboard-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: '#F5F7FA', fontFamily: 'Inter, sans-serif' }}>
+          <h1 className="dashboard-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: '#111111', fontFamily: 'Inter, sans-serif' }}>
             Welcome back, {user?.name?.split(' ')[0] || user?.name || 'Mayur'}!
           </h1>
-          <p style={{ color: '#9CA3AF', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: '#4B5563', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
             Track your growth, skills, and opportunities.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={openEditProfileModal}
-          className="btn btn-secondary btn-sm"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1rem', fontSize: '0.8125rem' }}
-          title="Edit Profile"
-        >
-          <Edit2 size={14} style={{ color: 'var(--brand-blue)' }} />
-          <span>Edit Profile</span>
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <Link
+            to={`/u/${user?.username || user?.etxId || user?.platforms?.github?.username || user?._id || 'me'}`}
+            target="_blank"
+            className="btn btn-outline btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 0.85rem', fontSize: '0.8125rem' }}
+            title="View Public Profile"
+          >
+            <Eye size={14} />
+            <span>View Public Profile</span>
+          </Link>
+          <button
+            type="button"
+            onClick={openEditProfileModal}
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.5rem 1rem', fontSize: '0.8125rem' }}
+            title="Edit Profile"
+          >
+            <Edit2 size={14} style={{ color: 'var(--brand-blue)' }} />
+            <span>Edit Profile</span>
+          </button>
+        </div>
       </header>
 
       {/* Tabs (only shown if not on overview) */}
@@ -932,7 +1031,7 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* 2. Career Score / MAVI Score */}
+                {/* 2. Career Score / EduTalentX Score */}
                 <div
                   onClick={() => setActiveTab('career')}
                   style={{
@@ -1861,12 +1960,12 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Protected Read-Only Identity Fields (MAVI ID & PRN) */}
+              {/* Protected Read-Only Identity Fields (ETX ID & PRN) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="input-group">
-                  <label className="input-label">MAVI ID (Permanent Canonical Identity)</label>
+                  <label className="input-label">ETX ID (Permanent Canonical Identity)</label>
                   <div className="input-field" style={{ background: 'var(--bg-subtle)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'not-allowed' }}>
-                    <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{user?.maviId || `MAVI-${user?._id?.slice(-8).toUpperCase()}`}</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{user?.etxId || `ETX-${user?._id?.slice(-8).toUpperCase()}`}</span>
                     <span style={{ fontSize: '0.7rem', color: '#3B82F6', display: 'flex', alignItems: 'center', gap: '0.2rem', fontWeight: 'bold' }}>
                       <Lock size={12} /> Permanent
                     </span>

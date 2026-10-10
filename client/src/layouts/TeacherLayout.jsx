@@ -10,6 +10,7 @@ import {
   Shield,
   Briefcase,
   UserCheck,
+  Bell,
 } from 'lucide-react';
 import AppShell from '../components/shell/AppShell';
 
@@ -24,6 +25,7 @@ const TeacherLayout = ({ children }) => {
     { name: 'Leaderboard', path: '/dashboard/teacher/leaderboard', icon: <Award size={18} />, category: 'Academic' },
     { name: 'Placement Drives', path: '/dashboard/teacher/drives', icon: <Briefcase size={18} />, category: 'Industry' },
     { name: 'Announcements', path: '/dashboard/teacher/announcements', icon: <Megaphone size={18} />, category: 'Reports' },
+    { name: 'Notifications', path: '/dashboard/teacher/notifications', icon: <Bell size={18} />, category: 'Reports' },
     { name: 'Shared Documents', path: '/dashboard/teacher/documents', icon: <FolderOpen size={18} />, category: 'Reports' },
     ...(user?.role === 'admin' ? [{ name: 'Admin Dashboard', path: '/dashboard/admin', icon: <Shield size={18} />, category: 'Administration' }] : []),
   ];

@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Shield, Users, GraduationCap, FileText, Megaphone, Search, AlertCircle, BarChart3, Trophy, Download, LogOut, Loader2 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Shield, Users, GraduationCap, FileText, Megaphone, Search, AlertCircle, BarChart3, Trophy, Download, Loader2 } from 'lucide-react';
 import api from '../../api/axios';
 import { AuthContext } from '../../context/AuthContext';
 import { notify } from '../../context/ToastContext';
+import DepartmentAdminLayout from '../../layouts/DepartmentAdminLayout';
 
 const DepartmentAdminDashboard = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [dashboardData, setDashboardData] = useState(null);
   const [students, setStudents] = useState([]);
   const [teachers, setTeachers] = useState([]);
@@ -16,12 +18,11 @@ const DepartmentAdminDashboard = () => {
   const [reportsData, setReportsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'students' | 'teachers' | 'analytics' | 'leaderboard' | 'reports'
   const [search, setSearch] = useState('');
 
-  const handleSignOut = () => {
-    if (logout) logout();
-    navigate('/admin/login', { replace: true });
+  const activeTab = searchParams.get('tab') || 'overview';
+  const setActiveTab = (tab) => {
+    setSearchParams(tab === 'overview' ? {} : { tab });
   };
 
   const handleDownloadPdf = async () => {
@@ -32,7 +33,7 @@ const DepartmentAdminDashboard = () => {
         responseType: 'blob',
       });
 
-      let filename = `MAVI_Department_Performance_Report_${(dashboardData?.departmentName || user?.university?.department || 'Department').replace(/[^a-zA-Z0-9_-]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      let filename = `ETX_Department_Performance_Report_${(dashboardData?.departmentName || user?.university?.department || 'Department').replace(/[^a-zA-Z0-9_-]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
       const disposition = response.headers?.['content-disposition'];
       if (disposition && disposition.includes('filename=')) {
         const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
@@ -94,400 +95,377 @@ const DepartmentAdminDashboard = () => {
       !search ||
       s.name?.toLowerCase().includes(search.toLowerCase()) ||
       s.email?.toLowerCase().includes(search.toLowerCase()) ||
-      (s.maviId && s.maviId.toLowerCase().includes(search.toLowerCase())) ||
+      (s.etxId && s.etxId.toLowerCase().includes(search.toLowerCase())) ||
       (s.prn && s.prn.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0b0c10', color: 'white', padding: '1.5rem 2rem' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-        {/* Header Banner */}
-        <header
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '2rem',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            paddingBottom: '1.5rem',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <Shield className="text-gradient" size={30} />
-              <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0 }}>
-                {dashboardData?.departmentName || user?.university?.department || 'Department Administration'}
-              </h1>
-              <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>
-                Department Admin
-              </span>
-            </div>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '0.3rem', fontSize: '0.9rem' }}>
-              Institution: <strong>{dashboardData?.institutionName || user?.university?.name || 'Zeal College'}</strong> | Logged in as <strong>{user?.name}</strong> ({user?.email})
-            </p>
+    <DepartmentAdminLayout>
+      {/* Header Banner */}
+      <header
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '1.75rem',
+          flexWrap: 'wrap',
+          gap: '1rem',
+        }}
+      >
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Shield size={24} style={{ color: 'var(--brand-blue)' }} />
+              {dashboardData?.departmentName || user?.university?.department || 'Department Administration'}
+            </h1>
+            <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>
+              Department Admin
+            </span>
           </div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
+            {dashboardData?.institutionName || user?.university?.name || 'Institution Campus'} • {user?.name} ({user?.email})
+          </p>
+        </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
-            {/* Tab Controls */}
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '0.25rem', flexWrap: 'wrap', gap: '0.25rem' }}>
-              {['overview', 'students', 'teachers', 'analytics', 'leaderboard', 'reports'].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setActiveTab(t)}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '8px',
-                    fontSize: '0.85rem',
-                    fontWeight: '600',
-                    border: 'none',
-                    background: activeTab === t ? 'var(--accent-purple)' : 'transparent',
-                    color: activeTab === t ? 'white' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    textTransform: 'capitalize',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+        {/* Tab Controls */}
+        <div style={{ display: 'flex', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.25rem', flexWrap: 'wrap', gap: '0.25rem' }}>
+          {['overview', 'students', 'teachers', 'analytics', 'leaderboard', 'reports'].map((t) => {
+            const isSelected = activeTab === t;
+            return (
+              <button
+                key={t}
+                onClick={() => setActiveTab(t)}
+                style={{
+                  padding: '0.4rem 0.875rem',
+                  borderRadius: '6px',
+                  fontSize: '0.8125rem',
+                  fontWeight: isSelected ? '600' : '500',
+                  border: isSelected ? '1px solid rgba(37, 99, 235, 0.2)' : '1px solid transparent',
+                  background: isSelected ? 'rgba(37, 99, 235, 0.08)' : 'transparent',
+                  color: isSelected ? 'var(--brand-blue)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  textTransform: 'capitalize',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t}
+              </button>
+            );
+          })}
+        </div>
+      </header>
 
-            {/* Sign Out Button */}
-            <button
-              onClick={handleSignOut}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.5rem 0.9rem',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                borderRadius: '8px',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
-                color: '#f87171',
-                background: 'rgba(239, 68, 68, 0.1)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
-                e.currentTarget.style.borderColor = '#ef4444';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-              }}
-              title="Sign Out of Department Admin Portal"
-            >
-              <LogOut size={15} />
-              <span>Sign Out</span>
-            </button>
-          </div>
-        </header>
-
-        {loading ? (
-          <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <div
-              className="animate-pulse"
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: 'var(--gradient-primary)',
-                margin: '0 auto 1rem',
-              }}
-            />
-            Loading Department Portal Data...
-          </div>
-        ) : (
-          <>
-            {/* Overview View */}
-            {activeTab === 'overview' && (
-              <div style={{ display: 'grid', gap: '2rem' }}>
-                {/* Stats Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
-                  <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '0.85rem', borderRadius: '12px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-purple)' }}>
-                      <GraduationCap size={24} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Department Students</div>
-                      <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--accent-purple)' }}>{dashboardData?.metrics?.students || students.length}</div>
-                    </div>
+      {loading ? (
+        <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <Loader2 size={32} className="animate-spin" style={{ color: 'var(--brand-blue)', margin: '0 auto 0.75rem auto' }} />
+          <div style={{ fontSize: '0.875rem' }}>Loading Department Records...</div>
+        </div>
+      ) : (
+        <>
+          {/* Overview View */}
+          {activeTab === 'overview' && (
+            <div style={{ display: 'grid', gap: '1.5rem' }}>
+              {/* Stats Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+                <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.08)', color: 'var(--brand-blue)' }}>
+                    <GraduationCap size={22} />
                   </div>
-
-                  <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '0.85rem', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' }}>
-                      <Users size={24} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Department Faculty</div>
-                      <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--accent-amber)' }}>{dashboardData?.metrics?.teachers || teachers.length}</div>
-                    </div>
-                  </div>
-
-                  <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '0.85rem', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)' }}>
-                      <BarChart3 size={24} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Avg MAVI Score</div>
-                      <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--accent-emerald)' }}>{dashboardData?.metrics?.avgMaviScore || 0} pts</div>
-                    </div>
-                  </div>
-
-                  <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '0.85rem', borderRadius: '12px', background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)' }}>
-                      <Megaphone size={24} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Active Circulars</div>
-                      <div style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--accent-cyan)' }}>{dashboardData?.metrics?.announcementsCount || 0}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Security Scope Banner */}
-                <div
-                  style={{
-                    padding: '1rem 1.25rem',
-                    background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    fontSize: '0.85rem',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
-                  <AlertCircle size={18} style={{ color: 'var(--accent-cyan)' }} />
                   <div>
-                    <strong>Department Security Boundary:</strong> You have administrative access strictly scoped to <strong>{dashboardData?.departmentName || 'your department'}</strong> at <strong>{dashboardData?.institutionName || 'your institution'}</strong>. Global administrative actions and cross-department appointments are prohibited server-side.
+                    <div style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Department Students</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>{dashboardData?.metrics?.students || students.length}</div>
+                  </div>
+                </div>
+
+                <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.08)', color: 'var(--brand-blue)' }}>
+                    <Users size={22} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Department Faculty</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>{dashboardData?.metrics?.teachers || teachers.length}</div>
+                  </div>
+                </div>
+
+                <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.08)', color: 'var(--brand-blue)' }}>
+                    <BarChart3 size={22} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Avg Student Score</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>{dashboardData?.metrics?.avgMaviScore || 0} pts</div>
+                  </div>
+                </div>
+
+                <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.08)', color: 'var(--brand-blue)' }}>
+                    <Megaphone size={22} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Active Circulars</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>{dashboardData?.metrics?.announcementsCount || 0}</div>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Students View */}
-            {activeTab === 'students' && (
-              <div>
-                <div style={{ marginBottom: '1.5rem', position: 'relative', maxWidth: '400px' }}>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="Search department students..."
-                    style={{ paddingLeft: '2.5rem', marginBottom: 0 }}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                  <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                </div>
-
-                <div className="glass-card-static" style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                        <th style={{ padding: '1rem' }}>Student Name</th>
-                        <th style={{ padding: '1rem' }}>MAVI ID / PRN</th>
-                        <th style={{ padding: '1rem' }}>Overall Score</th>
-                        <th style={{ padding: '1rem' }}>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredStudents.map((s) => (
-                        <tr key={s._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                          <td style={{ padding: '1rem' }}>
-                            <div style={{ fontWeight: '600' }}>{s.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{s.email}</div>
-                          </td>
-                          <td style={{ padding: '1rem' }}>
-                            <div style={{ fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-purple)' }}>{s.maviId}</div>
-                            <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>{s.prn || 'Pending'}</div>
-                          </td>
-                          <td style={{ padding: '1rem', fontWeight: 'bold', color: 'var(--accent-emerald)' }}>
-                            {s.scores?.overall || 0} pts
-                          </td>
-                          <td style={{ padding: '1rem' }}>
-                            <span className="badge badge-primary">{s.status || 'Active'}</span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {/* Security Scope Banner */}
+              <div
+                style={{
+                  padding: '1rem 1.25rem',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  fontSize: '0.8125rem',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                <AlertCircle size={18} style={{ color: 'var(--brand-blue)', flexShrink: 0 }} />
+                <div>
+                  <strong style={{ color: 'var(--text-primary)' }}>Department Security Boundary:</strong> Administrative access is strictly scoped to <strong>{dashboardData?.departmentName || 'your department'}</strong> at <strong>{dashboardData?.institutionName || 'your institution'}</strong>. Multi-department queries and global modifications are restricted.
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Teachers View */}
-            {activeTab === 'teachers' && (
-              <div className="glass-card-static" style={{ overflowX: 'auto' }}>
+          {/* Students View */}
+          {activeTab === 'students' && (
+            <div>
+              <div style={{ marginBottom: '1.25rem', position: 'relative', maxWidth: '400px' }}>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="Search department students..."
+                  style={{ paddingLeft: '2.5rem', marginBottom: 0, fontSize: '0.875rem' }}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              </div>
+
+              <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '1rem' }}>Faculty Member</th>
-                      <th style={{ padding: '1rem' }}>Designation</th>
-                      <th style={{ padding: '1rem' }}>Status</th>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
+                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Student Name</th>
+                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>ETX ID / PRN</th>
+                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Overall Score</th>
+                      <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {teachers.map((t) => (
-                      <tr key={t._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '1rem' }}>
-                          <div style={{ fontWeight: '600' }}>{t.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.email}</div>
+                    {filteredStudents.map((s) => (
+                      <tr key={s._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{s.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.email}</div>
                         </td>
-                        <td style={{ padding: '1rem' }}>{t.designation || 'Assistant Professor'}</td>
-                        <td style={{ padding: '1rem' }}>
-                          <span className="badge badge-primary">{t.status || 'Active'}</span>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <div style={{ fontFamily: 'monospace', fontWeight: '600', color: 'var(--text-primary)' }}>{s.etxId}</div>
+                          <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.prn || 'Pending'}</div>
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: '600', color: 'var(--brand-blue)' }}>
+                          {s.scores?.overall || 0} pts
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <span className="badge badge-primary">{s.status || 'Active'}</span>
                         </td>
                       </tr>
                     ))}
+                    {filteredStudents.length === 0 && (
+                      <tr>
+                        <td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                          No students found matching your search.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Analytics View */}
-            {activeTab === 'analytics' && (
-              <div style={{ display: 'grid', gap: '1.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-                  <div className="glass-card" style={{ padding: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>Average Score Breakdown</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>Overall MAVI Score</span>
-                        <strong style={{ color: 'var(--accent-purple)' }}>{analytics?.averages?.overallScore || 0} pts</strong>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>Development Score</span>
-                        <strong style={{ color: 'var(--accent-cyan)' }}>{analytics?.averages?.developmentScore || 0} pts</strong>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>Problem Solving Score</span>
-                        <strong style={{ color: 'var(--accent-emerald)' }}>{analytics?.averages?.problemSolvingScore || 0} pts</strong>
-                      </div>
+          {/* Teachers View */}
+          {activeTab === 'teachers' && (
+            <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Faculty Member</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Designation</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {teachers.map((t) => (
+                    <tr key={t._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{t.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t.email}</div>
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{t.designation || 'Assistant Professor'}</td>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <span className="badge badge-primary">{t.status || 'Active'}</span>
+                      </td>
+                    </tr>
+                  ))}
+                  {teachers.length === 0 && (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                        No faculty records found for this department.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Analytics View */}
+          {activeTab === 'analytics' && (
+            <div style={{ display: 'grid', gap: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: 'var(--text-primary)' }}>Average Score Breakdown</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Overall EduTalentX Score</span>
+                      <strong style={{ color: 'var(--brand-blue)' }}>{analytics?.averages?.overallScore || 0} pts</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Development Score</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{analytics?.averages?.developmentScore || 0} pts</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Problem Solving Score</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{analytics?.averages?.problemSolvingScore || 0} pts</strong>
                     </div>
                   </div>
-
-                  <div className="glass-card" style={{ padding: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>Score Tier Distribution</h3>
-                    {analytics?.tierDistribution &&
-                      Object.entries(analytics.tierDistribution).map(([tier, count]) => (
-                        <div key={tier} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>{tier}</span>
-                          <strong>{count} students</strong>
-                        </div>
-                      ))}
-                  </div>
                 </div>
-              </div>
-            )}
 
-            {/* Leaderboard View */}
-            {activeTab === 'leaderboard' && (
-              <div className="glass-card-static" style={{ overflowX: 'auto' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)' }}>
-                  <Trophy size={20} style={{ color: 'var(--accent-amber)' }} />
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>Department Student Leaderboard</h3>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '1rem' }}>Rank</th>
-                      <th style={{ padding: '1rem' }}>Student</th>
-                      <th style={{ padding: '1rem' }}>Tier</th>
-                      <th style={{ padding: '1rem' }}>Score</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leaderboard.map((item) => (
-                      <tr key={item._id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>#{item.rank}</td>
-                        <td style={{ padding: '1rem' }}>
-                          <div style={{ fontWeight: '600' }}>{item.user?.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{item.user?.maviId}</div>
-                        </td>
-                        <td style={{ padding: '1rem' }}>
-                          <span className="badge badge-primary">{item.scoreTier}</span>
-                        </td>
-                        <td style={{ padding: '1rem', fontWeight: 'bold', color: 'var(--accent-purple)' }}>{item.score} pts</td>
-                      </tr>
+                <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: 'var(--text-primary)' }}>Score Tier Distribution</h3>
+                  {analytics?.tierDistribution &&
+                    Object.entries(analytics.tierDistribution).map(([tier, count]) => (
+                      <div key={tier} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>{tier}</span>
+                        <strong style={{ color: 'var(--text-primary)' }}>{count} students</strong>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Reports View */}
-            {activeTab === 'reports' && (
-              <div className="glass-card" style={{ padding: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                  <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>Department Performance Report</h3>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                      Generated at: {reportsData?.generatedAt ? new Date(reportsData.generatedAt).toLocaleString() : 'Just now'} | Total Records: {reportsData?.totalRecords || 0}
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <button
-                      onClick={handleDownloadPdf}
-                      disabled={generatingPdf}
-                      className="btn btn-primary"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        opacity: generatingPdf ? 0.7 : 1,
-                        cursor: generatingPdf ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      {generatingPdf ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          <span>Generating PDF...</span>
-                        </>
-                      ) : (
-                        <>
-                          <FileText size={16} />
-                          <span>Download PDF Report</span>
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reportsData, null, 2));
-                        const downloadAnchor = document.createElement('a');
-                        downloadAnchor.setAttribute("href", dataStr);
-                        const cleanDept = (dashboardData?.departmentName || user?.university?.department || 'department').replace(/[^a-zA-Z0-9_-]/g, '_');
-                        downloadAnchor.setAttribute("download", `department_report_${cleanDept}_${new Date().toISOString().split('T')[0]}.json`);
-                        document.body.appendChild(downloadAnchor);
-                        downloadAnchor.click();
-                        downloadAnchor.remove();
-                      }}
-                      className="btn btn-secondary"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        color: 'white',
-                      }}
-                    >
-                      <Download size={16} /> Export JSON Report
-                    </button>
-                  </div>
                 </div>
               </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
+            </div>
+          )}
+
+          {/* Leaderboard View */}
+          {activeTab === 'leaderboard' && (
+            <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', overflowX: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-color)' }}>
+                <Trophy size={18} style={{ color: 'var(--brand-blue)' }} />
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', margin: 0, color: 'var(--text-primary)' }}>Department Student Leaderboard</h3>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Rank</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Student</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Tier</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboard.map((item) => (
+                    <tr key={item._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: '600', color: 'var(--text-primary)' }}>#{item.rank}</td>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{item.user?.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.user?.etxId}</div>
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <span className="badge badge-primary">{item.scoreTier}</span>
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: '700', color: 'var(--brand-blue)' }}>{item.score} pts</td>
+                    </tr>
+                  ))}
+                  {leaderboard.length === 0 && (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                        No leaderboard data currently available.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Reports View */}
+          {activeTab === 'reports' && (
+            <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: '600', margin: 0, color: 'var(--text-primary)' }}>Department Performance Report</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
+                    Generated at: {reportsData?.generatedAt ? new Date(reportsData.generatedAt).toLocaleString() : 'Just now'} | Total Records: {reportsData?.totalRecords || 0}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={handleDownloadPdf}
+                    disabled={generatingPdf}
+                    className="btn btn-primary"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      opacity: generatingPdf ? 0.7 : 1,
+                      cursor: generatingPdf ? 'not-allowed' : 'pointer',
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    {generatingPdf ? (
+                      <>
+                        <Loader2 size={15} className="animate-spin" />
+                        <span>Generating PDF...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileText size={15} />
+                        <span>Download PDF Report</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reportsData, null, 2));
+                      const downloadAnchor = document.createElement('a');
+                      downloadAnchor.setAttribute("href", dataStr);
+                      const cleanDept = (dashboardData?.departmentName || user?.university?.department || 'department').replace(/[^a-zA-Z0-9_-]/g, '_');
+                      downloadAnchor.setAttribute("download", `department_report_${cleanDept}_${new Date().toISOString().split('T')[0]}.json`);
+                      document.body.appendChild(downloadAnchor);
+                      downloadAnchor.click();
+                      downloadAnchor.remove();
+                    }}
+                    className="btn btn-secondary"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    <Download size={15} /> Export JSON Report
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </DepartmentAdminLayout>
   );
 };
 

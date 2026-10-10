@@ -5,43 +5,152 @@ const LeetCodeStatsCard = ({ data }) => {
   if (!data) return null;
 
   return (
-    <div className="glass-card">
-      <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
-        <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/LeetCode_logo_black.png" alt="LeetCode" style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} />
-        LeetCode Overview
-      </h3>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div style={{ padding: '1rem', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-            <Trophy size={16} color="var(--accent-gold, #fbbf24)" />
+    <div
+      style={{
+        background: '#FFFFFF',
+        border: '1px solid #E5E7EB',
+        borderRadius: '8px',
+        padding: '1.25rem 1.4rem',
+        boxShadow: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginBottom: '1rem',
+          paddingBottom: '0.75rem',
+          borderBottom: '1px solid #E5E7EB',
+        }}
+      >
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/1/19/LeetCode_logo_black.png"
+          alt="LeetCode"
+          style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+        />
+        <h3
+          style={{
+            margin: 0,
+            fontSize: '1rem',
+            fontWeight: 700,
+            color: '#111111',
+            fontFamily: 'Inter, sans-serif',
+          }}
+        >
+          LeetCode Overview
+        </h3>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.85rem' }}>
+        <div
+          style={{
+            padding: '0.85rem 1rem',
+            background: '#F8F9FA',
+            border: '1px solid #E5E7EB',
+            borderRadius: '8px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              color: '#4B5563',
+              marginBottom: '0.35rem',
+              fontSize: '0.8125rem',
+              fontWeight: 500,
+            }}
+          >
+            <Trophy size={15} color="#D97706" />
             <span>Global Ranking</span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{data.ranking ? `#${data.ranking.toLocaleString()}` : 'N/A'}</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111111', fontFamily: 'Inter, sans-serif' }}>
+            {data.ranking ? `#${data.ranking.toLocaleString()}` : 'N/A'}
+          </div>
         </div>
 
-        <div style={{ padding: '1rem', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-            <TrendingUp size={16} color="var(--accent-blue, #3b82f6)" />
+        <div
+          style={{
+            padding: '0.85rem 1rem',
+            background: '#F8F9FA',
+            border: '1px solid #E5E7EB',
+            borderRadius: '8px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              color: '#4B5563',
+              marginBottom: '0.35rem',
+              fontSize: '0.8125rem',
+              fontWeight: 500,
+            }}
+          >
+            <TrendingUp size={15} color="#2563EB" />
             <span>Contest Rating</span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{data.contestRating ? Math.round(data.contestRating) : 'N/A'}</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111111', fontFamily: 'Inter, sans-serif' }}>
+            {data.contestRating ? Math.round(data.contestRating) : 'N/A'}
+          </div>
         </div>
 
-        <div style={{ padding: '1rem', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-            <Star size={16} color="var(--accent-purple, #8b5cf6)" />
+        <div
+          style={{
+            padding: '0.85rem 1rem',
+            background: '#F8F9FA',
+            border: '1px solid #E5E7EB',
+            borderRadius: '8px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              color: '#4B5563',
+              marginBottom: '0.35rem',
+              fontSize: '0.8125rem',
+              fontWeight: 500,
+            }}
+          >
+            <Star size={15} color="#7C3AED" />
             <span>Reputation</span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{data.reputation || 0}</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111111', fontFamily: 'Inter, sans-serif' }}>
+            {data.reputation || 0}
+          </div>
         </div>
 
-        <div style={{ padding: '1rem', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-            <Award size={16} color="var(--accent-green, #10b981)" />
+        <div
+          style={{
+            padding: '0.85rem 1rem',
+            background: '#F8F9FA',
+            border: '1px solid #E5E7EB',
+            borderRadius: '8px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              color: '#4B5563',
+              marginBottom: '0.35rem',
+              fontSize: '0.8125rem',
+              fontWeight: 500,
+            }}
+          >
+            <Award size={15} color="#16A34A" />
             <span>Total Solved</span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{data.totalSolved || 0}</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111111', fontFamily: 'Inter, sans-serif' }}>
+            {data.totalSolved || 0}
+          </div>
         </div>
       </div>
     </div>

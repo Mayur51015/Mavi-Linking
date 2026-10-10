@@ -47,7 +47,7 @@ const calculateMedal = (rank) => {
  * Primary: scores.overall (desc)
  * Secondary: scores.problemSolving (desc)
  * Tertiary: scores.development (desc)
- * Final: maviId / _id (asc)
+ * Final: etxId / _id (asc)
  */
 const sortLeaderboardUsers = (users) => {
   return [...users].sort((a, b) => {
@@ -63,8 +63,8 @@ const sortLeaderboardUsers = (users) => {
     const devB = b.scores?.development || 0;
     if (devB !== devA) return devB - devA;
 
-    const idA = String(a.maviId || a._id || '');
-    const idB = String(b.maviId || b._id || '');
+    const idA = String(a.etxId || a._id || '');
+    const idB = String(b.etxId || b._id || '');
     return idA.localeCompare(idB);
   });
 };

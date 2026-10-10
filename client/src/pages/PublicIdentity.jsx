@@ -11,6 +11,7 @@ import QRModal from '../components/QRModal';
 import ReportGenerator from '../components/ReportGenerator';
 import { AuthContext } from '../context/AuthContext';
 import { SkeletonCircle, SkeletonText, SkeletonCard } from '../components/ui/Skeleton';
+import BrandLogo from '../components/BrandLogo';
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
 const tierColors = {
@@ -32,21 +33,30 @@ const PublicIdentity = () => {
   const [showQR, setShowQR] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [copiedMaviId, setCopiedMaviId] = useState(false);
+  const [copiedEtxId, setCopiedEtxId] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await api.get(`/public/u/${username}`);
+        const handle = (username === 'me' && user)
+          ? (user.username || user.etxId || user.platforms?.github?.username || user._id)
+          : username;
+        if (!handle) {
+          setError('Developer profile not found.');
+          setLoading(false);
+          return;
+        }
+        const res = await api.get(`/public/u/${handle}`);
         setData(res.data.data);
-      } catch {
-        setError('Developer profile not found.');
+      } catch (err) {
+        console.error('Error fetching public profile:', err);
+        setError(err.response?.data?.message || 'Developer profile not found.');
       } finally {
         setLoading(false);
       }
     };
     fetchProfile();
-  }, [username]);
+  }, [username, user]);
 
 
 if (loading) return (
@@ -79,12 +89,9 @@ if (loading) return (
   return (
     <>
       {/* Nav */}
-      <nav className="navbar">
+      <nav className="navbar" style={{ padding: '0.85rem 0' }}>
         <div className="container nav-container">
-          <Link to="/" className="nav-brand">
-            <Terminal size={24} className="text-gradient" />
-            <span>MaVi Linking</span>
-          </Link>
+          <BrandLogo variant="full" size={32} linkTo="/" />
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             {['recruiter', 'admin'].includes(user?.role) && (
               <button className="btn btn-primary btn-sm" onClick={() => setShowReport(true)} title="Generate Recruiter AI Report">
@@ -124,12 +131,12 @@ if (loading) return (
             </div>
             <div style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
               <span>@{profile.username}</span>
-              {profile.maviId && (
+              {profile.etxId && (
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(profile.maviId);
-                    setCopiedMaviId(true);
-                    setTimeout(() => setCopiedMaviId(false), 2000);
+                    navigator.clipboard.writeText(profile.etxId);
+                    setCopiedEtxId(true);
+                    setTimeout(() => setCopiedEtxId(false), 2000);
                   }}
                   className="badge badge-purple"
                   style={{
@@ -142,11 +149,11 @@ if (loading) return (
                     alignItems: 'center',
                     gap: '0.3rem',
                   }}
-                  title="Click to copy MAVI ID"
+                  title="Click to copy ETX ID"
                 >
-                  {copiedMaviId ? <Check size={12} style={{ color: 'var(--accent-emerald)' }} /> : <Copy size={12} />}
-                  <span>{profile.maviId}</span>
-                  {copiedMaviId && <span style={{ fontSize: '0.7rem', textTransform: 'none', marginLeft: '2px' }}>Copied!</span>}
+                  {copiedEtxId ? <Check size={12} style={{ color: 'var(--accent-emerald)' }} /> : <Copy size={12} />}
+                  <span>{profile.etxId}</span>
+                  {copiedEtxId && <span style={{ fontSize: '0.7rem', textTransform: 'none', marginLeft: '2px' }}>Copied!</span>}
                 </button>
               )}
             </div>
@@ -368,7 +375,7 @@ if (loading) return (
         {/* Projects Tab */}
         {activeTab === 'projects' && (
           <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.4 }}>
-            {projects.length === 0 ? (
+            {(!projects || projects.length === 0) ? (
               <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)', border: '1px dashed var(--border-color)', borderRadius: '12px' }}>
                 <Briefcase size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
                 <p>No projects showcased yet.</p>
@@ -380,7 +387,7 @@ if (loading) return (
                     <h3 style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>{proj.title}</h3>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', flex: 1 }}>{proj.description}</p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '1rem' }}>
-                      {proj.technologies.map((tech, idx) => (
+                      {(proj.technologies || []).map((tech, idx) => (
                         <span key={idx} className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{tech}</span>
                       ))}
                     </div>

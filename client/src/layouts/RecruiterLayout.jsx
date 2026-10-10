@@ -9,6 +9,7 @@ import {
   Briefcase,
   Building2,
   Shield,
+  Bell,
 } from 'lucide-react';
 import AppShell from '../components/shell/AppShell';
 
@@ -22,6 +23,7 @@ const RecruiterLayout = ({ children }) => {
     { name: 'Candidate Bookmarks', path: '/dashboard/recruiter/bookmarks', icon: <Bookmark size={18} />, category: 'Talent' },
     { name: 'Hiring Pipeline', path: '/dashboard/recruiter/pipeline', icon: <GitPullRequest size={18} />, category: 'Recruitment' },
     { name: 'Job Postings', path: '/dashboard/recruiter/jobs', icon: <Briefcase size={18} />, category: 'Recruitment' },
+    { name: 'Notifications', path: '/dashboard/recruiter/notifications', icon: <Bell size={18} />, category: 'Recruitment' },
     { name: 'Company Profile', path: '/dashboard/recruiter/company', icon: <Building2 size={18} />, category: 'Organization' },
     ...(user?.role === 'admin' ? [{ name: 'Admin Dashboard', path: '/dashboard/admin', icon: <Shield size={18} />, category: 'Organization' }] : []),
   ];

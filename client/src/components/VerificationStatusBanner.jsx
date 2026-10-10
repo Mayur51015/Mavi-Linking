@@ -89,8 +89,8 @@ const VerificationStatusBanner = () => {
               {/* Institutional Specs */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '0.85rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>MAVI ID: </span>
-                  <span style={{ fontFamily: 'monospace', fontWeight: '700', color: 'var(--accent-purple)' }}>{user.maviId || 'N/A'}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>ETX ID: </span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: '700', color: 'var(--accent-purple)' }}>{user.etxId || 'N/A'}</span>
                 </div>
                 {user.prn && (
                   <div>

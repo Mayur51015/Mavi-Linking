@@ -1,5 +1,5 @@
 /**
- * MAVI Career Lab Controller
+ * EduTalentX Career Lab Controller
  */
 
 const {

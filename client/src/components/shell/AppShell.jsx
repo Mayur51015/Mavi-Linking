@@ -23,9 +23,9 @@ import {
 import { AuthContext } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import NotificationBell from '../NotificationBell';
-import ThemeToggle from '../ThemeToggle';
 import VerificationStatusBanner from '../VerificationStatusBanner';
 import VerificationModal from '../VerificationModal';
+import BrandLogo from '../BrandLogo';
 
 /**
  * AppShell — Enterprise B2B SaaS Application Shell
@@ -37,6 +37,7 @@ const AppShell = ({
   navItems = [],
   quickActions = [],
   roleBadge = null,
+  topNavItems = null,
 }) => {
   const { user, logout } = useContext(AuthContext);
   const { unreadCount } = useNotifications();
@@ -45,7 +46,7 @@ const AppShell = ({
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
-    return localStorage.getItem('mavi_sidebar_collapsed') === 'true';
+    return localStorage.getItem('etx_sidebar_collapsed') === 'true';
   });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -96,7 +97,7 @@ const AppShell = ({
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       const next = !prev;
-      localStorage.setItem('mavi_sidebar_collapsed', String(next));
+      localStorage.setItem('etx_sidebar_collapsed', String(next));
       return next;
     });
   };
@@ -106,8 +107,8 @@ const AppShell = ({
     navigate('/login');
   };
 
-  const publicUsername = user?.username || user?.platforms?.github?.username;
-  const maviIdDisplay = user?.maviId || (user?._id ? `MAVI-${user._id.slice(-8).toUpperCase()}` : '');
+  const publicUsername = user?.username || user?.etxId || user?.platforms?.github?.username || user?._id;
+  const etxIdDisplay = user?.etxId || (user?._id ? `ETX-${user._id.slice(-8).toUpperCase()}` : '');
 
   // Filter navigation items for search palette
   const filteredNavItems = searchQuery.trim()
@@ -140,35 +141,105 @@ const AppShell = ({
   };
 
   const currentRole = getEffectiveRoleBadge();
+  const isStudentWorkspace = user?.role === 'user' || user?.roles?.includes('student');
+
+  // Role-specific top navigation links
+  const getRoleTopLinks = () => {
+    if (topNavItems && Array.isArray(topNavItems) && topNavItems.length > 0) {
+      return topNavItems;
+    }
+    const role = user?.role;
+    if (role === 'user' || user?.roles?.includes('student')) {
+      return [
+        { label: 'Overview', path: '/dashboard' },
+        { label: 'Career Match', path: '/dashboard/career-match' },
+        { label: 'Learning & Growth', path: '/student/career-roadmap' },
+        { label: 'Career Lab', path: '/dashboard/career-lab' },
+        { label: 'Applications', path: '/dashboard/jobs' },
+      ];
+    }
+    if (role === 'teacher' || role === 'professor') {
+      return [
+        { label: 'Overview', path: '/dashboard/teacher' },
+        { label: 'Students', path: '/dashboard/teacher/students' },
+        { label: 'Verification', path: '/dashboard/teacher/verification' },
+        { label: 'Readiness Analytics', path: '/dashboard/teacher/readiness' },
+        { label: 'Placement Drives', path: '/dashboard/teacher/drives' },
+      ];
+    }
+    if (role === 'recruiter') {
+      return [
+        { label: 'Overview', path: '/dashboard/recruiter' },
+        { label: 'Talent Search', path: '/dashboard/recruiter/search' },
+        { label: 'Compare Candidates', path: '/dashboard/recruiter/compare' },
+        { label: 'Hiring Pipeline', path: '/dashboard/recruiter/pipeline' },
+        { label: 'Job Postings', path: '/dashboard/recruiter/jobs' },
+      ];
+    }
+    if (role === 'institution_admin' || role === 'admin') {
+      return [
+        { label: 'Overview', path: '/admin' },
+        { label: 'Departments', path: '/admin/departments' },
+        { label: 'Faculty', path: '/admin/teachers' },
+        { label: 'Students', path: '/admin/students' },
+        { label: 'Analytics', path: '/admin/analytics' },
+      ];
+    }
+    if (role === 'department_admin') {
+      return [
+        { label: 'Overview', path: '/department-admin' },
+        { label: 'Students', path: '/department-admin?tab=students' },
+        { label: 'Faculty', path: '/department-admin?tab=teachers' },
+        { label: 'Analytics', path: '/department-admin?tab=analytics' },
+        { label: 'Reports', path: '/department-admin?tab=reports' },
+      ];
+    }
+    if (role === 'super_admin') {
+      return [
+        { label: 'Overview', path: '/super-admin' },
+        { label: 'Institutions', path: '/super-admin/institutions' },
+        { label: 'Users', path: '/super-admin/users' },
+        { label: 'Verifications', path: '/super-admin/verification' },
+        { label: 'Licenses', path: '/super-admin/licenses' },
+      ];
+    }
+    if (role === 'platform_owner' || role === 'owner') {
+      return [
+        { label: 'Overview', path: '/owner' },
+        { label: 'Revenue', path: '/owner/revenue' },
+        { label: 'Governance', path: '/owner/governance' },
+        { label: 'Plans', path: '/owner/plans' },
+      ];
+    }
+    if (navItems && navItems.length > 0) {
+      return navItems.slice(0, 5).map((item) => ({ label: item.name, path: item.path }));
+    }
+    return [];
+  };
+
+  const activeTopLinks = getRoleTopLinks();
 
   return (
-    <div className="dashboard-shell" style={{ display: 'flex', height: '100vh', maxHeight: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
+    <div className={`dashboard-shell${isStudentWorkspace ? ' student-workspace' : ''}`} style={{ display: 'flex', height: '100vh', maxHeight: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
       {/* Mobile Backdrop Overlay */}
       <div
         className={`sidebar-overlay${sidebarOpen ? ' active' : ''}`}
         onClick={() => setSidebarOpen(false)}
-        style={{
-          display: sidebarOpen ? 'block' : 'none',
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.65)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 90,
-        }}
+        aria-hidden={!sidebarOpen}
       />
 
       {/* ─── Sidebar ──────────────────────────────────────────────────────── */}
       <aside
         className={`dashboard-sidebar${sidebarOpen ? ' sidebar-open' : ''}`}
         style={{
-          width: collapsed ? '76px' : '260px',
+          width: collapsed ? '72px' : isStudentWorkspace ? '230px' : '260px',
           transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s ease',
           background: 'var(--bg-surface)',
           borderRight: '1px solid var(--border-color)',
           display: 'flex',
           flexDirection: 'column',
           zIndex: 100,
-          padding: '1.25rem 0.85rem',
+          padding: isStudentWorkspace ? '0.85rem 0.65rem' : '1.25rem 0.85rem',
           flexShrink: 0,
         }}
       >
@@ -183,47 +254,12 @@ const AppShell = ({
             minHeight: '36px',
           }}
         >
-          <Link
-            to="/"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.65rem',
-              textDecoration: 'none',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'var(--brand-blue)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                flexShrink: 0,
-                boxShadow: 'var(--shadow-xs)',
-              }}
-            >
-              <Terminal size={18} />
-            </div>
-            {!collapsed && (
-              <span
-                style={{
-                  fontFamily: 'Outfit, Inter, sans-serif',
-                  fontWeight: 800,
-                  fontSize: '1.15rem',
-                  letterSpacing: '-0.02em',
-                  color: 'var(--text-primary)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                MAVI <span style={{ color: 'var(--brand-blue)', fontWeight: 600 }}>Linking</span>
-              </span>
-            )}
-          </Link>
+          <BrandLogo
+            variant={collapsed ? 'icon' : 'full'}
+            size={30}
+            linkTo="/"
+            alt="EduTalentX"
+          />
 
           {/* Desktop Collapse Toggle */}
           <button
@@ -253,7 +289,6 @@ const AppShell = ({
             className="mobile-close-btn"
             onClick={() => setSidebarOpen(false)}
             aria-label="Close menu"
-            style={{ display: 'none' }}
           >
             <X size={20} />
           </button>
@@ -383,7 +418,7 @@ const AppShell = ({
                         padding: collapsed ? '0.65rem' : '0.55rem 0.75rem',
                         borderRadius: 'var(--radius-md)',
                         background: isActive ? 'var(--brand-blue-light)' : 'transparent',
-                        color: isActive ? 'var(--brand-blue)' : 'var(--text-secondary)',
+                        color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                         borderLeft: isActive ? '3px solid var(--brand-blue)' : '3px solid transparent',
                         fontWeight: isActive ? 600 : 500,
                         fontSize: '0.85rem',
@@ -544,113 +579,143 @@ const AppShell = ({
           style={{
             height: '60px',
             minHeight: '60px',
-            padding: '0 1.5rem',
-            background: 'var(--bg-surface)',
-            borderBottom: '1px solid var(--border-color)',
+            padding: '0 1.25rem',
+            background: 'var(--bg-surface, #FFFFFF)',
+            borderBottom: '1px solid var(--border-color, #D1D5DB)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '1rem',
+            gap: '0.75rem',
             zIndex: 40,
           }}
         >
           {/* Left: Mobile Menu & ERP Breadcrumbs */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexShrink: 0, minWidth: 0, maxWidth: '240px' }}>
             <button
               className="mobile-menu-btn"
               onClick={() => setSidebarOpen(true)}
               aria-label="Open navigation menu"
-              style={{
-                display: 'none',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '0.4rem',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-              }}
             >
               <Menu size={20} />
             </button>
 
             {/* Desktop ERP Breadcrumb Path */}
             <nav aria-label="Breadcrumb" className="breadcrumb hide-mobile">
-              <span className="breadcrumb-item">
-                {user?.institutionId?.name || user?.collegeName || 'MAVI Linking'}
+              <span className="breadcrumb-item" title={user?.institutionId?.name || user?.collegeName || 'EduTalentX'}>
+                {user?.institutionId?.name || user?.collegeName || 'EduTalentX'}
               </span>
               <span className="breadcrumb-sep">/</span>
               <span className="breadcrumb-item">
                 {currentRole.label}
               </span>
               <span className="breadcrumb-sep">/</span>
-              <span className="breadcrumb-current">
+              <span className="breadcrumb-current" title={title || 'Overview'}>
                 {title || 'Overview'}
               </span>
             </nav>
 
             {/* Mobile View Title */}
             <h1
-              className="show-mobile"
-              style={{
-                display: 'none',
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                margin: 0,
-                fontFamily: 'Inter, sans-serif',
-                letterSpacing: '-0.01em',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
+              className="show-mobile dashboard-mobile-title"
             >
               {title || currentRole.label}
             </h1>
           </div>
 
-          {/* Center / Search Trigger Button */}
-          <button
-            onClick={() => setSearchModalOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)',
-              padding: '0.4rem 0.85rem',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              fontSize: '0.8125rem',
-              maxWidth: '320px',
-              width: '100%',
-              transition: 'border-color var(--transition-fast)',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--border-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
-          >
-            <Search size={14} />
-            <span style={{ flex: 1, textAlign: 'left' }}>Search anything...</span>
-            <kbd
+          {activeTopLinks.length > 0 && (
+            <div className="topbar-divider hide-mobile" style={{ width: '1px', height: '22px', background: 'var(--border-subtle, #E5E7EB)', flexShrink: 0 }} />
+          )}
+
+          {/* Center: Top Navigation Items */}
+          {activeTopLinks.length > 0 && (
+            <nav className="dashboard-topnav student-topnav hide-mobile" aria-label="Workspace navigation">
+              {activeTopLinks.map((item) => {
+                const isExactOverview =
+                  item.path === '/dashboard' ||
+                  item.path === '/admin' ||
+                  item.path === '/super-admin' ||
+                  item.path === '/owner' ||
+                  item.path === '/dashboard/teacher' ||
+                  item.path === '/dashboard/recruiter';
+                const isActive = isExactOverview
+                  ? location.pathname === item.path
+                  : location.pathname.startsWith(item.path.split('?')[0]);
+
+                return (
+                  <Link
+                    key={item.path}
+                    className="dashboard-topnav-link student-topnav-link"
+                    to={item.path}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
+
+          {/* Right Section: Search Trigger & Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexShrink: 0, marginLeft: 'auto' }}>
+            {/* Desktop Search Trigger */}
+            <button
+              onClick={() => setSearchModalOpen(true)}
+              className="hide-mobile"
               style={{
-                background: 'var(--bg-surface-elevated)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '4px',
-                padding: '0.1rem 0.35rem',
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                background: 'var(--bg-card, #FFFFFF)',
+                border: '1px solid var(--border-color, #D1D5DB)',
+                borderRadius: 'var(--radius-md, 6px)',
+                padding: '0.35rem 0.75rem',
+                color: 'var(--text-muted, #6B7280)',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                maxWidth: '180px',
+                flexShrink: 0,
+                transition: 'border-color var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--border-hover, #9CA3AF)')}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color, #D1D5DB)')}
+            >
+              <Search size={14} />
+              <span style={{ flex: 1, textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Search...</span>
+              <kbd
+                style={{
+                  background: 'var(--bg-subtle, #F8F9FA)',
+                  border: '1px solid var(--border-subtle, #E5E7EB)',
+                  borderRadius: '4px',
+                  padding: '0.1rem 0.35rem',
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary, #4B5563)',
+                }}
+              >
+                ⌘K
+              </kbd>
+            </button>
+
+            {/* Mobile: compact search icon */}
+            <button
+              onClick={() => setSearchModalOpen(true)}
+              className="show-mobile"
+              aria-label="Search"
+              style={{
+                display: 'none',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary, #4B5563)',
+                cursor: 'pointer',
+                padding: '0.4rem',
+                borderRadius: '8px',
               }}
             >
-              ⌘ K
-            </kbd>
-          </button>
+              <Search size={18} />
+            </button>
 
-          {/* Right: Controls & User Avatar Menu */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <ThemeToggle />
             <NotificationBell />
 
             {/* User Dropdown */}
@@ -719,9 +784,9 @@ const AppShell = ({
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {user?.email}
                     </div>
-                    {maviIdDisplay && (
+                    {etxIdDisplay && (
                       <div style={{ fontFamily: 'monospace', fontSize: '0.675rem', color: 'var(--brand-blue)', marginTop: '0.25rem', fontWeight: 600 }}>
-                        {maviIdDisplay}
+                        {etxIdDisplay}
                       </div>
                     )}
                   </div>
@@ -731,13 +796,13 @@ const AppShell = ({
                     <button
                       onClick={() => {
                         setUserMenuOpen(false);
-                        const publicUser = user?.username || user?.platforms?.github?.username;
+                        const publicUser = user?.username || user?.etxId || user?.platforms?.github?.username || user?._id;
                         if (publicUser) {
                           navigate(`/u/${publicUser}`);
-                        } else if (user?._id) {
-                          navigate(`/portfolio/${user._id}`);
                         } else {
-                          navigate('/dashboard?edit=true');
+                          const currentPath = location.pathname + location.search;
+                          const returnTo = (currentPath.includes('edit=true') || currentPath === '/profile/edit') ? undefined : currentPath;
+                          navigate('/dashboard?edit=true', { state: { returnTo } });
                         }
                       }}
                       style={{
@@ -767,7 +832,9 @@ const AppShell = ({
                       onClick={() => {
                         setUserMenuOpen(false);
                         window.dispatchEvent(new CustomEvent('open-edit-profile'));
-                        navigate('/dashboard?edit=true');
+                        const currentPath = location.pathname + location.search;
+                        const returnTo = (currentPath.includes('edit=true') || currentPath === '/profile/edit') ? undefined : currentPath;
+                        navigate('/dashboard?edit=true', { state: { returnTo } });
                       }}
                       style={{
                         display: 'flex',
@@ -862,7 +929,7 @@ const AppShell = ({
         </header>
 
         {/* Content Viewport */}
-        <main className="dashboard-content" style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', padding: '1.5rem 2rem' }}>
+        <main className="dashboard-content" style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', padding: 'clamp(0.75rem, 3vw, 1.5rem) clamp(0.75rem, 3vw, 2rem)' }}>
           {/* Institutional Account Verification Status Banner */}
           <VerificationStatusBanner />
 
@@ -895,8 +962,7 @@ const AppShell = ({
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.7)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(0, 0, 0, 0.4)',
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'center',
@@ -908,7 +974,7 @@ const AppShell = ({
             className="modal-content"
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: '100%',
+              width: 'min(calc(100vw - 1.5rem), 520px)',
               maxWidth: '520px',
               background: 'var(--bg-surface-elevated)',
               border: '1px solid var(--border-color)',

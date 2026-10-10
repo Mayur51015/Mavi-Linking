@@ -77,11 +77,39 @@ export default function UserLifecycleModal({
 
   const getStatusBadge = (accStatus, simpleStatus) => {
     const s = (accStatus || simpleStatus || 'ACTIVE').toUpperCase();
-    if (s === 'ACTIVE') return <span className="badge badge-primary" style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid #10b981' }}>ACTIVE</span>;
-    if (s === 'SUSPENDED') return <span className="badge" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid #f59e0b' }}>SUSPENDED</span>;
-    if (s === 'DEACTIVATED') return <span className="badge" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid #ef4444' }}>DEACTIVATED</span>;
-    if (s.includes('PENDING')) return <span className="badge" style={{ background: 'rgba(168,85,247,0.15)', color: '#c084fc', border: '1px solid #a855f7' }}>{s}</span>;
-    return <span className="badge badge-outline">{s}</span>;
+    if (s === 'ACTIVE') {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '600', background: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0' }}>
+          ACTIVE
+        </span>
+      );
+    }
+    if (s === 'SUSPENDED') {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '600', background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' }}>
+          SUSPENDED
+        </span>
+      );
+    }
+    if (s === 'DEACTIVATED') {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '600', background: '#FEF2F2', color: '#991B1B', border: '1px solid #FECACA' }}>
+          DEACTIVATED
+        </span>
+      );
+    }
+    if (s.includes('PENDING')) {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '600', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE' }}>
+          {s}
+        </span>
+      );
+    }
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '0.2rem 0.55rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '600', background: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB' }}>
+        {s}
+      </span>
+    );
   };
 
   return (
@@ -92,8 +120,8 @@ export default function UserLifecycleModal({
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(6px)',
+        background: 'rgba(17, 24, 39, 0.4)',
+        backdropFilter: 'blur(4px)',
         zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
@@ -103,17 +131,16 @@ export default function UserLifecycleModal({
       onClick={onClose}
     >
       <div
-        className="glass-card-static animate-scale-up"
         style={{
-          background: '#12161f',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
-          borderRadius: '16px',
+          background: '#FFFFFF',
+          border: '1px solid var(--border-color)',
+          borderRadius: '12px',
           width: '100%',
           maxWidth: modalType === 'view' ? '650px' : '520px',
           maxHeight: '90vh',
           overflowY: 'auto',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
-          color: '#e2e8f0',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+          color: 'var(--text-main)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -121,21 +148,21 @@ export default function UserLifecycleModal({
         <div
           style={{
             padding: '1.25rem 1.5rem',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            borderBottom: '1px solid var(--border-color)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            {modalType === 'suspend' && <AlertTriangle size={22} style={{ color: '#f59e0b' }} />}
-            {modalType === 'deactivate' && <Lock size={22} style={{ color: '#f87171' }} />}
-            {modalType === 'reactivate' && <UserCheck size={22} style={{ color: '#10b981' }} />}
-            {modalType === 'permanent_delete' && <ShieldAlert size={22} style={{ color: '#ef4444' }} />}
-            {modalType === 'view' && <Info size={22} style={{ color: 'var(--accent-purple)' }} />}
-            {modalType === 'edit' && <UserIcon size={22} style={{ color: 'var(--accent-cyan)' }} />}
+            {modalType === 'suspend' && <AlertTriangle size={20} style={{ color: '#D97706' }} />}
+            {modalType === 'deactivate' && <Lock size={20} style={{ color: '#DC2626' }} />}
+            {modalType === 'reactivate' && <UserCheck size={20} style={{ color: '#059669' }} />}
+            {modalType === 'permanent_delete' && <ShieldAlert size={20} style={{ color: '#DC2626' }} />}
+            {modalType === 'view' && <Info size={20} style={{ color: 'var(--color-primary)' }} />}
+            {modalType === 'edit' && <UserIcon size={20} style={{ color: 'var(--color-primary)' }} />}
 
-            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '700' }}>
+            <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: '700', color: 'var(--text-main)' }}>
               {modalType === 'suspend' && 'Suspend User Account'}
               {modalType === 'deactivate' && 'Deactivate User Account'}
               {modalType === 'reactivate' && 'Reactivate User Account'}
@@ -151,10 +178,14 @@ export default function UserLifecycleModal({
               border: 'none',
               color: 'var(--text-muted)',
               cursor: 'pointer',
-              padding: '0.25rem',
+              padding: '0.35rem',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
@@ -163,9 +194,9 @@ export default function UserLifecycleModal({
           {/* Target User Summary Card */}
           <div
             style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.06)',
-              borderRadius: '10px',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
               padding: '1rem',
               marginBottom: '1.5rem',
               display: 'grid',
@@ -174,16 +205,16 @@ export default function UserLifecycleModal({
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: '700', fontSize: '1rem', color: '#ffffff' }}>{user.name}</span>
+              <span style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-main)' }}>{user.name}</span>
               {getStatusBadge(user.accountStatus, user.status)}
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-              <div><strong style={{ color: '#94a3b8' }}>Email:</strong> {user.email}</div>
-              <div><strong style={{ color: '#94a3b8' }}>MAVI ID:</strong> <span style={{ fontFamily: 'monospace', color: '#c084fc' }}>{user.maviId}</span></div>
-              <div><strong style={{ color: '#94a3b8' }}>Role:</strong> <span className="badge badge-outline" style={{ fontSize: '0.7rem' }}>{user.role}</span></div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>
+              <div><strong style={{ color: 'var(--text-main)' }}>Email:</strong> {user.email}</div>
+              <div><strong style={{ color: 'var(--text-main)' }}>ETX ID:</strong> <span style={{ fontFamily: 'monospace', color: 'var(--color-primary)', fontWeight: '600' }}>{user.etxId}</span></div>
+              <div><strong style={{ color: 'var(--text-main)' }}>Role:</strong> <span style={{ textTransform: 'capitalize', fontWeight: '500' }}>{user.role}</span></div>
             </div>
             {(user.institutionId?.name || user.institutionId?.code) && (
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                 <Building2 size={14} /> {user.institutionId?.name || user.institutionId?.code}
                 {user.departmentId?.name && ` • ${user.departmentId?.name}`}
               </div>
@@ -194,7 +225,7 @@ export default function UserLifecycleModal({
           {modalType === 'suspend' && (
             <form onSubmit={handleActionSubmit}>
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', color: '#f59e0b' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', color: '#92400E' }}>
                   Suspension Reason (Required) *
                 </label>
                 <textarea
@@ -235,7 +266,7 @@ export default function UserLifecycleModal({
                   type="submit"
                   className="btn"
                   disabled={loading || !reason.trim()}
-                  style={{ background: '#f59e0b', color: '#000000', fontWeight: '600', border: 'none' }}
+                  style={{ background: '#D97706', color: '#FFFFFF', fontWeight: '600', border: 'none' }}
                 >
                   {loading ? 'Suspending...' : 'Suspend User'}
                 </button>
@@ -248,22 +279,22 @@ export default function UserLifecycleModal({
             <form onSubmit={handleActionSubmit}>
               <div
                 style={{
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  background: '#FEF2F2',
+                  border: '1px solid #FECACA',
                   borderRadius: '8px',
                   padding: '1rem',
                   marginBottom: '1.25rem',
-                  color: '#fca5a5',
-                  fontSize: '0.875rem',
+                  color: '#991B1B',
+                  fontSize: '0.85rem',
                   lineHeight: '1.5',
                 }}
               >
-                <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#ef4444' }}>Important Deactivation Policy:</strong>
-                The user will immediately lose access to all MAVI Linking systems and active sessions will be revoked. The account will remain disabled indefinitely until an authorized administrator explicitly reactivates it.
+                <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#991B1B' }}>Important Deactivation Policy:</strong>
+                The user will immediately lose access to all EduTalentX systems and active sessions will be revoked. The account will remain disabled indefinitely until an authorized administrator explicitly reactivates it.
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
                   Deactivation Reason / Administrative Note
                 </label>
                 <textarea
@@ -284,7 +315,7 @@ export default function UserLifecycleModal({
                   type="submit"
                   className="btn"
                   disabled={loading}
-                  style={{ background: '#ef4444', color: '#ffffff', fontWeight: '600', border: 'none' }}
+                  style={{ background: '#DC2626', color: '#FFFFFF', fontWeight: '600', border: 'none' }}
                 >
                   {loading ? 'Deactivating...' : 'Deactivate User'}
                 </button>
@@ -296,7 +327,7 @@ export default function UserLifecycleModal({
           {modalType === 'reactivate' && (
             <form onSubmit={handleActionSubmit}>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-                Are you sure you want to restore full platform access for <strong style={{ color: '#ffffff' }}>{user.name}</strong> ({user.email})? 
+                Are you sure you want to restore full platform access for <strong style={{ color: 'var(--text-main)' }}>{user.name}</strong> ({user.email})? 
                 All suspensions and deactivations will be cleared and the user will be able to log in immediately.
               </p>
 
@@ -308,7 +339,7 @@ export default function UserLifecycleModal({
                   type="submit"
                   className="btn btn-primary"
                   disabled={loading}
-                  style={{ background: '#10b981', borderColor: '#10b981', color: '#ffffff', fontWeight: '600' }}
+                  style={{ background: '#059669', borderColor: '#059669', color: '#FFFFFF', fontWeight: '600' }}
                 >
                   {loading ? 'Reactivating...' : 'Reactivate User'}
                 </button>
@@ -321,29 +352,29 @@ export default function UserLifecycleModal({
             <form onSubmit={handleActionSubmit}>
               <div
                 style={{
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid #ef4444',
+                  background: '#FEF2F2',
+                  border: '1px solid #FECACA',
                   borderRadius: '8px',
                   padding: '1rem',
                   marginBottom: '1.25rem',
-                  color: '#fee2e2',
+                  color: '#991B1B',
                   fontSize: '0.85rem',
                   lineHeight: '1.5',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', fontWeight: '700', marginBottom: '0.4rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#991B1B', fontWeight: '700', marginBottom: '0.4rem' }}>
                   <ShieldAlert size={18} /> High-Risk Irreversible Operation
                 </div>
                 <ul style={{ margin: '0 0 0 1.25rem', padding: 0 }}>
                   <li>This action permanently deletes this user record and eligible dependent data from the database.</li>
                   <li><strong>The email address ({user.email}) will become available for a fresh new registration.</strong></li>
-                  <li>Any future registration with this email will receive a brand-new MAVI ID and start as a new account with zero inherited permissions.</li>
+                  <li>Any future registration with this email will receive a brand-new ETX ID and start as a new account with zero inherited permissions.</li>
                   <li>Legal and compliance audit logs are preserved for security governance.</li>
                 </ul>
               </div>
 
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-main)' }}>
                   <input
                     type="checkbox"
                     checked={confirmCheckbox}
@@ -355,8 +386,8 @@ export default function UserLifecycleModal({
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem' }}>
-                  To confirm, type <span style={{ color: '#ef4444', fontFamily: 'monospace', fontWeight: '700' }}>DELETE</span> below:
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', color: 'var(--text-main)' }}>
+                  To confirm, type <span style={{ color: '#DC2626', fontFamily: 'monospace', fontWeight: '700' }}>DELETE</span> below:
                 </label>
                 <input
                   type="text"
@@ -377,8 +408,8 @@ export default function UserLifecycleModal({
                   className="btn"
                   disabled={loading || !confirmCheckbox || confirmText.trim().toUpperCase() !== 'DELETE'}
                   style={{
-                    background: confirmCheckbox && confirmText.trim().toUpperCase() === 'DELETE' ? '#ef4444' : '#475569',
-                    color: '#ffffff',
+                    background: confirmCheckbox && confirmText.trim().toUpperCase() === 'DELETE' ? '#DC2626' : '#9CA3AF',
+                    color: '#FFFFFF',
                     fontWeight: '700',
                     border: 'none',
                     cursor: confirmCheckbox && confirmText.trim().toUpperCase() === 'DELETE' ? 'pointer' : 'not-allowed',
@@ -395,60 +426,60 @@ export default function UserLifecycleModal({
           {modalType === 'view' && (
             <div style={{ display: 'grid', gap: '1rem', fontSize: '0.875rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                <div className="glass-card" style={{ padding: '0.85rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Account Name</div>
-                  <div style={{ fontWeight: '600', color: '#ffffff' }}>{user.name}</div>
+                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Account Name</div>
+                  <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{user.name}</div>
                 </div>
-                <div className="glass-card" style={{ padding: '0.85rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Email Address</div>
-                  <div style={{ fontWeight: '600', color: '#ffffff' }}>{user.email}</div>
+                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email Address</div>
+                  <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{user.email}</div>
                 </div>
-                <div className="glass-card" style={{ padding: '0.85rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>MAVI ID</div>
-                  <div style={{ fontWeight: '600', fontFamily: 'monospace', color: '#c084fc' }}>{user.maviId}</div>
+                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>ETX ID</div>
+                  <div style={{ fontWeight: '600', fontFamily: 'monospace', color: 'var(--color-primary)' }}>{user.etxId}</div>
                 </div>
-                <div className="glass-card" style={{ padding: '0.85rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Primary Role</div>
-                  <div style={{ fontWeight: '600' }}><span className="badge badge-primary">{user.role}</span></div>
+                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Primary Role</div>
+                  <div style={{ fontWeight: '600', color: 'var(--text-main)', textTransform: 'capitalize' }}>{user.role}</div>
                 </div>
-                <div className="glass-card" style={{ padding: '0.85rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Institution</div>
-                  <div style={{ fontWeight: '600' }}>{user.institutionId?.name || 'Platform-Wide'}</div>
+                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Institution</div>
+                  <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{user.institutionId?.name || 'Platform-Wide'}</div>
                 </div>
-                <div className="glass-card" style={{ padding: '0.85rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Department</div>
-                  <div style={{ fontWeight: '600' }}>{user.departmentId?.name || 'All Departments'}</div>
+                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Department</div>
+                  <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{user.departmentId?.name || 'All Departments'}</div>
                 </div>
-                <div className="glass-card" style={{ padding: '0.85rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Created At</div>
+                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Created At</div>
                   <div style={{ color: 'var(--text-secondary)' }}>{user.createdAt ? new Date(user.createdAt).toLocaleString() : 'N/A'}</div>
                 </div>
-                <div className="glass-card" style={{ padding: '0.85rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Last Login</div>
+                <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.85rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Last Login</div>
                   <div style={{ color: 'var(--text-secondary)' }}>{user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never logged in'}</div>
                 </div>
               </div>
 
               {/* Suspension / Deactivation Metadata */}
               {user.suspendedAt && (
-                <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', padding: '1rem' }}>
-                  <div style={{ fontWeight: '700', color: '#f59e0b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '8px', padding: '1rem' }}>
+                  <div style={{ fontWeight: '700', color: '#92400E', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <AlertTriangle size={16} /> Suspension Details
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'grid', gap: '0.35rem' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#78350F', display: 'grid', gap: '0.35rem' }}>
                     <div><strong>Suspended At:</strong> {new Date(user.suspendedAt).toLocaleString()}</div>
                     <div><strong>Suspension Reason:</strong> {user.suspensionReason || 'None recorded'}</div>
-                    {user.suspendedUntil && <div><strong>Suspended Until:</strong> <span style={{ color: '#fbbf24' }}>{new Date(user.suspendedUntil).toLocaleString()}</span></div>}
+                    {user.suspendedUntil && <div><strong>Suspended Until:</strong> {new Date(user.suspendedUntil).toLocaleString()}</div>}
                   </div>
                 </div>
               )}
 
               {user.deactivatedAt && (
-                <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', padding: '1rem' }}>
-                  <div style={{ fontWeight: '700', color: '#ef4444', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '1rem' }}>
+                  <div style={{ fontWeight: '700', color: '#991B1B', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Lock size={16} /> Deactivation Details
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'grid', gap: '0.35rem' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#991B1B', display: 'grid', gap: '0.35rem' }}>
                     <div><strong>Deactivated At:</strong> {new Date(user.deactivatedAt).toLocaleString()}</div>
                     <div><strong>Deactivation Reason:</strong> {user.deactivationReason || 'None recorded'}</div>
                   </div>
@@ -468,7 +499,7 @@ export default function UserLifecycleModal({
             <form onSubmit={handleActionSubmit}>
               <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.3rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.3rem', color: 'var(--text-main)' }}>
                     Full Name *
                   </label>
                   <input
@@ -482,7 +513,7 @@ export default function UserLifecycleModal({
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.3rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.3rem', color: 'var(--text-main)' }}>
                     Email Address *
                   </label>
                   <input
@@ -497,7 +528,7 @@ export default function UserLifecycleModal({
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.3rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.3rem', color: 'var(--text-main)' }}>
                       Primary Role
                     </label>
                     <select
@@ -516,7 +547,7 @@ export default function UserLifecycleModal({
 
                   {departments.length > 0 && (
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.3rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.3rem', color: 'var(--text-main)' }}>
                         Department
                       </label>
                       <select

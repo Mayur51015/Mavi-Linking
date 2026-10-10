@@ -27,9 +27,9 @@ class PaymentProvider {
 class RazorpayProvider extends PaymentProvider {
   constructor() {
     super();
-    this.keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_TQ0mLvJPyus2JW';
-    this.keySecret = process.env.RAZORPAY_KEY_SECRET || 'BkefCUAgHrWwhIUQt8iSSNHM';
-    this.webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || 'BkefCUAgHrWwhIUQt8iSSNHM';
+    this.keyId = process.env.RAZORPAY_KEY_ID;
+    this.keySecret = process.env.RAZORPAY_KEY_SECRET;
+    this.webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
   }
 
   /**
@@ -48,20 +48,7 @@ class RazorpayProvider extends PaymentProvider {
    */
   async createOrder({ amount, currency = 'INR', receipt, notes = {} }) {
     if (!this.keyId || !this.keySecret) {
-      // Dev / Test Mock fallback order generator when credentials not present
-      const mockOrderId = `order_mock_${crypto.randomBytes(8).toString('hex')}`;
-      return {
-        id: mockOrderId,
-        entity: 'order',
-        amount: Math.round(amount * 100), // convert to paise
-        amount_paid: 0,
-        amount_due: Math.round(amount * 100),
-        currency,
-        receipt: receipt || `rcpt_${Date.now()}`,
-        status: 'created',
-        notes,
-        created_at: Math.floor(Date.now() / 1000),
-      };
+      throw new Error('Razorpay is not configured. Missing required API credentials.');
     }
 
     try {
@@ -92,7 +79,7 @@ class RazorpayProvider extends PaymentProvider {
    */
   verifyPaymentSignature({ orderId, paymentId, signature }, secretOverride) {
     const secret = secretOverride || this.keySecret;
-    if (!secret) return true; // Dev mode bypass if secret omitted
+    if (!secret) return false;
 
     if (!orderId || !paymentId || !signature) return false;
 

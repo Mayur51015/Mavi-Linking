@@ -286,7 +286,45 @@ const assignStudentsToDrive = async (req, res, next) => {
       req.params.id,
       { $addToSet: { students: { $each: studentIds } } },
       { new: true }
-    );
+    ).populate('companyId', 'name');
+
+    if (!drive) {
+      return res.status(404).json({ success: false, message: 'Placement drive not found' });
+    }
+
+    // Resolve assigned students server-side and dispatch assignment notification email to each student
+    if (Array.isArray(studentIds) && studentIds.length > 0) {
+      const User = require('../models/User');
+      const { sendAssignmentNotificationEmail } = require('../utils/sendEmail');
+      const { createNotification } = require('../services/notificationService');
+
+      const assignedStudents = await User.find({ _id: { $in: studentIds } }).select('email name');
+
+      for (const student of assignedStudents) {
+        if (student && student.email) {
+          sendAssignmentNotificationEmail({
+            to: student.email,
+            recipientUserId: student._id,
+            actorUserId: req.user._id,
+            actorName: req.user.name || 'Faculty Instructor',
+            actorRole: 'Teacher',
+            assignmentTitle: `Assigned to Placement Drive: ${drive.title}`,
+            assignmentDetails: `You have been nominated and assigned to the ${drive.title} placement drive with ${drive.companyId?.name || 'participating company'}.`,
+            assignmentType: 'PLACEMENT_DRIVE_ASSIGNMENT',
+            dueDate: drive.date,
+          }).catch((err) => console.error(`[DRIVE ASSIGN EMAIL ERROR] ${student.email}:`, err.message));
+
+          createNotification({
+            recipientId: student._id,
+            senderId: req.user._id,
+            type: 'pipeline_started',
+            title: `Assigned to Placement Drive: ${drive.title}`,
+            message: `Your instructor ${req.user.name} has assigned you to the ${drive.title} drive.`,
+          }).catch(() => {});
+        }
+      }
+    }
+
     res.status(200).json({ success: true, data: drive });
   } catch (error) {
     next(error);

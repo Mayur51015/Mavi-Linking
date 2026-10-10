@@ -37,8 +37,8 @@ const userSchema = new mongoose.Schema(
       minlength: [2, 'Name must be at least 2 characters'],
       maxlength: [50, 'Name cannot exceed 50 characters'],
     },
-    // Permanent MAVI ID (e.g., MAVI-8F3K7Q2P)
-    maviId: {
+    // Permanent ETX ID (e.g., ETX-8F3K7Q2P)
+    etxId: {
       type: String,
       unique: true,
       sparse: true,
@@ -551,28 +551,45 @@ userSchema.index({ facultyId: 1 });
 userSchema.index({ prnVerificationStatus: 1 });
 userSchema.index({ institutionId: 1, prn: 1 });
 
+userSchema.virtual('maviId').get(function () {
+  const rawValue = this.etxId || '';
+  if (!rawValue) return '';
+  return rawValue.toUpperCase().replace(/^ETX-/, 'MAVI-');
+}).set(function (value) {
+  if (!value) return;
+  const cleanValue = String(value).trim().toUpperCase();
+  this.etxId = cleanValue.startsWith('MAVI-') ? cleanValue.replace(/^MAVI-/, 'ETX-') : cleanValue.startsWith('ETX-') ? cleanValue : `ETX-${cleanValue.replace(/^ETX-/, '')}`;
+});
+
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
+
 // Helper to generate 8-char uppercase hex/alphanumeric code
-const generateMaviIdCode = () => {
-  return 'MAVI-' + require('crypto').randomBytes(4).toString('hex').toUpperCase();
+const generateEtxIdCode = () => {
+  return 'ETX-' + require('crypto').randomBytes(4).toString('hex').toUpperCase();
 };
 
-// ─── Pre-save: Auto-generate maviId, sync roles & hash password ───────────
+// ─── Pre-save: Auto-generate etxId, sync roles & hash password ───────────
 userSchema.pre('save', async function (next) {
+  if (this._skipPasswordHash) {
+    return next();
+  }
+
   // Ensure googleId is unset if null or empty string to preserve sparse index
   if (this.googleId === null || this.googleId === '') {
     this.googleId = undefined;
   }
 
-  // Generate permanent MAVI ID if missing (with collision check)
-  if (!this.maviId) {
+  // Generate permanent ETX ID if missing (with collision check)
+  if (!this.etxId) {
     let isUnique = false;
     let attempts = 0;
     while (!isUnique && attempts < 10) {
       attempts++;
-      const candidate = generateMaviIdCode();
-      const existing = await mongoose.model('User').findOne({ maviId: candidate });
+      const candidate = generateEtxIdCode();
+      const existing = await mongoose.model('User').findOne({ etxId: candidate });
       if (!existing) {
-        this.maviId = candidate;
+        this.etxId = candidate;
         isUnique = true;
       }
     }
@@ -588,6 +605,11 @@ userSchema.pre('save', async function (next) {
   // Only hash if password field was modified and present
   if (!this.isModified('password') || !this.password) return next();
 
+  // If the password is already a valid bcrypt hash, do not hash it again (prevents double-hashing bug)
+  if (/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(this.password)) {
+    return next();
+  }
+
   try {
     const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
@@ -599,7 +621,35 @@ userSchema.pre('save', async function (next) {
 
 // ─── Instance method: Compare candidate password with stored hash ───────────
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  if (!candidatePassword || !this.password) {
+    return false;
+  }
+
+  try {
+    const isHashMatch = await bcrypt.compare(candidatePassword, this.password);
+    if (isHashMatch) {
+      return true;
+    }
+  } catch (error) {
+    // Legacy or malformed credential values may not be bcrypt hashes.
+    // Continue with the plaintext fallback below so existing users can log in.
+  }
+
+  // Backward compatibility: if the stored value is still plain text from older
+  // data imports or seed scripts, accept it once and rehash it immediately.
+  if (this.password === candidatePassword) {
+    try {
+      const salt = await bcrypt.genSalt(12);
+      this.password = await bcrypt.hash(candidatePassword, salt);
+      this._skipPasswordHash = true;
+      await this.save({ validateModifiedOnly: false });
+      return true;
+    } finally {
+      this._skipPasswordHash = false;
+    }
+  }
+
+  return false;
 };
 
 // ─── Instance method: Generate signed JWT ───────────────────────────────────

@@ -1,5 +1,5 @@
 /**
- * Canonical Career Domains and Target Roles for MAVI Linking (Frontend).
+ * Canonical Career Domains and Target Roles for EduTalentX (Frontend).
  */
 
 export const CANONICAL_DOMAINS = [

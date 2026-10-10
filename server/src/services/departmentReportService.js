@@ -56,7 +56,7 @@ const generateDepartmentReportData = async (req) => {
 
   const query = buildScopeQuery(req, { role: { $in: ['user', 'student', 'developer'] } });
   const students = await User.find(query)
-    .select('name email maviId prn scores status accountStatus isVerified skillsList platforms placementStatus placementReadinessScore profileCompletion createdAt')
+    .select('name email etxId prn scores status accountStatus isVerified skillsList platforms placementStatus placementReadinessScore profileCompletion createdAt')
     .sort({ 'scores.overall': -1, createdAt: -1 })
     .lean();
 
@@ -108,7 +108,8 @@ const generateDepartmentReportData = async (req) => {
       id: s._id,
       name: s.name || 'Unnamed Student',
       email: s.email || 'N/A',
-      maviId: s.maviId || `MAVI-${s._id.toString().slice(-8).toUpperCase()}`,
+      maviId: s.maviId || s.etxId?.replace(/^ETX-/, 'MAVI-') || `MAVI-${(s._id || '').toString().slice(-8).toUpperCase()}`,
+      etxId: s.etxId || `ETX-${s._id.toString().slice(-8).toUpperCase()}`,
       prn: s.prn || 'Pending',
       status: s.status || 'active',
       accountStatus: s.accountStatus || 'ACTIVE',
@@ -223,7 +224,7 @@ const writeDepartmentReportPdf = async (reportData, res) => {
   doc.rect(40, 40, contentWidth, 68).fill('#0f172a');
 
   // Brand title
-  doc.fillColor('#818cf8').fontSize(11).font('Helvetica-Bold').text('MAVI LINKING', 55, 52, { characterSpacing: 1.5 });
+  doc.fillColor('#818cf8').fontSize(11).font('Helvetica-Bold').text('EDUTALENTX', 55, 52, { characterSpacing: 1.5 });
   doc.fillColor('#ffffff').fontSize(16).font('Helvetica-Bold').text('Department Performance Report', 55, 68);
   doc.fillColor('#94a3b8').fontSize(8).font('Helvetica').text('Official Department-Scoped Analytics & Student Assessment Record', 55, 88);
 
@@ -256,7 +257,7 @@ const writeDepartmentReportPdf = async (reportData, res) => {
   const kpis = [
     { label: 'TOTAL STUDENTS', value: `${reportData.summary.totalStudents}`, color: '#4f46e5' },
     { label: 'ACTIVE STUDENTS', value: `${reportData.summary.activeStudents}`, color: '#059669' },
-    { label: 'AVG MAVI SCORE', value: `${reportData.summary.averageScores.overall} pts`, color: '#7c3aed' },
+    { label: 'AVG ETX SCORE', value: `${reportData.summary.averageScores.overall} pts`, color: '#7c3aed' },
     { label: 'AVG DEV SCORE', value: `${reportData.summary.averageScores.development} pts`, color: '#0284c7' },
   ];
 
@@ -276,7 +277,7 @@ const writeDepartmentReportPdf = async (reportData, res) => {
 
   drawProgressBar(doc, 55, barY, barW, 8, reportData.summary.averageScores.development, 1000, '#0284c7', 'Average Development');
   drawProgressBar(doc, 55 + barW + 15, barY, barW, 8, reportData.summary.averageScores.problemSolving, 1000, '#059669', 'Average Problem Solving');
-  drawProgressBar(doc, 55 + (barW + 15) * 2, barY, barW, 8, reportData.summary.averageScores.overall, 1000, '#7c3aed', 'Average Overall MAVI');
+  drawProgressBar(doc, 55 + (barW + 15) * 2, barY, barW, 8, reportData.summary.averageScores.overall, 1000, '#7c3aed', 'Average Overall ETX');
 
   // ─── STUDENT PERFORMANCE TABLE ─────────────────────────────────────────────
   let tableStartY = vizY + 68;
@@ -288,7 +289,7 @@ const writeDepartmentReportPdf = async (reportData, res) => {
     doc.fillColor('#ffffff').fontSize(8).font('Helvetica-Bold');
     doc.text('#', 45, yPos + 6, { width: 20 });
     doc.text('Student Name & Email', 70, yPos + 6, { width: 145 });
-    doc.text('MAVI ID / PRN', 220, yPos + 6, { width: 115 });
+    doc.text('ETX ID / PRN', 220, yPos + 6, { width: 115 });
     doc.text('Dev', 340, yPos + 6, { width: 35, align: 'right' });
     doc.text('Problem', 380, yPos + 6, { width: 45, align: 'right' });
     doc.text('Overall', 430, yPos + 6, { width: 40, align: 'right' });
@@ -328,8 +329,8 @@ const writeDepartmentReportPdf = async (reportData, res) => {
       doc.fillColor('#0f172a').fontSize(8).font('Helvetica-Bold').text(std.name, 70, currentY + 4, { width: 145, ellipsis: true });
       doc.fillColor('#64748b').fontSize(7).font('Helvetica').text(std.email, 70, currentY + 14, { width: 145, ellipsis: true });
 
-      // MAVI ID / PRN
-      doc.fillColor('#4f46e5').fontSize(7.5).font('Helvetica-Bold').text(std.maviId, 220, currentY + 4, { width: 115, ellipsis: true });
+      // ETX ID / PRN
+      doc.fillColor('#4f46e5').fontSize(7.5).font('Helvetica-Bold').text(std.etxId, 220, currentY + 4, { width: 115, ellipsis: true });
       doc.fillColor('#0284c7').fontSize(7).font('Helvetica').text(std.prn ? `PRN: ${std.prn}` : 'PRN: Pending', 220, currentY + 14, { width: 115, ellipsis: true });
 
       // Scores
@@ -359,7 +360,7 @@ const writeDepartmentReportPdf = async (reportData, res) => {
 
     // Footer text
     doc.fillColor('#64748b').fontSize(7.5).font('Helvetica');
-    doc.text('MAVI Linking — Department Performance Report', 40, footerY, { width: 220, align: 'left' });
+    doc.text('EduTalentX — Department Performance Report', 40, footerY, { width: 220, align: 'left' });
     doc.text(`Generated: ${formatDateTime(reportData.generatedAt)}`, 220, footerY, { width: 160, align: 'center' });
     doc.text(`Page ${i + 1} of ${pages.count}`, pageWidth - 140, footerY, { width: 100, align: 'right' });
   }

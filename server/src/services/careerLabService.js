@@ -1,5 +1,5 @@
 /**
- * MAVI Career Lab — Simulation & What-If Service
+ * EduTalentX Career Lab — Simulation & What-If Service
  *
  * Provides safe, deterministic simulation of hypothetical career improvements
  * without modifying real student profiles, projects, skills, or platform metrics.
@@ -167,10 +167,10 @@ async function getCareerLabProfile(userId, requestedRole = null) {
       user: {
         id: evidence.user.id,
         name: evidence.user.name,
-        maviId: evidence.user.maviId,
+        etxId: evidence.user.etxId,
         preferredRole: evidence.user.preferredRole,
         preferredDomain: evidence.user.preferredDomain,
-        maviScore: evidence.user.scores.overall,
+        etxScore: evidence.user.scores.overall,
         profileStrength: evidence.user.profileCompletion,
         dnaArchetype: evidence.dna.personalityType,
       },

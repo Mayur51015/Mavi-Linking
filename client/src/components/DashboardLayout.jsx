@@ -6,6 +6,7 @@ import {
   Terminal, Briefcase, Search, GraduationCap, Heart, BadgeCheck, QrCode, Compass,
 } from 'lucide-react';
 import VerificationModal from './VerificationModal';
+import BrandLogo from './BrandLogo';
 
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
@@ -29,7 +30,7 @@ const DashboardLayout = ({ children }) => {
     { name: 'College Mode', path: '/dashboard/college', icon: <GraduationCap size={20} /> },
   ];
 
-  const publicUsername = user?.username || user?.platforms?.github?.username;
+  const publicUsername = user?.username || user?.etxId || user?.platforms?.github?.username || user?._id;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
@@ -39,10 +40,9 @@ const DashboardLayout = ({ children }) => {
         padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column',
         backdropFilter: 'blur(12px)',
       }}>
-        <Link to="/" className="nav-brand" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Terminal size={24} className="text-gradient" />
-          <span className="text-gradient">MaVi Linking</span>
-        </Link>
+        <div style={{ marginBottom: '2rem' }}>
+          <BrandLogo variant="full" size={32} linkTo="/" />
+        </div>
 
         {/* User Info */}
         <div style={{
@@ -96,7 +96,7 @@ const DashboardLayout = ({ children }) => {
             </div>
             {!user?.isVerified && (
               <button
-                onClick={() => navigate(`/verify/${user?.maviId || 'account'}`)}
+                onClick={() => navigate(`/verify/${user?.etxId || 'account'}`)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.75rem',
                   padding: '0.625rem 1rem', borderRadius: '10px',

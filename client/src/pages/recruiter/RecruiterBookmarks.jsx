@@ -44,89 +44,94 @@ const RecruiterBookmarks = () => {
 
   return (
     <RecruiterLayout>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Bookmark size={28} /> Bookmarked Candidates
+      <header style={{ marginBottom: '1.75rem' }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Bookmark size={22} style={{ color: 'var(--brand-blue)' }} /> Bookmarked Candidates
         </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>{bookmarks.length} candidate{bookmarks.length !== 1 ? 's' : ''} saved.</p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{bookmarks.length} candidate{bookmarks.length !== 1 ? 's' : ''} saved for recruitment evaluation.</p>
       </header>
 
       {loading ? (
         <div style={{ display: 'grid', gap: '0.75rem' }}>
-          {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: '80px' }} />)}
+          {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: '70px', borderRadius: '8px' }} />)}
         </div>
       ) : bookmarks.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
-          No bookmarks yet. Go to <strong>Search Talent</strong> to find and save candidates.
+        <div style={{ background: '#FFFFFF', border: '1px dashed var(--border-color)', borderRadius: '8px', textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+          No bookmarks saved yet. Navigate to <strong>Search Talent</strong> to discover and bookmark prospective candidates.
         </div>
       ) : (
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {bookmarks.map((bm, i) => (
             <motion.div
               key={bm._id}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="glass-card"
-              style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.5rem' }}
+              transition={{ delay: i * 0.03 }}
+              style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.875rem 1.25rem', flexWrap: 'wrap' }}
             >
-              <div className="avatar-gradient" style={{ width: '40px', height: '40px', fontSize: '1rem', flexShrink: 0 }}>
+              <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(37, 99, 235, 0.08)', color: 'var(--brand-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.9rem', flexShrink: 0 }}>
                 {bm.developerId?.name?.charAt(0)}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <div style={{ flex: 1, minWidth: '180px' }}>
+                <div style={{ fontWeight: '600', fontSize: '0.9375rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   {bm.developerId?.name}
-                  {bm.developerId?.isVerified && <BadgeCheck size={14} style={{ color: 'var(--accent-cyan)' }} />}
+                  {bm.developerId?.isVerified && <BadgeCheck size={14} style={{ color: 'var(--brand-blue)' }} />}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  {bm.developerId?.university?.name || 'N/A'} • Score: {bm.developerId?.scores?.overall || 0}
+                  {bm.developerId?.university?.name || 'N/A'} • Score: <strong style={{ color: 'var(--text-primary)' }}>{bm.developerId?.scores?.overall || 0}</strong>
                 </div>
               </div>
 
               {/* Status Selector */}
-              <select
-                value={bm.status || 'reviewing'}
-                onChange={e => handleUpdateStatus(bm.developerId?._id, e.target.value)}
-                style={{
-                  background: 'rgba(0,0,0,0.2)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                  borderRadius: '8px',
-                  padding: '0.375rem 0.75rem',
-                  fontSize: '0.8rem',
-                }}
-              >
-                <option value="reviewing">Reviewing</option>
-                <option value="shortlisted">Shortlisted</option>
-                <option value="contacted">Contacted</option>
-                <option value="hired">Hired</option>
-                <option value="rejected">Rejected</option>
-              </select>
-
-              <span className={`badge badge-${bm.status === 'hired' ? 'emerald' : bm.status === 'shortlisted' ? 'primary' : bm.status === 'rejected' ? 'pink' : 'amber'}`}>
-                {bm.status || 'reviewing'}
-              </span>
-
-              {bm.developerId?._id && (
-                <button
-                  onClick={() => setReportCandidate(bm.developerId)}
-                  className="btn btn-ghost btn-sm"
-                  style={{ color: 'var(--accent-blue)' }}
-                  title="Recruiter AI Report"
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <select
+                  value={bm.status || 'reviewing'}
+                  onChange={e => handleUpdateStatus(bm.developerId?._id, e.target.value)}
+                  style={{
+                    background: '#FFFFFF',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
+                    borderRadius: '6px',
+                    padding: '0.35rem 0.625rem',
+                    fontSize: '0.8125rem',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
                 >
-                  <FileText size={16} />
+                  <option value="reviewing">Reviewing</option>
+                  <option value="shortlisted">Shortlisted</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="hired">Hired</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+
+                <span className={`badge badge-${bm.status === 'hired' ? 'emerald' : bm.status === 'shortlisted' ? 'primary' : bm.status === 'rejected' ? 'red' : 'amber'}`} style={{ fontSize: '0.75rem' }}>
+                  {bm.status || 'reviewing'}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                {bm.developerId?._id && (
+                  <button
+                    onClick={() => setReportCandidate(bm.developerId)}
+                    className="btn btn-outline"
+                    style={{ padding: '0.35rem 0.5rem' }}
+                    title="Recruiter AI Report"
+                  >
+                    <FileText size={14} />
+                  </button>
+                )}
+
+                {bm.developerId?.username && (
+                  <a href={`/u/${bm.developerId.username}`} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '0.35rem 0.5rem' }} title="View Profile">
+                    <Eye size={14} />
+                  </a>
+                )}
+
+                <button onClick={() => handleRemoveBookmark(bm.developerId?._id)} className="btn btn-outline-danger" style={{ padding: '0.35rem 0.5rem' }} title="Remove Bookmark">
+                  <X size={14} />
                 </button>
-              )}
-
-              {bm.developerId?.username && (
-                <a href={`/u/${bm.developerId.username}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" title="View Profile">
-                  <Eye size={16} />
-                </a>
-              )}
-
-              <button onClick={() => handleRemoveBookmark(bm.developerId?._id)} className="btn btn-ghost btn-sm" style={{ color: '#fca5a5' }} title="Remove Bookmark">
-                <X size={16} />
-              </button>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -139,12 +144,12 @@ const RecruiterBookmarks = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="modal-content"
             onClick={e => e.stopPropagation()}
-            style={{ maxWidth: '560px' }}
+            style={{ maxWidth: '560px', background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.75rem' }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.35rem' }}>Recruiter AI Report: {reportCandidate.name}</h2>
-              <button onClick={() => setReportCandidate(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                <X size={24} />
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Candidate Dossier: {reportCandidate.name}</h2>
+              <button onClick={() => setReportCandidate(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem' }}>
+                <X size={20} />
               </button>
             </div>
             <ReportGenerator candidateId={reportCandidate._id} candidate={reportCandidate} />

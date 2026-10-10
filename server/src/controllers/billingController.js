@@ -11,10 +11,12 @@ const { getInstitutionEntitlements, checkPlanLimit } = require('../services/enti
 /**
  * Seed Canonical Active Default SaaS Plans if Catalog is empty
  */
+let isPlansSeeded = false;
 const seedDefaultPlansIfEmpty = async () => {
-  await Plan.collection.dropIndex('code_1').catch(() => {});
+  if (isPlansSeeded) return;
   const count = await Plan.countDocuments();
   if (count === 0) {
+    await Plan.collection.dropIndex('code_1').catch(() => {});
     console.log('[SAAS CATALOG SEED] Seeding canonical SaaS plans (BASIC, PRO, ENTERPRISE)...');
     await Plan.create([
       {
@@ -49,6 +51,7 @@ const seedDefaultPlansIfEmpty = async () => {
       },
     ]);
   }
+  isPlansSeeded = true;
 };
 
 /**
@@ -77,6 +80,7 @@ const getPublishedPlans = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: plans,
+      plans,
     });
   } catch (error) {
     next(error);
@@ -273,7 +277,7 @@ const createCheckoutSession = async (req, res, next) => {
         paymentRecordId: payment._id,
         amount: order.amount,
         currency: order.currency,
-        keyId: process.env.RAZORPAY_KEY_ID || provider.keyId || 'rzp_test_TQ0mLvJPyus2JW',
+        keyId: process.env.RAZORPAY_KEY_ID || provider.keyId,
         targetPlanCode,
         planVersion,
         institutionName: institution.name,
@@ -416,7 +420,7 @@ const verifyPayment = async (req, res, next) => {
       },
       lineItems: [
         {
-          description: `MAVI Linking ${targetPlanCode} v${verifiedVersion} Institutional Annual Subscription`,
+          description: `EduTalentX ${targetPlanCode} v${verifiedVersion} Institutional Annual Subscription`,
           amount: verifiedAmount,
           periodStart: subscription.currentPeriodStart,
           periodEnd: subscription.currentPeriodEnd,

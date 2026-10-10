@@ -17,6 +17,7 @@ import api from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
+import BrandLogo from '../components/BrandLogo';
 
 /**
  * Mask email address for privacy (e.g. student@example.com -> s***t@example.com)
@@ -29,11 +30,11 @@ const maskEmail = (email) => {
 };
 
 const VerifyAccount = () => {
-  const { maviId: maviIdFromParams } = useParams();
+  const { etxId: etxIdFromParams } = useParams();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const tokenFromUrl = searchParams.get('t') || searchParams.get('token') || searchParams.get('code');
-  const maviIdFromUrl = (maviIdFromParams || searchParams.get('maviId') || '').toUpperCase().trim();
+  const etxIdFromUrl = (etxIdFromParams || searchParams.get('etxId') || '').toUpperCase().trim();
   const navigate = useNavigate();
   const toast = useToast();
   const { user, setUser, logout } = useContext(AuthContext) || {};
@@ -54,7 +55,7 @@ const VerifyAccount = () => {
       setVerifying(true);
       setVerificationError('');
       try {
-        const res = await api.post('/auth/verify-email', { token: tokenFromUrl, maviId: maviIdFromUrl || undefined });
+        const res = await api.post('/auth/verify-email', { token: tokenFromUrl, etxId: etxIdFromUrl || undefined });
         if (res.data?.success) {
           setVerificationSuccess(true);
           if (res.data.data?.token) {
@@ -101,7 +102,7 @@ const VerifyAccount = () => {
   const handleResend = async () => {
     if (resendCooldown > 0 || resending) return;
 
-    const emailOrId = activeEmail || user?.maviId || '';
+    const emailOrId = activeEmail || user?.etxId || '';
     if (!emailOrId) {
       toast.error('Registered email address is missing. Please log in or re-register.');
       return;
@@ -111,7 +112,7 @@ const VerifyAccount = () => {
     try {
       const res = await api.post('/auth/resend-verification', {
         email: emailOrId,
-        maviId: user?.maviId,
+        etxId: user?.etxId,
       });
 
       if (res.data?.success) {
@@ -179,9 +180,21 @@ const VerifyAccount = () => {
           backdropFilter: 'blur(16px)',
         }}
       >
+        {/* Brand Header */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <BrandLogo
+            variant="full"
+            size={38}
+            linkTo="/"
+            showTagline={true}
+            style={{ flexDirection: 'column', textAlign: 'center', gap: '0.5rem' }}
+            taglineStyle={{ textAlign: 'center', maxWidth: '280px' }}
+          />
+        </div>
+
         {/* Verification in progress via link */}
         {verifying && (
-          <div style={{ padding: '2.5rem 0', textAlign: 'center' }}>
+          <div style={{ padding: '1.5rem 0', textAlign: 'center' }}>
             <div
               style={{
                 width: '64px',
@@ -288,7 +301,7 @@ const VerifyAccount = () => {
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: '1.5' }}>
                 {verificationError
                   ? verificationError
-                  : 'Your MAVI Linking account has been created successfully. Verify your email address to activate your account and access your dashboard.'}
+                  : 'Your EduTalentX account has been created successfully. Verify your email address to activate your account and access your dashboard.'}
               </p>
             </div>
 
@@ -311,15 +324,15 @@ const VerifyAccount = () => {
                   <div style={{ fontSize: '0.95rem', fontWeight: '700', color: 'var(--accent-purple)', marginTop: '0.2rem', wordBreak: 'break-all' }}>
                     {activeEmail || 'mayur2006khandare@gmail.com'}
                   </div>
-                  {user?.maviId && (
+                  {user?.etxId && (
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                      Permanent MAVI ID: <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: '700' }}>{user.maviId}</span>
+                      Permanent ETX ID: <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: '700' }}>{user.etxId}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Institution MAVI ID Verifier Notice */}
+              {/* Institution ETX ID Verifier Notice */}
               <div
                 style={{
                   padding: '0.65rem 0.85rem',
@@ -335,7 +348,7 @@ const VerifyAccount = () => {
               >
                 <ShieldCheck size={16} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} />
                 <span>
-                  <strong>Institutional Verifier:</strong> MAVI ID & verification notice sent to <strong>Institution Administrator</strong> for identity verification.
+                  <strong>Institutional Verifier:</strong> ETX ID & verification notice sent to <strong>Institution Administrator</strong> for identity verification.
                 </span>
               </div>
             </div>

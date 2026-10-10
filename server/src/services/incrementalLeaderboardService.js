@@ -41,7 +41,7 @@ const calculateUserRank = async (user) => {
     'scores.overall': -1,
     'scores.problemSolving': -1,
     'scores.development': -1,
-    maviId: 1,
+    etxId: 1,
     _id: 1,
   };
 
@@ -64,7 +64,7 @@ const calculateUserRank = async (user) => {
         'scores.overall': user.scores.overall,
         'scores.problemSolving': user.scores.problemSolving || 0,
         'scores.development': user.scores.development || 0,
-        maviId: { $lt: user.maviId || '' },
+        etxId: { $lt: user.etxId || '' },
       },
     ],
   };
@@ -177,13 +177,13 @@ const getLeaderboardPage = async ({
   const [users, total] = await Promise.all([
     User.find(query)
       .select(
-        'name avatar maviId scores role status platforms departmentId'
+        'name avatar etxId scores role status platforms departmentId'
       )
       .sort({
         'scores.overall': -1,
         'scores.problemSolving': -1,
         'scores.development': -1,
-        maviId: 1,
+        etxId: 1,
         _id: 1,
       })
       .skip(skip)
@@ -203,7 +203,7 @@ const getLeaderboardPage = async ({
       _id: user._id,
       name: user.name,
       avatar: user.avatar,
-      maviId: user.maviId,
+      etxId: user.etxId,
       role: user.role,
       platforms: user.platforms,
     },
@@ -231,7 +231,7 @@ const rebuildRankings = async () => {
     status: { $ne: 'suspended' },
     'scores.overall': { $gt: 0 },
   })
-    .select('_id scores role status departmentId maviId')
+    .select('_id scores role status departmentId etxId')
     .lean();
 
   const sortedUsers = [...users].sort((a, b) => {
@@ -259,8 +259,8 @@ const rebuildRankings = async () => {
       );
     }
 
-    return String(a.maviId || a._id).localeCompare(
-      String(b.maviId || b._id)
+    return String(a.etxId || a._id).localeCompare(
+      String(b.etxId || b._id)
     );
   });
 

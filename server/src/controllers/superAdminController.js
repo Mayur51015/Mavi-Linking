@@ -5,7 +5,7 @@ const ActivityLog = require('../models/ActivityLog');
 const AuditLog = require('../models/AuditLog');
 const RecruitmentNotification = require('../models/RecruitmentNotification');
 const crypto = require('crypto');
-const { sendAdminInvitationEmail } = require('../utils/sendEmail');
+const { sendAdminInvitationEmail, getClientBaseUrl } = require('../utils/sendEmail');
 const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
 /**
@@ -70,7 +70,7 @@ const getAllAdmins = async (req, res, next) => {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
-        { maviId: { $regex: search, $options: 'i' } },
+        { etxId: { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -236,16 +236,13 @@ const createAdmin = async (req, res, next) => {
     }
 
     // Dispatch Invitation Email
-    const clientUrl = (
-      process.env.CLIENT_URL ||
-      process.env.FRONTEND_URL ||
-      process.env.PUBLIC_APP_URL ||
-      'http://localhost:5173'
-    ).replace(/\/+$/, '');
+    const clientUrl = getClientBaseUrl(req);
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
       to: lowerEmail,
+      recipientUserId: user._id,
+      actorUserId: req.user._id,
       name: user.name,
       role: targetRole,
       institutionName: targetInst?.name || 'Platform Wide',
@@ -297,7 +294,7 @@ const createAdmin = async (req, res, next) => {
         senderId: req.user._id,
         type: 'general',
         title: 'Administrative Access Granted 🔑',
-        message: `You have been assigned ${targetRole.replace('_', ' ').toUpperCase()} access (Admin ID: ${finalAdminId}) on MAVI Linking.`,
+        message: `You have been assigned ${targetRole.replace('_', ' ').toUpperCase()} access (Admin ID: ${finalAdminId}) on EduTalentX.`,
       });
     } catch (_) {}
 
@@ -385,7 +382,7 @@ const getSecurityEvents = async (req, res, next) => {
 
     const [events, total] = await Promise.all([
       ActivityLog.find(query)
-        .populate('userId', 'name email role status maviId')
+        .populate('userId', 'name email role status etxId')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit)),
@@ -468,12 +465,12 @@ const getPlatformSettings = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: {
-        platformName: 'MAVI Linking',
+        platformName: 'EduTalentX',
         environment: process.env.NODE_ENV || 'production',
         requireEmailVerification: true,
         allowPublicRegistrations: true,
         defaultUserPlan: 'FREE',
-        supportEmail: 'support@mavilinking.com',
+        supportEmail: 'support@edutalentx.com',
         maxLoginAttempts: 5,
         sessionTimeoutMinutes: 120,
       },
@@ -540,16 +537,13 @@ const resendAdminInvite = async (req, res, next) => {
     adminUser.invitedAt = new Date();
     await adminUser.save();
 
-    const clientUrl = (
-      process.env.CLIENT_URL ||
-      process.env.FRONTEND_URL ||
-      process.env.PUBLIC_APP_URL ||
-      'http://localhost:5173'
-    ).replace(/\/+$/, '');
+    const clientUrl = getClientBaseUrl(req);
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${inviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
       to: adminUser.email,
+      recipientUserId: adminUser._id,
+      actorUserId: req.user._id,
       name: adminUser.name,
       role: adminUser.role,
       institutionName: adminUser.institutionId?.name || 'Platform Wide',

@@ -1,0 +1,34 @@
+{
+  "name": "EduTalentX — Education, Skills, Intelligence & Hiring",
+  "short_name": "EduTalentX",
+  "description": "Education, Skills, Intelligence & Hiring. Digital Operating Platform connecting institutions, teachers, students, and recruiters.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "/branding/edutalentx-favicon.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "/branding/edutalentx-logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/branding/edutalentx-logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/branding/edutalentx-logo.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

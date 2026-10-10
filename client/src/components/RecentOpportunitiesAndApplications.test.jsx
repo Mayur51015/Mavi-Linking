@@ -176,4 +176,21 @@ describe('RecentApplicationsCard Component', () => {
     expect(screen.getByText(/application lifecycle timeline/i)).toBeInTheDocument();
     expect(screen.getByText('Looking forward to the technical discussion.')).toBeInTheDocument();
   });
+
+  it('renders pending approval message when student is waiting for institution verification', () => {
+    render(
+      <BrowserRouter>
+        <RecentApplicationsCard
+          pipelines={[]}
+          loading={false}
+          error={true}
+          errorMessage="Placement applications are available after your institution approves your account."
+        />
+      </BrowserRouter>
+    );
+    expect(
+      screen.getByText('Placement applications are available after your institution approves your account.')
+    ).toBeInTheDocument();
+  });
 });
+

@@ -1,7 +1,17 @@
 const { generateQrForUsername } = require('../services/qrService');
 
-const getProfileBaseUrl = () => {
-  // QR should redirect to frontend identity route /u/:username or /u/:maviId
+const getProfileBaseUrl = (req) => {
+  if (req) {
+    const origin = req.get('origin');
+    if (origin) return origin.replace(/\/+$/, '');
+    const referer = req.get('referer');
+    if (referer) {
+      try {
+        const u = new URL(referer);
+        return `${u.protocol}//${u.host}`;
+      } catch (_) {}
+    }
+  }
   return process.env.PUBLIC_APP_URL || process.env.CLIENT_URL || 'https://mavi-linking-mq7d.vercel.app';
 };
 
@@ -12,7 +22,7 @@ const getQrForUsername = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'username is required' });
     }
 
-    const targetUrl = `${getProfileBaseUrl()}/u/${encodeURIComponent(username)}?ref=qr`;
+    const targetUrl = `${getProfileBaseUrl(req)}/u/${encodeURIComponent(username)}?ref=qr`;
 
     const { dataUrl, fileUrl, svgUrl } = await generateQrForUsername({ username, targetUrl });
 
@@ -36,7 +46,7 @@ const downloadQr = async (req, res, next) => {
     const { username } = req.params;
     if (!username) return res.status(400).json({ success: false, message: 'username is required' });
 
-    const targetUrl = `${getProfileBaseUrl()}/u/${encodeURIComponent(username)}?ref=qr`;
+    const targetUrl = `${getProfileBaseUrl(req)}/u/${encodeURIComponent(username)}?ref=qr`;
     const { fileUrl } = await generateQrForUsername({ username, targetUrl });
 
     // Stream via redirect since fileUrl is already a static file

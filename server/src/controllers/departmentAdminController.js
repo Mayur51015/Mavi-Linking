@@ -3,7 +3,7 @@ const User = require('../models/User');
 const Department = require('../models/Department');
 const Institution = require('../models/Institution');
 const AuditLog = require('../models/AuditLog');
-const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml } = require('../utils/sendEmail');
+const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml, getClientBaseUrl } = require('../utils/sendEmail');
 const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
 
 /**
@@ -52,7 +52,7 @@ const createDepartmentAdmin = async (req, res, next) => {
       }
     }
 
-    const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
+    const clientUrl = getClientBaseUrl(req);
 
     // 3. Handle Existing User Appointment or Re-Invitation
     const existingUser = await User.findOne({ email: lowerEmail });
@@ -113,6 +113,8 @@ const createDepartmentAdmin = async (req, res, next) => {
       const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;
       const emailResult = await sendAdminInvitationEmail({
         to: lowerEmail,
+        recipientUserId: existingUser._id,
+        actorUserId: req.user._id,
         name: existingUser.name,
         role: 'department_admin',
         institutionName: institution?.name || 'Authorized Institution',
@@ -180,8 +182,8 @@ const createDepartmentAdmin = async (req, res, next) => {
       }
     }
 
-    // 5. Generate System MAVI ID
-    const generatedMaviId = `MAVI-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    // 5. Generate System ETX ID
+    const generatedMaviId = `ETX-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
     // 6. Single-Use Cryptographic Invitation Token & Expiration
     const rawInviteToken = crypto.randomBytes(32).toString('hex');
@@ -195,7 +197,7 @@ const createDepartmentAdmin = async (req, res, next) => {
       email: lowerEmail,
       role: 'department_admin',
       roles: ['department_admin', 'user'],
-      maviId: generatedMaviId,
+      etxId: generatedMaviId,
       institutionId: targetInstId,
       departmentId: department._id,
       tenantId: institution?.tenantId || req.user.tenantId || '',
@@ -256,6 +258,8 @@ const createDepartmentAdmin = async (req, res, next) => {
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;
     const emailResult = await sendAdminInvitationEmail({
       to: lowerEmail,
+      recipientUserId: newDeptAdmin._id,
+      actorUserId: req.user._id,
       name: newDeptAdmin.name,
       role: 'department_admin',
       institutionName: institution?.name || 'Authorized Institution',
@@ -299,7 +303,7 @@ const createDepartmentAdmin = async (req, res, next) => {
         id: newDeptAdmin._id,
         name: newDeptAdmin.name,
         email: newDeptAdmin.email,
-        maviId: newDeptAdmin.maviId,
+        etxId: newDeptAdmin.etxId,
         role: newDeptAdmin.role,
         accountStatus: newDeptAdmin.accountStatus,
         emailSent: emailResult.success,
@@ -334,7 +338,7 @@ const getDepartmentAdmins = async (req, res, next) => {
     }
 
     const admins = await User.find(query)
-      .select('name email maviId role status accountStatus designation phone avatar createdAt')
+      .select('name email etxId role status accountStatus designation phone avatar createdAt')
       .populate('institutionId', 'name code tenantId')
       .populate('departmentId', 'name code')
       .sort({ createdAt: -1 });
@@ -376,7 +380,7 @@ const getEligibleCandidates = async (req, res, next) => {
       status: 'active',
       role: { $in: ['teacher', 'user', 'admin', 'professor'] },
     })
-      .select('name email maviId role designation department university avatar')
+      .select('name email etxId role designation department university avatar')
       .sort({ name: 1 });
 
     res.status(200).json({
@@ -535,7 +539,7 @@ const getAppointmentHistory = async (req, res, next) => {
       action: { $in: ['DEPARTMENT_ADMIN_APPOINTED', 'DEPARTMENT_ADMIN_REASSIGNED', 'DEPARTMENT_ADMIN_SUSPENDED', 'DEPARTMENT_ADMIN_REACTIVATED'] },
     })
       .populate('actorId', 'name role email')
-      .populate('targetUserId', 'name email maviId role')
+      .populate('targetUserId', 'name email etxId role')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -598,11 +602,13 @@ const resendDepartmentAdminInvite = async (req, res, next) => {
     deptAdmin.invitedAt = new Date();
     await deptAdmin.save();
 
-    const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
+    const clientUrl = getClientBaseUrl(req);
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;
 
     const emailResult = await sendAdminInvitationEmail({
       to: deptAdmin.email,
+      recipientUserId: deptAdmin._id,
+      actorUserId: req.user._id,
       name: deptAdmin.name,
       role: 'department_admin',
       institutionName: deptAdmin.institutionId?.name || 'Authorized Institution',

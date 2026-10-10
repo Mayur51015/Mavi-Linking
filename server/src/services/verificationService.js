@@ -9,7 +9,7 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
  * User must place this code in their GitHub bio to verify.
  */
 const generateVerificationCode = async (userId) => {
-  const code = `mavi-verify-${crypto.randomBytes(6).toString('hex')}`;
+  const code = `etx-verify-${crypto.randomBytes(6).toString('hex')}`;
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
   const verification = await Verification.findOneAndUpdate(

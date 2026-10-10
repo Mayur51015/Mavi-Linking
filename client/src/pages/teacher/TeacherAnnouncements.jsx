@@ -97,37 +97,41 @@ const TeacherAnnouncements = () => {
 
   return (
     <TeacherLayout>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Megaphone size={28} className="text-gradient" /> Announcements Management
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <Megaphone size={26} style={{ color: 'var(--brand-blue)' }} /> Department Announcements
           </h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Manage notices, drives, and department updates for your students.</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Publish academic notices, drive notifications, and updates to department students.</p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenCreate} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Plus size={18} /> Create Announcement
+        <button className="btn btn-primary" onClick={handleOpenCreate} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem' }}>
+          <Plus size={16} /> Create Announcement
         </button>
       </header>
 
       {/* Filter Row */}
-      <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
-          <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+      <div style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-color)',
+        borderRadius: 'var(--radius-md)',
+        padding: '1rem',
+        marginBottom: '1.5rem',
+        display: 'flex',
+        gap: '0.75rem',
+        flexWrap: 'wrap',
+      }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
+          <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"
             placeholder="Search announcements..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="input-field"
             style={{
-              width: '100%',
-              padding: '0.625rem 1rem 0.625rem 2.75rem',
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '10px',
-              color: 'var(--text-primary)',
-              fontSize: '0.9rem',
-              outline: 'none',
-              transition: 'border-color 0.2s',
+              paddingLeft: '2.5rem',
+              marginBottom: 0,
+              fontSize: '0.875rem',
             }}
           />
         </div>
@@ -135,83 +139,86 @@ const TeacherAnnouncements = () => {
         <select
           value={departmentFilter}
           onChange={(e) => { setDepartmentFilter(e.target.value); setPage(1); }}
+          className="input-field"
           style={{
-            padding: '0.625rem 1rem',
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '10px',
-            color: 'var(--text-primary)',
-            fontSize: '0.9rem',
-            outline: 'none',
-            cursor: 'pointer',
+            marginBottom: 0,
+            fontSize: '0.875rem',
             minWidth: '180px',
+            width: 'auto',
           }}
         >
-          <option value="" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>All Departments</option>
+          <option value="">All Departments</option>
           {(user?.university?.department?.split(',') || []).map(d => d.trim()).filter(Boolean).map(d => (
-            <option key={d} value={d} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{d}</option>
+            <option key={d} value={d}>{d}</option>
           ))}
         </select>
       </div>
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-          <Loader2 size={36} className="animate-spin" style={{ color: 'var(--accent-purple)' }} />
+          <Loader2 size={32} className="animate-spin" style={{ color: 'var(--brand-blue)' }} />
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gap: '1rem' }}>
           {announcements.map((ann) => (
             <motion.div
               key={ann._id}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card-static"
-              style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+              }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{ann.title}</h3>
-                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-primary)' }}>{ann.title}</h3>
+                  <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', fontSize: '0.78rem', color: 'var(--text-muted)', alignItems: 'center' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Calendar size={14} /> {new Date(ann.createdAt).toLocaleDateString()}
+                      <Calendar size={13} /> {new Date(ann.createdAt).toLocaleDateString()}
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <User size={14} /> Posted by {ann.teacherId?.name || 'You'}
+                      <User size={13} /> Posted by {ann.teacherId?.name || 'Faculty Member'}
                     </span>
-                    <span className="badge badge-primary">{ann.department || 'All'}</span>
+                    <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{ann.department || 'All'}</span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '8px' }} onClick={() => handleOpenEdit(ann)}>
-                    <Edit2 size={16} />
+                <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+                  <button className="btn btn-outline btn-sm" style={{ padding: '0.35rem 0.5rem' }} onClick={() => handleOpenEdit(ann)} title="Edit announcement">
+                    <Edit2 size={14} />
                   </button>
-                  <button className="btn btn-outline-danger" style={{ padding: '0.4rem', borderRadius: '8px' }} onClick={() => handleDelete(ann._id)}>
-                    <Trash2 size={16} />
+                  <button className="btn btn-outline-danger btn-sm" style={{ padding: '0.35rem 0.5rem' }} onClick={() => handleDelete(ann._id)} title="Delete announcement">
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
 
-              <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', whiteSpace: 'pre-line' }}>{ann.content}</p>
+              <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-line', fontSize: '0.9rem', margin: 0 }}>{ann.content}</p>
             </motion.div>
           ))}
 
           {announcements.length === 0 && (
-            <div className="glass-card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-              No announcements match your search or department filters.
+            <div style={{ textAlign: 'center', padding: '3.5rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              No announcements match your search or department filter.
             </div>
           )}
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
-              <button className="btn btn-outline" disabled={page === 1} onClick={() => setPage(prev => Math.max(1, prev - 1))}>
-                Prev
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
+              <button className="btn btn-outline btn-sm" disabled={page === 1} onClick={() => setPage(prev => Math.max(1, prev - 1))}>
+                Previous
               </button>
-              <span style={{ display: 'flex', alignItems: 'center', padding: '0 1rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', padding: '0 0.5rem' }}>
                 Page {page} of {totalPages}
               </span>
-              <button className="btn btn-outline" disabled={page === totalPages} onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}>
+              <button className="btn btn-outline btn-sm" disabled={page === totalPages} onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}>
                 Next
               </button>
             </div>
@@ -224,99 +231,83 @@ const TeacherAnnouncements = () => {
         {modalOpen && (
           <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+            background: 'rgba(0,0,0,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 1000, padding: '1rem'
+            zIndex: 120, padding: '1rem',
           }}>
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card-static"
-              style={{ width: '100%', maxWidth: '600px', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              style={{
+                width: '100%',
+                maxWidth: '560px',
+                padding: '2rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.25rem',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: 'var(--shadow-lg)',
+              }}
             >
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 {editingAnn ? 'Edit Announcement' : 'Create New Announcement'}
               </h2>
 
               {error && (
-                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--accent-red)', padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-red)', fontSize: '0.875rem' }}>
-                  <AlertCircle size={16} /> {error}
+                <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#DC2626', fontSize: '0.85rem' }}>
+                  <AlertCircle size={15} /> {error}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Target Department</label>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label">Target Department</label>
                   <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    style={{
-                      padding: '0.75rem 1rem',
-                      background: 'var(--bg-input)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.95rem',
-                      outline: 'none',
-                      cursor: 'pointer',
-                    }}
+                    className="input-field"
                   >
-                    <option value="All" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>All Departments</option>
+                    <option value="All">All Departments</option>
                     {(user?.university?.department?.split(',') || []).map(d => d.trim()).filter(Boolean).map(d => (
-                      <option key={d} value={d} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{d}</option>
+                      <option key={d} value={d}>{d}</option>
                     ))}
                   </select>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Announcement Title</label>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label">Announcement Title *</label>
                   <input
                     type="text"
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Google Placement Drive Registration Deadline"
-                    style={{
-                      padding: '0.75rem 1rem',
-                      background: 'var(--bg-input)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.95rem',
-                      outline: 'none',
-                    }}
+                    placeholder="e.g. Placement Drive Registration Deadline"
+                    className="input-field"
                   />
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Announcement Content</label>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label">Announcement Content *</label>
                   <textarea
                     required
-                    rows={6}
+                    rows={5}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Provide full description, timings, requirements and link coordinates here..."
-                    style={{
-                      padding: '0.75rem 1rem',
-                      background: 'var(--bg-input)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.95rem',
-                      outline: 'none',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                    }}
+                    placeholder="Provide full description, guidelines, timings, and instructions..."
+                    className="input-field"
+                    style={{ resize: 'vertical' }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                   <button type="button" className="btn btn-outline" onClick={() => setModalOpen(false)} disabled={saving}>
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary" disabled={saving}>
-                    {saving ? 'Saving...' : 'Publish Notice'}
+                    {saving ? 'Publishing...' : 'Publish Announcement'}
                   </button>
                 </div>
               </form>

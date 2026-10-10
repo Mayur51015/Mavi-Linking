@@ -44,11 +44,23 @@ const api = axios.create({
   withCredentials: true,
 });
 
+let isAuthRedirecting = false;
+
 // ─── Request Interceptor — Attach JWT ───────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
+    // Strip leading /api if baseURL already ends with /api to avoid /api/api double-prefix
+    if (config.url && config.url.startsWith('/api/') && config.baseURL?.endsWith('/api')) {
+      config.url = config.url.substring(4);
+    }
+    const isPublicAuthEndpoint = config.url && (
+      config.url.endsWith('/auth/login') ||
+      config.url.endsWith('/auth/register') ||
+      config.url.endsWith('/auth/forgot-password') ||
+      config.url.endsWith('/auth/reset-password')
+    );
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && !isPublicAuthEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -60,31 +72,74 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 1. Connection / Network Error (backend server not running or unreachable)
     if (!error.response) {
-      console.error('API Network/Connection Error:', error.message);
+      const isConnectionRefused = error.message?.includes('Network Error') || error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED';
+      console.error(`[API Connection Error] ${isConnectionRefused ? 'Backend unreachable (ERR_CONNECTION_REFUSED / Network Error)' : error.message} at ${error.config?.url}`);
+      error.isNetworkError = true;
       return Promise.reject(error);
     }
 
-    // Detailed logging on 400 Bad Request
-    if (error.response.status === 400) {
-      const errData = error.response.data;
-      const errMsg = errData?.message || (Array.isArray(errData?.errors) ? errData.errors.map((e) => e.message || e.msg).join(', ') : 'Bad Request');
-      console.warn(`[API 400 Bad Request] ${error.config?.method?.toUpperCase()} ${error.config?.url}:`, errMsg, errData);
-    }
+    const status = error.response.status;
+    const errData = error.response.data;
+    const errMsg = errData?.message || (Array.isArray(errData?.errors) ? errData.errors.map((e) => e.message || e.msg).join(', ') : `HTTP ${status}`);
 
-    // Auto-logout on 401 (expired/invalid token)
-    if (error.response.status === 401) {
-      const hadToken = !!localStorage.getItem('token');
-      localStorage.removeItem('token');
-      const path = typeof window !== 'undefined' ? window.location.pathname : '';
-      const authPages = ['/login', '/register', '/verify-account', '/verify-email', '/pending-approval', '/activate-account', '/admin/login'];
-      const isAuthPage = authPages.some((p) => path === p || path.startsWith('/public/'));
+    // 2. Specific HTTP status logging & handling
+    if (status === 400) {
+      console.warn(`[API 400 Bad Request] ${error.config?.method?.toUpperCase()} ${error.config?.url}:`, errMsg);
+    } else if (status === 401 || (status >= 500 && (errMsg?.toLowerCase().includes('authentication error') || errMsg?.toLowerCase().includes('jwt')))) {
+      const isLoginAttempt = error.config?.url && (
+        error.config.url.includes('/auth/login') ||
+        error.config.url.includes('/auth/admin-login') ||
+        error.config.url.includes('/auth/super-admin-login')
+      );
+      if (isLoginAttempt) {
+        console.warn(`[API ${status} Unauthorized] Login credentials rejected:`, errMsg);
+      } else {
+        console.warn(`[API ${status} Unauthorized] Expired or invalid session on:`, error.config?.url);
+        const hadToken = !!localStorage.getItem('token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        const path = typeof window !== 'undefined' ? window.location.pathname : '';
+        const authPages = [
+          '/login',
+          '/owner/login',
+          '/super-admin/login',
+          '/admin/login',
+          '/register',
+          '/verify-account',
+          '/verify-email',
+          '/pending-approval',
+          '/activate-account',
+        ];
+        const isAuthPage = authPages.some((p) => path === p || path.startsWith('/public/'));
 
-      if (hadToken && !isAuthPage && typeof window !== 'undefined') {
-        notify('warning', 'Your session has expired. Please log in again.');
-        window.location.href = '/login';
+        if (hadToken && !isAuthPage && !error.config?.skipAuthRedirect && typeof window !== 'undefined' && !isAuthRedirecting) {
+          isAuthRedirecting = true;
+          notify('warning', 'Your session has expired. Please log in again.');
+          setTimeout(() => {
+            if (path.startsWith('/owner')) {
+              window.location.href = '/owner/login';
+            } else if (path.startsWith('/super-admin')) {
+              window.location.href = '/super-admin/login';
+            } else if (path.startsWith('/admin')) {
+              window.location.href = '/admin/login';
+            } else {
+              window.location.href = '/login';
+            }
+          }, 300);
+        }
       }
+    } else if (status === 403) {
+      console.warn(`[API 403 Forbidden] Access denied on ${error.config?.url}:`, errMsg);
+    } else if (status === 404) {
+      console.warn(`[API 404 Not Found] ${error.config?.url}:`, errMsg);
+    } else if (status === 422) {
+      console.warn(`[API 422 Unprocessable Entity] ${error.config?.url}:`, errMsg);
+    } else if (status >= 500) {
+      console.error(`[API ${status} Server Error] ${error.config?.url}:`, errMsg);
     }
+
     return Promise.reject(error);
   }
 );

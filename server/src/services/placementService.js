@@ -60,7 +60,7 @@ const createPipeline = async (recruiterId, data) => {
     $set: { placementStatus: 'Under Review' },
   });
 
-  // Notify student
+  // Notify student via in-app notification & email
   await _createNotification({
     recipientId: studentId,
     senderId: recruiterId,
@@ -69,6 +69,25 @@ const createPipeline = async (recruiterId, data) => {
     message: `${recruiter?.companyName || 'A company'} has initiated a hiring pipeline for the role of "${role}".`,
     metadata: { pipelineId: pipeline._id, companyName: pipeline.companyName, role },
   });
+
+  try {
+    const student = await User.findById(studentId).select('email name');
+    if (student && student.email) {
+      const { sendAssignmentNotificationEmail } = require('../utils/sendEmail');
+      await sendAssignmentNotificationEmail({
+        to: student.email,
+        recipientUserId: student._id,
+        actorUserId: recruiterId,
+        actorName: recruiter?.companyName || recruiter?.name || 'Recruiter',
+        actorRole: 'Recruiter',
+        assignmentTitle: `New Recruitment Interest: ${role}`,
+        assignmentDetails: `${recruiter?.companyName || 'A registered recruiter'} has initiated a recruitment pipeline for the role of "${role}".`,
+        assignmentType: 'RECRUITER_CONTACT',
+      });
+    }
+  } catch (emailErr) {
+    console.error('[PIPELINE CONTACT EMAIL ERROR]', emailErr.message);
+  }
 
   return pipeline;
 };
@@ -211,7 +230,7 @@ const updateInterviewDetails = async (pipelineId, interviewDetails, updatedBy) =
   });
   await pipeline.save();
 
-  // Notify student
+  // Notify student via in-app notification & email
   await _createNotification({
     recipientId: pipeline.studentId,
     senderId: updatedBy,
@@ -220,6 +239,26 @@ const updateInterviewDetails = async (pipelineId, interviewDetails, updatedBy) =
     message: `Your interview for "${pipeline.role}" at ${pipeline.companyName} has been scheduled.`,
     metadata: { pipelineId: pipeline._id, interviewDetails },
   });
+
+  try {
+    const student = await User.findById(pipeline.studentId).select('email name');
+    if (student && student.email) {
+      const { sendAssignmentNotificationEmail } = require('../utils/sendEmail');
+      await sendAssignmentNotificationEmail({
+        to: student.email,
+        recipientUserId: student._id,
+        actorUserId: updatedBy,
+        actorName: pipeline.companyName || 'Recruiter',
+        actorRole: 'Recruiter',
+        assignmentTitle: `Interview Scheduled: ${pipeline.role}`,
+        assignmentDetails: `Your interview for "${pipeline.role}" at ${pipeline.companyName} has been scheduled for ${interviewDetails.interviewDate || 'TBD'} (${interviewDetails.interviewMode || 'TBD'}).`,
+        assignmentType: 'INTERVIEW_SCHEDULED',
+        dueDate: interviewDetails.interviewDate,
+      });
+    }
+  } catch (emailErr) {
+    console.error('[INTERVIEW NOTIFICATION EMAIL ERROR]', emailErr.message);
+  }
 
   return pipeline;
 };

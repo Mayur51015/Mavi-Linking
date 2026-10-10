@@ -11,3 +11,7 @@ client/.env.local
 server/.env
 server/.env.local
 .agents/
+.expo/
+dist/
+mobile/.expo/
+mobile/dist/

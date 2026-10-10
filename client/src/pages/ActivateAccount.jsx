@@ -194,7 +194,7 @@ const ActivateAccount = () => {
             <KeyRound size={28} />
           </div>
           <h1 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            MAVI Account Activation
+            EduTalentX Account Activation
           </h1>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
             Set your private password to activate your account
@@ -276,7 +276,7 @@ const ActivateAccount = () => {
               Account Successfully Activated!
             </h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
-              Your private password has been set. You can now sign in with your email or assigned MAVI ID.
+              Your private password has been set. You can now sign in with your email or assigned ETX ID.
             </p>
             <button
               onClick={() => {

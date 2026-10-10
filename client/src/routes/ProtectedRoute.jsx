@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { getDashboardRouteForRole } from '../utils/roleRouting';
 
 /**
  * ProtectedRoute — guards routes behind authentication.
@@ -12,6 +13,7 @@ import { AuthContext } from '../context/AuthContext';
  */
 const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
   const { user, loading } = useContext(AuthContext);
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -59,9 +61,9 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
         <div className="glass-card-static" style={{ maxWidth: '450px', padding: '2.5rem' }}>
           <h2 style={{ marginBottom: '1rem' }}>Account Suspended</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            Your account has been suspended by an administrator. Access to MAVI Linking features is restricted.
+            Your account has been suspended by an administrator. Access to EduTalentX features is restricted.
           </p>
-          <a href="mailto:support@mavilinking.com" className="btn btn-primary">Contact Support</a>
+          <a href="mailto:support@edutalentx.com" className="btn btn-primary">Contact Support</a>
         </div>
       </div>
     );
@@ -79,7 +81,7 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
   const isStudentRole = normalizedUserRoles.includes('user') && !isSuperAdmin && !isInstAdmin && !normalizedUserRoles.includes('teacher') && !normalizedUserRoles.includes('recruiter') && !normalizedUserRoles.includes('department_admin');
   if (isStudentRole) {
     if (!user.emailVerified) {
-      return <Navigate to={`/verify/${user.maviId || 'account'}`} replace />;
+      return <Navigate to={`/verify/${user.etxId || 'account'}`} replace />;
     }
     if (user.accountStatus === 'REJECTED') {
       return <Navigate to="/pending-approval" replace />;
@@ -87,13 +89,17 @@ const ProtectedRoute = ({ children, roles, redirectTo = '/login' }) => {
     // Pre-approval student accounts (PENDING_ADMIN_APPROVAL / PENDING_VERIFICATION) are permitted to access the limited Student Dashboard shell!
   }
 
+  // If the user is accessing the edit profile flow on /dashboard or /profile/edit,
+  // allow any authenticated active user to edit their profile
+  const isEditProfileFlow = (location.pathname === '/dashboard' && location.search.includes('edit=true')) || location.pathname === '/profile/edit';
+  if (isEditProfileFlow) {
+    return children;
+  }
+
   if (roles && roles.length > 0) {
     const hasRole = roles.some((r) => normalizedUserRoles.includes(r));
     if (!hasRole && !isSuperAdmin) {
-      if (isInstAdmin) return <Navigate to="/dashboard/admin" />;
-      if (normalizedUserRoles.includes('recruiter')) return <Navigate to="/dashboard/recruiter" />;
-      if (normalizedUserRoles.includes('teacher')) return <Navigate to="/dashboard/teacher" />;
-      return <Navigate to="/dashboard" />;
+      return <Navigate to={getDashboardRouteForRole(user)} replace />;
     }
   }
 

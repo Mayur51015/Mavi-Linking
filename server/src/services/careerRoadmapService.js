@@ -483,8 +483,8 @@ const generateCareerRoadmap = async (userId, customTargetRole = null) => {
         client = new OpenAI({ apiKey: openaiApiKey });
       }
 
-      const prompt = `You are the Lead Career Architect of MAVI Linking, an advanced AI developer platform.
-Analyze the following student profile and generate a highly personalized, practical MAVI Career Roadmap for their target career goal.
+      const prompt = `You are the Lead Career Architect of EduTalentX, an advanced AI developer platform.
+Analyze the following student profile and generate a highly personalized, practical EduTalentX Career Roadmap for their target career goal.
 
 STUDENT PROFILE:
 - Name: ${user.name}
@@ -609,7 +609,7 @@ Return a strictly valid JSON object (no markdown, no backticks, only JSON) match
     {
       ...generatedData,
       user: userId,
-      maviId: user.maviId || '',
+      etxId: user.etxId || '',
       generatedAt: new Date(),
       lastProfileSyncAt: new Date(),
       status: 'active',

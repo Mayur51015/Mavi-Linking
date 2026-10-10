@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 
 /**
@@ -28,12 +29,34 @@ const protect = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_mavi_secret_key_2026');
 
-    // Attach user to request (exclude password)
-    const user = await User.findById(decoded.id).select('-password');
+    const userId = decoded.id || decoded._id || decoded.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        code: 'INVALID_TOKEN',
+        message: 'Access denied. Invalid token payload.',
+      });
+    }
+
+    // Attach user to request (exclude password) — safe ObjectId and fallback lookup
+    let user;
+    if (mongoose.Types.ObjectId.isValid(userId)) {
+      user = await User.findById(userId).select('-password');
+    } else {
+      user = await User.findOne({
+        $or: [
+          { etxId: String(userId).toUpperCase() },
+          { adminId: String(userId).toUpperCase() },
+          { adminLoginId: String(userId).toUpperCase() },
+          { email: String(userId).toLowerCase() },
+        ],
+      }).select('-password');
+    }
 
     if (!user) {
       return res.status(401).json({
         success: false,
+        code: 'USER_NOT_FOUND',
         message: 'Token is valid but user no longer exists.',
       });
     }
@@ -145,7 +168,7 @@ const protect = async (req, res, next) => {
             message: 'Please verify your email address before accessing your account.',
             data: {
               email: user.email,
-              maviId: user.maviId,
+              etxId: user.etxId,
               accountStatus: user.accountStatus,
               emailVerified: false,
             },
@@ -160,7 +183,7 @@ const protect = async (req, res, next) => {
           message: 'Your account registration was rejected by your institution administrator.',
           data: {
             email: user.email,
-            maviId: user.maviId,
+            etxId: user.etxId,
             accountStatus: 'REJECTED',
             rejectionReason: user.rejectionReason || 'Registration rejected by administrator.',
           },
@@ -184,35 +207,49 @@ const protect = async (req, res, next) => {
             message: 'Verification Required. This feature will become available after your account is approved by your institution administrator.',
             data: {
               accountStatus: user.accountStatus,
-              maviId: user.maviId,
+              etxId: user.etxId,
             },
           });
         }
       }
     }
 
-    next();
   } catch (error) {
-    // Differentiate between expired and malformed tokens
+    console.error('[Protect Auth Middleware Error]:', error.message || error);
+
+    // Differentiate between expired, malformed, and invalid tokens (always 401 Unauthorized)
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
+        code: 'TOKEN_EXPIRED',
         message: 'Token has expired. Please login again.',
       });
     }
 
-    if (error.name === 'JsonWebTokenError') {
+    if (error.name === 'JsonWebTokenError' || error.name === 'NotBeforeError') {
       return res.status(401).json({
         success: false,
+        code: 'INVALID_TOKEN',
         message: 'Invalid token.',
       });
     }
 
-    return res.status(500).json({
+    if (error.name === 'CastError') {
+      return res.status(401).json({
+        success: false,
+        code: 'INVALID_TOKEN_IDENTIFIER',
+        message: 'Invalid token user identifier.',
+      });
+    }
+
+    return res.status(401).json({
       success: false,
-      message: 'Authentication error.',
+      code: 'AUTH_FAILED',
+      message: 'Authentication error. Please login again.',
     });
   }
+
+  next();
 };
 
 module.exports = { protect };

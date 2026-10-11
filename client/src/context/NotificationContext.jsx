@@ -166,12 +166,11 @@ export const NotificationProvider = ({ children }) => {
   // Clean slate on user identity change or logout to avoid cross-user state leakage
   useEffect(() => {
     setNotifications([]);
-    setUnreadCount(0);
     setError(null);
-    if (user?._id && hasValidSession()) {
-      fetchUnreadCount();
+    if (!user?._id || !hasValidSession()) {
+      setUnreadCount(0);
     }
-  }, [user?._id, hasValidSession, fetchUnreadCount]);
+  }, [user?._id, hasValidSession]);
 
 
   const value = useMemo(

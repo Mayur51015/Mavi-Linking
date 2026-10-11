@@ -10,7 +10,7 @@ const Department = require('../models/Department');
 const Project = require('../models/Project');
 const crypto = require('crypto');
 const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml, sendAccountLifecycleEmail, getClientBaseUrl } = require('../utils/sendEmail');
-const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
+const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt, getResendRateLimitConfig } = require('../config/invitationConfig');
 
 /**
  * @desc    Get Admin Dashboard metrics (Platform-wide or Institution-scoped)
@@ -1896,13 +1896,32 @@ const resendUserInvitation = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Target user not found.' });
     }
 
+    // Tenant Isolation Check
+    if (req.institutionScope?.institutionId) {
+      const reqInstId = req.institutionScope.institutionId.toString();
+      const userInstId = (user.institutionId?._id || user.institutionId || '').toString();
+      if (userInstId !== reqInstId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden. You cannot resend invitations for another institution.',
+        });
+      }
+    }
+
+    const { cooldownSeconds } = getResendRateLimitConfig();
+    const cooldownMs = cooldownSeconds * 1000;
+
     // Rate Limit: 60s cooldown
-    if (user.invitedAt && Date.now() - new Date(user.invitedAt).getTime() < 60000) {
-      const remainingSecs = Math.ceil((60000 - (Date.now() - new Date(user.invitedAt).getTime())) / 1000);
+    if (user.invitedAt && Date.now() - new Date(user.invitedAt).getTime() < cooldownMs) {
+      const remainingSecs = Math.max(1, Math.ceil((cooldownMs - (Date.now() - new Date(user.invitedAt).getTime())) / 1000));
+      res.set('Retry-After', String(remainingSecs));
       return res.status(429).json({
         success: false,
         code: 'RATE_LIMITED',
         message: `Please wait ${remainingSecs} seconds before resending another invitation email.`,
+        data: {
+          retryAfter: remainingSecs,
+        },
       });
     }
 
@@ -1912,12 +1931,43 @@ const resendUserInvitation = async (req, res, next) => {
     const invitationExpires = getAdminInvitationExpiresAt();
     const expiryHours = getAdminInvitationExpiryHours();
 
-    user.invitationToken = hashedInviteToken;
-    user.invitationExpires = invitationExpires;
-    user.accountStatus = 'INVITED';
-    user.status = 'invited';
-    user.invitedAt = new Date();
-    await user.save();
+    // Atomic concurrency guard: claim resend slot
+    const cooldownThreshold = new Date(Date.now() - cooldownMs);
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        $or: [
+          { invitedAt: { $exists: false } },
+          { invitedAt: null },
+          { invitedAt: { $lte: cooldownThreshold } },
+        ],
+      },
+      {
+        $set: {
+          invitationToken: hashedInviteToken,
+          invitationExpires,
+          accountStatus: 'INVITED',
+          status: 'invited',
+          invitedAt: new Date(),
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      const refreshed = await User.findById(user._id).select('invitedAt');
+      const timeSinceLast = refreshed?.invitedAt ? Date.now() - new Date(refreshed.invitedAt).getTime() : 0;
+      const remainingSecs = Math.max(1, Math.ceil((cooldownMs - timeSinceLast) / 1000));
+      res.set('Retry-After', String(remainingSecs));
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMITED',
+        message: `Please wait ${remainingSecs} seconds before resending another invitation email.`,
+        data: {
+          retryAfter: remainingSecs,
+        },
+      });
+    }
 
     const clientUrl = process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || 'http://localhost:5173';
     const isAdminRole = ['platform_owner', 'super_admin', 'institution_admin', 'department_admin', 'placement_admin', 'academic_admin', 'finance_admin', 'training_admin', 'admin'].includes(user.role) || user.role?.includes('admin');

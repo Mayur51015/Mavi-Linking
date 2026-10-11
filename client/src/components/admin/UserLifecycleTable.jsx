@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Eye,
   Edit2,
@@ -33,6 +33,30 @@ export default function UserLifecycleTable({
   const [modalType, setModalType] = useState(null); // 'view' | 'edit' | 'suspend' | 'deactivate' | 'reactivate' | 'permanent_delete'
   const [actionLoading, setActionLoading] = useState(false);
   const [assigningFacultyUser, setAssigningFacultyUser] = useState(null);
+  const [resendingUserId, setResendingUserId] = useState(null);
+  const [cooldowns, setCooldowns] = useState({});
+
+  useEffect(() => {
+    const hasActiveCooldown = Object.values(cooldowns).some((t) => t > Date.now());
+    if (!hasActiveCooldown) return;
+
+    const timer = setInterval(() => {
+      setCooldowns((prev) => {
+        const now = Date.now();
+        let changed = false;
+        const next = { ...prev };
+        for (const [id, expireTime] of Object.entries(next)) {
+          if (expireTime <= now) {
+            delete next[id];
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [cooldowns]);
 
   const openModal = (user, type) => {
     setSelectedUser(user);
@@ -64,7 +88,6 @@ export default function UserLifecycleTable({
         await api.put(`/admin/users/${selectedUser._id}`, formData);
         alert(`User profile for ${selectedUser.email} updated successfully.`);
       }
-
       closeModal();
       if (onRefresh) onRefresh();
     } catch (err) {
@@ -77,30 +100,44 @@ export default function UserLifecycleTable({
   };
 
   const handleResendInvite = async (user) => {
+    if (!user?._id) return;
+
+    if (cooldowns[user._id] && cooldowns[user._id] > Date.now()) {
+      const remaining = Math.ceil((cooldowns[user._id] - Date.now()) / 1000);
+      alert(`Please wait ${remaining} seconds before resending another invitation email.`);
+      return;
+    }
+
+    if (resendingUserId === user._id || actionLoading) return;
+
+    setResendingUserId(user._id);
     try {
-      setActionLoading(true);
-      let res = null;
+      // Determine the single authoritative endpoint based on user role and caller role
+      let endpoint;
       if (user.role === 'department_admin') {
-        res = await api.post(`/admin/department-admins/${user._id}/resend-invite`).catch(() => null);
-        if (!res) res = await api.post(`/admin/users/${user._id}/resend-invitation`).catch(() => null);
-      } else if (['institution_admin', 'super_admin', 'platform_owner', 'academic_admin', 'placement_admin', 'finance_admin', 'training_admin'].includes(user.role) || user.role?.includes('admin')) {
-        res = await api.post(`/owner/admins/${user._id}/resend-invite`).catch(() => null);
-        if (!res) res = await api.post(`/super-admin/admins/${user._id}/resend-invite`).catch(() => null);
-        if (!res) res = await api.post(`/admin/users/${user._id}/resend-invitation`).catch(() => null);
+        endpoint = `/admin/department-admins/${user._id}/resend-invite`;
+      } else if (['platform_owner', 'owner'].includes(currentUserRole) && (['super_admin', 'institution_admin', 'admin'].includes(user.role) || user.role?.includes('admin'))) {
+        endpoint = `/owner/admins/${user._id}/resend-invite`;
+      } else if (currentUserRole === 'super_admin' && (['institution_admin', 'admin'].includes(user.role) || user.role?.includes('admin'))) {
+        endpoint = `/super-admin/admins/${user._id}/resend-invite`;
       } else {
-        res = await api.post(`/admin/users/${user._id}/resend-invitation`).catch(() => null);
+        endpoint = `/admin/users/${user._id}/resend-invitation`;
       }
 
-      if (res?.data?.success || res?.status === 200) {
-        alert(res.data?.message || `New 24-hour invitation and setup email dispatched to ${user.email}`);
-      } else {
-        alert(res?.data?.message || 'Failed to dispatch email. Please check server logs.');
-      }
+      const res = await api.post(endpoint);
+      setCooldowns((prev) => ({ ...prev, [user._id]: Date.now() + 60000 }));
+      alert(res.data?.message || `New invitation and setup email dispatched to ${user.email}`);
       if (onRefresh) onRefresh();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to resend invitation email.');
+      if (err.response?.status === 429) {
+        const retryAfter = err.response.data?.data?.retryAfter || parseInt(err.response.headers?.['retry-after'], 10) || 60;
+        setCooldowns((prev) => ({ ...prev, [user._id]: Date.now() + retryAfter * 1000 }));
+        alert(err.response.data?.message || `Rate limit active: please wait ${retryAfter}s before retrying.`);
+      } else {
+        alert(err.response?.data?.message || 'Failed to resend invitation email.');
+      }
     } finally {
-      setActionLoading(false);
+      setResendingUserId(null);
     }
   };
 
@@ -332,24 +369,33 @@ export default function UserLifecycleTable({
                       </button>
 
                       {/* Resend Invite / Setup Mail Action */}
-                      {!u.isDeleted && u.accountStatus !== 'PERMANENTLY_DELETED' && (
-                        <button
-                          onClick={() => handleResendInvite(u)}
-                          className="btn btn-outline"
-                          title="Resend 24-Hour Invitation / Setup Email"
-                          style={{
-                            padding: '0.25rem 0.5rem',
-                            fontSize: '0.75rem',
-                            borderColor: 'var(--accent-purple, #a855f7)',
-                            color: 'var(--accent-purple, #a855f7)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.2rem',
-                          }}
-                        >
-                          <Mail size={13} /> Resend Mail
-                        </button>
-                      )}
+                      {!u.isDeleted && u.accountStatus !== 'PERMANENTLY_DELETED' && (() => {
+                        const userCooldown = cooldowns[u._id] ? Math.max(0, Math.ceil((cooldowns[u._id] - Date.now()) / 1000)) : 0;
+                        const isResending = resendingUserId === u._id;
+                        const isBtnDisabled = actionLoading || isResending || userCooldown > 0;
+                        return (
+                          <button
+                            onClick={() => handleResendInvite(u)}
+                            disabled={isBtnDisabled}
+                            className="btn btn-outline"
+                            title={userCooldown > 0 ? `Please wait ${userCooldown}s before resending` : 'Resend 24-Hour Invitation / Setup Email'}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              fontSize: '0.75rem',
+                              borderColor: 'var(--accent-purple, #a855f7)',
+                              color: 'var(--accent-purple, #a855f7)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.2rem',
+                              opacity: isBtnDisabled ? 0.6 : 1,
+                              cursor: isBtnDisabled ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            <Mail size={13} className={isResending ? 'animate-spin' : ''} />
+                            {isResending ? 'Sending...' : userCooldown > 0 ? `Wait ${userCooldown}s` : 'Resend Mail'}
+                          </button>
+                        );
+                      })()}
 
                       {/* Suspend / Reactivate Action */}
                       {isSuspended || isDeactivated ? (

@@ -4,7 +4,7 @@ const Department = require('../models/Department');
 const Institution = require('../models/Institution');
 const AuditLog = require('../models/AuditLog');
 const { sendEmail, sendAdminInvitationEmail, generateAccountInvitationEmailHtml, getClientBaseUrl } = require('../utils/sendEmail');
-const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt } = require('../config/invitationConfig');
+const { getAdminInvitationExpiryHours, getAdminInvitationExpiresAt, getResendRateLimitConfig } = require('../config/invitationConfig');
 
 /**
  * @desc    Create a new institution-provisioned Department Admin account
@@ -584,23 +584,63 @@ const resendDepartmentAdminInvite = async (req, res, next) => {
       }
     }
 
-    // Rate Limit: Minimum 60s resend interval
-    if (deptAdmin.invitedAt && Date.now() - new Date(deptAdmin.invitedAt).getTime() < 60000) {
-      const remainingSecs = Math.ceil((60000 - (Date.now() - new Date(deptAdmin.invitedAt).getTime())) / 1000);
+    const { cooldownSeconds } = getResendRateLimitConfig();
+    const cooldownMs = cooldownSeconds * 1000;
+
+    // Rate Limit: Minimum cooldown interval
+    if (deptAdmin.invitedAt && Date.now() - new Date(deptAdmin.invitedAt).getTime() < cooldownMs) {
+      const remainingSecs = Math.max(1, Math.ceil((cooldownMs - (Date.now() - new Date(deptAdmin.invitedAt).getTime())) / 1000));
+      res.set('Retry-After', String(remainingSecs));
       return res.status(429).json({
         success: false,
         code: 'RATE_LIMITED',
         message: `Please wait ${remainingSecs} seconds before resending another invitation email.`,
+        data: {
+          retryAfter: remainingSecs,
+        },
       });
     }
 
     const rawInviteToken = crypto.randomBytes(32).toString('hex');
     const hashedInviteToken = crypto.createHash('sha256').update(rawInviteToken).digest('hex');
-    deptAdmin.invitationToken = hashedInviteToken;
-    deptAdmin.invitationExpires = getAdminInvitationExpiresAt();
-    deptAdmin.accountStatus = 'INVITED';
-    deptAdmin.invitedAt = new Date();
-    await deptAdmin.save();
+    const invitationExpires = getAdminInvitationExpiresAt();
+
+    // Atomic concurrency guard: only update if last invite was outside the cooldown window
+    const cooldownThreshold = new Date(Date.now() - cooldownMs);
+    const updatedAdmin = await User.findOneAndUpdate(
+      {
+        _id: deptAdmin._id,
+        $or: [
+          { invitedAt: { $exists: false } },
+          { invitedAt: null },
+          { invitedAt: { $lte: cooldownThreshold } },
+        ],
+      },
+      {
+        $set: {
+          invitationToken: hashedInviteToken,
+          invitationExpires,
+          accountStatus: 'INVITED',
+          invitedAt: new Date(),
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedAdmin) {
+      const refreshedAdmin = await User.findById(deptAdmin._id).select('invitedAt');
+      const timeSinceLast = refreshedAdmin?.invitedAt ? Date.now() - new Date(refreshedAdmin.invitedAt).getTime() : 0;
+      const remainingSecs = Math.max(1, Math.ceil((cooldownMs - timeSinceLast) / 1000));
+      res.set('Retry-After', String(remainingSecs));
+      return res.status(429).json({
+        success: false,
+        code: 'RATE_LIMITED',
+        message: `Please wait ${remainingSecs} seconds before resending another invitation email.`,
+        data: {
+          retryAfter: remainingSecs,
+        },
+      });
+    }
 
     const clientUrl = getClientBaseUrl(req);
     const invitationLink = `${clientUrl}/admin/accept-invite?token=${rawInviteToken}`;

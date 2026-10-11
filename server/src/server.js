@@ -174,10 +174,13 @@ app.use('/public', express.static(path.join(__dirname, '..', 'public')));
 
 // ─── Health Check ───────────────────────────────────────────────────────────
 const healthHandler = (req, res) => {
-  res.status(200).json({
-    success: true,
-    status: 'ok',
-    message: 'EduTalentX API is running',
+  const mongoose = require('mongoose');
+  const isDbConnected = mongoose.connection.readyState === 1;
+  res.status(isDbConnected ? 200 : 503).json({
+    success: isDbConnected,
+    status: isDbConnected ? 'ok' : 'degraded',
+    message: isDbConnected ? 'EduTalentX API is running' : 'EduTalentX API is degraded: database disconnected',
+    database: isDbConnected ? 'connected' : 'disconnected',
     environment: process.env.NODE_ENV || 'production',
     timestamp: new Date().toISOString(),
   });
@@ -242,10 +245,14 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    // Validate payment provider credentials in production mode (fail fast with safe error)
-    if (process.env.NODE_ENV === 'production') {
-      const { getPaymentProvider } = require('./services/paymentProvider');
-      getPaymentProvider().validateConfig();
+    // Validate payment provider credentials in production mode (warn gracefully if unconfigured)
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const { getPaymentProvider } = require('./services/paymentProvider');
+        getPaymentProvider().validateConfig();
+      }
+    } catch (paymentConfigErr) {
+      console.warn('⚠️  [PAYMENT WARNING] Payment provider configuration incomplete:', paymentConfigErr.message);
     }
 
     // ─── One-time role migration & admin bootstrap ───────────────────────────

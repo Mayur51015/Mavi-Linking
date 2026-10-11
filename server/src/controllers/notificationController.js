@@ -59,8 +59,15 @@ const markAllAsRead = async (req, res, next) => {
  */
 const getUnreadCount = async (req, res, next) => {
   try {
-    const count = await notificationService.getUnreadCount(req.user.id);
-    res.status(200).json({ success: true, data: { count } });
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. Authenticated user required.',
+      });
+    }
+    const count = await notificationService.getUnreadCount(userId);
+    res.status(200).json({ success: true, data: { count: count ?? 0 } });
   } catch (error) {
     next(error);
   }

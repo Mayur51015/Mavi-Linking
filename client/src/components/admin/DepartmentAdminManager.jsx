@@ -26,8 +26,31 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
   const [suspensionReason, setSuspensionReason] = useState('');
   const [suspending, setSuspending] = useState(false);
 
-  // Resend Invitation State
+  // Resend Invitation State & Cooldown Tracking
   const [resendingId, setResendingId] = useState(null);
+  const [cooldowns, setCooldowns] = useState({});
+
+  useEffect(() => {
+    const hasActiveCooldown = Object.values(cooldowns).some((t) => t > Date.now());
+    if (!hasActiveCooldown) return;
+
+    const timer = setInterval(() => {
+      setCooldowns((prev) => {
+        const now = Date.now();
+        let changed = false;
+        const next = { ...prev };
+        for (const [id, expireTime] of Object.entries(next)) {
+          if (expireTime <= now) {
+            delete next[id];
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [cooldowns]);
 
   const loadData = async () => {
     setLoading(true);
@@ -61,15 +84,27 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
   }, [activeDepartment]);
 
   const handleResendInvite = async (adminId) => {
+    if (cooldowns[adminId] && cooldowns[adminId] > Date.now()) {
+      const remaining = Math.ceil((cooldowns[adminId] - Date.now()) / 1000);
+      toast.error(`Please wait ${remaining} seconds before resending another invitation email.`);
+      return;
+    }
+
     setResendingId(adminId);
     try {
-      const res = await api.post(`/admin/department-admins/${adminId}/resend-invite`).catch(() =>
-        api.post(`/admin/users/${adminId}/resend-invitation`)
-      );
+      const res = await api.post(`/admin/department-admins/${adminId}/resend-invite`);
       toast.success(res.data?.message || 'New 24-hour invitation email resent successfully!');
+      // Apply 60-second client-side cooldown
+      setCooldowns((prev) => ({ ...prev, [adminId]: Date.now() + 60000 }));
       loadData();
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to resend invitation email.'));
+      if (err.response?.status === 429) {
+        const retryAfter = err.response.data?.data?.retryAfter || parseInt(err.response.headers?.['retry-after'], 10) || 60;
+        setCooldowns((prev) => ({ ...prev, [adminId]: Date.now() + retryAfter * 1000 }));
+        toast.error(err.response.data?.message || `Rate limit active: please wait ${retryAfter}s before retrying.`);
+      } else {
+        toast.error(getErrorMessage(err, 'Failed to resend invitation email.'));
+      }
     } finally {
       setResendingId(null);
     }
@@ -220,15 +255,30 @@ const DepartmentAdminManager = ({ activeDepartment }) => {
                       </td>
                       <td style={{ padding: '0.85rem 1rem' }}>
                         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                          <button
-                            onClick={() => handleResendInvite(admin._id)}
-                            disabled={resendingId === admin._id}
-                            className="btn btn-outline"
-                            title="Resend 24-Hour Invitation Email"
-                            style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                          >
-                            <RefreshCw size={12} className={resendingId === admin._id ? 'animate-spin' : ''} /> Resend Invite
-                          </button>
+                          {(() => {
+                            const adminCooldown = cooldowns[admin._id] ? Math.max(0, Math.ceil((cooldowns[admin._id] - Date.now()) / 1000)) : 0;
+                            const isResendDisabled = resendingId === admin._id || adminCooldown > 0;
+                            return (
+                              <button
+                                onClick={() => handleResendInvite(admin._id)}
+                                disabled={isResendDisabled}
+                                className="btn btn-outline"
+                                title={adminCooldown > 0 ? `Please wait ${adminCooldown}s before resending` : 'Resend 24-Hour Invitation Email'}
+                                style={{
+                                  padding: '0.3rem 0.6rem',
+                                  fontSize: '0.75rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  opacity: isResendDisabled ? 0.65 : 1,
+                                  cursor: isResendDisabled ? 'not-allowed' : 'pointer',
+                                }}
+                              >
+                                <RefreshCw size={12} className={resendingId === admin._id ? 'animate-spin' : ''} />
+                                {resendingId === admin._id ? 'Sending...' : adminCooldown > 0 ? `Wait ${adminCooldown}s` : 'Resend Invite'}
+                              </button>
+                            );
+                          })()}
                           <button
                             onClick={() => setReassigningAdmin(admin)}
                             className="btn btn-outline"

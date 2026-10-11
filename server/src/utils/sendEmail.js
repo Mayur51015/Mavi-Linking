@@ -45,53 +45,76 @@ const resetTransporter = () => {
 };
 
 /**
- * Get or initialize Nodemailer transporter.
- * Uses dedicated SSL connection for Gmail without persistent pooling to prevent idle socket ECONNRESET.
+ * Read and normalize SMTP environment configuration
+ * Defaults to Brevo SMTP on port 587
+ */
+const getSmtpConfig = () => {
+  const host = (process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp-relay.brevo.com').trim();
+  const port = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
+  const user = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
+  const rawPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || '').trim();
+  const configuredFrom = (process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.EMAIL_FROM || '').trim();
+
+  // Strip enclosing quotes from password if present
+  const pass = rawPass.replace(/^["']|["']$/g, '');
+
+  return { host, port, user, pass, configuredFrom };
+};
+
+/**
+ * Validate required SMTP configuration at startup or runtime
+ */
+const validateSmtpConfig = () => {
+  const config = getSmtpConfig();
+  const missing = [];
+  if (!config.user) missing.push('SMTP_USER');
+  if (!config.pass) missing.push('SMTP_PASS');
+
+  if (missing.length > 0) {
+    return {
+      isValid: false,
+      missing,
+      error: `Missing required Brevo SMTP configuration: ${missing.join(', ')}. Set SMTP_USER and SMTP_PASS.`,
+    };
+  }
+
+  return { isValid: true, config };
+};
+
+/**
+ * Get or initialize Nodemailer transporter for Brevo SMTP.
+ * Enforces STARTTLS on port 587 with bounded socket timeouts.
  */
 const getTransporter = async (forceFresh = false) => {
   if (!forceFresh && cachedTransporter) {
     return cachedTransporter;
   }
 
-  const emailHost = (process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
-  const emailPort = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
-  const emailUser = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
-  const rawPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || '').trim();
+  const { host, port, user, pass } = getSmtpConfig();
 
-  // Normalize app password by stripping enclosing quotes, spaces, and carriage returns
-  const isGmail = emailHost.includes('gmail') || process.env.SMTP_SERVICE === 'gmail' || process.env.EMAIL_SERVICE === 'gmail';
-  const emailPass = isGmail
-    ? rawPass.replace(/^["']|["']$/g, '').replace(/\s+/g, '')
-    : rawPass.replace(/^["']|["']$/g, '');
-
-  if (emailUser && emailPass) {
-    // If an explicit port is set (e.g. SMTP_PORT=587 or SMTP_PORT=2525), respect it.
-    // Otherwise, default Gmail to port 465 (direct SSL) and generic SMTP to emailPort (default 587)
-    const explicitPort = process.env.SMTP_PORT || process.env.EMAIL_PORT;
-    const targetPort = explicitPort ? parseInt(explicitPort, 10) : (isGmail ? 465 : emailPort);
-    const isSecure = targetPort === 465 || process.env.SMTP_SECURE === 'true';
-
+  if (user && pass) {
+    const isSecurePort = port === 465;
     const transportConfig = {
-      host: isGmail ? 'smtp.gmail.com' : emailHost,
-      port: targetPort,
-      secure: isSecure,
-      auth: { user: emailUser, pass: emailPass },
+      host: host || 'smtp-relay.brevo.com',
+      port: port || 587,
+      secure: isSecurePort, // false on 587 for STARTTLS
+      requireTLS: !isSecurePort, // enforce STARTTLS on port 587
+      auth: { user, pass },
       connectionTimeout: 15000,
       greetingTimeout: 10000,
       socketTimeout: 15000,
-      ...(isSecure ? {} : {
-        tls: {
-          rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
-        },
-      }),
+      tls: {
+        rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
+        minVersion: 'TLSv1.2',
+      },
     };
 
     cachedTransporter = nodemailer.createTransport(transportConfig);
     return cachedTransporter;
   }
 
-  if (process.env.NODE_ENV === 'production' && !process.env.RESEND_API_KEY && !process.env.BREVO_API_KEY) {
-    console.error('❌ [EMAIL CONFIG ERROR] Missing SMTP credentials! Set SMTP_USER / EMAIL_USER and SMTP_PASS / EMAIL_PASS in Render environment variables for email delivery.');
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ [EMAIL CONFIG ERROR] Missing SMTP credentials! Set SMTP_USER and SMTP_PASS (Brevo SMTP key) in Render environment variables for email delivery.');
   }
 
   // Development/Test fallback to Ethereal if no credentials provided
@@ -107,50 +130,24 @@ const getTransporter = async (forceFresh = false) => {
 };
 
 /**
- * Verify SMTP connection safely (useful for startup diagnostics)
+ * Verify Brevo SMTP connection safely (used for startup diagnostics & health routes)
  */
 const verifySmtpConnection = async () => {
-  // If an HTTPS API provider is configured, verify and report ready
-  if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.trim()) {
-    return {
-      success: true,
-      status: 'SMTP_CONNECTED',
-      provider: 'resend-https-api',
-      port: 443,
-      secure: true,
-      message: 'Resend HTTPS API configured and ready (bypasses raw SMTP port blocking)',
-    };
-  }
+  const config = getSmtpConfig();
+  const validation = validateSmtpConfig();
 
-  if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY.trim()) {
-    return {
-      success: true,
-      status: 'SMTP_CONNECTED',
-      provider: 'brevo-https-api',
-      port: 443,
-      secure: true,
-      message: 'Brevo HTTPS API configured and ready (bypasses raw SMTP port blocking)',
-    };
-  }
-
-  const emailHost = (process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
-  const emailUser = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
-  const emailPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || '').trim();
-  const explicitPort = process.env.SMTP_PORT || process.env.EMAIL_PORT;
-  const isGmail = emailHost.includes('gmail') || process.env.SMTP_SERVICE === 'gmail' || process.env.EMAIL_SERVICE === 'gmail';
-  const targetPort = explicitPort ? parseInt(explicitPort, 10) : (isGmail ? 465 : 587);
-  const isSecure = targetPort === 465 || process.env.SMTP_SECURE === 'true';
-
-  if (!emailUser || !emailPass) {
+  if (!validation.isValid) {
     return {
       success: false,
       status: 'EMAIL_NOT_CONFIGURED',
       code: 'MISSING_CREDENTIALS',
-      host: emailHost,
-      port: targetPort,
-      error: 'SMTP credentials missing: configure SMTP_USER and SMTP_PASS (or EMAIL_USER and EMAIL_PASS)',
+      host: config.host,
+      port: config.port,
+      error: validation.error,
     };
   }
+
+  const isSecure = config.port === 465;
 
   try {
     const transporter = await getTransporter();
@@ -158,11 +155,13 @@ const verifySmtpConnection = async () => {
     return {
       success: true,
       status: 'SMTP_CONNECTED',
-      provider: isGmail ? 'gmail' : emailHost,
-      host: emailHost,
-      port: targetPort,
+      provider: 'brevo-smtp',
+      host: config.host,
+      port: config.port,
       secure: isSecure,
-      userMasked: maskEmail(emailUser),
+      requireTLS: !isSecure,
+      userMasked: maskEmail(config.user),
+      message: 'Brevo SMTP connected and verified successfully',
     };
   } catch (err) {
     resetTransporter();
@@ -170,26 +169,25 @@ const verifySmtpConnection = async () => {
     let errorMessage = err.message || 'SMTP connection failed';
     if (err.code === 'EAUTH' || err.responseCode === 535) {
       errorCode = 'EMAIL_AUTH_ERROR';
-      errorMessage = 'SMTP authentication failed: verify SMTP_USER and App Password';
+      errorMessage = 'Brevo SMTP authentication failed: verify SMTP_USER (login email) and SMTP_PASS (Brevo SMTP key)';
     } else if (err.code === 'ETIMEDOUT' || err.message?.includes('timeout')) {
       errorCode = 'EMAIL_CONNECTION_ERROR';
-      errorMessage = `Connection timeout connecting to ${emailHost}:${targetPort}. (Note: Render Free Tier blocks outbound SMTP ports 25, 465, and 587. Upgrade to Render Starter or set SMTP_PORT=2525 / RESEND_API_KEY).`;
+      errorMessage = `Connection timeout connecting to ${config.host}:${config.port}.`;
     } else if (err.code === 'ECONNREFUSED') {
       errorCode = 'EMAIL_CONNECTION_REFUSED';
-      errorMessage = `Connection refused by ${emailHost}:${targetPort}`;
+      errorMessage = `Connection refused by ${config.host}:${config.port}`;
     } else if (err.code === 'ENOTFOUND') {
       errorCode = 'EMAIL_DNS_ERROR';
-      errorMessage = `DNS resolution failed for ${emailHost}`;
+      errorMessage = `DNS resolution failed for ${config.host}`;
     }
 
     return {
       success: false,
       status: errorCode,
       code: err.code || errorCode,
-      host: emailHost,
-      port: targetPort,
-      secure: isSecure,
-      userMasked: maskEmail(emailUser),
+      host: config.host,
+      port: config.port,
+      userMasked: maskEmail(config.user),
       error: errorMessage,
     };
   }
@@ -232,7 +230,7 @@ const resolveRecipientEmail = async ({
 };
 
 /**
- * Centralized transactional email dispatch utility with automatic retry on socket reset
+ * Centralized transactional email dispatch utility with Nodemailer and Brevo SMTP
  */
 const sendEmail = async ({
   to,
@@ -249,6 +247,7 @@ const sendEmail = async ({
   teacherId,
   recruiterId,
   user,
+  transporter: customTransporter,
 }) => {
   let recipientEmail = await resolveRecipientEmail({
     to,
@@ -288,20 +287,19 @@ const sendEmail = async ({
     } catch (_) {}
   }
 
-  const emailHost = (process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
-  const isGmail = emailHost.includes('gmail') || process.env.SMTP_SERVICE === 'gmail' || process.env.EMAIL_SERVICE === 'gmail';
-  const emailUser = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
-  const configuredFrom = (process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.EMAIL_FROM || '').trim();
+  const smtpConfig = getSmtpConfig();
+  const emailUser = smtpConfig.user;
+  const configuredFrom = smtpConfig.configuredFrom;
 
   let fromAddress;
-  if (isGmail && emailUser) {
-    const nameMatch = configuredFrom.match(/^(?:"?([^"<]+)"?\s*)?/);
-    const displayName = (nameMatch && nameMatch[1] && nameMatch[1].trim() && !nameMatch[1].includes('@'))
-      ? nameMatch[1].trim()
-      : 'EduTalentX Security';
-    fromAddress = `"${displayName}" <${emailUser}>`;
+  if (configuredFrom) {
+    if (configuredFrom.includes('<') && configuredFrom.includes('>')) {
+      fromAddress = configuredFrom;
+    } else {
+      fromAddress = `"EduTalentX Security" <${configuredFrom}>`;
+    }
   } else {
-    fromAddress = configuredFrom || `"EduTalentX Security" <${emailUser || 'noreply@edutalentx.com'}>`;
+    fromAddress = `"EduTalentX Security" <${emailUser || 'noreply@edutalentx.com'}>`;
   }
 
   const cleanSubject = (subject || 'EduTalentX Notification').trim();
@@ -315,7 +313,7 @@ const sendEmail = async ({
     html,
   };
 
-  // Safe structured logging for recipient resolution (Phase 10)
+  // Safe structured logging for recipient resolution (masking PII & credentials)
   console.log('[EMAIL] Sending email', {
     event: templateName || cleanSubject,
     recipientUserId: recipientUserId || assignedUserId || userId || studentId || null,
@@ -326,7 +324,8 @@ const sendEmail = async ({
     to: mailOptions.to,
   });
 
-  if (process.env.NODE_ENV === 'test') {
+  // Automated test mock check (when not testing with custom mocked transporter)
+  if (process.env.NODE_ENV === 'test' && !customTransporter && !process.env.FORCE_LIVE_SMTP) {
     const mockResult = {
       success: true,
       status: 'EMAIL_ACCEPTED',
@@ -346,97 +345,13 @@ const sendEmail = async ({
     return mockResult;
   }
 
-  // Option A: If RESEND_API_KEY is configured, dispatch over HTTPS port 443 (bypasses Render SMTP port block)
-  if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.trim()) {
-    try {
-      const axios = require('axios');
-      const resendRes = await axios.post(
-        'https://api.resend.com/emails',
-        {
-          from: mailOptions.from,
-          to: [cleanRecipient],
-          subject: cleanSubject,
-          html: html || undefined,
-          text: cleanText,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.RESEND_API_KEY.trim()}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 15000,
-        }
-      );
-      const resendId = resendRes.data?.id || `resend_${Date.now()}`;
-      console.log(`[EMAIL ACCEPTED (RESEND API)] messageId=${resendId} recipient=${maskEmail(cleanRecipient)}`);
-      return {
-        success: true,
-        status: 'EMAIL_ACCEPTED',
-        messageId: resendId,
-        accepted: [cleanRecipient],
-        rejected: [],
-        response: '250 OK (Resend HTTPS API)',
-        envelope: { from: mailOptions.from, to: [cleanRecipient] },
-      };
-    } catch (apiErr) {
-      console.error('[EMAIL RESEND API ERROR]', apiErr.response?.data || apiErr.message);
-      return {
-        success: false,
-        status: 'EMAIL_DELIVERY_ERROR',
-        error: apiErr.response?.data?.message || apiErr.message,
-      };
-    }
-  }
-
-  // Option B: If BREVO_API_KEY is configured, dispatch over HTTPS port 443 (bypasses Render SMTP port block)
-  if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY.trim()) {
-    try {
-      const axios = require('axios');
-      const brevoRes = await axios.post(
-        'https://api.brevo.com/v3/smtp/email',
-        {
-          sender: { email: emailUser || 'noreply@edutalentx.com', name: 'EduTalentX Security' },
-          to: [{ email: cleanRecipient }],
-          subject: cleanSubject,
-          htmlContent: html || undefined,
-          textContent: cleanText,
-        },
-        {
-          headers: {
-            'api-key': process.env.BREVO_API_KEY.trim(),
-            'Content-Type': 'application/json',
-          },
-          timeout: 15000,
-        }
-      );
-      const brevoId = brevoRes.data?.messageId || `brevo_${Date.now()}`;
-      console.log(`[EMAIL ACCEPTED (BREVO API)] messageId=${brevoId} recipient=${maskEmail(cleanRecipient)}`);
-      return {
-        success: true,
-        status: 'EMAIL_ACCEPTED',
-        messageId: brevoId,
-        accepted: [cleanRecipient],
-        rejected: [],
-        response: '250 OK (Brevo HTTPS API)',
-        envelope: { from: mailOptions.from, to: [cleanRecipient] },
-      };
-    } catch (apiErr) {
-      console.error('[EMAIL BREVO API ERROR]', apiErr.response?.data || apiErr.message);
-      return {
-        success: false,
-        status: 'EMAIL_DELIVERY_ERROR',
-        error: apiErr.response?.data?.message || apiErr.message,
-      };
-    }
-  }
-
-  // Option C: Standard Nodemailer SMTP transport
+  // Dispatch message through Nodemailer with Brevo SMTP
   const dispatchOnce = async (transporterInstance) => {
     return await transporterInstance.sendMail(mailOptions);
   };
 
   try {
-    let transporter = await getTransporter();
+    let transporter = customTransporter || await getTransporter();
     let info;
 
     try {
@@ -446,7 +361,8 @@ const sendEmail = async ({
         firstErr.message?.includes('ECONNRESET') ||
         firstErr.message?.includes('socket closed');
 
-      if (isSocketDrop) {
+      // Bounded single retry on socket reset when using shared transporter
+      if (isSocketDrop && !customTransporter) {
         console.warn(`[EMAIL RETRY] Socket disconnect detected (${firstErr.message}). Re-establishing fresh SMTP connection...`);
         resetTransporter();
         const freshTransporter = await getTransporter(true);
@@ -459,7 +375,6 @@ const sendEmail = async ({
     const accepted = Array.isArray(info.accepted) ? info.accepted : [];
     const rejected = Array.isArray(info.rejected) ? info.rejected : [];
 
-    // Capture and inspect the Nodemailer result (Phase 11)
     console.log('[EMAIL SMTP RESULT]', {
       messageId: info.messageId,
       accepted,
@@ -468,7 +383,6 @@ const sendEmail = async ({
       response: info.response,
     });
 
-    // Verify recipient acceptance from the SMTP server
     if (rejected.length > 0 && accepted.length === 0) {
       console.error(`[EMAIL REJECTED] Recipient rejected by SMTP: ${rejected.join(', ')} (${info.response || 'No response'})`);
       return {
@@ -499,11 +413,6 @@ const sendEmail = async ({
 
     console.log(`[EMAIL ACCEPTED] messageId=${info.messageId} recipient=${maskEmail(cleanRecipient)} response="${info.response || '250 OK'}"`);
 
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    if (previewUrl) {
-      console.log(`[EMAIL PREVIEW URL] ${previewUrl}`);
-    }
-
     return {
       success: true,
       status: 'EMAIL_ACCEPTED',
@@ -512,26 +421,27 @@ const sendEmail = async ({
       rejected,
       response: info.response,
       envelope: info.envelope,
-      previewUrl: previewUrl || null,
     };
   } catch (error) {
-    resetTransporter();
+    if (!customTransporter) {
+      resetTransporter();
+    }
     let errorStatus = 'EMAIL_DELIVERY_ERROR';
     let errorMessage = error.message || errorStatus;
     if (error.code === 'EAUTH' || error.responseCode === 535) {
       errorStatus = 'EMAIL_AUTH_ERROR';
-      errorMessage = 'SMTP authentication failed: verify SMTP_USER and App Password';
+      errorMessage = 'Brevo SMTP authentication failed: verify SMTP_USER and SMTP_PASS (Brevo SMTP key)';
     } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT' || error.code === 'ESOCKET' || error.code === 'ECONNRESET') {
       errorStatus = 'EMAIL_CONNECTION_ERROR';
       if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) {
-        errorMessage = `SMTP connection timeout. (Note: Render Free Tier blocks outbound SMTP ports 25, 465, and 587. Upgrade to Render Starter or set SMTP_PORT=2525 / RESEND_API_KEY).`;
+        errorMessage = `SMTP connection timeout connecting to ${smtpConfig.host}:${smtpConfig.port}`;
       }
     } else if (error.code === 'ENOTFOUND') {
       errorStatus = 'EMAIL_DNS_ERROR';
-      errorMessage = `DNS resolution failed for SMTP host: ${error.hostname || 'unknown'}`;
+      errorMessage = `DNS resolution failed for SMTP host: ${error.hostname || smtpConfig.host}`;
     } else if (error.code === 'ECONNREFUSED') {
       errorStatus = 'EMAIL_CONNECTION_REFUSED';
-      errorMessage = `Connection refused by SMTP host`;
+      errorMessage = `Connection refused by SMTP host ${smtpConfig.host}:${smtpConfig.port}`;
     } else if (error.code === 'EENVELOPE') {
       errorStatus = 'EMAIL_CONFIGURATION_ERROR';
     }
@@ -1017,6 +927,7 @@ const sendAdminInvitationEmail = async ({
   invitationLink,
   expiresMinutes = 10,
   expiresHours,
+  transporter,
 }) => {
   let recipientEmail = to;
   if (!recipientEmail && recipientUserId) {
@@ -1047,6 +958,7 @@ const sendAdminInvitationEmail = async ({
     subject: `You've been invited to become a EduTalentX Administrator`,
     html,
     templateName: 'admin-invitation',
+    transporter,
   });
 };
 
@@ -1190,10 +1102,13 @@ const sendAssignmentNotificationEmail = async ({
   assignmentType = 'TASK_ASSIGNMENT',
   dueDate,
   actionLink,
+  studentId,
+  teacherId,
+  transporter,
 }) => {
   let recipientEmail = to;
-  if (!recipientEmail && recipientUserId) {
-    recipientEmail = await resolveRecipientEmail({ recipientUserId });
+  if (!recipientEmail && (recipientUserId || studentId || teacherId)) {
+    recipientEmail = await resolveRecipientEmail({ recipientUserId, studentId, teacherId });
   }
 
   if (!recipientEmail || typeof recipientEmail !== 'string' || !recipientEmail.includes('@')) {
@@ -1256,6 +1171,7 @@ const sendAssignmentNotificationEmail = async ({
     subject: `EduTalentX: ${title}`,
     html,
     templateName: `assignment-${assignmentType.toLowerCase().replace(/_/g, '-')}`,
+    transporter,
   });
 };
 
@@ -1304,6 +1220,8 @@ module.exports = {
   sendAssignmentNotificationEmail,
   sendOwnerAlertEmail,
   verifySmtpConnection,
+  getSmtpConfig,
+  validateSmtpConfig,
   getClientBaseUrl,
   getTransporter,
   resetTransporter,

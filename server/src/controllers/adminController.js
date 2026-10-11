@@ -2015,13 +2015,19 @@ const resendUserInvitation = async (req, res, next) => {
       userAgent: req.headers['user-agent'] || '',
     });
 
+    const emailSent = Boolean(emailResult?.success);
+
     res.status(200).json({
       success: true,
-      message: `New 24-hour invitation email successfully dispatched to ${user.email}.`,
+      emailSent,
+      message: emailSent
+        ? `New 24-hour invitation email successfully dispatched to ${user.email}.`
+        : `Invitation updated, but email delivery failed (${emailResult?.error || 'mail server error'}). Please check SMTP configuration.`,
       data: {
-        emailSent: emailResult?.success ?? true,
+        emailSent,
         expiresAt: invitationExpires,
         validityHours: expiryHours,
+        error: emailResult?.error || null,
       },
     });
   } catch (error) {

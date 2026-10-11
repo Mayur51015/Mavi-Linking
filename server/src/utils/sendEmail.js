@@ -50,10 +50,20 @@ const resetTransporter = () => {
  */
 const getSmtpConfig = () => {
   const host = (process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp-relay.brevo.com').trim();
-  const port = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
+  let port = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
   const user = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
   const rawPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || '').trim();
-  const configuredFrom = (process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.EMAIL_FROM || '').trim();
+  let configuredFrom = (process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.EMAIL_FROM || '').trim();
+
+  // If host is Gmail and port was set to non-standard (e.g. 2525), auto-correct to 587
+  if (host.toLowerCase().includes('gmail') && port !== 465 && port !== 587) {
+    port = 587;
+  }
+
+  // Filter out obsolete resend.dev domain fallback if lingering in environment
+  if (configuredFrom.toLowerCase().includes('resend.dev')) {
+    configuredFrom = '';
+  }
 
   // Strip enclosing quotes from password if present
   const pass = rawPass.replace(/^["']|["']$/g, '');
@@ -82,7 +92,7 @@ const validateSmtpConfig = () => {
 };
 
 /**
- * Get or initialize Nodemailer transporter for Brevo SMTP.
+ * Get or initialize Nodemailer transporter for SMTP (Brevo or Gmail).
  * Enforces STARTTLS on port 587 with bounded socket timeouts.
  */
 const getTransporter = async (forceFresh = false) => {
@@ -93,21 +103,37 @@ const getTransporter = async (forceFresh = false) => {
   const { host, port, user, pass } = getSmtpConfig();
 
   if (user && pass) {
+    const isGmail = host.toLowerCase().includes('gmail');
     const isSecurePort = port === 465;
-    const transportConfig = {
-      host: host || 'smtp-relay.brevo.com',
-      port: port || 587,
-      secure: isSecurePort, // false on 587 for STARTTLS
-      requireTLS: !isSecurePort, // enforce STARTTLS on port 587
-      auth: { user, pass },
-      connectionTimeout: 15000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
-      tls: {
-        rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
-        minVersion: 'TLSv1.2',
-      },
-    };
+
+    const transportConfig = isGmail
+      ? {
+          host: 'smtp.gmail.com',
+          port: isSecurePort ? 465 : 587,
+          secure: isSecurePort,
+          requireTLS: !isSecurePort,
+          auth: { user, pass },
+          connectionTimeout: 15000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
+          tls: {
+            rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
+          },
+        }
+      : {
+          host: host || 'smtp-relay.brevo.com',
+          port: port || 587,
+          secure: isSecurePort, // false on 587 for STARTTLS
+          requireTLS: !isSecurePort, // enforce STARTTLS on port 587
+          auth: { user, pass },
+          connectionTimeout: 15000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
+          tls: {
+            rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
+            minVersion: 'TLSv1.2',
+          },
+        };
 
     cachedTransporter = nodemailer.createTransport(transportConfig);
     return cachedTransporter;
@@ -430,7 +456,10 @@ const sendEmail = async ({
     let errorMessage = error.message || errorStatus;
     if (error.code === 'EAUTH' || error.responseCode === 535) {
       errorStatus = 'EMAIL_AUTH_ERROR';
-      errorMessage = 'Brevo SMTP authentication failed: verify SMTP_USER and SMTP_PASS (Brevo SMTP key)';
+      const isGmail = (smtpConfig.host || '').toLowerCase().includes('gmail');
+      errorMessage = isGmail
+        ? 'Gmail SMTP authentication failed: verify EMAIL_USER and Gmail App Password (EMAIL_PASS)'
+        : 'Brevo SMTP authentication failed: verify SMTP_USER and SMTP_PASS (Brevo SMTP key)';
     } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT' || error.code === 'ESOCKET' || error.code === 'ECONNRESET') {
       errorStatus = 'EMAIL_CONNECTION_ERROR';
       if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) {

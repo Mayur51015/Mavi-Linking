@@ -61,7 +61,7 @@ describe('CORS Configuration Tests', () => {
         'Access-Control-Request-Method',
         'Access-Control-Request-Headers',
       ],
-      exposedHeaders: ['Content-Range', 'X-Content-Range', 'Authorization'],
+      exposedHeaders: ['Content-Range', 'X-Content-Range', 'Authorization', 'Content-Disposition'],
       maxAge: 86400,
       optionsSuccessStatus: 204,
     };
@@ -130,5 +130,13 @@ describe('CORS Configuration Tests', () => {
       .set('Origin', evilOrigin);
 
     expect(res.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  test('CORS response exposes Content-Disposition header for file downloads', async () => {
+    const res = await request(app)
+      .get('/api/billing/plans')
+      .set('Origin', stableVercelOrigin);
+
+    expect(res.headers['access-control-expose-headers']).toContain('Content-Disposition');
   });
 });

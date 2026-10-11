@@ -19,6 +19,8 @@ const {
   getOtpExpiresAt,
   isOtpExpired,
 } = require('../config/securityTokenConfig');
+const { STORAGE_BUCKETS } = require('../utils/fileValidation');
+const { getPublicUrl } = require('../services/supabaseStorageService');
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 const oauth2Client = new OAuth2Client(googleClientId);
@@ -696,6 +698,15 @@ const getMe = async (req, res, next) => {
       await user.save();
     }
 
+    // Auto-heal missing or relative avatar URL if user has a valid Supabase storage path
+    if (user && user.avatarStoragePath && (!user.avatar || !user.avatar.startsWith('http'))) {
+      const publicUrl = getPublicUrl(STORAGE_BUCKETS.PROFILE_IMAGES, user.avatarStoragePath);
+      if (publicUrl) {
+        user.avatar = publicUrl;
+        await user.save();
+      }
+    }
+
     res.status(200).json({
       success: true,
       data: { user },
@@ -721,7 +732,7 @@ const updateProfile = async (req, res, next) => {
     const updateFields = {};
 
     if (name && name.trim()) updateFields.name = name.trim();
-    if (avatar !== undefined && avatar !== null) updateFields.avatar = avatar;
+    if (typeof avatar === 'string' && avatar.trim().length > 0) updateFields.avatar = avatar.trim();
     if (username && username.trim().length >= 3 && /^[a-z0-9_-]{3,30}$/i.test(username.trim())) {
       updateFields.username = username.toLowerCase().trim();
     }

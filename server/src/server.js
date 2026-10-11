@@ -77,12 +77,24 @@ app.use(helmet({
       scriptSrc: ["'self'"],
       connectSrc: [
         "'self'", 
+        "blob:",
         "https://api.openai.com", 
         "https://api.groq.com", 
         "https://api.x.ai", 
-        "https://generativelanguage.googleapis.com"
+        "https://generativelanguage.googleapis.com",
+        "https://*.supabase.co",
+        "https://*.supabase.in"
       ],
-      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+      imgSrc: [
+        "'self'", 
+        "data:", 
+        "blob:",
+        "https://*.supabase.co", 
+        "https://*.supabase.in", 
+        "https://res.cloudinary.com",
+        "https://avatars.githubusercontent.com",
+        "https://*.googleusercontent.com"
+      ],
       styleSrc: ["'self'", "'unsafe-inline'"],
     },
   },
@@ -146,7 +158,7 @@ const corsOptions = {
     'Access-Control-Request-Method',
     'Access-Control-Request-Headers',
   ],
-  exposedHeaders: ['Content-Range', 'X-Content-Range', 'Authorization'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range', 'Authorization', 'Content-Disposition'],
   maxAge: 86400,
   optionsSuccessStatus: 204,
 };

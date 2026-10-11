@@ -322,9 +322,25 @@ const AppShell = ({
                 fontSize: '0.85rem',
                 color: 'var(--brand-blue)',
                 flexShrink: 0,
+                overflow: 'hidden',
               }}
             >
-              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+              {user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user?.name || 'User'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.nextSibling) {
+                      e.currentTarget.nextSibling.style.display = 'flex';
+                    }
+                  }}
+                />
+              ) : null}
+              <span style={{ display: user?.avatar ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+              </span>
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div
@@ -746,9 +762,25 @@ const AppShell = ({
                     fontSize: '0.85rem',
                     color: '#ffffff',
                     flexShrink: 0,
+                    overflow: 'hidden',
                   }}
                 >
-                  {user?.name?.charAt(0)?.toUpperCase() || 'M'}
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user?.name || 'User'}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextSibling) {
+                          e.currentTarget.nextSibling.style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <span style={{ display: user?.avatar ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                    {user?.name?.charAt(0)?.toUpperCase() || 'M'}
+                  </span>
                 </div>
                 <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', lineHeight: 1.2 }} className="hide-mobile">
                   <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>

@@ -12,6 +12,7 @@ const {
   uploadFile,
   getSignedUrl,
   getPublicUrl,
+  downloadFile,
   deleteFile,
   replaceFile,
   cleanupOrphan,
@@ -318,12 +319,23 @@ const getProfileDocument = async (req, res, next) => {
 
     // 1. Supabase Storage flow
     if (storagePath) {
-      const signedUrl = await getSignedUrl(bucket, storagePath, 3600);
-      if (signedUrl) {
-        if (format === 'json' || req.query.signedUrl === 'true') {
-          return res.status(200).json({ success: true, url: signedUrl, data: { signedUrl }, download: download === 'true' });
+      if (format === 'json' || req.query.signedUrl === 'true') {
+        const signedUrl = await getSignedUrl(bucket, storagePath, 3600);
+        if (signedUrl) {
+          return res.status(200).json({ success: true, url: signedUrl, downloadUrl: signedUrl, data: { signedUrl }, download: download === 'true' });
         }
-        return res.redirect(signedUrl);
+      }
+
+      // Stream file directly to prevent credentialed redirect CORS failures in Axios
+      const downloadResult = await downloadFile(bucket, storagePath);
+      if (downloadResult.success && downloadResult.buffer) {
+        const mimeType = downloadResult.contentType || docItem?.mimeType || 'application/pdf';
+        res.setHeader('Content-Type', mimeType);
+        const disposition = download === 'true' ? 'attachment' : 'inline';
+        const safeUser = (user.name || 'user').replace(/\s+/g, '_');
+        res.setHeader('Content-Disposition', `${disposition}; filename="${type}-${safeUser}.pdf"`);
+        res.setHeader('Cache-Control', 'private, max-age=3600');
+        return res.send(downloadResult.buffer);
       }
     }
 
@@ -623,12 +635,24 @@ const getCertificateFile = async (req, res, next) => {
     }
 
     if (cert.storagePath) {
-      const signedUrl = await getSignedUrl(cert.bucket || STORAGE_BUCKETS.CERTIFICATES, cert.storagePath, 3600);
-      if (signedUrl) {
-        if (format === 'json' || req.query.signedUrl === 'true') {
-          return res.status(200).json({ success: true, url: signedUrl, data: { signedUrl }, download: download === 'true' });
+      const bucket = cert.bucket || STORAGE_BUCKETS.CERTIFICATES;
+      if (format === 'json' || req.query.signedUrl === 'true') {
+        const signedUrl = await getSignedUrl(bucket, cert.storagePath, 3600);
+        if (signedUrl) {
+          return res.status(200).json({ success: true, url: signedUrl, downloadUrl: signedUrl, data: { signedUrl }, download: download === 'true' });
         }
-        return res.redirect(signedUrl);
+      }
+
+      // Stream file directly to prevent credentialed redirect CORS failures in Axios
+      const downloadResult = await downloadFile(bucket, cert.storagePath);
+      if (downloadResult.success && downloadResult.buffer) {
+        const mimeType = downloadResult.contentType || 'application/pdf';
+        res.setHeader('Content-Type', mimeType);
+        const disposition = download === 'true' ? 'attachment' : 'inline';
+        const safeTitle = (cert.title || 'certificate').replace(/\s+/g, '_');
+        res.setHeader('Content-Disposition', `${disposition}; filename="${safeTitle}.pdf"`);
+        res.setHeader('Cache-Control', 'private, max-age=3600');
+        return res.send(downloadResult.buffer);
       }
     }
 
@@ -883,12 +907,25 @@ const getPortfolioDocFile = async (req, res, next) => {
     // 1. Supabase Storage flow
     if (doc.storagePath) {
       const bucket = doc.bucket || getBucketForPortfolioCategory(doc.category);
-      const signedUrl = await getSignedUrl(bucket, doc.storagePath, 3600);
-      if (signedUrl) {
-        if (format === 'json') {
-          return res.status(200).json({ success: true, url: signedUrl, download: download === 'true' });
+      if (format === 'json' || req.query.signedUrl === 'true') {
+        const signedUrl = await getSignedUrl(bucket, doc.storagePath, 3600);
+        if (signedUrl) {
+          return res.status(200).json({ success: true, url: signedUrl, downloadUrl: signedUrl, data: { signedUrl }, download: download === 'true' });
         }
-        return res.redirect(signedUrl);
+      }
+
+      // Stream file directly to prevent credentialed redirect CORS failures in Axios
+      const downloadResult = await downloadFile(bucket, doc.storagePath);
+      if (downloadResult.success && downloadResult.buffer) {
+        const mimeType = downloadResult.contentType || doc.mimeType || 'application/pdf';
+        res.setHeader('Content-Type', mimeType);
+        const disposition = download === 'true' ? 'attachment' : 'inline';
+        const safeTitle = (doc.title || doc.originalName || 'document').replace(/\s+/g, '_');
+        const ext = doc.originalName && path.extname(doc.originalName) ? path.extname(doc.originalName) : '.pdf';
+        const filename = safeTitle.endsWith(ext) ? safeTitle : `${safeTitle}${ext}`;
+        res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
+        res.setHeader('Cache-Control', 'private, max-age=3600');
+        return res.send(downloadResult.buffer);
       }
     }
 

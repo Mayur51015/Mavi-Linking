@@ -11,6 +11,7 @@ const {
 const {
   uploadFile,
   getSignedUrl,
+  downloadFile,
   deleteFile,
   cleanupOrphan,
 } = require('../services/supabaseStorageService');
@@ -279,12 +280,24 @@ const downloadDocument = async (req, res, next) => {
 
     // 1. Supabase Storage flow
     if (doc.storagePath) {
-      const signedUrl = await getSignedUrl(doc.bucket || STORAGE_BUCKETS.INSTITUTION_DOCUMENTS, doc.storagePath, 3600);
-      if (signedUrl) {
-        if (req.query.format === 'json') {
-          return res.status(200).json({ success: true, url: signedUrl, download: true });
+      const bucket = doc.bucket || STORAGE_BUCKETS.INSTITUTION_DOCUMENTS;
+      if (req.query.format === 'json' || req.query.signedUrl === 'true') {
+        const signedUrl = await getSignedUrl(bucket, doc.storagePath, 3600);
+        if (signedUrl) {
+          return res.status(200).json({ success: true, url: signedUrl, downloadUrl: signedUrl, download: req.query.preview !== 'true' });
         }
-        return res.redirect(signedUrl);
+      }
+
+      // Stream file directly to prevent credentialed redirect CORS failures in Axios
+      const downloadResult = await downloadFile(bucket, doc.storagePath);
+      if (downloadResult.success && downloadResult.buffer) {
+        const mimeType = downloadResult.contentType || doc.fileType || 'application/pdf';
+        res.setHeader('Content-Type', mimeType);
+        const disposition = req.query.preview === 'true' ? 'inline' : 'attachment';
+        const safeName = (doc.fileName || doc.title || 'document.pdf').replace(/\s+/g, '_');
+        res.setHeader('Content-Disposition', `${disposition}; filename="${safeName}"`);
+        res.setHeader('Cache-Control', 'private, max-age=3600');
+        return res.send(downloadResult.buffer);
       }
     }
 

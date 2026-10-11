@@ -1963,12 +1963,32 @@ const Dashboard = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1rem', background: 'var(--bg-subtle, #F8FAFC)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                 <div style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid var(--brand-blue, #2563EB)' }}>
                   {user?.avatar ? (
-                    <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div className="avatar-gradient" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                      {user?.name?.charAt(0) || 'U'}
-                    </div>
-                  )}
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextSibling) {
+                          e.currentTarget.nextSibling.style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="avatar-gradient"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      display: user?.avatar ? 'none' : 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.5rem',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    {user?.name?.charAt(0) || 'U'}
+                  </div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>Profile Picture</div>

@@ -251,6 +251,34 @@ describe('EduTalentX — Supabase Storage Integration & File Validation Test Sui
       expect(res.body.success).toBe(false);
       expect(res.body.message).toContain('signature');
     });
+
+    test('profile update does not overwrite existing avatar when empty avatar string is sent', async () => {
+      const userBefore = await User.findById(studentUser._id);
+      expect(userBefore.avatar).toBeTruthy();
+
+      const res = await request(app)
+        .put('/api/auth/me')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({ name: 'Alice Student Updated', avatar: '' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.user.avatar).toBe(userBefore.avatar);
+
+      const userAfter = await User.findById(studentUser._id);
+      expect(userAfter.avatar).toBe(userBefore.avatar);
+    });
+
+    test('getMe auto-heals user.avatar from avatarStoragePath if avatar URL is missing', async () => {
+      const originalUser = await User.findById(studentUser._id);
+      await User.findByIdAndUpdate(studentUser._id, { $set: { avatar: '' } });
+
+      const res = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${studentToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.user.avatar).toContain('storage/v1/object/public/profile-images');
+    });
   });
 
   // ─── 3. RESUME UPLOADS & SHORT-LIVED SIGNED URLS (RESUMES BUCKET) ───────────
@@ -335,6 +363,16 @@ describe('EduTalentX — Supabase Storage Integration & File Validation Test Sui
       expect(res.status).toBe(404);
     });
 
+    test('streams certificate buffer directly with 200 OK to prevent CORS redirect failures', async () => {
+      const res = await request(app)
+        .get(`/api/auth/certificate/${certificateId}/file`)
+        .set('Authorization', `Bearer ${studentToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toContain('application/pdf');
+      expect(res.headers['content-disposition']).toContain('inline');
+    });
+
     test('deletes certificate record and cleans up storage', async () => {
       const res = await request(app)
         .delete(`/api/auth/certificate/${certificateId}`)
@@ -345,6 +383,67 @@ describe('EduTalentX — Supabase Storage Integration & File Validation Test Sui
 
       const userAfterDelete = await User.findById(studentUser._id);
       expect(userAfterDelete.certificates.some((c) => c._id.toString() === certificateId)).toBe(false);
+    });
+  });
+
+  // ─── 4b. PORTFOLIO DOCUMENTS & STREAMING (/api/auth/portfolio-doc) ─────────
+  describe('Portfolio Document Viewing & Direct Streaming (/api/auth/portfolio-doc)', () => {
+    let portfolioDocId = '';
+
+    test('creates portfolio document with PDF attachment in project-assets bucket', async () => {
+      const res = await request(app)
+        .post('/api/auth/portfolio-doc')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .field('title', 'Distributed Systems Whitepaper')
+        .field('category', 'Project Report')
+        .field('description', 'Technical report on Raft consensus implementation')
+        .attach('file', validPdfBuffer, 'whitepaper.pdf');
+
+      expect([200, 201]).toContain(res.status);
+      expect(res.body.success).toBe(true);
+
+      const user = await User.findById(studentUser._id);
+      const doc = user.portfolioDocs?.find(d => d.title === 'Distributed Systems Whitepaper');
+      expect(doc).toBeDefined();
+      expect(doc.storagePath).toMatch(/^portfolio\//);
+      portfolioDocId = doc._id.toString();
+    });
+
+    test('streams portfolio PDF directly with 200 OK, avoiding 302 redirect', async () => {
+      const res = await request(app)
+        .get(`/api/auth/portfolio-doc/${portfolioDocId}/file`)
+        .set('Authorization', `Bearer ${studentToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toContain('application/pdf');
+      expect(res.headers['content-disposition']).toContain('inline');
+    });
+
+    test('returns signed URL when client specifically requests format=json', async () => {
+      const res = await request(app)
+        .get(`/api/auth/portfolio-doc/${portfolioDocId}/file?format=json`)
+        .set('Authorization', `Bearer ${studentToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.url).toContain('storage/v1/object/sign/project-assets');
+    });
+
+    test('denies cross-user access to portfolio document', async () => {
+      const res = await request(app)
+        .get(`/api/auth/portfolio-doc/${portfolioDocId}/file`)
+        .set('Authorization', `Bearer ${otherStudentToken}`);
+
+      expect([403, 404]).toContain(res.status);
+    });
+
+    test('deletes portfolio document record', async () => {
+      const res = await request(app)
+        .delete(`/api/auth/portfolio-doc/${portfolioDocId}`)
+        .set('Authorization', `Bearer ${studentToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
     });
   });
 

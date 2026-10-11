@@ -46,17 +46,17 @@ const resetTransporter = () => {
 
 /**
  * Read and normalize SMTP environment configuration
- * Defaults to Brevo SMTP on port 587
+ * Defaults to Brevo SMTP on port 2525 (Render Free alternative to ports 25, 465, 587)
  */
 const getSmtpConfig = () => {
   const host = (process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp-relay.brevo.com').trim();
-  let port = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
+  let port = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 2525);
   const user = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
   const rawPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || '').trim();
   let configuredFrom = (process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.EMAIL_FROM || '').trim();
 
-  // If host is Gmail and port was set to non-standard (e.g. 2525), auto-correct to 587
-  if (host.toLowerCase().includes('gmail') && port !== 465 && port !== 587) {
+  // If host is explicitly Gmail and port was not explicitly configured, default to 587
+  if (host.toLowerCase().includes('gmail') && !process.env.SMTP_PORT && !process.env.EMAIL_PORT) {
     port = 587;
   }
 
@@ -92,8 +92,8 @@ const validateSmtpConfig = () => {
 };
 
 /**
- * Get or initialize Nodemailer transporter for SMTP (Brevo or Gmail).
- * Enforces STARTTLS on port 587 with bounded socket timeouts.
+ * Get or initialize Nodemailer transporter for SMTP (Brevo on port 2525 or Gmail).
+ * Uses secure: false for port 2525 with generous timeouts.
  */
 const getTransporter = async (forceFresh = false) => {
   if (!forceFresh && cachedTransporter) {
@@ -109,26 +109,25 @@ const getTransporter = async (forceFresh = false) => {
     const transportConfig = isGmail
       ? {
           host: 'smtp.gmail.com',
-          port: isSecurePort ? 465 : 587,
+          port: isSecurePort ? 465 : (port || 587),
           secure: isSecurePort,
           requireTLS: !isSecurePort,
           auth: { user, pass },
           connectionTimeout: 15000,
-          greetingTimeout: 10000,
-          socketTimeout: 15000,
+          greetingTimeout: 15000,
+          socketTimeout: 20000,
           tls: {
             rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
           },
         }
       : {
           host: host || 'smtp-relay.brevo.com',
-          port: port || 587,
-          secure: isSecurePort, // false on 587 for STARTTLS
-          requireTLS: !isSecurePort, // enforce STARTTLS on port 587
+          port: Number(port || 2525),
+          secure: isSecurePort, // false on port 2525
           auth: { user, pass },
           connectionTimeout: 15000,
-          greetingTimeout: 10000,
-          socketTimeout: 15000,
+          greetingTimeout: 15000,
+          socketTimeout: 20000,
           tls: {
             rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
             minVersion: 'TLSv1.2',
@@ -178,27 +177,31 @@ const verifySmtpConnection = async () => {
   try {
     const transporter = await getTransporter();
     await transporter.verify();
+    const isGmail = (config.host || '').toLowerCase().includes('gmail');
     return {
       success: true,
       status: 'SMTP_CONNECTED',
-      provider: 'brevo-smtp',
+      provider: isGmail ? 'gmail-smtp' : 'brevo-smtp',
       host: config.host,
       port: config.port,
       secure: isSecure,
-      requireTLS: !isSecure,
+      requireTLS: !isSecure && config.port === 587,
       userMasked: maskEmail(config.user),
-      message: 'Brevo SMTP connected and verified successfully',
+      message: `${isGmail ? 'Gmail' : 'Brevo'} SMTP connected and verified successfully`,
     };
   } catch (err) {
     resetTransporter();
     let errorCode = 'EMAIL_CONNECTION_ERROR';
     let errorMessage = err.message || 'SMTP connection failed';
+    const isGmail = (config.host || '').toLowerCase().includes('gmail');
     if (err.code === 'EAUTH' || err.responseCode === 535) {
       errorCode = 'EMAIL_AUTH_ERROR';
-      errorMessage = 'Brevo SMTP authentication failed: verify SMTP_USER (login email) and SMTP_PASS (Brevo SMTP key)';
+      errorMessage = isGmail
+        ? 'Gmail SMTP authentication failed: verify EMAIL_USER and Gmail App Password (EMAIL_PASS)'
+        : 'Brevo SMTP authentication failed: verify SMTP_USER (Brevo login email) and SMTP_PASS (active Brevo SMTP key, not API key)';
     } else if (err.code === 'ETIMEDOUT' || err.message?.includes('timeout')) {
       errorCode = 'EMAIL_CONNECTION_ERROR';
-      errorMessage = `Connection timeout connecting to ${config.host}:${config.port}.`;
+      errorMessage = `Connection timeout connecting to ${config.host}:${config.port}. Render Free restricts outbound SMTP ports 25, 465, and 587. If port 2525 also times out, outbound SMTP may be restricted on your instance; migrate to Brevo HTTP API over HTTPS.`;
     } else if (err.code === 'ECONNREFUSED') {
       errorCode = 'EMAIL_CONNECTION_REFUSED';
       errorMessage = `Connection refused by ${config.host}:${config.port}`;

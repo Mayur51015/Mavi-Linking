@@ -12,7 +12,8 @@
     "db:reset-users": "node src/scripts/resetUsersQA.js",
     "db:seed-super-admin": "node src/scripts/seedSuperAdmin.js",
     "build": "echo Backend is Node.js, no build step required",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "test:smtp": "node src/scripts/verifySmtp.js"
   },
   "keywords": [
     "developer",

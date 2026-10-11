@@ -37,7 +37,7 @@ describe('EDUTALENTX — Nodemailer + Brevo SMTP Unit & Integration Test Suite',
     process.env.SMTP_USER = 'brevo_login@edutalentx.com';
     process.env.SMTP_PASS = 'xsmtpsib-testkey1234567890';
     process.env.SMTP_HOST = 'smtp-relay.brevo.com';
-    process.env.SMTP_PORT = '587';
+    process.env.SMTP_PORT = '2525';
     process.env.MAIL_FROM = '"EduTalentX Security" <security@edutalentx.com>';
 
     if (mongoose.connection.readyState === 0) {
@@ -106,7 +106,7 @@ describe('EDUTALENTX — Nodemailer + Brevo SMTP Unit & Integration Test Suite',
       process.env = { ...originalEnv };
     });
 
-    it('defaults host to smtp-relay.brevo.com and port to 587', () => {
+    it('defaults host to smtp-relay.brevo.com and port to 2525', () => {
       delete process.env.SMTP_HOST;
       delete process.env.EMAIL_HOST;
       delete process.env.SMTP_PORT;
@@ -114,19 +114,19 @@ describe('EDUTALENTX — Nodemailer + Brevo SMTP Unit & Integration Test Suite',
 
       const config = getSmtpConfig();
       expect(config.host).toBe('smtp-relay.brevo.com');
-      expect(config.port).toBe(587);
+      expect(config.port).toBe(2525);
     });
 
     it('reads SMTP_USER, SMTP_PASS, and MAIL_FROM correctly', () => {
       process.env.SMTP_HOST = 'smtp-relay.brevo.com';
-      process.env.SMTP_PORT = '587';
+      process.env.SMTP_PORT = '2525';
       process.env.SMTP_USER = 'brevo_account@example.com';
       process.env.SMTP_PASS = 'xsmtpsib-secret123';
       process.env.MAIL_FROM = '"EduTalentX" <noreply@example.com>';
 
       const config = getSmtpConfig();
       expect(config.host).toBe('smtp-relay.brevo.com');
-      expect(config.port).toBe(587);
+      expect(config.port).toBe(2525);
       expect(config.user).toBe('brevo_account@example.com');
       expect(config.pass).toBe('xsmtpsib-secret123');
       expect(config.configuredFrom).toBe('"EduTalentX" <noreply@example.com>');
@@ -140,14 +140,14 @@ describe('EDUTALENTX — Nodemailer + Brevo SMTP Unit & Integration Test Suite',
       delete process.env.MAIL_FROM;
 
       process.env.EMAIL_HOST = 'smtp-relay.brevo.com';
-      process.env.EMAIL_PORT = '587';
+      process.env.EMAIL_PORT = '2525';
       process.env.EMAIL_USER = 'legacy_brevo@example.com';
       process.env.EMAIL_PASS = 'xsmtpsib-legacy123';
       process.env.EMAIL_FROM = '"Legacy EduTalentX" <legacy@example.com>';
 
       const config = getSmtpConfig();
       expect(config.host).toBe('smtp-relay.brevo.com');
-      expect(config.port).toBe(587);
+      expect(config.port).toBe(2525);
       expect(config.user).toBe('legacy_brevo@example.com');
       expect(config.pass).toBe('xsmtpsib-legacy123');
       expect(config.configuredFrom).toBe('"Legacy EduTalentX" <legacy@example.com>');
@@ -287,7 +287,7 @@ describe('EDUTALENTX — Nodemailer + Brevo SMTP Unit & Integration Test Suite',
     });
 
     it('captures connection refused (ECONNREFUSED) and returns EMAIL_CONNECTION_REFUSED', async () => {
-      const connError = new Error('connect ECONNREFUSED 127.0.0.1:587');
+      const connError = new Error('connect ECONNREFUSED 127.0.0.1:2525');
       connError.code = 'ECONNREFUSED';
 
       const mockTransporter = {

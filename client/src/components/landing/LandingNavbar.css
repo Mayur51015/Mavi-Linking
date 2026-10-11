@@ -170,10 +170,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(17, 24, 39, 0.4);
+    background-color: rgba(17, 24, 39, 0.35);
     z-index: 998;
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
     animation: edxFadeIn 0.2s ease forwards;
   }
 

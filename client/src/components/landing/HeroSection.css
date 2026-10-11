@@ -1,0 +1,238 @@
+/* EduTalentX 3D Hero Background & Responsive Styles */
+
+.edutalentx-hero-section {
+  position: relative;
+  width: 100%;
+  min-height: 640px;
+  background-color: #FFFFFF;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.97) 0%,
+      rgba(255, 255, 255, 0.94) 30%,
+      rgba(255, 255, 255, 0.75) 45%,
+      rgba(255, 255, 255, 0.25) 60%,
+      rgba(255, 255, 255, 0) 75%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0) 25%,
+      rgba(255, 255, 255, 0) 80%,
+      #FFFFFF 100%
+    ),
+    url('/images/edutalentx-hero.png');
+  background-size: cover;
+  background-position: right 10% center;
+  background-repeat: no-repeat;
+  border-bottom: 1px solid #E5E7EB;
+  display: flex;
+  align-items: center;
+  padding-top: 7.5rem;
+  padding-bottom: 5rem;
+  overflow: hidden;
+}
+
+.edutalentx-hero-container {
+  max-width: 1160px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.edutalentx-hero-content {
+  max-width: 520px;
+}
+
+.edutalentx-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2563EB;
+  background: rgba(239, 246, 255, 0.85);
+  border: 1px solid #DBEAFE;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  margin-bottom: 1.25rem;
+}
+
+.edutalentx-hero-headline {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: clamp(2.35rem, 4.5vw, 3.6rem);
+  line-height: 1.15;
+  font-weight: 700;
+  color: #111111;
+  letter-spacing: -0.025em;
+  margin: 0 0 1.25rem 0;
+}
+
+.edutalentx-hero-description {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #374151;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Feature capability pills reflecting the visual integrations */
+.edutalentx-hero-pillars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.edutalentx-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #1F2937;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.edutalentx-hero-pill svg {
+  color: #2563EB;
+}
+
+/* CTA buttons */
+.edutalentx-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: center;
+}
+
+.edutalentx-hero-btn-primary {
+  background: #2563EB;
+  color: #FFFFFF;
+  padding: 0.75rem 1.6rem;
+  border-radius: 6px;
+  font-size: 0.925rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+}
+
+.edutalentx-hero-btn-primary:hover {
+  background: #1D4ED8;
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.edutalentx-hero-btn-secondary {
+  background: rgba(255, 255, 255, 0.95);
+  color: #111111;
+  border: 1px solid #D1D5DB;
+  padding: 0.75rem 1.6rem;
+  border-radius: 6px;
+  font-size: 0.925rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.edutalentx-hero-btn-secondary:hover {
+  background: #F8F9FA;
+  border-color: #9CA3AF;
+}
+
+/* Tablet responsiveness: keep laptop dashboard & cards in view */
+@media (max-width: 1024px) {
+  .edutalentx-hero-section {
+    min-height: 600px;
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.97) 0%,
+        rgba(255, 255, 255, 0.92) 44%,
+        rgba(255, 255, 255, 0.40) 65%,
+        rgba(255, 255, 255, 0) 80%,
+        #FFFFFF 100%
+      ),
+      url('/images/edutalentx-hero.png');
+    background-position: 55% bottom;
+    padding-top: 7rem;
+    padding-bottom: 4rem;
+  }
+
+  .edutalentx-hero-content {
+    max-width: 580px;
+  }
+}
+
+/* Mobile responsiveness: dedicated crop positioning focusing on laptop & dashboard */
+@media (max-width: 768px) {
+  .edutalentx-hero-section {
+    min-height: 640px;
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.98) 0%,
+        rgba(255, 255, 255, 0.95) 50%,
+        rgba(255, 255, 255, 0.35) 75%,
+        rgba(255, 255, 255, 0) 90%,
+        #FFFFFF 100%
+      ),
+      url('/images/edutalentx-hero.png');
+    background-position: 52% 98%;
+    background-size: cover;
+    padding-top: 6.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .edutalentx-hero-headline {
+    font-size: 2.15rem;
+  }
+
+  .edutalentx-hero-pillars {
+    gap: 0.4rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .edutalentx-hero-pill {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .edutalentx-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .edutalentx-hero-btn-primary,
+  .edutalentx-hero-btn-secondary {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Reduced motion preference support */
+@media (prefers-reduced-motion: reduce) {
+  .edutalentx-hero-btn-primary,
+  .edutalentx-hero-btn-secondary {
+    transition: none !important;
+    transform: none !important;
+  }
+}

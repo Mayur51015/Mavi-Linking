@@ -20,7 +20,7 @@ describe('HeroSection Component with 3D Background', () => {
     // 2. Eyebrow & Description
     expect(screen.getByText(/EDUCATION • SKILLS • CAREER/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/EduTalentX connects students, institutions, faculty, and recruiters in one platform/i)
+      screen.getByText(/EduTalentX connects students, institutions, faculty, and recruiters/i)
     ).toBeInTheDocument();
 
     // 3. 4 Core Pillars

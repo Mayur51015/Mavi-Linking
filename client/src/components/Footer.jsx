@@ -1,35 +1,13 @@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import BrandLogo from './BrandLogo';
+import './landing/LandingSections.css';
 
 const Footer = () => {
   return (
-    <footer
-      style={{
-        borderTop: '1px solid #E5E7EB',
-        background: '#FFFFFF',
-        padding: '3rem 0 2rem 0',
-      }}
-    >
-      <div
-        className="container"
-        style={{
-          maxWidth: '1120px',
-          margin: '0 auto',
-          padding: '0 1.5rem',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: '2rem',
-            paddingBottom: '2.5rem',
-            borderBottom: '1px solid #E5E7EB',
-          }}
-        >
+    <footer className="edx-footer" role="contentinfo">
+      <div className="edx-section-container">
+        <div className="edx-footer-main">
           {/* Brand Info */}
           <div>
             <BrandLogo variant="full" size={28} linkTo="/" />
@@ -46,80 +24,44 @@ const Footer = () => {
           </div>
 
           {/* Links */}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '1.75rem',
-              alignItems: 'center',
-            }}
-          >
+          <nav className="edx-footer-links" aria-label="Footer links">
             <a
               href="#what-it-does"
-              style={{
-                color: '#4B5563',
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-                transition: 'color 0.15s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#111111')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#4B5563')}
+              className="edx-footer-link"
             >
               Platform
             </a>
             <a
+              href="#who-its-for"
+              className="edx-footer-link"
+            >
+              Solutions
+            </a>
+            <a
               href="#security"
-              style={{
-                color: '#4B5563',
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-                transition: 'color 0.15s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#111111')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#4B5563')}
+              className="edx-footer-link"
             >
               Security
             </a>
             <a
               href="mailto:contact@edutalentx.com"
-              style={{
-                color: '#4B5563',
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-                transition: 'color 0.15s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#111111')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#4B5563')}
+              className="edx-footer-link"
             >
               Contact
             </a>
             <RouterLink
               to="/"
-              style={{
-                color: '#4B5563',
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-                transition: 'color 0.15s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#111111')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#4B5563')}
+              className="edx-footer-link"
             >
               Privacy
             </RouterLink>
             <RouterLink
               to="/"
-              style={{
-                color: '#4B5563',
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-                transition: 'color 0.15s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#111111')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#4B5563')}
+              className="edx-footer-link"
             >
               Terms
             </RouterLink>
-          </div>
+          </nav>
         </div>
 
         {/* Bottom Bar */}
@@ -131,9 +73,11 @@ const Footer = () => {
             alignItems: 'center',
             fontSize: '0.8rem',
             color: '#6B7280',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
           }}
         >
-          <span>&copy; 2026 EduTalentX</span>
+          <span>&copy; {new Date().getFullYear()} EduTalentX. All rights reserved.</span>
         </div>
       </div>
     </footer>

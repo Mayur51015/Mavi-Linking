@@ -1,136 +1,112 @@
 import React from 'react';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Lock, CheckCircle2 } from 'lucide-react';
+import './LandingSections.css';
 
 const CareerFlowSection = () => {
   const steps = [
-    { num: '01', title: 'Profile', desc: 'Academic records' },
-    { num: '02', title: 'Skills', desc: 'Projects & code' },
-    { num: '03', title: 'Verification', desc: 'Institutional check' },
-    { num: '04', title: 'Opportunities', desc: 'Internships & jobs' },
-    { num: '05', title: 'Career', desc: 'Verified placement' },
+    { num: '01', title: 'Profile', desc: 'Academic records & history' },
+    { num: '02', title: 'Skills', desc: 'Projects & code metrics' },
+    { num: '03', title: 'Verification', desc: 'Institutional audit check' },
+    { num: '04', title: 'Opportunities', desc: 'Curated internships & jobs' },
+    { num: '05', title: 'Career', desc: 'Verified placement success' },
+  ];
+
+  const securityPoints = [
+    {
+      title: 'Institutional Verification',
+      desc: 'Accredited university domain authentication, faculty endorsements, and tamper-resistant academic records.',
+      icon: ShieldCheck,
+    },
+    {
+      title: 'Role-Based Access Control',
+      desc: 'Granular permissions ensure students, department faculty, and recruiters access only authorized information.',
+      icon: Lock,
+    },
+    {
+      title: 'Student Privacy & Governance',
+      desc: 'Strict FERPA-aligned data protection, zero unauthorized third-party sharing, and encrypted communications.',
+      icon: CheckCircle2,
+    },
   ];
 
   return (
     <section
       id="flow"
-      style={{
-        padding: '5rem 0',
-        backgroundColor: '#FFFFFF',
-        borderBottom: '1px solid #E5E7EB',
-      }}
+      className="edx-section"
+      aria-label="EduTalentX career flow and security architecture"
     >
-      <div
-        className="container"
-        style={{
-          maxWidth: '1120px',
-          margin: '0 auto',
-          padding: '0 1.5rem',
-        }}
-      >
-        <div style={{ marginBottom: '3rem' }}>
-          <h2
-            style={{
-              fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-              fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
-              fontWeight: '600',
-              color: '#111111',
-              letterSpacing: '-0.02em',
-              margin: 0,
-            }}
-          >
+      <div className="edx-section-container">
+        {/* Career Flow Header */}
+        <div className="edx-section-header">
+          <div className="edx-section-eyebrow">
+            HOW IT WORKS
+          </div>
+          <h2 className="edx-section-title">
             From skills to opportunity.
           </h2>
+          <p className="edx-section-subtitle">
+            A seamless journey from initial coursework to verified career outcomes.
+          </p>
         </div>
 
-        {/* Desktop Horizontal Flow / Mobile Vertical Stack */}
-        <div className="flow-container">
-          <div
-            className="flow-track"
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: '1rem',
-              position: 'relative',
-            }}
-          >
-            {steps.map((step, idx) => (
-              <React.Fragment key={step.title}>
-                <div
-                  className="flow-step-node"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.4rem',
-                    flex: 1,
-                    minWidth: '130px',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: '0.75rem',
-                      fontFamily: 'monospace',
-                      color: '#2563EB',
-                      fontWeight: '600',
-                    }}
-                  >
-                    {step.num}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '1.05rem',
-                      fontWeight: '600',
-                      color: '#111111',
-                    }}
-                  >
-                    {step.title}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '0.85rem',
-                      color: '#4B5563',
-                    }}
-                  >
-                    {step.desc}
-                  </span>
+        {/* Process Flow Track (Responsive Horizontal -> Grid -> Stack) */}
+        <div className="edx-flow-track" role="list">
+          {steps.map((step, idx) => (
+            <React.Fragment key={step.title}>
+              <div className="edx-flow-step" role="listitem">
+                <span className="edx-flow-step-num">
+                  {step.num}
+                </span>
+                <span className="edx-flow-step-title">
+                  {step.title}
+                </span>
+                <span className="edx-flow-step-desc">
+                  {step.desc}
+                </span>
+              </div>
+
+              {idx < steps.length - 1 && (
+                <div className="edx-flow-arrow" aria-hidden="true">
+                  <ArrowRight size={16} />
                 </div>
-
-                {idx < steps.length - 1 && (
-                  <div
-                    className="flow-step-arrow hide-mobile"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      paddingTop: '1.35rem',
-                      color: '#9CA3AF',
-                    }}
-                  >
-                    <ArrowRight size={16} />
-                  </div>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
+              )}
+            </React.Fragment>
+          ))}
         </div>
 
-        {/* Target anchor for Security navigation */}
-        <div
-          id="security"
-          style={{
-            marginTop: '3.5rem',
-            paddingTop: '1.5rem',
-            borderTop: '1px solid #E5E7EB',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.65rem',
-            fontSize: '0.85rem',
-            color: '#4B5563',
-          }}
-        >
-          <ShieldCheck size={16} color="#2563EB" />
-          <span>
-            Institutional verification &bull; Role-based access control &bull; Student data privacy
-          </span>
+        {/* Dedicated Target Anchor for Security Navigation */}
+        <div id="security" className="edx-security-container">
+          <div className="edx-section-header" style={{ marginBottom: '1.5rem' }}>
+            <div className="edx-section-eyebrow">
+              <ShieldCheck size={14} aria-hidden="true" />
+              <span>SECURITY &amp; COMPLIANCE</span>
+            </div>
+            <h3 className="edx-section-title" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 1.85rem)' }}>
+              Enterprise security and institutional trust.
+            </h3>
+            <p className="edx-section-subtitle">
+              EduTalentX is built with institutional safeguards, ensuring student privacy and data integrity at every step.
+            </p>
+          </div>
+
+          <div className="edx-security-grid">
+            {securityPoints.map((point) => {
+              const Icon = point.icon;
+              return (
+                <div key={point.title} className="edx-security-card">
+                  <div className="edx-security-icon-box">
+                    <Icon size={18} aria-hidden="true" />
+                  </div>
+                  <h4 className="edx-security-card-title">
+                    {point.title}
+                  </h4>
+                  <p className="edx-security-card-desc">
+                    {point.desc}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>

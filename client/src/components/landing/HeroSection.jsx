@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Code2, GitBranch, Briefcase } from 'lucide-react';
+import { Sparkles, BarChart2, GitPullRequest, Briefcase, ArrowRight } from 'lucide-react';
 import './HeroSection.css';
 
 const HeroSection = () => {
@@ -8,11 +8,12 @@ const HeroSection = () => {
     <section
       className="edutalentx-hero-section"
       role="region"
-      aria-label="EduTalentX Hero - AI-powered skills and developer opportunities"
+      aria-label="EduTalentX Hero - AI-powered skills and opportunities platform"
     >
       <div className="edutalentx-hero-container">
-        <div className="edutalentx-hero-content">
-          {/* Eyebrow Badge */}
+        {/* Left Column: Heading, description, capability badges, and CTAs */}
+        <div className="edutalentx-hero-text-column">
+          {/* Eyebrow Label */}
           <div className="edutalentx-hero-eyebrow">
             EDUCATION • SKILLS • CAREER
           </div>
@@ -21,28 +22,34 @@ const HeroSection = () => {
           <h1 className="edutalentx-hero-headline">
             Build skills.
             <br />
-            Find opportunities.
+            <span className="hero-headline-accent">Find opportunities.</span>
           </h1>
 
-          {/* Supporting Description */}
+          {/* Descriptive Text */}
           <p className="edutalentx-hero-description">
-            EduTalentX connects students, institutions, faculty, and recruiters in one platform.
+            EduTalentX connects students, institutions, faculty, and recruiters through AI-powered skill mapping and real developer insights.
           </p>
 
-          {/* Platform Capability Badges communicating the 4 core pillars */}
-          <div className="edutalentx-hero-pillars" aria-label="Platform Highlights">
-            <span className="edutalentx-hero-pill">
-              <Sparkles size={13} aria-hidden="true" /> AI Skill Mapping
-            </span>
-            <span className="edutalentx-hero-pill">
-              <Code2 size={13} aria-hidden="true" /> Developer Profiles
-            </span>
-            <span className="edutalentx-hero-pill">
-              <GitBranch size={13} aria-hidden="true" /> GitHub • LeetCode • Codeforces • Stack Overflow
-            </span>
-            <span className="edutalentx-hero-pill">
-              <Briefcase size={13} aria-hidden="true" /> Skill-Matched Opportunities
-            </span>
+          {/* 4 Core Capability Badges */}
+          <div className="edutalentx-hero-pillars" aria-label="Core platform capabilities">
+            <div className="edutalentx-hero-pillars-row">
+              <span className="edutalentx-hero-pill">
+                <Sparkles size={14} className="pill-icon" aria-hidden="true" />
+                <span>AI Skill Mapping</span>
+              </span>
+              <span className="edutalentx-hero-pill">
+                <BarChart2 size={14} className="pill-icon" aria-hidden="true" />
+                <span>Developer Profiles</span>
+              </span>
+            </div>
+            <div className="edutalentx-hero-pill full-width">
+              <GitPullRequest size={14} className="pill-icon" aria-hidden="true" />
+              <span>GitHub • LeetCode • Codeforces • Stack Overflow</span>
+            </div>
+            <div className="edutalentx-hero-pill full-width">
+              <Briefcase size={14} className="pill-icon" aria-hidden="true" />
+              <span>Skill-Matched Opportunities</span>
+            </div>
           </div>
 
           {/* Call-to-Action Buttons */}
@@ -51,7 +58,7 @@ const HeroSection = () => {
               to="/register"
               className="edutalentx-hero-btn-primary"
             >
-              Get Started
+              Get Started <ArrowRight size={16} aria-hidden="true" />
             </Link>
 
             <a
@@ -60,6 +67,18 @@ const HeroSection = () => {
             >
               Explore Platform
             </a>
+          </div>
+        </div>
+
+        {/* Dedicated Mobile/Tablet Visual: Stacks neatly beneath text on screens < 1024px */}
+        <div className="edutalentx-hero-mobile-visual" aria-hidden="true">
+          <div className="edutalentx-hero-image-frame">
+            <img
+              src="/images/edutalentx-hero.png"
+              alt="EduTalentX Developer Dashboard and Integrations"
+              className="edutalentx-hero-img"
+              loading="eager"
+            />
           </div>
         </div>
       </div>

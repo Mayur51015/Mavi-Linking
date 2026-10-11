@@ -25,7 +25,6 @@ const Home = () => {
         background: '#FFFFFF',
         color: '#111111',
         minHeight: '100vh',
-        overflowX: 'hidden',
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
       }}
     >

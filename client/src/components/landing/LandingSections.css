@@ -1,0 +1,454 @@
+/* EduTalentX Responsive Landing Page Sections Stylesheet */
+
+/* Common Section Containers */
+.edx-section {
+  padding: 5rem 0;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.edx-section.edx-section-alt {
+  background-color: #F8F9FA;
+}
+
+.edx-section-container {
+  max-width: 1120px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+}
+
+.edx-section-header {
+  margin-bottom: 2.5rem;
+}
+
+.edx-section-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2563EB;
+  margin-bottom: 0.65rem;
+}
+
+.edx-section-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: clamp(1.75rem, 3.2vw, 2.25rem);
+  font-weight: 600;
+  color: #111111;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.edx-section-subtitle {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #4B5563;
+  margin: 0.75rem 0 0 0;
+  max-width: 600px;
+}
+
+/* 1. What It Does Section Grid */
+.edx-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 1.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edx-feature-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 1.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.edx-feature-card:hover {
+  border-color: #D1D5DB;
+  background-color: #F8F9FA;
+}
+
+.edx-feature-icon-box {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: #EFF6FF;
+  color: #2563EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.edx-feature-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #111111;
+  margin: 0;
+}
+
+.edx-feature-desc {
+  font-size: 0.925rem;
+  line-height: 1.55;
+  color: #4B5563;
+  margin: 0;
+}
+
+/* 2. Who It's For Section Grid */
+.edx-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edx-role-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 2rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.edx-role-card:hover {
+  border-color: #D1D5DB;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.edx-role-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.edx-role-badge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #2563EB;
+}
+
+.edx-role-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #EFF6FF;
+  color: #2563EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.edx-role-desc {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: #111111;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* 3. Career Flow Section */
+.edx-flow-track {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edx-flow-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.edx-flow-step-num {
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: #2563EB;
+  font-weight: 600;
+}
+
+.edx-flow-step-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #111111;
+}
+
+.edx-flow-step-desc {
+  font-size: 0.85rem;
+  color: #4B5563;
+  line-height: 1.4;
+}
+
+.edx-flow-arrow {
+  display: flex;
+  align-items: center;
+  padding-top: 1.35rem;
+  color: #9CA3AF;
+  flex-shrink: 0;
+}
+
+/* 4. Dedicated Security Section */
+.edx-security-container {
+  margin-top: 4.5rem;
+  padding-top: 3.5rem;
+  border-top: 1px solid #E5E7EB;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edx-security-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1.25rem;
+  margin-top: 1.75rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edx-security-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.edx-security-card:hover {
+  border-color: #D1D5DB;
+}
+
+.edx-security-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #EFF6FF;
+  color: #2563EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.edx-security-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111111;
+  margin: 0;
+}
+
+.edx-security-card-desc {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #4B5563;
+  margin: 0;
+}
+
+/* 5. Final CTA Section */
+.edx-cta-card {
+  background: #F8F9FA;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 3.5rem 2rem;
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.edx-cta-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.edx-cta-primary-btn {
+  background-color: #2563EB;
+  color: #FFFFFF !important;
+  padding: 0.75rem 1.6rem;
+  border-radius: 6px;
+  font-size: 0.925rem;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  min-height: 44px;
+}
+
+.edx-cta-primary-btn:hover {
+  background-color: #1D4ED8;
+  transform: translateY(-1px);
+}
+
+.edx-cta-secondary-btn {
+  background-color: #FFFFFF;
+  color: #111111;
+  border: 1px solid #E5E7EB;
+  padding: 0.75rem 1.6rem;
+  border-radius: 6px;
+  font-size: 0.925rem;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  min-height: 44px;
+}
+
+.edx-cta-secondary-btn:hover {
+  background-color: #F8F9FA;
+  border-color: #D1D5DB;
+}
+
+/* 6. Footer Layout */
+.edx-footer {
+  border-top: 1px solid #E5E7EB;
+  background-color: #FFFFFF;
+  padding: 3rem 0 2rem 0;
+  box-sizing: border-box;
+}
+
+.edx-footer-main {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.edx-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.edx-footer-link {
+  color: #4B5563;
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 0.25rem 0;
+  transition: color 0.15s ease;
+}
+
+.edx-footer-link:hover {
+  color: #111111;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1023px) {
+  .edx-flow-track {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 1.5rem;
+  }
+
+  .edx-flow-arrow {
+    display: none;
+  }
+
+  .edx-flow-step {
+    border-left: 2px solid #2563EB;
+    padding-left: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .edx-section {
+    padding: 3.5rem 0;
+  }
+
+  .edx-section-header {
+    margin-bottom: 2rem;
+  }
+
+  .edx-flow-track {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .edx-security-container {
+    margin-top: 3rem;
+    padding-top: 2.5rem;
+  }
+
+  .edx-cta-card {
+    padding: 2.5rem 1.5rem;
+  }
+
+  .edx-cta-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .edx-cta-primary-btn,
+  .edx-cta-secondary-btn {
+    width: 100%;
+  }
+
+  .edx-footer-main {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .edx-footer-links {
+    gap: 1rem 1.25rem;
+  }
+}
+
+/* Narrowest screens (320px) */
+@media (max-width: 360px) {
+  .edx-section-container {
+    padding: 0 1rem;
+  }
+
+  .edx-section-title {
+    font-size: 1.55rem;
+  }
+
+  .edx-feature-card,
+  .edx-role-card,
+  .edx-security-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .edx-cta-card {
+    padding: 2rem 1rem;
+  }
+}

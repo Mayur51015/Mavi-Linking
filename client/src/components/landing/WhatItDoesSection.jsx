@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, Code2, Briefcase, TrendingUp } from 'lucide-react';
+import './LandingSections.css';
 
 const WhatItDoesSection = () => {
   const items = [
@@ -28,100 +29,39 @@ const WhatItDoesSection = () => {
   return (
     <section
       id="what-it-does"
-      style={{
-        padding: '5rem 0',
-        backgroundColor: '#FFFFFF',
-        borderBottom: '1px solid #E5E7EB',
-      }}
+      className="edx-section"
+      aria-label="What EduTalentX does"
     >
-      <div
-        className="container"
-        style={{
-          maxWidth: '1120px',
-          margin: '0 auto',
-          padding: '0 1.5rem',
-        }}
-      >
-        <div style={{ marginBottom: '2.5rem' }}>
-          <h2
-            style={{
-              fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-              fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
-              fontWeight: '600',
-              color: '#111111',
-              letterSpacing: '-0.02em',
-              margin: 0,
-            }}
-          >
+      <div className="edx-section-container">
+        <div className="edx-section-header">
+          <div className="edx-section-eyebrow">
+            PLATFORM CAPABILITIES
+          </div>
+          <h2 className="edx-section-title">
             Everything in one place.
           </h2>
+          <p className="edx-section-subtitle">
+            One unified platform that transforms student skills, coursework, and coding contributions into real career pathways.
+          </p>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '1.25rem',
-          }}
-        >
+        <div className="edx-features-grid">
           {items.map((item) => {
             const Icon = item.icon;
             return (
               <div
                 key={item.title}
-                style={{
-                  background: '#FFFFFF',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '8px',
-                  padding: '1.75rem 1.5rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.85rem',
-                  transition: 'border-color 0.15s ease, background-color 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#D1D5DB';
-                  e.currentTarget.style.backgroundColor = '#F8F9FA';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#E5E7EB';
-                  e.currentTarget.style.backgroundColor = '#FFFFFF';
-                }}
+                className="edx-feature-card"
               >
-                <div
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '6px',
-                    background: '#EFF6FF',
-                    color: '#2563EB',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Icon size={16} />
+                <div className="edx-feature-icon-box">
+                  <Icon size={18} aria-hidden="true" />
                 </div>
 
-                <h3
-                  style={{
-                    fontSize: '1.05rem',
-                    fontWeight: '600',
-                    color: '#111111',
-                    margin: 0,
-                  }}
-                >
+                <h3 className="edx-feature-title">
                   {item.title}
                 </h3>
 
-                <p
-                  style={{
-                    fontSize: '0.925rem',
-                    lineHeight: 1.55,
-                    color: '#4B5563',
-                    margin: 0,
-                  }}
-                >
+                <p className="edx-feature-desc">
                   {item.description}
                 </p>
               </div>

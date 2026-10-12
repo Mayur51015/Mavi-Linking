@@ -357,32 +357,39 @@ export const AuthProvider = ({ children }) => {
 
   // ─── 10. Unified Register ────────────────────────────────────────────
   const register = useCallback(async (userData) => {
-    if (isSupabaseConfigured()) {
-      try {
+    // Primary: Process registration on backend so user receives the official EduTalentX branded email
+    // from "EduTalentX Security" with EduTalentX design, zero-trust token, and 0 Supabase quota consumption.
+    // The server automatically provisions the Supabase user in the background via Admin API.
+    try {
+      const res = await api.post('/auth/register', userData);
+      const token = res.data?.data?.token;
+      if (token) {
+        localStorage.setItem('token', token);
+        localStorage.setItem('authProvider', 'local');
+        setUser(res.data?.data?.user);
+      }
+      return {
+        ...res.data,
+        emailConfirmationRequired: true,
+        user: res.data?.data?.user,
+      };
+    } catch (err) {
+      // Re-throw user-facing validation errors (duplicate email/PRN, invalid department) immediately
+      if (err.response && err.response.status < 500) {
+        throw err;
+      }
+      // If server is unreachable or 500+ and Supabase is configured, fallback to Supabase
+      if (isSupabaseConfigured()) {
+        console.warn('[Server registration unreachable, falling back to Supabase signup]:', err.message);
         return await signUpWithSupabase({
           email: userData.email,
           password: userData.password,
           name: userData.name,
           registrationData: userData,
         });
-      } catch (supaErr) {
-        console.warn('[Supabase Sign Up hit limitation or failed, falling back to server registration]:', supaErr.message);
-        // Fall back to primary server registration if Supabase fails (e.g. 429 over_email_send_rate_limit)
       }
+      throw err;
     }
-
-    // Fallback to legacy/primary registration on server
-    const res = await api.post('/auth/register', userData);
-    const token = res.data?.data?.token;
-    if (token) {
-      localStorage.setItem('token', token);
-      localStorage.setItem('authProvider', 'local');
-      setUser(res.data?.data?.user);
-    }
-    return {
-      ...res.data,
-      user: res.data?.data?.user,
-    };
   }, [signUpWithSupabase]);
 
   // ─── 11. Sign Out / Logout ───────────────────────────────────────────

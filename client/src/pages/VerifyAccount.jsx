@@ -195,9 +195,31 @@ const VerifyAccount = () => {
       return;
     }
 
-    setResending(true);
+    // Primary: Resend verification email via EduTalentX backend (branded EduTalentX Security email)
+    try {
+      const res = await api.post('/auth/resend-verification', {
+        email: emailOrId,
+        etxId: user?.etxId,
+      });
 
-    // If Supabase is configured and email address is available, resend via Supabase Auth
+      if (res.data?.success) {
+        toast.success(res.data?.message || `A new EduTalentX verification email has been dispatched to ${emailOrId}!`);
+        setResendCooldown(60);
+        setVerificationError('');
+        setResending(false);
+        return;
+      }
+    } catch (err) {
+      if (err.response?.status === 429) {
+        setResendCooldown(60);
+        toast.error(getErrorMessage(err, 'Please wait before requesting another verification email.'));
+        setResending(false);
+        return;
+      }
+      console.warn('[Backend verification resend failed, attempting Supabase fallback]:', err.message);
+    }
+
+    // Fallback: If backend is unavailable but Supabase is configured
     if (isSupabaseConfigured() && activeEmail && activeEmail.includes('@')) {
       try {
         const { error } = await supabase.auth.resend({
@@ -211,7 +233,7 @@ const VerifyAccount = () => {
         if (error) {
           toast.error(getSupabaseAuthErrorMessage(error));
         } else {
-          toast.success(`A fresh confirmation email has been dispatched to ${activeEmail} via Supabase!`);
+          toast.success(`A fresh confirmation email has been dispatched to ${activeEmail}!`);
           setResendCooldown(60);
           setVerificationError('');
         }
@@ -223,28 +245,8 @@ const VerifyAccount = () => {
       return;
     }
 
-    // Fallback to custom backend resend
-    try {
-      const res = await api.post('/auth/resend-verification', {
-        email: emailOrId,
-        etxId: user?.etxId,
-      });
-
-      if (res.data?.success) {
-        toast.success(res.data?.message || `A new verification link has been dispatched to ${emailOrId}!`);
-        setResendCooldown(60);
-        setVerificationError('');
-      } else {
-        toast.error(res.data?.message || 'Failed to resend verification email.');
-      }
-    } catch (err) {
-      if (err.response?.status === 429) {
-        setResendCooldown(60);
-      }
-      toast.error(getErrorMessage(err, 'Failed to resend verification email. Please try again.'));
-    } finally {
-      setResending(false);
-    }
+    toast.error('Failed to resend verification email. Please try again.');
+    setResending(false);
   };
 
   const displayEmail = activeEmail || 'your registered email';

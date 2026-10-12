@@ -84,13 +84,6 @@ const Login = () => {
       );
       setForgotStep(2);
       toast.success('Password recovery OTP sent to your email!');
-
-      // 2. Also trigger Supabase recovery link in background if Supabase is configured
-      if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
-        resetPasswordForEmail(forgotEmail).catch((err) => {
-          console.warn('[Supabase password recovery notice]:', err.message);
-        });
-      }
     } catch (err) {
       // Fallback: If backend OTP dispatch failed but Supabase is available, try Supabase directly
       if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
@@ -104,6 +97,9 @@ const Login = () => {
           return;
         } catch (supaErr) {
           console.warn('[Supabase fallback recovery failed]:', supaErr.message);
+          setForgotError(getSupabaseAuthErrorMessage(supaErr, 'Email service rate limit reached. Please wait a few minutes before retrying.'));
+          setSendingForgot(false);
+          return;
         }
       }
       setForgotError(getErrorMessage(err, 'Failed to send recovery OTP. Please check your email.'));
@@ -126,12 +122,6 @@ const Login = () => {
       setForgotSuccessMsg('A fresh 6-digit recovery OTP has been dispatched. Code expires in exactly 10 minutes.');
       setForgotOtp('');
       toast.success('Fresh recovery OTP dispatched!');
-
-      if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
-        resetPasswordForEmail(forgotEmail).catch((err) => {
-          console.warn('[Supabase password resend notice]:', err.message);
-        });
-      }
     } catch (err) {
       if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
         try {
@@ -142,6 +132,9 @@ const Login = () => {
           return;
         } catch (supaErr) {
           console.warn('[Supabase resend failed]:', supaErr.message);
+          setForgotError(getSupabaseAuthErrorMessage(supaErr, 'Email service rate limit reached. Please wait a few minutes before retrying.'));
+          setSendingForgot(false);
+          return;
         }
       }
       setForgotError(getErrorMessage(err, 'Failed to resend recovery OTP. Please wait before retrying.'));

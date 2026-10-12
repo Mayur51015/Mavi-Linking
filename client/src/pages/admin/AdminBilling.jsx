@@ -17,7 +17,10 @@ const AdminBilling = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/billing/subscription');
+      const targetInstId = user?.institutionId?._id || user?.institutionId;
+      const res = await api.get('/billing/subscription', {
+        params: targetInstId && typeof targetInstId === 'string' ? { institutionId: targetInstId } : {},
+      });
       if (res.data?.data) {
         setBillingData(res.data.data);
       }
@@ -31,7 +34,7 @@ const AdminBilling = () => {
 
   useEffect(() => {
     fetchBillingInfo();
-  }, []);
+  }, [user]);
 
   const handleCheckout = async (planCode) => {
     setUpgradingPlan(planCode);
@@ -144,8 +147,15 @@ const AdminBilling = () => {
     return (
       <div style={{ padding: '3rem', textAlign: 'center', color: '#DC2626' }}>
         <AlertTriangle size={36} style={{ margin: '0 auto 1rem' }} />
-        <h3 style={{ margin: '0 0 0.5rem 0', color: '#111111' }}>Access Restricted</h3>
-        <p style={{ color: '#4B5563', fontSize: '0.875rem' }}>{error}</p>
+        <h3 style={{ margin: '0 0 0.5rem 0', color: '#111111' }}>Unable to Load Billing Data</h3>
+        <p style={{ color: '#4B5563', fontSize: '0.875rem', marginBottom: '1.25rem' }}>{error}</p>
+        <button
+          onClick={fetchBillingInfo}
+          className="btn btn-outline"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: '#FFFFFF', borderColor: '#E5E7EB' }}
+        >
+          <RefreshCw size={14} /> Retry
+        </button>
       </div>
     );
   }

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Institution = require('../models/Institution');
 const Subscription = require('../models/Subscription');
 const Plan = require('../models/Plan');
@@ -7,6 +8,49 @@ const WebhookLog = require('../models/WebhookLog');
 const AuditLog = require('../models/AuditLog');
 const { getPaymentProvider } = require('../services/paymentProvider');
 const { getInstitutionEntitlements, checkPlanLimit } = require('../services/entitlementService');
+
+/**
+ * Safely resolves and validates target institution ID across scopes and roles
+ */
+const resolveTargetInstitutionId = async (req) => {
+  let institutionId =
+    req.institutionScope?.institutionId ||
+    req.user?.institutionId ||
+    req.query?.institutionId ||
+    req.headers['x-institution-id'] ||
+    req.body?.institutionId;
+
+  if (institutionId && typeof institutionId === 'object' && institutionId._id) {
+    institutionId = institutionId._id;
+  }
+
+  if (institutionId === 'undefined' || institutionId === 'null') {
+    institutionId = null;
+  }
+
+  // If Super Admin / Owner has global scope without an explicit institutionId, fallback to primary active institution
+  const isElevated =
+    req.isSuperAdmin ||
+    req.isOwner ||
+    req.user?.role === 'super_admin' ||
+    req.user?.role === 'owner' ||
+    req.user?.role === 'platform_owner' ||
+    (Array.isArray(req.user?.roles) &&
+      (req.user.roles.includes('super_admin') ||
+        req.user.roles.includes('owner') ||
+        req.user.roles.includes('platform_owner')));
+
+  if (!institutionId && isElevated) {
+    const fallbackInst =
+      (await Institution.findOne({ status: 'active' }).sort({ createdAt: 1 })) ||
+      (await Institution.findOne().sort({ createdAt: 1 }));
+    if (fallbackInst) {
+      institutionId = fallbackInst._id;
+    }
+  }
+
+  return institutionId;
+};
 
 /**
  * Seed Canonical Active Default SaaS Plans if Catalog is empty
@@ -95,7 +139,7 @@ const getPublishedPlans = async (req, res, next) => {
 const getInstitutionBilling = async (req, res, next) => {
   try {
     await seedDefaultPlansIfEmpty();
-    const institutionId = req.institutionScope?.institutionId || req.user.institutionId;
+    const institutionId = await resolveTargetInstitutionId(req);
 
     if (!institutionId) {
       return res.status(403).json({
@@ -104,21 +148,37 @@ const getInstitutionBilling = async (req, res, next) => {
       });
     }
 
+    if (!mongoose.isValidObjectId(institutionId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid institution identifier format.',
+      });
+    }
+
     const institution = await Institution.findById(institutionId);
     if (!institution) {
       return res.status(404).json({ success: false, message: 'Institution record not found.' });
     }
 
-    let subscription = await Subscription.findOne({ institutionId }).sort({ createdAt: -1 });
+    let subscription = await Subscription.findOne({ institutionId: institution._id }).sort({ createdAt: -1 });
 
     if (!subscription) {
-      const activePlan = await Plan.findOne({ code: institution.plan || 'ENTERPRISE', status: 'ACTIVE' }).sort({ version: -1 });
+      const rawPlanCode = (institution.plan || 'ENTERPRISE').toString().toUpperCase().trim();
+      const validPlanCodes = ['BASIC', 'PRO', 'ENTERPRISE', 'CUSTOM'];
+      const planCode = validPlanCodes.includes(rawPlanCode) ? rawPlanCode : 'ENTERPRISE';
+
+      let rawStatus = (institution.subscriptionStatus || 'ACTIVE').toString().toUpperCase().trim();
+      if (rawStatus === 'TRIAL') rawStatus = 'TRIALING';
+      const validStatuses = ['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELLED', 'EXPIRED', 'SUSPENDED'];
+      const subStatus = validStatuses.includes(rawStatus) ? rawStatus : 'ACTIVE';
+
+      const activePlan = await Plan.findOne({ code: planCode, status: 'ACTIVE' }).sort({ version: -1 });
       subscription = await Subscription.create({
         institutionId: institution._id,
-        planCode: institution.plan || 'ENTERPRISE',
+        planCode,
         planVersion: activePlan ? activePlan.version : 1,
         priceSnapshot: activePlan ? activePlan.price : { amount: 299999, currency: 'INR', interval: 'annual' },
-        status: institution.subscriptionStatus || 'ACTIVE',
+        status: subStatus,
         billingContact: {
           name: institution.primaryContact?.name || institution.name,
           email: institution.primaryContact?.email || '',
@@ -214,10 +274,10 @@ const getInstitutionBilling = async (req, res, next) => {
  */
 const createCheckoutSession = async (req, res, next) => {
   try {
-    const institutionId = req.institutionScope?.institutionId || req.user.institutionId;
+    const institutionId = await resolveTargetInstitutionId(req);
     const { targetPlanCode = 'PRO', billingCycle = 'annual' } = req.body;
 
-    if (!institutionId) {
+    if (!institutionId || !mongoose.isValidObjectId(institutionId)) {
       return res.status(403).json({ success: false, message: 'Forbidden. Institution scope required.' });
     }
 
@@ -295,7 +355,7 @@ const createCheckoutSession = async (req, res, next) => {
  */
 const verifyPayment = async (req, res, next) => {
   try {
-    const institutionId = req.institutionScope?.institutionId || req.user.institutionId;
+    const institutionId = await resolveTargetInstitutionId(req);
     const orderId = req.body.orderId || req.body.razorpay_order_id;
     const paymentId = req.body.paymentId || req.body.razorpay_payment_id;
     const signature = req.body.signature || req.body.razorpay_signature;
@@ -305,6 +365,13 @@ const verifyPayment = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Missing required payment verification tokens (orderId, paymentId, signature).',
+      });
+    }
+
+    if (!institutionId || !mongoose.isValidObjectId(institutionId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid institution scope required for payment verification.',
       });
     }
 
@@ -598,8 +665,8 @@ const handleWebhook = async (req, res, next) => {
  */
 const getInvoices = async (req, res, next) => {
   try {
-    const institutionId = req.institutionScope?.institutionId || req.user.institutionId;
-    if (!institutionId) {
+    const institutionId = await resolveTargetInstitutionId(req);
+    if (!institutionId || !mongoose.isValidObjectId(institutionId)) {
       return res.status(403).json({ success: false, message: 'Forbidden. Institution scope required.' });
     }
 
@@ -649,8 +716,8 @@ const getInvoiceById = async (req, res, next) => {
  */
 const cancelSubscription = async (req, res, next) => {
   try {
-    const institutionId = req.institutionScope?.institutionId || req.user.institutionId;
-    if (!institutionId) {
+    const institutionId = await resolveTargetInstitutionId(req);
+    if (!institutionId || !mongoose.isValidObjectId(institutionId)) {
       return res.status(403).json({ success: false, message: 'Forbidden. Institution scope required.' });
     }
 

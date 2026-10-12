@@ -15,8 +15,11 @@ const subscriptionSchema = new mongoose.Schema(
     },
     planCode: {
       type: String,
+      uppercase: true,
+      trim: true,
       enum: ['BASIC', 'PRO', 'ENTERPRISE', 'CUSTOM'],
       default: 'ENTERPRISE',
+      set: (v) => (typeof v === 'string' ? v.toUpperCase().trim() : v),
     },
     planId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -34,8 +37,21 @@ const subscriptionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
+      uppercase: true,
+      trim: true,
       enum: ['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELLED', 'EXPIRED', 'SUSPENDED'],
       default: 'ACTIVE',
+      set: (v) => {
+        if (!v || typeof v !== 'string') return 'ACTIVE';
+        const u = v.toUpperCase().trim();
+        if (u === 'TRIAL' || u === 'TRIALING') return 'TRIALING';
+        if (u === 'ACTIVE') return 'ACTIVE';
+        if (u === 'CANCELLED' || u === 'CANCELED') return 'CANCELLED';
+        if (u === 'EXPIRED') return 'EXPIRED';
+        if (u === 'SUSPENDED') return 'SUSPENDED';
+        if (u === 'PAST_DUE') return 'PAST_DUE';
+        return u;
+      },
       index: true,
     },
     provider: {

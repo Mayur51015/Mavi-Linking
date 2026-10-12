@@ -1575,6 +1575,18 @@ const resetPassword = async (req, res, next) => {
 
     await user.save();
 
+    if (user.supabaseUid) {
+      try {
+        const { getSupabaseAdminClient } = require('../services/supabaseAuthService');
+        const supaAdmin = getSupabaseAdminClient();
+        if (supaAdmin?.auth?.admin) {
+          await supaAdmin.auth.admin.updateUserById(user.supabaseUid, { password });
+        }
+      } catch (supaErr) {
+        console.warn('[Supabase password sync notice]:', supaErr.message);
+      }
+    }
+
 
     try {
       await ActivityLog.create({
@@ -2400,6 +2412,18 @@ const changePassword = async (req, res, next) => {
     user.refreshToken = newRefreshToken;
 
     await user.save();
+
+    if (user.supabaseUid) {
+      try {
+        const { getSupabaseAdminClient } = require('../services/supabaseAuthService');
+        const supaAdmin = getSupabaseAdminClient();
+        if (supaAdmin?.auth?.admin) {
+          await supaAdmin.auth.admin.updateUserById(user.supabaseUid, { password: newPassword });
+        }
+      } catch (supaErr) {
+        console.warn('[Supabase password sync notice]:', supaErr.message);
+      }
+    }
 
     await ActivityLog.create({
       userId: user._id,

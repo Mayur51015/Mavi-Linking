@@ -20,6 +20,8 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [unverifiedInfo, setUnverifiedInfo] = useState(null);
+  const [resendingVerification, setResendingVerification] = useState(false);
 
   // Forgot / Reset Password States (10-Minute Universal Expiration)
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -198,9 +200,33 @@ const Login = () => {
         navigate('/dashboard');
       }
     } catch (err) {
+      if (err.response?.data?.code === 'EMAIL_VERIFICATION_REQUIRED') {
+        setUnverifiedInfo({
+          email: err.response?.data?.data?.email || cleanId,
+          etxId: err.response?.data?.data?.etxId,
+        });
+      } else {
+        setUnverifiedInfo(null);
+      }
       setError(getErrorMessage(err, 'Login failed. Please check your credentials.'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!unverifiedInfo?.email || resendingVerification) return;
+    setResendingVerification(true);
+    try {
+      const res = await api.post('/auth/resend-verification', {
+        email: unverifiedInfo.email,
+        etxId: unverifiedInfo.etxId,
+      });
+      toast.success(res.data?.message || 'Verification email resent! Please check your inbox.');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to resend verification email. Please try again.'));
+    } finally {
+      setResendingVerification(false);
     }
   };
 
@@ -400,16 +426,56 @@ const Login = () => {
                 background: 'rgba(239, 68, 68, 0.15)',
                 border: '1px solid rgba(239, 68, 68, 0.3)',
                 color: 'var(--accent-red)',
-                padding: '0.75rem 1rem',
+                padding: '0.85rem 1rem',
                 borderRadius: '6px',
                 marginBottom: '1.5rem',
                 fontSize: '0.85rem',
                 display: 'flex',
-                alignItems: 'center',
+                flexDirection: 'column',
                 gap: '0.5rem',
               }}
             >
-              <span>{error}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>{error}</span>
+              </div>
+              {unverifiedInfo && (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resendingVerification}
+                    style={{
+                      background: 'rgba(59, 130, 246, 0.2)',
+                      border: '1px solid rgba(59, 130, 246, 0.4)',
+                      color: '#60a5fa',
+                      borderRadius: '4px',
+                      padding: '0.35rem 0.75rem',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: resendingVerification ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {resendingVerification ? 'Resending...' : 'Resend Verification Email'}
+                  </button>
+                  <Link
+                    to={`/verify/${unverifiedInfo.etxId || 'account'}`}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-primary)',
+                      borderRadius: '4px',
+                      padding: '0.35rem 0.75rem',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    Enter Verification Code
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 

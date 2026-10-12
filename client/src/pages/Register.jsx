@@ -41,6 +41,8 @@ const Register = () => {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
+  const [resendingVerification, setResendingVerification] = useState(false);
 
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -189,9 +191,29 @@ const Register = () => {
         navigate(`/verify/${res?.user?.etxId || 'account'}`, { state: { email: registeredEmail } });
       }
     } catch (err) {
+      if (err.response?.status === 409 || err.response?.data?.code === 'EMAIL_PENDING_VERIFICATION') {
+        setPendingVerificationEmail(formData.email.toLowerCase().trim());
+      } else {
+        setPendingVerificationEmail('');
+      }
       setError(getErrorMessage(err, 'Account registration failed. Please try again.'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!pendingVerificationEmail || resendingVerification) return;
+    setResendingVerification(true);
+    try {
+      const res = await api.post('/auth/resend-verification', {
+        email: pendingVerificationEmail,
+      });
+      toast.success(res.data?.message || 'Verification email resent! Please check your inbox.');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to resend verification email. Please try again.'));
+    } finally {
+      setResendingVerification(false);
     }
   };
 
@@ -253,9 +275,49 @@ const Register = () => {
 
         {/* Error Alert Banner */}
         {error && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'var(--accent-red)', padding: '0.85rem 1rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <AlertCircle size={18} />
-            <span>{error}</span>
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'var(--accent-red)', padding: '0.85rem 1rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <AlertCircle size={18} />
+              <span>{error}</span>
+            </div>
+            {pendingVerificationEmail && (
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendingVerification}
+                  style={{
+                    background: 'rgba(59, 130, 246, 0.2)',
+                    border: '1px solid rgba(59, 130, 246, 0.4)',
+                    color: '#60a5fa',
+                    borderRadius: '4px',
+                    padding: '0.35rem 0.75rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    cursor: resendingVerification ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {resendingVerification ? 'Resending...' : 'Resend Verification Email'}
+                </button>
+                <Link
+                  to="/login"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
+                    borderRadius: '4px',
+                    padding: '0.35rem 0.75rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  Go to Sign In
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

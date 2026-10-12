@@ -1,4 +1,114 @@
 const nodemailer = require('nodemailer');
+const axios = require('axios');
+
+/**
+ * Parse display name and email address from composite from string
+ */
+const parseFromAddress = (fromStr, fallbackEmail) => {
+  if (!fromStr) {
+    return { name: 'EduTalentX Security', email: fallbackEmail || 'noreply@edutalentx.com' };
+  }
+  const match = fromStr.match(/^(?:"?([^"]*)"?\s)?(?:<?(.+@[^>]+)>?)$/);
+  if (match) {
+    return {
+      name: (match[1] || 'EduTalentX Security').trim(),
+      email: (match[2] || fallbackEmail || 'noreply@edutalentx.com').trim(),
+    };
+  }
+  if (fromStr.includes('@')) {
+    return { name: 'EduTalentX Security', email: fromStr.replace(/[<>]/g, '').trim() };
+  }
+  return { name: 'EduTalentX Security', email: fallbackEmail || 'noreply@edutalentx.com' };
+};
+
+/**
+ * Send transactional email via Brevo REST API (HTTPS port 443 - Never blocked on Render Free)
+ */
+const sendBrevoApiEmail = async ({
+  apiKey,
+  fromEmail,
+  fromName,
+  toEmail,
+  toName,
+  subject,
+  html,
+  text,
+}) => {
+  const url = 'https://api.brevo.com/v3/smtp/email';
+  const payload = {
+    sender: {
+      name: fromName || 'EduTalentX Security',
+      email: fromEmail,
+    },
+    to: [
+      {
+        email: toEmail,
+        name: toName || undefined,
+      },
+    ],
+    subject,
+    htmlContent: html,
+    textContent: text,
+  };
+
+  const response = await axios.post(url, payload, {
+    headers: {
+      'accept': 'application/json',
+      'api-key': apiKey,
+      'content-type': 'application/json',
+    },
+    timeout: 8000,
+  });
+
+  return {
+    success: true,
+    status: 'EMAIL_ACCEPTED',
+    provider: 'brevo-api',
+    messageId: response.data?.messageId || `brevo_api_${Date.now()}`,
+    accepted: [toEmail],
+    rejected: [],
+    response: `201 Created (Brevo API messageId: ${response.data?.messageId || 'ok'})`,
+  };
+};
+
+/**
+ * Send transactional email via Resend REST API (HTTPS port 443 - Never blocked on Render Free)
+ */
+const sendResendApiEmail = async ({
+  apiKey,
+  fromAddress,
+  toEmail,
+  subject,
+  html,
+  text,
+}) => {
+  const url = 'https://api.resend.com/emails';
+  const payload = {
+    from: fromAddress || 'EduTalentX <onboarding@resend.dev>',
+    to: [toEmail],
+    subject,
+    html,
+    text,
+  };
+
+  const response = await axios.post(url, payload, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    timeout: 8000,
+  });
+
+  return {
+    success: true,
+    status: 'EMAIL_ACCEPTED',
+    provider: 'resend-api',
+    messageId: response.data?.id || `resend_api_${Date.now()}`,
+    accepted: [toEmail],
+    rejected: [],
+    response: `200 OK (Resend API id: ${response.data?.id || 'ok'})`,
+  };
+};
 
 /**
  * Singleton cached transporter for high-performance connection pooling
@@ -93,7 +203,7 @@ const validateSmtpConfig = () => {
 
 /**
  * Get or initialize Nodemailer transporter for SMTP (Brevo on port 2525 or Gmail).
- * Uses secure: false for port 2525 with generous timeouts.
+ * Uses fast 5s connection timeouts to prevent server hanging on Render Free blocked ports.
  */
 const getTransporter = async (forceFresh = false) => {
   if (!forceFresh && cachedTransporter) {
@@ -113,9 +223,9 @@ const getTransporter = async (forceFresh = false) => {
           secure: isSecurePort,
           requireTLS: !isSecurePort,
           auth: { user, pass },
-          connectionTimeout: 15000,
-          greetingTimeout: 15000,
-          socketTimeout: 20000,
+          connectionTimeout: 5000,
+          greetingTimeout: 5000,
+          socketTimeout: 8000,
           tls: {
             rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
           },
@@ -125,9 +235,9 @@ const getTransporter = async (forceFresh = false) => {
           port: Number(port || 2525),
           secure: isSecurePort, // false on port 2525
           auth: { user, pass },
-          connectionTimeout: 15000,
-          greetingTimeout: 15000,
-          socketTimeout: 20000,
+          connectionTimeout: 5000,
+          greetingTimeout: 5000,
+          socketTimeout: 8000,
           tls: {
             rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
             minVersion: 'TLSv1.2',
@@ -139,7 +249,7 @@ const getTransporter = async (forceFresh = false) => {
   }
 
   if (process.env.NODE_ENV === 'production') {
-    console.error('❌ [EMAIL CONFIG ERROR] Missing SMTP credentials! Set SMTP_USER and SMTP_PASS (Brevo SMTP key) in Render environment variables for email delivery.');
+    console.error('❌ [EMAIL CONFIG ERROR] Missing SMTP credentials! Set SMTP_USER and SMTP_PASS (Brevo SMTP key) or BREVO_API_KEY / RESEND_API_KEY in Render environment variables for email delivery.');
   }
 
   // Development/Test fallback to Ethereal if no credentials provided
@@ -155,10 +265,66 @@ const getTransporter = async (forceFresh = false) => {
 };
 
 /**
- * Verify Brevo SMTP connection safely (used for startup diagnostics & health routes)
+ * Verify Email Service connectivity safely (Brevo REST API, Resend REST API, or SMTP)
  */
 const verifySmtpConnection = async () => {
   const config = getSmtpConfig();
+  const resendApiKey = (process.env.RESEND_API_KEY || '').trim();
+  const brevoApiKey = (process.env.BREVO_API_KEY || (config.pass?.startsWith('xkeysib-') ? config.pass : '')).trim();
+
+  // 1. If Resend REST API is configured, verify via Resend over port 443
+  if (resendApiKey) {
+    try {
+      await axios.get('https://api.resend.com/api-keys', {
+        headers: { Authorization: `Bearer ${resendApiKey}` },
+        timeout: 5000,
+      });
+      return {
+        success: true,
+        status: 'RESEND_API_CONNECTED',
+        provider: 'resend-api',
+        port: 443,
+        message: 'Resend HTTP API connected and verified successfully (port 443)',
+      };
+    } catch (resendErr) {
+      if (resendErr.response?.status === 401 || resendErr.response?.status === 403) {
+        return {
+          success: false,
+          status: 'EMAIL_AUTH_ERROR',
+          code: 'RESEND_AUTH_ERROR',
+          error: 'Resend API authentication failed: verify RESEND_API_KEY',
+        };
+      }
+    }
+  }
+
+  // 2. If Brevo REST API is configured, verify via Brevo over port 443
+  if (brevoApiKey) {
+    try {
+      await axios.get('https://api.brevo.com/v3/account', {
+        headers: { 'api-key': brevoApiKey },
+        timeout: 5000,
+      });
+      return {
+        success: true,
+        status: 'BREVO_API_CONNECTED',
+        provider: 'brevo-api',
+        port: 443,
+        message: 'Brevo HTTP API connected and verified successfully (port 443)',
+      };
+    } catch (brevoErr) {
+      if (brevoErr.response?.status === 401 || brevoErr.response?.status === 403) {
+        return {
+          success: false,
+          status: 'EMAIL_AUTH_ERROR',
+          code: 'BREVO_AUTH_ERROR',
+          error: 'Brevo API authentication failed: verify BREVO_API_KEY or SMTP_PASS',
+        };
+      }
+    }
+  }
+
+  // 3. Fallback to standard SMTP verification
   const validation = validateSmtpConfig();
 
   if (!validation.isValid) {
@@ -201,7 +367,7 @@ const verifySmtpConnection = async () => {
         : 'Brevo SMTP authentication failed: verify SMTP_USER (Brevo login email) and SMTP_PASS (active Brevo SMTP key, not API key)';
     } else if (err.code === 'ETIMEDOUT' || err.message?.includes('timeout')) {
       errorCode = 'EMAIL_CONNECTION_ERROR';
-      errorMessage = `Connection timeout connecting to ${config.host}:${config.port}. Render Free restricts outbound SMTP ports 25, 465, and 587. If port 2525 also times out, outbound SMTP may be restricted on your instance; migrate to Brevo HTTP API over HTTPS.`;
+      errorMessage = `Connection timeout connecting to ${config.host}:${config.port}. Render Free restricts outbound SMTP ports 25, 465, and 587. Configure BREVO_API_KEY or RESEND_API_KEY to send via HTTPS port 443.`;
     } else if (err.code === 'ECONNREFUSED') {
       errorCode = 'EMAIL_CONNECTION_REFUSED';
       errorMessage = `Connection refused by ${config.host}:${config.port}`;
@@ -353,6 +519,17 @@ const sendEmail = async ({
     to: mailOptions.to,
   });
 
+  // Extract and print emergency action link / OTP to stdout for instant developer recovery
+  try {
+    const linkMatch = html?.match(/href=["'](https?:\/\/[^"'\s]+)["']/i);
+    const otpMatch = html?.match(/class=["']otp-code["']>([^<]+)<\//i);
+    const actionLink = linkMatch ? linkMatch[1] : null;
+    const actionOtp = otpMatch ? otpMatch[1].trim() : null;
+    if (actionLink || actionOtp) {
+      console.log(`[ACTION LINK DISPATCH] Recipient: ${maskEmail(cleanRecipient)} | Event: ${templateName || cleanSubject} ${actionOtp ? `| OTP: ${actionOtp}` : ''} ${actionLink ? `| Link: ${actionLink}` : ''}`);
+    }
+  } catch (_) {}
+
   // Automated test mock check (when not testing with custom mocked transporter)
   if (process.env.NODE_ENV === 'test' && !customTransporter && !process.env.FORCE_LIVE_SMTP) {
     const mockResult = {
@@ -374,7 +551,49 @@ const sendEmail = async ({
     return mockResult;
   }
 
-  // Dispatch message through Nodemailer with Brevo SMTP
+  // 1. Dispatch via Resend REST API (HTTPS Port 443 - Never blocked on Render Free)
+  const resendApiKey = (process.env.RESEND_API_KEY || '').trim();
+  if (!customTransporter && resendApiKey) {
+    try {
+      console.log(`[EMAIL DISPATCH] Dispatching via Resend REST API (HTTPS port 443) for ${maskEmail(cleanRecipient)}...`);
+      const apiResult = await sendResendApiEmail({
+        apiKey: resendApiKey,
+        fromAddress: mailOptions.from,
+        toEmail: cleanRecipient,
+        subject: cleanSubject,
+        html,
+        text: cleanText,
+      });
+      console.log(`[EMAIL ACCEPTED (RESEND API)] messageId=${apiResult.messageId} recipient=${maskEmail(cleanRecipient)}`);
+      return apiResult;
+    } catch (resendErr) {
+      console.error(`[RESEND API ERROR] Failed to send via Resend API: ${resendErr.response?.data?.message || resendErr.message}`);
+    }
+  }
+
+  // 2. Dispatch via Brevo REST API (HTTPS Port 443 - Never blocked on Render Free)
+  const brevoApiKey = (process.env.BREVO_API_KEY || (smtpConfig.pass?.startsWith('xkeysib-') ? smtpConfig.pass : '')).trim();
+  if (!customTransporter && brevoApiKey) {
+    try {
+      console.log(`[EMAIL DISPATCH] Dispatching via Brevo REST API (HTTPS port 443) for ${maskEmail(cleanRecipient)}...`);
+      const { name: senderName, email: senderEmail } = parseFromAddress(mailOptions.from, emailUser);
+      const apiResult = await sendBrevoApiEmail({
+        apiKey: brevoApiKey,
+        fromEmail: senderEmail,
+        fromName: senderName,
+        toEmail: cleanRecipient,
+        subject: cleanSubject,
+        html,
+        text: cleanText,
+      });
+      console.log(`[EMAIL ACCEPTED (BREVO API)] messageId=${apiResult.messageId} recipient=${maskEmail(cleanRecipient)}`);
+      return apiResult;
+    } catch (brevoErr) {
+      console.error(`[BREVO API ERROR] Failed to send via Brevo API: ${brevoErr.response?.data?.message || brevoErr.message}`);
+    }
+  }
+
+  // 3. Fallback: Dispatch message through Nodemailer with SMTP
   const dispatchOnce = async (transporterInstance) => {
     return await transporterInstance.sendMail(mailOptions);
   };
@@ -386,7 +605,20 @@ const sendEmail = async ({
     try {
       info = await dispatchOnce(transporter);
     } catch (firstErr) {
-      const isSocketDrop = ['ECONNRESET', 'ESOCKET', 'ETIMEDOUT', 'ECONNABORTED', 'ECONNREFUSED'].includes(firstErr.code) ||
+      const isTimeoutOrRefused = ['ETIMEDOUT', 'ECONNREFUSED', 'ENETUNREACH', 'EHOSTUNREACH'].includes(firstErr.code) ||
+        firstErr.message?.includes('timeout') ||
+        firstErr.message?.includes('Connection closed');
+
+      // Fail-fast on network connection refusal or timeout (Render Free port blocking)
+      if (isTimeoutOrRefused) {
+        console.error(`❌ [SMTP HOST UNREACHABLE] Connection to ${smtpConfig.host}:${smtpConfig.port} failed (${firstErr.code || firstErr.message}).`);
+        if (process.env.NODE_ENV === 'production') {
+          console.error(`💡 [RENDER FREE NOTICE] Render Free restricts outbound SMTP ports 25, 465, and 587. Configure BREVO_API_KEY or RESEND_API_KEY in Render environment variables to send via HTTPS port 443 without firewall blocking.`);
+        }
+        throw firstErr;
+      }
+
+      const isSocketDrop = ['ECONNRESET', 'ESOCKET', 'ECONNABORTED'].includes(firstErr.code) ||
         firstErr.message?.includes('ECONNRESET') ||
         firstErr.message?.includes('socket closed');
 
@@ -1248,6 +1480,9 @@ const sendOwnerAlertEmail = async ({
 
 module.exports = {
   sendEmail,
+  sendBrevoApiEmail,
+  sendResendApiEmail,
+  parseFromAddress,
   resolveRecipientEmail,
   sendAssignmentNotificationEmail,
   sendOwnerAlertEmail,

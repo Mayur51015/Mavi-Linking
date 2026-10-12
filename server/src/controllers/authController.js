@@ -144,7 +144,14 @@ const register = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         code: 'EMAIL_ALREADY_REGISTERED',
-        message: 'An account with this email address already exists. Please sign in instead.',
+        message: !existingUser.emailVerified
+          ? 'An account with this email is already registered and pending email verification. Please check your inbox or resend verification.'
+          : 'An account with this email address already exists. Please sign in instead.',
+        data: {
+          email: lowerEmail,
+          etxId: existingUser.etxId,
+          emailVerified: existingUser.emailVerified,
+        },
       });
     }
 
@@ -295,6 +302,7 @@ const register = async (req, res, next) => {
     const { sendEmail, generateStudentVerificationEmailHtml, getClientBaseUrl } = require('../utils/sendEmail');
     const clientUrl = getClientBaseUrl(req);
     const verificationLink = `${clientUrl}/verify/${user.etxId}?t=${rawVerificationToken}`;
+    console.log(`[STUDENT VERIFICATION LINK] Recipient: ${user.email} (ETX ID: ${user.etxId}) -> ${verificationLink}`);
 
     const emailHtml = generateStudentVerificationEmailHtml({
       name: user.name,
@@ -1143,6 +1151,7 @@ const resendVerification = async (req, res, next) => {
 
     const clientUrl = getClientBaseUrl(req);
     const verificationLink = `${clientUrl}/verify/${user.etxId}?t=${rawVerificationToken}`;
+    console.log(`[STUDENT VERIFICATION LINK RESENT] Recipient: ${user.email} (ETX ID: ${user.etxId}) -> ${verificationLink}`);
 
     const { sendEmail, generateStudentVerificationEmailHtml } = require('../utils/sendEmail');
     const emailHtml = generateStudentVerificationEmailHtml({

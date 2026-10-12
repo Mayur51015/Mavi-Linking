@@ -15,6 +15,7 @@ import api from '../api/axios';
 import PasswordInput from '../components/ui/PasswordInput';
 import BrandLogo from '../components/BrandLogo';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { getSupabaseAuthErrorMessage } from '../utils/supabaseErrors';
 
 const Login = () => {
   const [identifier, setIdentifier] = useState('');

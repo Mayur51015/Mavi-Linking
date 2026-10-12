@@ -72,37 +72,40 @@ const Login = () => {
     setForgotError('');
     setForgotSuccessMsg('');
 
-    // If Supabase is configured and email is entered, use Supabase Auth recovery
-    if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
-      try {
-        await resetPasswordForEmail(forgotEmail);
-        setForgotSuccessMsg(
-          'A password recovery link has been dispatched to your email address from Supabase Auth! Please check your inbox and click the link to reset your password. (Note: Supabase default email service has recipient and rate limits).'
-        );
-        toast.success('Password recovery email dispatched!');
-        setSendingForgot(false);
-        return;
-      } catch (err) {
-        console.warn('[Supabase password recovery failed, attempting OTP fallback]:', err.message);
-        // If it's a hard rate limit from Supabase, show it to the user
-        if (err.message?.includes('rate limit') || err.message?.includes('Too Many Requests')) {
-          setForgotError(err.message);
-          setSendingForgot(false);
-          return;
-        }
-        // Otherwise fall through to backend OTP route
-      }
-    }
-
     try {
-      const res = await api.post('/auth/forgot-password', { email: forgotEmail });
+      // 1. Dispatch verified 6-digit OTP and reset link via primary server email service (Nodemailer / Gmail / Brevo)
+      const res = await api.post('/auth/forgot-password', { email: forgotEmail.toLowerCase().trim() });
       const expiry = Date.now() + 10 * 60 * 1000;
       sessionStorage.setItem('edutalentx_recovery_otp_expires_at', String(expiry));
       setForgotOtpExpiresAt(expiry);
       setResendCooldown(60);
-      setForgotSuccessMsg(res.data?.message || 'A 6-digit recovery OTP has been sent. Code expires in 10 minutes.');
+      setForgotSuccessMsg(
+        res.data?.message || 'A 6-digit recovery OTP and password reset link have been sent to your email. Code expires in 10 minutes.'
+      );
       setForgotStep(2);
+      toast.success('Password recovery OTP sent to your email!');
+
+      // 2. Also trigger Supabase recovery link in background if Supabase is configured
+      if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
+        resetPasswordForEmail(forgotEmail).catch((err) => {
+          console.warn('[Supabase password recovery notice]:', err.message);
+        });
+      }
     } catch (err) {
+      // Fallback: If backend OTP dispatch failed but Supabase is available, try Supabase directly
+      if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
+        try {
+          await resetPasswordForEmail(forgotEmail);
+          setForgotSuccessMsg(
+            'A password recovery link has been dispatched to your email address from Supabase Auth! Please check your inbox and click the link to reset your password.'
+          );
+          toast.success('Password recovery link dispatched via Supabase!');
+          setSendingForgot(false);
+          return;
+        } catch (supaErr) {
+          console.warn('[Supabase fallback recovery failed]:', supaErr.message);
+        }
+      }
       setForgotError(getErrorMessage(err, 'Failed to send recovery OTP. Please check your email.'));
     } finally {
       setSendingForgot(false);
@@ -114,32 +117,33 @@ const Login = () => {
     setSendingForgot(true);
     setForgotError('');
 
-    if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
-      try {
-        await resetPasswordForEmail(forgotEmail);
-        setForgotSuccessMsg('A fresh password recovery link has been dispatched to your email address from Supabase Auth!');
-        setResendCooldown(60);
-        setSendingForgot(false);
-        return;
-      } catch (err) {
-        console.warn('[Supabase resend recovery failed, attempting OTP fallback]:', err.message);
-        if (err.message?.includes('rate limit') || err.message?.includes('Too Many Requests')) {
-          setForgotError(err.message);
-          setSendingForgot(false);
-          return;
-        }
-      }
-    }
-
     try {
-      const res = await api.post('/auth/forgot-password', { email: forgotEmail });
+      const res = await api.post('/auth/forgot-password', { email: forgotEmail.toLowerCase().trim() });
       const expiry = Date.now() + 10 * 60 * 1000;
       sessionStorage.setItem('edutalentx_recovery_otp_expires_at', String(expiry));
       setForgotOtpExpiresAt(expiry);
       setResendCooldown(60);
       setForgotSuccessMsg('A fresh 6-digit recovery OTP has been dispatched. Code expires in exactly 10 minutes.');
       setForgotOtp('');
+      toast.success('Fresh recovery OTP dispatched!');
+
+      if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
+        resetPasswordForEmail(forgotEmail).catch((err) => {
+          console.warn('[Supabase password resend notice]:', err.message);
+        });
+      }
     } catch (err) {
+      if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
+        try {
+          await resetPasswordForEmail(forgotEmail);
+          setForgotSuccessMsg('A fresh password recovery link has been dispatched via Supabase Auth!');
+          setResendCooldown(60);
+          setSendingForgot(false);
+          return;
+        } catch (supaErr) {
+          console.warn('[Supabase resend failed]:', supaErr.message);
+        }
+      }
       setForgotError(getErrorMessage(err, 'Failed to resend recovery OTP. Please wait before retrying.'));
     } finally {
       setSendingForgot(false);

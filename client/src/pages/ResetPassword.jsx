@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle2, AlertCircle, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import PasswordInput from '../components/ui/PasswordInput';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { getSupabaseAuthErrorMessage } from '../utils/supabaseErrors';
+import { getErrorMessage } from '../utils/errorMessage';
+import api from '../api/axios';
 import { useToast } from '../context/ToastContext';
 
 const ResetPassword = () => {
+  const [searchParams] = useSearchParams();
+  const backendToken = searchParams.get('token');
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -23,10 +28,17 @@ const ResetPassword = () => {
   useEffect(() => {
     let mounted = true;
 
+    // 1. If opened via backend transactional email reset link (?token=...)
+    if (backendToken) {
+      setHasRecoverySession(true);
+      setCheckingSession(false);
+      return;
+    }
+
     const checkSession = async () => {
       if (!isSupabaseConfigured()) {
         if (mounted) {
-          setError('Supabase is not configured on this environment.');
+          setError('Password reset link is invalid or expired. Please request a new recovery link.');
           setCheckingSession(false);
         }
         return;
@@ -65,7 +77,7 @@ const ResetPassword = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [backendToken]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,6 +96,23 @@ const ResetPassword = () => {
     setSubmitting(true);
 
     try {
+      // If reset via backend token link
+      if (backendToken) {
+        const res = await api.post('/auth/reset-password', {
+          token: backendToken,
+          password,
+        });
+
+        setSuccess(true);
+        toast?.success?.(res.data?.message || 'Password updated successfully! You can now log in.');
+
+        setTimeout(() => {
+          navigate('/login');
+        }, 2500);
+        return;
+      }
+
+      // Otherwise reset via Supabase Auth recovery session
       const { error: updateError } = await supabase.auth.updateUser({
         password,
       });
@@ -105,7 +134,11 @@ const ResetPassword = () => {
         navigate('/login');
       }, 2500);
     } catch (err) {
-      setError(getSupabaseAuthErrorMessage(err, 'Failed to update password. Your recovery link may be expired.'));
+      if (backendToken) {
+        setError(getErrorMessage(err, 'Failed to update password. Your recovery link may be expired or already used.'));
+      } else {
+        setError(getSupabaseAuthErrorMessage(err, 'Failed to update password. Your recovery link may be expired.'));
+      }
     } finally {
       setSubmitting(false);
     }

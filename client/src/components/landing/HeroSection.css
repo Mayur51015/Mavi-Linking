@@ -1,57 +1,27 @@
-/* EduTalentX 3D Hero Section Responsive Styles */
+/* EduTalentX Hero Section Responsive Styles */
 
 .edutalentx-hero-section {
   position: relative;
   width: 100%;
-  min-height: 640px;
   background-color: #FFFFFF;
   border-bottom: 1px solid #E5E7EB;
-  display: flex;
-  align-items: center;
-  padding-top: 5.5rem;
-  padding-bottom: 3.5rem;
-  overflow: hidden;
-}
-
-/* Desktop & Laptop: Clean, crisp 3D background with zero blur or milky overlays */
-@media (min-width: 1024px) {
-  .edutalentx-hero-section {
-    min-height: 560px;
-    background-image: url('/images/edutalentx-hero.png');
-    background-size: cover;
-    background-position: left center;
-    background-repeat: no-repeat;
-    padding-top: 5.5rem;
-    padding-bottom: 3.5rem;
-  }
+  padding-top: 6.25rem; /* Room for fixed 68px navbar */
+  padding-bottom: 4rem;
+  overflow-x: hidden;
 }
 
 .edutalentx-hero-container {
-  max-width: 1280px;
+  max-width: 1200px;
   width: 100%;
   margin: 0 auto;
   padding: 0 1.5rem;
-  position: relative;
-  z-index: 2;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  box-sizing: border-box;
 }
 
-@media (min-width: 1024px) {
-  .edutalentx-hero-container {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
-  }
-}
-
-/* Text Column */
-.edutalentx-hero-text-column {
-  max-width: 440px;
-  width: 100%;
-}
-
+/* 1. Hero Eyebrow */
 .edutalentx-hero-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -63,20 +33,22 @@
   color: #2563EB;
   background: #EFF6FF;
   border: 1px solid #DBEAFE;
-  padding: 0.3rem 0.75rem;
+  padding: 0.35rem 0.85rem;
   border-radius: 9999px;
-  margin-bottom: 1.15rem;
+  margin-bottom: 1.25rem;
   box-shadow: 0 1px 2px rgba(37, 99, 235, 0.05);
 }
 
+/* 2. Main Headline */
 .edutalentx-hero-headline {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  font-size: clamp(2rem, 3.2vw, 2.75rem);
+  font-size: clamp(2.25rem, 4.5vw, 3.25rem);
   line-height: 1.15;
   font-weight: 700;
   color: #0F172A;
-  letter-spacing: -0.025em;
-  margin: 0 0 1rem 0;
+  letter-spacing: -0.03em;
+  margin: 0 0 1.25rem 0;
+  max-width: 800px;
 }
 
 .hero-headline-accent {
@@ -84,43 +56,47 @@
   display: inline-block;
 }
 
+/* 3. Description */
 .edutalentx-hero-description {
-  font-size: 1rem;
-  line-height: 1.55;
-  color: #1E293B;
-  font-weight: 500;
-  margin: 0 0 1.35rem 0;
-  max-width: 420px;
+  font-size: clamp(1rem, 1.25vw, 1.125rem);
+  line-height: 1.6;
+  color: #475569;
+  font-weight: 450;
+  margin: 0 0 1.75rem 0;
+  max-width: 680px;
 }
 
-/* Capability Badges Strip */
+/* 4. Feature Badges */
 .edutalentx-hero-pillars {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1.75rem;
-  max-width: 430px;
+  gap: 0.55rem;
+  margin-bottom: 2rem;
+  max-width: 760px;
+  width: 100%;
 }
 
 .edutalentx-hero-pillars-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.55rem;
+  width: 100%;
 }
 
 .edutalentx-hero-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #1F2937;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #E5E7EB;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  padding: 0.45rem 0.8rem;
-  border-radius: 6px;
-  transition: border-color 0.15s ease;
+  color: #1E293B;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  box-sizing: border-box;
 }
 
 .edutalentx-hero-pill.full-width {
@@ -128,7 +104,8 @@
 }
 
 .edutalentx-hero-pill:hover {
-  border-color: #D1D5DB;
+  border-color: #CBD5E1;
+  background-color: #F1F5F9;
 }
 
 .edutalentx-hero-pill .pill-icon {
@@ -136,115 +113,134 @@
   flex-shrink: 0;
 }
 
-/* CTA Action Buttons */
+/* 5. CTA Action Buttons — in one horizontal row */
 .edutalentx-hero-actions {
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
-  gap: 0.85rem;
+  gap: 1rem;
   align-items: center;
+  width: 100%;
 }
 
 .edutalentx-hero-btn-primary {
   background-color: #2563EB;
   color: #FFFFFF !important;
-  padding: 0.75rem 1.6rem;
-  border-radius: 6px;
+  padding: 0.8rem 1.75rem;
+  border-radius: 8px;
   font-size: 0.9375rem;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  border: 1px solid transparent;
-  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+  gap: 0.5rem;
+  border: 1px solid #2563EB;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
   transition: background-color 0.15s ease, transform 0.15s ease;
-  min-height: 44px;
+  min-height: 46px;
+  box-sizing: border-box;
 }
 
 .edutalentx-hero-btn-primary:hover {
   background-color: #1D4ED8;
+  border-color: #1D4ED8;
   transform: translateY(-1px);
 }
 
 .edutalentx-hero-btn-secondary {
   background-color: #FFFFFF;
-  color: #111111;
-  border: 1px solid #D1D5DB;
-  padding: 0.75rem 1.6rem;
-  border-radius: 6px;
+  color: #1E293B !important;
+  border: 1px solid #CBD5E1;
+  padding: 0.8rem 1.75rem;
+  border-radius: 8px;
   font-size: 0.9375rem;
   font-weight: 500;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   transition: background-color 0.15s ease, border-color 0.15s ease;
-  min-height: 44px;
+  min-height: 46px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
 }
 
 .edutalentx-hero-btn-secondary:hover {
-  background-color: #F8F9FA;
-  border-color: #9CA3AF;
+  background-color: #F8FAFC;
+  border-color: #94A3B8;
 }
 
-/* Mobile & Tablet Dedicated Visual Area */
-.edutalentx-hero-mobile-visual {
-  display: block;
-  margin-top: 2.25rem;
+/* 6. Hero Image Wrapper — exactly 32-44px below CTA buttons, left-aligned, spanning container */
+.edutalentx-hero-image-wrapper {
+  margin-top: 36px;
   width: 100%;
-}
-
-@media (min-width: 1024px) {
-  .edutalentx-hero-mobile-visual {
-    display: none;
-  }
-}
-
-.edutalentx-hero-image-frame {
-  width: 100%;
-  border-radius: 10px;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  background-color: #F8FAFC;
   overflow: hidden;
-  border: 1px solid #E5E7EB;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-  background: #F8F9FA;
+  box-sizing: border-box;
 }
 
-.edutalentx-hero-img {
+.edutalentx-hero-image {
   display: block;
   width: 100%;
   height: auto;
-  object-fit: cover;
-  object-position: center;
+  object-fit: contain;
+  border-radius: 12px;
 }
 
-/* Mobile Breakpoints */
-@media (max-width: 768px) {
+/* Tablet Breakpoint (768px - 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
   .edutalentx-hero-section {
-    padding-top: 5.5rem;
-    padding-bottom: 2.5rem;
+    padding-top: 5.75rem;
+    padding-bottom: 3.5rem;
   }
 
   .edutalentx-hero-headline {
-    font-size: clamp(1.9rem, 7vw, 2.4rem);
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .edutalentx-hero-image-wrapper {
+    margin-top: 32px;
+  }
+}
+
+/* Mobile Breakpoint (< 768px) */
+@media (max-width: 767px) {
+  .edutalentx-hero-section {
+    padding-top: 5.25rem;
+    padding-bottom: 2.75rem;
+  }
+
+  .edutalentx-hero-container {
+    padding: 0 1rem; /* ~16px page gutters */
+  }
+
+  .edutalentx-hero-headline {
+    font-size: clamp(1.85rem, 6.5vw, 2.35rem);
+    line-height: 1.18;
+    margin-bottom: 1rem;
   }
 
   .edutalentx-hero-description {
-    font-size: 0.98rem;
+    font-size: 0.975rem;
+    line-height: 1.55;
+    margin-bottom: 1.35rem;
   }
 
   .edutalentx-hero-pillars {
-    gap: 0.4rem;
+    gap: 0.45rem;
     margin-bottom: 1.5rem;
   }
 
   .edutalentx-hero-pill {
-    font-size: 0.77rem;
+    font-size: 0.775rem;
     padding: 0.4rem 0.65rem;
   }
 
   .edutalentx-hero-pillars-row {
     flex-direction: column;
-    width: 100%;
+    gap: 0.45rem;
   }
 
   .edutalentx-hero-pillars-row .edutalentx-hero-pill {
@@ -254,7 +250,7 @@
   .edutalentx-hero-actions {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.65rem;
+    gap: 0.75rem;
   }
 
   .edutalentx-hero-btn-primary,
@@ -262,27 +258,53 @@
     width: 100%;
     justify-content: center;
   }
+
+  .edutalentx-hero-image-wrapper {
+    margin-top: 28px;
+    border-radius: 10px;
+  }
+
+  .edutalentx-hero-image {
+    border-radius: 10px;
+  }
 }
 
-/* Narrowest screens (320px) */
+/* Narrow Screen Optimization (<= 360px, including 320px) */
 @media (max-width: 360px) {
   .edutalentx-hero-container {
-    padding: 0 1rem;
+    padding: 0 0.875rem;
+  }
+
+  .edutalentx-hero-eyebrow {
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.65rem;
   }
 
   .edutalentx-hero-headline {
-    font-size: 1.75rem;
+    font-size: 1.7rem;
   }
 
   .edutalentx-hero-pill {
     font-size: 0.72rem;
+    padding: 0.35rem 0.55rem;
+  }
+
+  .edutalentx-hero-image-wrapper {
+    margin-top: 22px;
+    border-radius: 8px;
+  }
+
+  .edutalentx-hero-image {
+    border-radius: 8px;
   }
 }
 
-/* Reduced motion preference */
+/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .edutalentx-hero-btn-primary,
-  .edutalentx-hero-btn-secondary {
+  .edutalentx-hero-btn-secondary,
+  .edutalentx-hero-pill {
     transition: none !important;
     transform: none !important;
   }

@@ -37,5 +37,10 @@ describe('HeroSection Component with 3D Background', () => {
     const exploreLink = screen.getByRole('link', { name: /Explore Platform/i });
     expect(exploreLink).toBeInTheDocument();
     expect(exploreLink.getAttribute('href')).toBe('#what-it-does');
+
+    // 5. Hero Workspace Image directly below CTAs
+    const heroImg = screen.getByAltText(/EduTalentX dashboard connecting developer skills, coding profiles, and career opportunities/i);
+    expect(heroImg).toBeInTheDocument();
+    expect(heroImg.getAttribute('src')).toBe('/images/edutalentx-hero-workspace.png');
   });
 });

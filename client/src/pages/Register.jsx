@@ -235,13 +235,14 @@ const Register = () => {
         <div style={{ textAlign: 'center', marginBottom: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <BrandLogo
             variant="full"
-            size={44}
+            size={36}
+            layout="horizontal"
             linkTo="/"
-            showTagline={true}
-            style={{ flexDirection: 'column', textAlign: 'center', gap: '0.65rem' }}
-            taglineStyle={{ textAlign: 'center', maxWidth: '300px' }}
+            showTagline={false}
           />
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.75rem' }}>Verified Student Registration &amp; Institutional Onboarding</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.65rem' }}>
+            Verified Student Registration &amp; Institutional Onboarding
+          </p>
         </div>
 
         {/* Progress Stepper Bar */}

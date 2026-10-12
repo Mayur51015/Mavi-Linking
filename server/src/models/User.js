@@ -221,9 +221,15 @@ const userSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
+    supabaseUid: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
     authProvider: {
       type: String,
-      enum: ['local', 'google', 'github'],
+      enum: ['local', 'google', 'github', 'supabase'],
       default: 'local',
     },
     requestedRole: {
@@ -593,9 +599,12 @@ userSchema.pre('save', async function (next) {
     return next();
   }
 
-  // Ensure googleId is unset if null or empty string to preserve sparse index
+  // Ensure googleId & supabaseUid are unset if null or empty string to preserve sparse index
   if (this.googleId === null || this.googleId === '') {
     this.googleId = undefined;
+  }
+  if (this.supabaseUid === null || this.supabaseUid === '') {
+    this.supabaseUid = undefined;
   }
 
   // Generate permanent ETX ID if missing (with collision check)

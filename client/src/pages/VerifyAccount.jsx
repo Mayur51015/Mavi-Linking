@@ -18,6 +18,8 @@ import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorMessage';
 import BrandLogo from '../components/BrandLogo';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { getSupabaseAuthErrorMessage } from '../utils/supabaseErrors';
 
 /**
  * Mask email address for privacy (e.g. student@example.com -> s***t@example.com)
@@ -47,8 +49,93 @@ const VerifyAccount = () => {
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // Auto-verify token from URL on mount
+  // Auto-verify token from URL on mount & detect Supabase email confirmation callback
   useEffect(() => {
+    let isMounted = true;
+
+    // 1. Supabase Auth Email Confirmation Detection
+    if (isSupabaseConfigured()) {
+      const checkSupabaseVerification = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user?.email_confirmed_at) {
+            if (isMounted) {
+              setVerificationSuccess(true);
+              localStorage.setItem('token', session.access_token);
+              localStorage.setItem('authProvider', 'supabase');
+            }
+
+            // Provision or sync MongoDB student profile
+            const pendingRegRaw = sessionStorage.getItem('edutalentx_pending_registration');
+            if (pendingRegRaw) {
+              try {
+                const pendingReg = JSON.parse(pendingRegRaw);
+                const syncRes = await api.post('/auth/supabase/sync-profile', pendingReg, {
+                  headers: { Authorization: `Bearer ${session.access_token}` },
+                });
+                if (syncRes.data?.data?.user && setUser && isMounted) {
+                  setUser(syncRes.data.data.user);
+                  sessionStorage.removeItem('edutalentx_pending_registration');
+                }
+              } catch (syncErr) {
+                console.warn('[Profile Sync on Verify]:', syncErr.message);
+              }
+            } else {
+              try {
+                const meRes = await api.get('/auth/me', {
+                  headers: { Authorization: `Bearer ${session.access_token}` },
+                });
+                if (meRes.data?.data?.user && setUser && isMounted) {
+                  setUser(meRes.data.data.user);
+                }
+              } catch {
+                // Ignore profile fetch failure during background verification
+              }
+            }
+            toast.success('Account successfully verified & activated!');
+          }
+        } catch (supaErr) {
+          console.warn('[Supabase verification check]:', supaErr.message);
+        }
+      };
+
+      checkSupabaseVerification();
+
+      const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!isMounted) return;
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          if (session?.user?.email_confirmed_at) {
+            setVerificationSuccess(true);
+            localStorage.setItem('token', session.access_token);
+            localStorage.setItem('authProvider', 'supabase');
+
+            const pendingRegRaw = sessionStorage.getItem('edutalentx_pending_registration');
+            if (pendingRegRaw) {
+              try {
+                const pendingReg = JSON.parse(pendingRegRaw);
+                const syncRes = await api.post('/auth/supabase/sync-profile', pendingReg, {
+                  headers: { Authorization: `Bearer ${session.access_token}` },
+                });
+                if (syncRes.data?.data?.user && setUser) {
+                  setUser(syncRes.data.data.user);
+                  sessionStorage.removeItem('edutalentx_pending_registration');
+                }
+              } catch {
+                // Ignore sync error if profile was already synchronized
+              }
+            }
+            toast.success('Account successfully verified & activated!');
+          }
+        }
+      });
+
+      return () => {
+        isMounted = false;
+        authListener?.subscription?.unsubscribe();
+      };
+    }
+
+    // 2. Legacy SHA-256 token verification flow
     if (!tokenFromUrl) return;
 
     const executeTokenVerification = async () => {
@@ -81,7 +168,7 @@ const VerifyAccount = () => {
     };
 
     executeTokenVerification();
-  }, [tokenFromUrl, setUser, toast]);
+  }, [tokenFromUrl, etxIdFromUrl, setUser, toast]);
 
   // Cooldown timer handler
   useEffect(() => {
@@ -109,6 +196,34 @@ const VerifyAccount = () => {
     }
 
     setResending(true);
+
+    // If Supabase is configured and email address is available, resend via Supabase Auth
+    if (isSupabaseConfigured() && activeEmail && activeEmail.includes('@')) {
+      try {
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email: activeEmail,
+          options: {
+            emailRedirectTo: `${window.location.origin}/verify-account`,
+          },
+        });
+
+        if (error) {
+          toast.error(getSupabaseAuthErrorMessage(error));
+        } else {
+          toast.success(`A fresh confirmation email has been dispatched to ${activeEmail} via Supabase!`);
+          setResendCooldown(60);
+          setVerificationError('');
+        }
+      } catch (supaErr) {
+        toast.error(getSupabaseAuthErrorMessage(supaErr));
+      } finally {
+        setResending(false);
+      }
+      return;
+    }
+
+    // Fallback to custom backend resend
     try {
       const res = await api.post('/auth/resend-verification', {
         email: emailOrId,
@@ -116,7 +231,7 @@ const VerifyAccount = () => {
       });
 
       if (res.data?.success) {
-        toast.success(res.data?.message || `A new verification link has been dispatched to ${emailOrId} and your Institution Administrator!`);
+        toast.success(res.data?.message || `A new verification link has been dispatched to ${emailOrId}!`);
         setResendCooldown(60);
         setVerificationError('');
       } else {

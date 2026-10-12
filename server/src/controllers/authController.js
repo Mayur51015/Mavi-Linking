@@ -3045,6 +3045,317 @@ const validatePRN = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Synchronize or provision student application profile from Supabase Auth
+ * @route   POST /api/auth/supabase/sync-profile
+ * @access  Private (Supabase Bearer Token via protect middleware)
+ */
+const syncSupabaseProfile = async (req, res, next) => {
+  try {
+    if (!req.supabaseUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'This operation requires authenticated Supabase credentials.',
+      });
+    }
+
+    const {
+      name,
+      prn,
+      institutionCode,
+      institutionId,
+      departmentId,
+      university,
+      degree,
+      graduationYear,
+      portfolioWebsite,
+      githubUsername,
+      preferredDomain,
+      experienceLevel,
+      bio,
+    } = req.body;
+
+    const supabaseUid = req.supabaseUser.id;
+    const email = (req.supabaseUser.email || '').toLowerCase().trim();
+
+    // Check if profile is already mapped to this supabaseUid
+    let user = await User.findOne({ supabaseUid });
+
+    if (!user) {
+      // Check if user exists with this email
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        if (existingUser.supabaseUid && existingUser.supabaseUid !== supabaseUid) {
+          return res.status(409).json({
+            success: false,
+            code: 'ACCOUNT_CONFLICT',
+            message: 'This email is already associated with another Supabase identity.',
+          });
+        }
+        // Zero-Trust Rule 6: Do not automatically grant access without explicit password/identity verification
+        return res.status(403).json({
+          success: false,
+          code: 'ACCOUNT_LINKING_REQUIRED',
+          message: 'An existing EduTalentX account exists for this email address. Please link your account by verifying your existing password.',
+          data: { email },
+        });
+      }
+
+      // Provision new student profile safely
+      const Institution = require('../models/Institution');
+      const Department = require('../models/Department');
+
+      let targetInst = null;
+      if (institutionCode && institutionCode.trim()) {
+        const cleanCode = institutionCode.trim().toUpperCase();
+        targetInst = await Institution.findOne({
+          $or: [
+            { institutionCode: cleanCode },
+            { tenantId: cleanCode },
+            { shortName: cleanCode },
+            { code: cleanCode },
+          ],
+        });
+        if (!targetInst) {
+          return res.status(404).json({
+            success: false,
+            code: 'INSTITUTION_CODE_INVALID',
+            message: 'Invalid Institution Code. Please check the code provided by your institution.',
+          });
+        }
+      } else if (institutionId) {
+        targetInst = await Institution.findById(institutionId);
+        if (!targetInst) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid or non-existent institution selected.',
+          });
+        }
+      }
+
+      if (targetInst && (targetInst.status !== 'active' || targetInst.licenseStatus === 'suspended')) {
+        return res.status(400).json({
+          success: false,
+          code: 'INSTITUTION_INACTIVE',
+          message: 'Student registration for this institution is currently unavailable.',
+        });
+      }
+
+      // Validate Department belongingness
+      let targetDept = null;
+      if (departmentId) {
+        targetDept = await Department.findById(departmentId);
+        if (!targetDept || targetDept.status !== 'active') {
+          return res.status(400).json({
+            success: false,
+            code: 'INVALID_DEPARTMENT',
+            message: 'Invalid or inactive department selected.',
+          });
+        }
+        if (targetInst && targetDept.institutionId.toString() !== targetInst._id.toString()) {
+          return res.status(403).json({
+            success: false,
+            code: 'DEPARTMENT_INSTITUTION_MISMATCH',
+            message: 'The selected department does not belong to the validated institution.',
+          });
+        }
+      }
+
+      // PRN duplicate check
+      if (prn && prn.trim()) {
+        const trimmedPrn = prn.trim();
+        const prnQuery = { prn: trimmedPrn };
+        if (institutionId || targetInst?._id) {
+          prnQuery.institutionId = institutionId || targetInst._id;
+        }
+        const existingPrn = await User.findOne(prnQuery);
+        if (existingPrn) {
+          return res.status(409).json({
+            success: false,
+            code: 'PRN_ALREADY_REGISTERED',
+            message: 'A student account with this PRN is already registered.',
+          });
+        }
+      }
+
+      const displayName =
+        name ||
+        req.supabaseUser.user_metadata?.name ||
+        req.supabaseUser.user_metadata?.full_name ||
+        email.split('@')[0];
+
+      const isEmailVerified = Boolean(req.supabaseUser.email_confirmed_at);
+
+      const userData = {
+        name: displayName,
+        email,
+        supabaseUid,
+        authProvider: 'supabase',
+        role: 'user', // strictly zero-trust: default to student
+        roles: ['user'],
+        requestedRole: 'none',
+        roleStatus: 'active',
+        accountStatus: isEmailVerified
+          ? targetInst
+            ? 'PENDING_ADMIN_APPROVAL'
+            : 'PENDING_VERIFICATION'
+          : 'PENDING_EMAIL_VERIFICATION',
+        emailVerified: isEmailVerified,
+      };
+
+      if (prn && prn.trim()) {
+        userData.prn = prn.trim();
+        userData.institutionalIdentifier = {
+          identifierType: 'PRN',
+          identifierValue: prn.trim(),
+        };
+      }
+      if (targetInst) {
+        userData.institutionId = targetInst._id;
+        if (targetInst.tenantId) userData.tenantId = targetInst.tenantId;
+        if (!userData.university) userData.university = {};
+        userData.university.name = targetInst.name;
+      }
+      if (targetDept) {
+        userData.departmentId = targetDept._id;
+        if (!userData.university) userData.university = {};
+        userData.university.department = targetDept.name;
+      }
+      userData.prnVerificationStatus = 'pending';
+
+      if (bio) userData.bio = bio;
+      if (university) userData.university = university;
+      if (degree) userData.degree = degree;
+      if (graduationYear) userData.graduationYear = graduationYear;
+      if (portfolioWebsite) userData.portfolioWebsite = portfolioWebsite;
+      if (githubUsername) userData.githubUsername = githubUsername;
+      if (preferredDomain) userData.preferredDomain = preferredDomain;
+      if (experienceLevel) userData.experienceLevel = experienceLevel;
+
+      user = await User.create(userData);
+
+      // Notify Institution Admin(s) if institution attached
+      if (targetInst) {
+        try {
+          await notifyInstitutionAdminsOfStudentVerification({ user, institutionId: targetInst._id });
+        } catch (adminNotifyErr) {
+          console.error('[INSTITUTION ADMIN NOTIFY ERROR]', adminNotifyErr.message);
+        }
+      }
+
+      // Security Audit Logs
+      try {
+        await AuditLog.create({
+          actorId: user._id,
+          targetUserId: user._id,
+          action: 'SUPABASE_PROFILE_PROVISIONED',
+          details: { email: user.email, etxId: user.etxId, supabaseUid },
+          result: 'SUCCESS',
+        });
+      } catch (auditErr) {
+        console.error('Audit Log Error:', auditErr.message);
+      }
+    } else {
+      // Existing user profile found for this supabaseUid: update verified state if needed
+      if (req.supabaseUser.email_confirmed_at && !user.emailVerified) {
+        user.emailVerified = true;
+        if (user.accountStatus === 'PENDING_EMAIL_VERIFICATION') {
+          user.accountStatus = user.institutionId ? 'PENDING_ADMIN_APPROVAL' : 'PENDING_VERIFICATION';
+        }
+        await user.save();
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile synchronized successfully.',
+      data: { user },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Link an existing EduTalentX account to Supabase Auth by verifying password
+ * @route   POST /api/auth/supabase/link-account
+ * @access  Private (requires Supabase token)
+ */
+const linkSupabaseAccount = async (req, res, next) => {
+  try {
+    if (!req.supabaseUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'This operation requires authenticated Supabase credentials.',
+      });
+    }
+
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Existing account password is required to link accounts.',
+      });
+    }
+
+    const email = (req.supabaseUser.email || '').toLowerCase().trim();
+    const user = req.existingUserToLink || (await User.findOne({ email }).select('+password'));
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        code: 'USER_NOT_FOUND',
+        message: 'No existing EduTalentX account found with this email address.',
+      });
+    }
+
+    if (user.supabaseUid && user.supabaseUid !== req.supabaseUser.id) {
+      return res.status(409).json({
+        success: false,
+        code: 'ALREADY_LINKED',
+        message: 'This EduTalentX account is already linked to another Supabase identity.',
+      });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        code: 'INVALID_CREDENTIALS',
+        message: 'Incorrect password. Account linking failed.',
+      });
+    }
+
+    // Link Supabase UID safely
+    user.supabaseUid = req.supabaseUser.id;
+    user.authProvider = 'supabase';
+    if (req.supabaseUser.email_confirmed_at) {
+      user.emailVerified = true;
+    }
+    await user.save({ validateModifiedOnly: true });
+
+    try {
+      await AuditLog.create({
+        actorId: user._id,
+        targetUserId: user._id,
+        action: 'ACCOUNT_LINKED_SUPABASE',
+        details: { email: user.email, etxId: user.etxId, supabaseUid: req.supabaseUser.id },
+        result: 'SUCCESS',
+      });
+    } catch (auditErr) {
+      console.error('Audit Log Error:', auditErr.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Account successfully linked with Supabase Auth.',
+      data: { user },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -3071,5 +3382,8 @@ module.exports = {
   resendVerification,
   changeEmailPending,
   validatePRN,
+  syncSupabaseProfile,
+  linkSupabaseAccount,
 };
+
 

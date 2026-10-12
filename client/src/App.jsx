@@ -48,6 +48,7 @@ const ActivateAccount = React.lazy(() => import('./pages/ActivateAccount'));
 const VerifyAccount = React.lazy(() => import('./pages/VerifyAccount'));
 const PendingApproval = React.lazy(() => import('./pages/PendingApproval'));
 const ChangePassword = React.lazy(() => import('./pages/ChangePassword'));
+const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
 
 import RequirePasswordChange from './routes/RequirePasswordChange';
 
@@ -133,6 +134,7 @@ const App = () => {
             <Route path="/verify/:etxId" element={<VerifyAccount />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
             <Route path="/activate-account" element={<ActivateAccount />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/change-password" element={<RequirePasswordChange><ChangePassword /></RequirePasswordChange>} />
 
             {/* ─── User/Student Dashboard ────────────────────────── */}

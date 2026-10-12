@@ -181,9 +181,9 @@ const Register = () => {
       const registeredEmail = formData.email.toLowerCase().trim();
       localStorage.setItem('pendingVerificationEmail', registeredEmail);
 
-      if (res?.code === 'EMAIL_VERIFICATION_REQUIRED') {
-        toast.success(`🎉 Account created! Please check ${registeredEmail} to verify your address.`);
-        navigate(`/verify/${res?.user?.etxId || 'account'}`, { state: { email: registeredEmail } });
+      if (res?.emailConfirmationRequired || res?.code === 'EMAIL_VERIFICATION_REQUIRED') {
+        toast.success(`🎉 Account created! Please check ${registeredEmail} to verify your email address.`);
+        navigate('/verify-account', { state: { email: registeredEmail } });
       } else {
         toast.success('Account created successfully!');
         navigate(`/verify/${res?.user?.etxId || 'account'}`, { state: { email: registeredEmail } });

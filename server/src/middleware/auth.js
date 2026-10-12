@@ -1,11 +1,13 @@
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const supabaseAuthService = require('../services/supabaseAuthService');
 
 /**
  * Auth Middleware — protects routes by verifying JWT from the
- * Authorization header (Bearer <token>). Attaches the full
- * user document (minus password) to req.user.
+ * Authorization header (Bearer <token>).
+ * Supports both verified Supabase access tokens and legacy signed JWTs.
+ * Attaches the full user document (minus password) to req.user.
  */
 const protect = async (req, res, next) => {
   try {
@@ -26,52 +28,140 @@ const protect = async (req, res, next) => {
       });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_mavi_secret_key_2026');
-
-    const userId = decoded.id || decoded._id || decoded.userId;
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        code: 'INVALID_TOKEN',
-        message: 'Access denied. Invalid token payload.',
-      });
-    }
-
-    // Attach user to request (exclude password) — safe ObjectId and fallback lookup
     let user;
-    if (mongoose.Types.ObjectId.isValid(userId)) {
-      user = await User.findById(userId).select('-password');
+    let decoded;
+
+    // ─── 1. Supabase Access Token Verification Flow ──────────────────
+    if (supabaseAuthService.isSupabaseTokenCandidate(token)) {
+      const verification = await supabaseAuthService.verifySupabaseToken(token);
+      if (!verification.valid) {
+        if (
+          verification.error === 'TokenExpiredError' ||
+          String(verification.error).toLowerCase().includes('expired')
+        ) {
+          return res.status(401).json({
+            success: false,
+            code: 'TOKEN_EXPIRED',
+            message: 'Token has expired. Please login again.',
+          });
+        }
+        return res.status(401).json({
+          success: false,
+          code: 'INVALID_TOKEN',
+          message: verification.error || 'Access denied. Invalid Supabase token.',
+        });
+      }
+
+      const supabaseUser = verification.user;
+      req.supabaseUser = supabaseUser;
+      req.authProvider = 'supabase';
+
+      const currentUrl = req.originalUrl || req.url || '';
+
+      // Resolve corresponding MongoDB user profile by verified supabaseUid
+      user = await User.findOne({ supabaseUid: supabaseUser.id }).select('-password');
+
+      if (!user) {
+        // Safe Profile Resolution & Provisioning
+        const lowerEmail = (supabaseUser.email || '').toLowerCase().trim();
+        const existingEmailUser = await User.findOne({ email: lowerEmail }).select('+password');
+
+        if (existingEmailUser) {
+          // If accessing the link-account endpoint, allow request to proceed to controller
+          if (currentUrl.includes('/api/auth/supabase/link-account')) {
+            req.existingUserToLink = existingEmailUser;
+            return next();
+          }
+
+          // Zero-Trust Rule: Do NOT automatically grant access to an existing account merely because email matches
+          return res.status(403).json({
+            success: false,
+            code: 'ACCOUNT_LINKING_REQUIRED',
+            message: 'An existing EduTalentX account is registered with this email. Please log in with your credentials to link your Supabase account.',
+            data: { email: lowerEmail },
+          });
+        }
+
+        // If accessing sync-profile, allow syncSupabaseProfile controller to provision from body payload
+        if (currentUrl.includes('/api/auth/supabase/sync-profile')) {
+          return next();
+        }
+
+        // Safe profile auto-provisioning for verified brand new student on general endpoints
+        const userName =
+          supabaseUser.user_metadata?.name ||
+          supabaseUser.user_metadata?.full_name ||
+          lowerEmail.split('@')[0] ||
+          'EduTalentX User';
+
+        user = await User.create({
+          name: userName,
+          email: lowerEmail,
+          supabaseUid: supabaseUser.id,
+          authProvider: 'supabase',
+          role: 'user', // strictly default to 'user' (student)
+          roles: ['user'],
+          requestedRole: 'none',
+          roleStatus: 'active',
+          accountStatus: 'PENDING_VERIFICATION',
+          emailVerified: Boolean(supabaseUser.email_confirmed_at),
+        });
+      }
+
+      // Synchronize confirmed email state from Supabase if verified
+      if (supabaseUser.email_confirmed_at && !user.emailVerified) {
+        user.emailVerified = true;
+        await User.updateOne({ _id: user._id }, { $set: { emailVerified: true } });
+      }
     } else {
-      user = await User.findOne({
-        $or: [
-          { etxId: String(userId).toUpperCase() },
-          { adminId: String(userId).toUpperCase() },
-          { adminLoginId: String(userId).toUpperCase() },
-          { email: String(userId).toLowerCase() },
-        ],
-      }).select('-password');
-    }
+      // ─── 2. Legacy Signed JWT Verification Flow ────────────────────
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_mavi_secret_key_2026');
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        code: 'USER_NOT_FOUND',
-        message: 'Token is valid but user no longer exists.',
-      });
-    }
+      const userId = decoded.id || decoded._id || decoded.userId;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          code: 'INVALID_TOKEN',
+          message: 'Access denied. Invalid token payload.',
+        });
+      }
 
-    // ─── Session / Token Version Invalidation Check ──────────────────
-    if (
-      decoded.tokenVersion !== undefined &&
-      user.tokenVersion !== undefined &&
-      decoded.tokenVersion !== user.tokenVersion
-    ) {
-      return res.status(401).json({
-        success: false,
-        code: 'SESSION_INVALIDATED',
-        message: 'Your session has been invalidated or expired. Please log in again.',
-      });
+      // Attach user to request (exclude password) — safe ObjectId and fallback lookup
+      if (mongoose.Types.ObjectId.isValid(userId)) {
+        user = await User.findById(userId).select('-password');
+      } else {
+        user = await User.findOne({
+          $or: [
+            { etxId: String(userId).toUpperCase() },
+            { adminId: String(userId).toUpperCase() },
+            { adminLoginId: String(userId).toUpperCase() },
+            { email: String(userId).toLowerCase() },
+          ],
+        }).select('-password');
+      }
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          code: 'USER_NOT_FOUND',
+          message: 'Token is valid but user no longer exists.',
+        });
+      }
+
+      // Session / Token Version Invalidation Check for legacy tokens
+      if (
+        decoded.tokenVersion !== undefined &&
+        user.tokenVersion !== undefined &&
+        decoded.tokenVersion !== user.tokenVersion
+      ) {
+        return res.status(401).json({
+          success: false,
+          code: 'SESSION_INVALIDATED',
+          message: 'Your session has been invalidated or expired. Please log in again.',
+        });
+      }
+
+      req.authProvider = 'local';
     }
 
     // ─── Account Deactivation Check (Indefinite Disable) ────────────

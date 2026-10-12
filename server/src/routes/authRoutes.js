@@ -28,6 +28,8 @@ const { authLimiter, loginLimiter } = require('../middleware/authLimiter');const
   resendVerification,
   changeEmailPending,
   validatePRN,
+  syncSupabaseProfile,
+  linkSupabaseAccount,
 } = require('../controllers/authController');
 const {
   upload,
@@ -142,6 +144,10 @@ router.post('/avatar', protect, upload.single('file'), uploadAvatar);
 router.post('/logout', protect, logout);
 router.post('/change-password', protect, changePassword);
 router.post('/request-role-upgrade', protect, authLimiter, requestRoleUpgrade);
+
+// Supabase Auth Integration Endpoints
+router.post('/supabase/sync-profile', protect, syncSupabaseProfile);
+router.post('/supabase/link-account', protect, linkSupabaseAccount);
 
 // Secure Email Change System Endpoints (Password + OTP Verification)
 router.post('/email-change/request', protect, authLimiter, requestEmailChange);

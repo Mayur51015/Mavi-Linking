@@ -111,6 +111,7 @@ api.interceptors.response.use(
           '/verify-email',
           '/pending-approval',
           '/activate-account',
+          '/reset-password',
         ];
         const isAuthPage = authPages.some((p) => path === p || path.startsWith('/public/'));
 

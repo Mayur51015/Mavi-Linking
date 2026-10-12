@@ -127,6 +127,8 @@ const auditLogSchema = new mongoose.Schema(
         'STUDENT_LOGIN_BLOCKED_PENDING_APPROVAL',
         'INSTITUTION_CODE_VALIDATED',
         'INSTITUTION_CODE_CHANGED',
+        'SUPABASE_PROFILE_PROVISIONED',
+        'ACCOUNT_LINKED_SUPABASE',
       ],
     },
     oldPRN: {

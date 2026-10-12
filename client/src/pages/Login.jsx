@@ -37,7 +37,7 @@ const Login = () => {
   const [otpTimeRemaining, setOtpTimeRemaining] = useState(0);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  const { login } = useContext(AuthContext);
+  const { login, resetPasswordForEmail, linkAccountWithSupabase, needsAccountLinking } = useContext(AuthContext);
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -68,6 +68,23 @@ const Login = () => {
     setSendingForgot(true);
     setForgotError('');
     setForgotSuccessMsg('');
+
+    // If Supabase is configured and email is entered, use Supabase Auth recovery
+    if (forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
+      try {
+        await resetPasswordForEmail(forgotEmail);
+        setForgotSuccessMsg(
+          'A password recovery link has been dispatched to your email address from Supabase Auth! Please check your inbox and click the link to reset your password. (Note: Supabase default email service has recipient and rate limits).'
+        );
+        toast.success('Password recovery email dispatched!');
+      } catch (err) {
+        setForgotError(err.message || 'Failed to send recovery email. Please check your address or wait before retrying.');
+      } finally {
+        setSendingForgot(false);
+      }
+      return;
+    }
+
     try {
       const res = await api.post('/auth/forgot-password', { email: forgotEmail });
       const expiry = Date.now() + 10 * 60 * 1000;
@@ -87,6 +104,20 @@ const Login = () => {
     if (resendCooldown > 0 || sendingForgot) return;
     setSendingForgot(true);
     setForgotError('');
+
+    if (forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
+      try {
+        await resetPasswordForEmail(forgotEmail);
+        setForgotSuccessMsg('A fresh password recovery link has been dispatched to your email address from Supabase Auth!');
+        setResendCooldown(60);
+      } catch (err) {
+        setForgotError(err.message || 'Failed to resend recovery email.');
+      } finally {
+        setSendingForgot(false);
+      }
+      return;
+    }
+
     try {
       const res = await api.post('/auth/forgot-password', { email: forgotEmail });
       const expiry = Date.now() + 10 * 60 * 1000;

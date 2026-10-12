@@ -358,15 +358,20 @@ export const AuthProvider = ({ children }) => {
   // ─── 10. Unified Register ────────────────────────────────────────────
   const register = useCallback(async (userData) => {
     if (isSupabaseConfigured()) {
-      return await signUpWithSupabase({
-        email: userData.email,
-        password: userData.password,
-        name: userData.name,
-        registrationData: userData,
-      });
+      try {
+        return await signUpWithSupabase({
+          email: userData.email,
+          password: userData.password,
+          name: userData.name,
+          registrationData: userData,
+        });
+      } catch (supaErr) {
+        console.warn('[Supabase Sign Up hit limitation or failed, falling back to server registration]:', supaErr.message);
+        // Fall back to primary server registration if Supabase fails (e.g. 429 over_email_send_rate_limit)
+      }
     }
 
-    // Fallback to legacy registration
+    // Fallback to legacy/primary registration on server
     const res = await api.post('/auth/register', userData);
     const token = res.data?.data?.token;
     if (token) {

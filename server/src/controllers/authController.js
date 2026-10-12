@@ -298,6 +298,26 @@ const register = async (req, res, next) => {
     // Create user (password is hashed via pre-save hook, ETX ID auto-generated)
     const user = await User.create(userData);
 
+    // Attempt background Supabase user provisioning via Admin API (does not consume Supabase email quota)
+    try {
+      const { getSupabaseAdminClient } = require('../services/supabaseAuthService');
+      const supaAdmin = getSupabaseAdminClient();
+      if (supaAdmin?.auth?.admin) {
+        const { data: supaCreated } = await supaAdmin.auth.admin.createUser({
+          email: user.email,
+          password,
+          email_confirm: false,
+          user_metadata: { name: user.name, full_name: user.name },
+        });
+        if (supaCreated?.user?.id) {
+          user.supabaseUid = supaCreated.user.id;
+          await User.updateOne({ _id: user._id }, { $set: { supabaseUid: supaCreated.user.id } });
+        }
+      }
+    } catch (supaProvisionErr) {
+      console.warn('[Supabase admin auto-provision notice]:', supaProvisionErr.message);
+    }
+
     // Dispatch Verification Email
     const { sendEmail, generateStudentVerificationEmailHtml, getClientBaseUrl } = require('../utils/sendEmail');
     const clientUrl = getClientBaseUrl(req);
@@ -659,6 +679,32 @@ const login = async (req, res, next) => {
     user.lastLogin = new Date();
     await user.save({ validateModifiedOnly: true });
 
+    // Synchronize Supabase credentials in background if applicable
+    if (user.email && password) {
+      try {
+        const { getSupabaseAdminClient } = require('../services/supabaseAuthService');
+        const supaAdmin = getSupabaseAdminClient();
+        if (supaAdmin?.auth?.admin) {
+          if (user.supabaseUid) {
+            await supaAdmin.auth.admin.updateUserById(user.supabaseUid, { password });
+          } else {
+            const { data: supaCreated } = await supaAdmin.auth.admin.createUser({
+              email: user.email,
+              password,
+              email_confirm: Boolean(user.emailVerified),
+              user_metadata: { name: user.name, full_name: user.name },
+            });
+            if (supaCreated?.user?.id) {
+              user.supabaseUid = supaCreated.user.id;
+              await User.updateOne({ _id: user._id }, { $set: { supabaseUid: supaCreated.user.id } });
+            }
+          }
+        }
+      } catch (supaSyncErr) {
+        // Non-blocking credential sync notice
+      }
+    }
+
     // Log Security Audit Activity
     try {
       await ActivityLog.create({
@@ -988,6 +1034,18 @@ const verifyEmail = async (req, res, next) => {
     user.verificationTokenExpires = null;
 
     await user.save();
+
+    if (user.supabaseUid) {
+      try {
+        const { getSupabaseAdminClient } = require('../services/supabaseAuthService');
+        const supaAdmin = getSupabaseAdminClient();
+        if (supaAdmin?.auth?.admin) {
+          await supaAdmin.auth.admin.updateUserById(user.supabaseUid, { email_confirm: true });
+        }
+      } catch (supaErr) {
+        console.warn('[Supabase email verification sync notice]:', supaErr.message);
+      }
+    }
 
     // Send confirmation email to student that account is verified and active
     const clientUrl = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';

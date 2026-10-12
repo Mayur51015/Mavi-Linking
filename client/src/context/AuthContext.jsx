@@ -459,6 +459,7 @@ export const AuthProvider = ({ children }) => {
     getDashboardPath,
     setUser,
     socket,
+    isSupabaseConfigured: isSupabaseConfigured(),
   }), [
     user,
     loading,

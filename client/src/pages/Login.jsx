@@ -14,6 +14,7 @@ import { getErrorMessage } from '../utils/errorMessage';
 import api from '../api/axios';
 import PasswordInput from '../components/ui/PasswordInput';
 import BrandLogo from '../components/BrandLogo';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
 
 const Login = () => {
   const [identifier, setIdentifier] = useState('');
@@ -72,19 +73,25 @@ const Login = () => {
     setForgotSuccessMsg('');
 
     // If Supabase is configured and email is entered, use Supabase Auth recovery
-    if (forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
+    if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
       try {
         await resetPasswordForEmail(forgotEmail);
         setForgotSuccessMsg(
           'A password recovery link has been dispatched to your email address from Supabase Auth! Please check your inbox and click the link to reset your password. (Note: Supabase default email service has recipient and rate limits).'
         );
         toast.success('Password recovery email dispatched!');
-      } catch (err) {
-        setForgotError(err.message || 'Failed to send recovery email. Please check your address or wait before retrying.');
-      } finally {
         setSendingForgot(false);
+        return;
+      } catch (err) {
+        console.warn('[Supabase password recovery failed, attempting OTP fallback]:', err.message);
+        // If it's a hard rate limit from Supabase, show it to the user
+        if (err.message?.includes('rate limit') || err.message?.includes('Too Many Requests')) {
+          setForgotError(err.message);
+          setSendingForgot(false);
+          return;
+        }
+        // Otherwise fall through to backend OTP route
       }
-      return;
     }
 
     try {
@@ -107,17 +114,21 @@ const Login = () => {
     setSendingForgot(true);
     setForgotError('');
 
-    if (forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
+    if (isSupabaseConfigured() && forgotEmail && forgotEmail.includes('@') && resetPasswordForEmail) {
       try {
         await resetPasswordForEmail(forgotEmail);
         setForgotSuccessMsg('A fresh password recovery link has been dispatched to your email address from Supabase Auth!');
         setResendCooldown(60);
-      } catch (err) {
-        setForgotError(err.message || 'Failed to resend recovery email.');
-      } finally {
         setSendingForgot(false);
+        return;
+      } catch (err) {
+        console.warn('[Supabase resend recovery failed, attempting OTP fallback]:', err.message);
+        if (err.message?.includes('rate limit') || err.message?.includes('Too Many Requests')) {
+          setForgotError(err.message);
+          setSendingForgot(false);
+          return;
+        }
       }
-      return;
     }
 
     try {

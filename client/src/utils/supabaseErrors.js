@@ -30,7 +30,7 @@ export const getSupabaseAuthErrorMessage = (error, fallbackMessage = 'An unexpec
     lower.includes('email_not_confirmed') ||
     lower.includes('not verified')
   ) {
-    return 'Your email address is not yet confirmed. Please check your inbox for the confirmation email from Supabase.';
+    return 'Your email address is not yet confirmed. Please check your inbox for the verification email.';
   }
 
   // 3. Invalid Credentials

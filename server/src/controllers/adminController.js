@@ -1324,6 +1324,7 @@ const approvePrnVerification = async (req, res, next) => {
     user.accountStatus = 'ACTIVE';
     user.roleStatus = 'approved';
     user.isVerified = true;
+    user.emailVerified = true;
     user.prnVerifiedBy = req.user._id;
     user.prnVerifiedAt = new Date();
 
@@ -1336,6 +1337,16 @@ const approvePrnVerification = async (req, res, next) => {
     }
 
     await user.save();
+
+    if (user.supabaseUid) {
+      try {
+        const { getSupabaseAdminClient } = require('../services/supabaseAuthService');
+        const supaAdmin = getSupabaseAdminClient();
+        if (supaAdmin?.auth?.admin) {
+          await supaAdmin.auth.admin.updateUserById(user.supabaseUid, { email_confirm: true });
+        }
+      } catch (_) {}
+    }
 
     // Emit real-time Socket.io update to student
     const io = req.app.get('io');

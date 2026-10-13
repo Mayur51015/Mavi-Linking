@@ -5,9 +5,10 @@ import {
   ArrowRight,
   Code2,
   FolderGit2,
-  Activity as ActivityIcon,
   Check,
   Link as LinkIcon,
+  AlertCircle,
+  RotateCcw,
 } from 'lucide-react';
 import api from '../api/axios';
 import GitHubIntelligenceModal from './GitHubIntelligenceModal';
@@ -40,33 +41,42 @@ const GitHubIntelligenceCard = ({ externalScores = null }) => {
     fetchIntelligence();
   }, [fetchIntelligence]);
 
-  const hasRealLink = Boolean(data?.linked && (data?.username || user?.githubUsername));
-  const isLinked = true; // Display as connected like screenshot
-  const username = (hasRealLink ? (data?.username || user?.githubUsername) : null) || 'mayur51015';
+  // Derive verified connection states
+  const connectionState = data?.connectionState || (data?.linked ? 'connected' : 'not_connected');
+  const isLinked = Boolean(data?.linked && (connectionState === 'connected' || connectionState === 'sync_failed'));
+  const isRevoked = connectionState === 'revoked';
+  const isPending = connectionState === 'pending';
+  const isSyncFailed = connectionState === 'sync_failed';
+
+  const username = isLinked ? (data?.username || null) : null;
   const intelligence = data?.intelligence || {};
-  const repositoriesCount = hasRealLink ? (intelligence?.repositories?.length ?? intelligence?.profile?.publicRepos ?? 0) : 59;
+
+  const repositoriesCount = typeof intelligence?.repositories?.length === 'number'
+    ? intelligence.repositories.length
+    : (typeof intelligence?.profile?.publicRepos === 'number' ? intelligence.profile.publicRepos : null);
+
   const languageDistribution = intelligence?.languages?.distribution || {};
-  const languagesCount = hasRealLink ? Object.keys(languageDistribution).length : 3;
+  const languagesCount = intelligence?.languages?.totalDistinct !== undefined && intelligence?.languages?.totalDistinct !== null
+    ? intelligence.languages.totalDistinct
+    : Object.keys(languageDistribution).length;
 
-  let activityStatus = '31 Commits';
-  if (hasRealLink) {
-    if (intelligence?.commits?.recentCount30Days !== undefined && intelligence?.commits?.recentCount30Days !== null) {
-      activityStatus = intelligence.commits.recentCount30Days > 0
-        ? `${intelligence.commits.recentCount30Days} Commits`
-        : 'Active';
-    } else if (intelligence?.contributions?.level) {
-      activityStatus = intelligence.contributions.level;
-    }
-  }
+  const commitsCount = (intelligence?.commits?.recentCount30Days !== undefined && intelligence?.commits?.recentCount30Days !== null)
+    ? intelligence.commits.recentCount30Days
+    : (intelligence?.commits?.available ? 0 : null);
 
-  const devScore = hasRealLink
-    ? (data?.totalScore ?? data?.scores?.development ?? externalScores?.development ?? user?.scores?.development ?? 697)
-    : 697;
-  const scorePercent = Math.min(100, Math.max(0, Math.round((devScore / 1000) * 100)));
+  const devScore = (data?.totalScore !== undefined && data?.totalScore !== null)
+    ? data.totalScore
+    : (data?.scores?.development !== undefined && data?.scores?.development !== null && data?.scores?.development > 0
+        ? data.scores.development
+        : null);
+
+  const scorePercent = devScore !== null ? Math.min(100, Math.max(0, Math.round((devScore / 1000) * 100))) : 0;
 
   const formatLastSynced = () => {
-    if (!data?.lastSyncedAt) return 'Synced 14m ago';
-    const minutes = data.freshnessMinutes !== undefined ? data.freshnessMinutes : Math.floor((Date.now() - new Date(data.lastSyncedAt).getTime()) / 60000);
+    if (!data?.lastSyncedAt) return null;
+    const minutes = (data.freshnessMinutes !== undefined && data.freshnessMinutes !== null)
+      ? data.freshnessMinutes
+      : Math.floor((Date.now() - new Date(data.lastSyncedAt).getTime()) / 60000);
     if (minutes < 1) return 'Synced just now';
     if (minutes < 60) return `Synced ${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
@@ -74,8 +84,7 @@ const GitHubIntelligenceCard = ({ externalScores = null }) => {
     return `Synced ${new Date(data.lastSyncedAt).toLocaleDateString()}`;
   };
 
-  const syncLabel = formatLastSynced();
-
+  const syncLabel = isLinked ? formatLastSynced() : null;
 
   return (
     <>
@@ -103,7 +112,7 @@ const GitHubIntelligenceCard = ({ externalScores = null }) => {
                 GitHub Intelligence
               </h3>
             </div>
-            {isLinked && (
+            {isLinked && username && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.25rem' }}>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                   @{username}
@@ -117,7 +126,7 @@ const GitHubIntelligenceCard = ({ externalScores = null }) => {
             )}
           </div>
 
-          {isLinked ? (
+          {isLinked && !isSyncFailed ? (
             <span
               style={{
                 display: 'inline-flex',
@@ -135,12 +144,66 @@ const GitHubIntelligenceCard = ({ externalScores = null }) => {
             >
               <Check size={11} strokeWidth={3} /> Connected
             </span>
-          ) : (
+          ) : isSyncFailed ? (
             <span
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                background: 'rgba(245, 158, 11, 0.15)',
+                color: 'var(--accent-amber, #F59E0B)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                padding: '0.2rem 0.5rem',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <AlertCircle size={11} /> Sync Failed
+            </span>
+          ) : isRevoked ? (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
                 background: 'rgba(239, 68, 68, 0.15)',
                 color: '#EF4444',
                 border: '1px solid rgba(239, 68, 68, 0.3)',
+                padding: '0.2rem 0.5rem',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <AlertCircle size={11} /> Authorization Revoked
+            </span>
+          ) : isPending ? (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                background: 'rgba(245, 158, 11, 0.15)',
+                color: 'var(--accent-amber, #F59E0B)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                padding: '0.2rem 0.5rem',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Pending
+            </span>
+          ) : (
+            <span
+              style={{
+                background: 'rgba(107, 114, 128, 0.15)',
+                color: 'var(--text-muted, #9CA3AF)',
+                border: '1px solid var(--border-color)',
                 padding: '0.2rem 0.5rem',
                 borderRadius: 'var(--radius-sm)',
                 fontSize: '0.72rem',
@@ -163,7 +226,7 @@ const GitHubIntelligenceCard = ({ externalScores = null }) => {
           <div
             style={{
               flex: 1,
-              padding: '1rem',
+              padding: '1.25rem 1rem',
               borderRadius: '10px',
               background: 'var(--bg-subtle)',
               border: '1px dashed var(--border-color)',
@@ -172,25 +235,68 @@ const GitHubIntelligenceCard = ({ externalScores = null }) => {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.6rem',
-              minHeight: '120px',
+              gap: '0.75rem',
+              minHeight: '160px',
             }}
           >
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0, lineHeight: 1.4 }}>
-              Link your GitHub account to track repositories, commit trends, and calculate your development score.
-            </p>
-            <button
-              onClick={() => navigate('/account-linking')}
-              className="btn btn-secondary btn-sm"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-              }}
-              aria-label="Link GitHub Account"
-            >
-              <LinkIcon size={13} style={{ color: 'var(--brand-blue)' }} /> Link GitHub Account
-            </button>
+            {isRevoked ? (
+              <>
+                <AlertCircle size={28} color="#EF4444" style={{ opacity: 0.8 }} />
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0, lineHeight: 1.4 }}>
+                  GitHub access authorization has expired or been revoked. Reconnect your account to resume intelligence sync.
+                </p>
+                <button
+                  onClick={() => navigate('/account-linking')}
+                  className="btn btn-secondary btn-sm"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                  aria-label="Reconnect GitHub Account"
+                >
+                  <RotateCcw size={13} style={{ color: 'var(--brand-blue)' }} /> Reconnect GitHub Account
+                </button>
+              </>
+            ) : isPending ? (
+              <>
+                <AlertCircle size={28} color="var(--accent-amber, #F59E0B)" style={{ opacity: 0.8 }} />
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0, lineHeight: 1.4 }}>
+                  GitHub connection is pending verification. Complete verification to activate intelligence.
+                </p>
+                <button
+                  onClick={() => navigate('/account-linking')}
+                  className="btn btn-secondary btn-sm"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                  aria-label="Verify GitHub Account"
+                >
+                  <LinkIcon size={13} style={{ color: 'var(--brand-blue)' }} /> Verify in Account Linking
+                </button>
+              </>
+            ) : (
+              <>
+                <GitBranch size={28} style={{ opacity: 0.4, color: 'var(--text-muted)' }} />
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0, lineHeight: 1.4 }}>
+                  Link your GitHub account to track repositories, commit activity, and calculate your verified development score.
+                </p>
+                <button
+                  onClick={() => navigate('/account-linking')}
+                  className="btn btn-secondary btn-sm"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                  aria-label="Connect GitHub Account"
+                >
+                  <LinkIcon size={13} style={{ color: 'var(--brand-blue)' }} /> Connect GitHub
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -212,7 +318,7 @@ const GitHubIntelligenceCard = ({ externalScores = null }) => {
                   Repos
                 </div>
                 <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif' }}>
-                  {repositoriesCount}
+                  {repositoriesCount !== null ? repositoriesCount : '—'}
                 </div>
               </div>
 
@@ -221,7 +327,7 @@ const GitHubIntelligenceCard = ({ externalScores = null }) => {
                   Languages
                 </div>
                 <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif' }}>
-                  {languagesCount}
+                  {languagesCount !== null ? languagesCount : '—'}
                 </div>
               </div>
 
@@ -230,7 +336,7 @@ const GitHubIntelligenceCard = ({ externalScores = null }) => {
                   Commits
                 </div>
                 <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif' }}>
-                  31
+                  {commitsCount !== null ? commitsCount : '—'}
                 </div>
               </div>
             </div>
@@ -242,7 +348,13 @@ const GitHubIntelligenceCard = ({ externalScores = null }) => {
                   Development Score
                 </span>
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif' }}>
-                  {devScore} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>/ 1000</span>
+                  {devScore !== null ? (
+                    <>
+                      {devScore} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>/ 1000</span>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>Not available</span>
+                  )}
                 </span>
               </div>
               <div

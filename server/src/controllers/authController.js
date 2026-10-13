@@ -303,15 +303,28 @@ const register = async (req, res, next) => {
       const { getSupabaseAdminClient } = require('../services/supabaseAuthService');
       const supaAdmin = getSupabaseAdminClient();
       if (supaAdmin?.auth?.admin) {
-        const { data: supaCreated } = await supaAdmin.auth.admin.createUser({
+        const { data: supaCreated, error: supaCreateErr } = await supaAdmin.auth.admin.createUser({
           email: user.email,
           password,
-          email_confirm: false,
+          email_confirm: true,
           user_metadata: { name: user.name, full_name: user.name },
         });
         if (supaCreated?.user?.id) {
           user.supabaseUid = supaCreated.user.id;
           await User.updateOne({ _id: user._id }, { $set: { supabaseUid: supaCreated.user.id } });
+        } else if (supaCreateErr && (supaCreateErr.message?.toLowerCase().includes('already') || supaCreateErr.status === 422)) {
+          // If already registered in Supabase, sync password and confirm email
+          const { data: listData } = await supaAdmin.auth.admin.listUsers();
+          const existingSupaUser = listData?.users?.find((u) => u.email?.toLowerCase() === user.email.toLowerCase());
+          if (existingSupaUser) {
+            await supaAdmin.auth.admin.updateUserById(existingSupaUser.id, {
+              password,
+              email_confirm: true,
+              user_metadata: { name: user.name, full_name: user.name },
+            });
+            user.supabaseUid = existingSupaUser.id;
+            await User.updateOne({ _id: user._id }, { $set: { supabaseUid: existingSupaUser.id } });
+          }
         }
       }
     } catch (supaProvisionErr) {
@@ -686,12 +699,12 @@ const login = async (req, res, next) => {
         const supaAdmin = getSupabaseAdminClient();
         if (supaAdmin?.auth?.admin) {
           if (user.supabaseUid) {
-            await supaAdmin.auth.admin.updateUserById(user.supabaseUid, { password });
+            await supaAdmin.auth.admin.updateUserById(user.supabaseUid, { password, email_confirm: true });
           } else {
             const { data: supaCreated } = await supaAdmin.auth.admin.createUser({
               email: user.email,
               password,
-              email_confirm: Boolean(user.emailVerified),
+              email_confirm: true,
               user_metadata: { name: user.name, full_name: user.name },
             });
             if (supaCreated?.user?.id) {
@@ -1638,7 +1651,7 @@ const resetPassword = async (req, res, next) => {
         const { getSupabaseAdminClient } = require('../services/supabaseAuthService');
         const supaAdmin = getSupabaseAdminClient();
         if (supaAdmin?.auth?.admin) {
-          await supaAdmin.auth.admin.updateUserById(user.supabaseUid, { password });
+          await supaAdmin.auth.admin.updateUserById(user.supabaseUid, { password, email_confirm: true });
         }
       } catch (supaErr) {
         console.warn('[Supabase password sync notice]:', supaErr.message);

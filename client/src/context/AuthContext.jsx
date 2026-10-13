@@ -326,6 +326,7 @@ export const AuthProvider = ({ children }) => {
   // ─── 9. Unified Login (Seamless Supabase + Legacy Fallback) ─────────
   const login = useCallback(async (identifier, password) => {
     const cleanId = (identifier || '').trim();
+    let supabaseAuthError = null;
 
     // If identifier is an email and Supabase is configured, try Supabase Auth first
     if (cleanId.includes('@') && isSupabaseConfigured()) {
@@ -335,24 +336,32 @@ export const AuthProvider = ({ children }) => {
           return { user: supabaseUser, token: session.access_token };
         }
       } catch (err) {
-        // If unconfirmed email, propagate immediately
-        if (err.message.includes('not yet confirmed') || err.message.includes('confirm')) {
-          throw err;
-        }
-        // If rate limit exceeded, propagate immediately
-        if (err.message.includes('rate limit')) {
-          throw err;
-        }
-        // Otherwise, fall through to legacy check (in case user hasn't migrated to Supabase yet)
+        supabaseAuthError = err;
+        console.warn('[Supabase Auth Candidate Notice]:', err.message);
+        // Do not immediately block fallback if Supabase returns 400 or unconfirmed email;
+        // fallback to server endpoint so institutional students & verified backend users can sign in.
       }
     }
 
     // Standard / Legacy Backend Authentication (ETX ID, PRN, Admin ID, or legacy password)
-    const res = await api.post('/auth/login', { identifier: cleanId, password });
-    localStorage.setItem('token', res.data.data.token);
-    localStorage.setItem('authProvider', 'local');
-    setUser(res.data.data.user);
-    return res.data.data;
+    try {
+      const res = await api.post('/auth/login', { identifier: cleanId, password });
+      localStorage.setItem('token', res.data.data.token);
+      localStorage.setItem('authProvider', 'local');
+      setUser(res.data.data.user);
+      return res.data.data;
+    } catch (backendErr) {
+      // If backend explicitly returns actionable status (e.g., EMAIL_VERIFICATION_REQUIRED, ACCOUNT_DEACTIVATED),
+      // bubble that structured response error immediately so UI displays proper resolution actions.
+      if (backendErr.response?.data?.code) {
+        throw backendErr;
+      }
+      // If Supabase threw an error and backend also failed, surface the most specific error
+      if (supabaseAuthError) {
+        throw backendErr.response ? backendErr : supabaseAuthError;
+      }
+      throw backendErr;
+    }
   }, [signInWithSupabase]);
 
   // ─── 10. Unified Register ────────────────────────────────────────────

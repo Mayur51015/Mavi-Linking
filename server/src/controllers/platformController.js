@@ -206,18 +206,22 @@ const unlinkPlatform = async (req, res, next) => {
       [`platforms.${platform}.username`]: '',
       [`platforms.${platform}.linkedAt`]: null,
       [`platformData.${platform}`]: null,
+      [`platformSync.${platform}`]: null,
     };
+    if (platform === 'github') {
+      updateQuery.githubUsername = '';
+    }
 
-let userToUpdate = await User.findByIdAndUpdate(
-  req.user.id,
-  { $set: updateQuery },
-  { new: true }
-);
+    let userToUpdate = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: updateQuery },
+      { new: true }
+    );
 
-await unlinkIdentity({
-  userId: req.user.id,
-  platform,
-});    
+    await unlinkIdentity({
+      userId: req.user.id,
+      platform,
+    });    
     // Auto-recalculate scores after unlinking
     const { evaluateUserIntelligence } = require('../services/careerIntelligenceService');
     const { logTimelineEvent } = require('../utils/timelineLogger');
@@ -545,6 +549,7 @@ const getGitHubIntelligence = async (req, res, next) => {
   try {
     const Project = require('../models/Project');
     const Activity = require('../models/Activity');
+    const ExternalIdentity = require('../models/ExternalIdentity');
     const { calculateDevelopmentScore } = require('../services/scoreService');
 
     let user = await User.findById(req.user.id);
@@ -552,28 +557,71 @@ const getGitHubIntelligence = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    const githubUsername = user.platforms?.github?.username || user.githubUsername;
-    if (!githubUsername) {
+    // Lookup verified external identity explicitly scoped to this authenticated user
+    const identity = await ExternalIdentity.findOne({
+      userId: req.user.id,
+      platform: 'github',
+    });
+
+    const hasLinkedRecord = Boolean(
+      (user.platforms?.github?.username && user.platforms?.github?.linkedAt) ||
+      (identity && identity.verificationStatus === 'verified')
+    );
+
+    // Derive explicit connection states:
+    // 1. not_connected
+    // 2. pending
+    // 3. connected
+    // 4. sync_failed
+    // 5. revoked
+    let connectionState = 'not_connected';
+
+    const failureReason = user.platformSync?.github?.failureReason || '';
+    const isRevoked = identity?.verificationStatus === 'revoked' ||
+      failureReason.toLowerCase().includes('bad credentials') ||
+      failureReason.toLowerCase().includes('token expired') ||
+      failureReason.toLowerCase().includes('revoked');
+
+    if (isRevoked) {
+      connectionState = 'revoked';
+    } else if (identity?.verificationStatus === 'pending') {
+      connectionState = 'pending';
+    } else if (hasLinkedRecord) {
+      const syncStatus = user.platformSync?.github?.syncStatus;
+      if (syncStatus === 'failed') {
+        connectionState = 'sync_failed';
+      } else {
+        connectionState = 'connected';
+      }
+    } else {
+      connectionState = 'not_connected';
+    }
+
+    // If not connected, pending, or revoked: return unlinked response without fabricated stats
+    if (connectionState === 'not_connected' || connectionState === 'pending' || connectionState === 'revoked') {
       return res.status(200).json({
         success: true,
         data: {
           linked: false,
+          connectionState,
           username: null,
           intelligence: null,
           scores: user.scores || {},
           breakdown: null,
-          totalScore: 0,
-          isVerified: Boolean(user.isVerified),
+          totalScore: null,
+          isVerified: false,
           lastSyncedAt: null,
           isFresh: false,
           freshnessMinutes: null,
+          syncStatus: connectionState,
         },
       });
     }
 
+    const githubUsername = (user.platforms?.github?.username || identity?.externalUsername || '').trim();
     let githubData = user.platformData?.github || null;
 
-    // Auto-sync if linked but never populated
+    // Auto-sync ONLY for legitimately linked users whose data hasn't been populated
     if (!githubData && githubUsername) {
       try {
         const { syncGitHubAccount } = require('../services/githubSyncService');
@@ -590,9 +638,23 @@ const getGitHubIntelligence = async (req, res, next) => {
     const projects = await Project.find({ user: req.user.id });
     const activities = await Activity.find({ userId: req.user.id, platform: 'github' }).sort({ date: -1 }).limit(50);
 
-    const scoreResult = calculateDevelopmentScore(githubData, projects, activities);
+    const hasSufficientEvidence = Boolean(
+      githubData && (
+        (githubData.repositories && githubData.repositories.length > 0) ||
+        (githubData.profile?.publicRepos > 0) ||
+        (githubData.commits?.recentCount30Days > 0) ||
+        (projects && projects.length > 0)
+      )
+    );
 
-    const lastSyncedAt = user.lastSyncedAt || githubData?.sync?.lastSyncedAt || null;
+    const scoreResult = calculateDevelopmentScore(githubData, projects, activities);
+    const totalScore = hasSufficientEvidence ? scoreResult.totalScore : null;
+
+    const lastSyncedAt = user.platformSync?.github?.lastSuccessfulSyncAt ||
+      user.platformData?.github?.sync?.completedAt ||
+      identity?.lastSuccessfulSync ||
+      null;
+
     const now = Date.now();
     const freshnessMinutes = lastSyncedAt ? Math.floor((now - new Date(lastSyncedAt).getTime()) / 60000) : null;
     const isFresh = freshnessMinutes !== null ? freshnessMinutes <= 15 : false;
@@ -601,16 +663,17 @@ const getGitHubIntelligence = async (req, res, next) => {
       success: true,
       data: {
         linked: true,
+        connectionState,
         username: githubUsername,
         intelligence: githubData,
         scores: user.scores || {},
-        breakdown: scoreResult.breakdown,
-        totalScore: scoreResult.totalScore,
-        isVerified: Boolean(user.isVerified),
+        breakdown: hasSufficientEvidence ? scoreResult.breakdown : null,
+        totalScore,
+        isVerified: Boolean(identity?.verificationStatus === 'verified' || user.isVerified),
         lastSyncedAt,
         isFresh,
         freshnessMinutes,
-        syncStatus: githubData?.sync?.status || (lastSyncedAt ? 'complete' : 'never_synced'),
+        syncStatus: connectionState === 'sync_failed' ? 'failed' : (githubData?.sync?.status || (lastSyncedAt ? 'complete' : 'pending')),
       },
     });
   } catch (error) {
@@ -636,20 +699,36 @@ const syncGitHubIntelligence = async (req, res, next) => {
 
     const projects = await Project.find({ user: req.user.id });
     const activities = await Activity.find({ userId: req.user.id, platform: 'github' }).sort({ date: -1 }).limit(50);
+
+    const hasSufficientEvidence = Boolean(
+      githubData && (
+        (githubData.repositories && githubData.repositories.length > 0) ||
+        (githubData.profile?.publicRepos > 0) ||
+        (githubData.commits?.recentCount30Days > 0) ||
+        (projects && projects.length > 0)
+      )
+    );
+
     const scoreResult = calculateDevelopmentScore(githubData, projects, activities);
+    const totalScore = hasSufficientEvidence ? scoreResult.totalScore : null;
+
+    const lastSuccessfulSync = updatedUser.platformSync?.github?.lastSuccessfulSyncAt ||
+      updatedUser.lastSyncedAt ||
+      null;
 
     res.status(200).json({
       success: true,
       message: result.message || 'GitHub intelligence synchronized successfully',
       data: {
         linked: true,
+        connectionState: 'connected',
         username: updatedUser.platforms?.github?.username || updatedUser.githubUsername,
         intelligence: githubData,
         scores: updatedUser.scores || {},
-        breakdown: scoreResult.breakdown,
-        totalScore: scoreResult.totalScore,
+        breakdown: hasSufficientEvidence ? scoreResult.breakdown : null,
+        totalScore,
         isVerified: Boolean(updatedUser.isVerified),
-        lastSyncedAt: updatedUser.lastSyncedAt || new Date(),
+        lastSyncedAt: lastSuccessfulSync,
         isFresh: true,
         freshnessMinutes: 0,
         syncStatus: githubData?.sync?.status || 'complete',

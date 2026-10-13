@@ -20,6 +20,7 @@ import {
   ChevronRight,
   TrendingUp,
   Info,
+  Link as LinkIcon,
 } from 'lucide-react';
 import api from '../api/axios';
 import { useToast } from '../context/ToastContext';
@@ -92,7 +93,11 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
   const releases = intelligence.releases || {};
   const contributions = intelligence.contributions || {};
   const breakdown = data?.breakdown || {};
-  const totalScore = data?.totalScore || data?.scores?.development || 0;
+  const totalScore = data?.totalScore !== undefined && data?.totalScore !== null
+    ? data.totalScore
+    : (data?.scores?.development !== undefined && data?.scores?.development !== null && data?.scores?.development > 0
+        ? data.scores.development
+        : null);
 
   const filteredRepos = repositories.filter((r) =>
     r.name?.toLowerCase().includes(repoSearch.toLowerCase()) ||
@@ -156,7 +161,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
                 overflow: 'hidden',
               }}
             >
-              {profile.avatarUrl ? (
+              {data?.linked && profile.avatarUrl ? (
                 <img src={profile.avatarUrl} alt="GitHub avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <GitBranch size={22} color="var(--accent-purple)" />
@@ -166,9 +171,9 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.15rem', fontFamily: 'Outfit, sans-serif', fontWeight: '700' }}>
-                  {profile.name || data?.username || username || 'GitHub Developer Intelligence'}
+                  {data?.linked ? (profile.name || data?.username || username || 'GitHub Developer Intelligence') : 'GitHub Developer Intelligence'}
                 </h3>
-                {data?.isVerified && (
+                {data?.linked && data?.isVerified && (
                   <span
                     style={{
                       display: 'inline-flex',
@@ -188,23 +193,25 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.15rem' }}>
-                <a
-                  href={profile.profileUrl || `https://github.com/${data?.username || username}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    color: 'var(--text-muted)',
-                    fontSize: '0.8rem',
-                    textDecoration: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                  }}
-                >
-                  @{profile.username || data?.username || username} <ExternalLink size={11} />
-                </a>
+                {data?.linked && (profile.username || data?.username || username) && (
+                  <a
+                    href={profile.profileUrl || `https://github.com/${data?.username || username}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      color: 'var(--text-muted)',
+                      fontSize: '0.8rem',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                  >
+                    @{profile.username || data?.username || username} <ExternalLink size={11} />
+                  </a>
+                )}
 
-                {data?.lastSyncedAt && (
+                {data?.linked && data?.lastSyncedAt && (
                   <span
                     style={{
                       color: data?.isFresh !== false ? 'var(--text-muted)' : 'var(--accent-amber)',
@@ -222,23 +229,25 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <button
-              onClick={handleSync}
-              disabled={syncing}
-              className="btn btn-outline btn-sm"
-              style={{
-                fontSize: '0.78rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.4rem 0.75rem',
-                borderColor: syncing ? 'var(--accent-purple)' : undefined,
-              }}
-              aria-label="Synchronize GitHub intelligence data"
-            >
-              <RotateCcw size={13} className={syncing ? 'animate-spin' : ''} />
-              {syncing ? 'Syncing GitHub data...' : 'Sync GitHub'}
-            </button>
+            {data?.linked && (
+              <button
+                onClick={handleSync}
+                disabled={syncing}
+                className="btn btn-outline btn-sm"
+                style={{
+                  fontSize: '0.78rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.4rem 0.75rem',
+                  borderColor: syncing ? 'var(--accent-purple)' : undefined,
+                }}
+                aria-label="Synchronize GitHub intelligence data"
+              >
+                <RotateCcw size={13} className={syncing ? 'animate-spin' : ''} />
+                {syncing ? 'Syncing GitHub data...' : 'Sync GitHub'}
+              </button>
+            )}
 
             <button
               onClick={onClose}
@@ -296,7 +305,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
               gap: '0.4rem',
             }}
           >
-            <GitBranch size={15} /> Repositories ({repositories.length})
+            <GitBranch size={15} /> Repositories ({data?.linked ? repositories.length : 0})
           </button>
 
           <button
@@ -315,7 +324,7 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
               gap: '0.4rem',
             }}
           >
-            <Code2 size={15} /> Score Breakdown ({totalScore} / 1000)
+            <Code2 size={15} /> Score Breakdown ({totalScore !== null ? `${totalScore} / 1000` : 'Not available'})
           </button>
         </div>
 
@@ -345,9 +354,19 @@ const GitHubIntelligenceModal = ({ isOpen, onClose, username, onSyncSuccess }) =
             <div style={{ textAlign: 'center', padding: '3rem 0' }}>
               <AlertCircle size={36} color="var(--accent-amber)" style={{ margin: '0 auto 0.75rem auto' }} />
               <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>No GitHub Account Linked</h4>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '360px', margin: '0 auto' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '360px', margin: '0 auto 1.25rem auto' }}>
                 Link your GitHub account in Account Linking to generate Developer Intelligence and unlock Development Score breakdown.
               </p>
+              <button
+                onClick={() => {
+                  onClose();
+                  window.location.href = '/account-linking';
+                }}
+                className="btn btn-secondary btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', margin: '0 auto' }}
+              >
+                <LinkIcon size={14} /> Go to Account Linking
+              </button>
             </div>
           ) : activeTab === 'overview' ? (
             /* OVERVIEW TAB */

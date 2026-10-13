@@ -1494,6 +1494,7 @@ const convertSuperAdminToStudent = async (req, res) => {
     targetUser.accountStatus = 'ACTIVE';
     targetUser.status = 'active';
     targetUser.prnVerificationStatus = 'approved';
+    targetUser.emailVerified = true;
     targetUser.approvedBy = req.user._id;
     targetUser.approvedAt = new Date();
     targetUser.approvalSource = 'SUPER_ADMIN';
@@ -1503,6 +1504,16 @@ const convertSuperAdminToStudent = async (req, res) => {
     targetUser.tokenVersion = (targetUser.tokenVersion || 0) + 1;
 
     await targetUser.save();
+
+    if (targetUser.supabaseUid) {
+      try {
+        const { getSupabaseAdminClient } = require('../services/supabaseAuthService');
+        const supaAdmin = getSupabaseAdminClient();
+        if (supaAdmin?.auth?.admin) {
+          await supaAdmin.auth.admin.updateUserById(targetUser.supabaseUid, { email_confirm: true });
+        }
+      } catch (_) {}
+    }
 
     // 9. Create Audit Log Entry (Requirement 15)
     await AuditLog.create({

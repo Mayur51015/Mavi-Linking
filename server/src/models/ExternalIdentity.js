@@ -36,7 +36,7 @@ const externalIdentitySchema = new mongoose.Schema(
 
     verificationStatus: {
       type: String,
-      enum: ['pending', 'verified', 'failed'],
+      enum: ['pending', 'verified', 'failed', 'revoked'],
       default: 'pending',
     },
 

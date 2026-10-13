@@ -10,7 +10,7 @@ const timelineEventSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['ACCOUNT', 'DOCUMENT', 'PROJECT', 'GITHUB', 'LEETCODE', 'PLACEMENT', 'BADGE', 'CERTIFICATE', 'ACHIEVEMENT'],
+      enum: ['ACCOUNT', 'DOCUMENT', 'PROJECT', 'GITHUB', 'LEETCODE', 'PLACEMENT', 'BADGE', 'CERTIFICATE', 'ACHIEVEMENT', 'PLATFORM'],
       required: true,
     },
     title: {

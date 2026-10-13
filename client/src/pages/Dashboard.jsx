@@ -406,8 +406,7 @@ const Dashboard = () => {
         api.get('/announcements/my-college').catch(() => arrayFallback),
         api.get('/jobs').catch((err) => {
           console.warn('Failed to fetch jobs:', err.message);
-          setJobsStatus({ loading: false, error: true });
-          return arrayFallback;
+          return { error: true, data: { data: [] } };
         }),
       ]);
 
@@ -427,9 +426,14 @@ const Dashboard = () => {
       setProjectsCount(projectRes.data.count || projectRes.data.data?.length || 0);
       setAnnouncements(annRes.data.data || []);
 
-      const fetchedJobs = jobsRes.data?.data || jobsRes.data?.jobs || (Array.isArray(jobsRes.data) ? jobsRes.data : []);
-      setJobs(fetchedJobs);
-      setJobsStatus({ loading: false, error: false });
+      if (jobsRes.error) {
+        setJobs([]);
+        setJobsStatus({ loading: false, error: true });
+      } else {
+        const fetchedJobs = jobsRes.data?.data || jobsRes.data?.jobs || (Array.isArray(jobsRes.data) ? jobsRes.data : []);
+        setJobs(fetchedJobs);
+        setJobsStatus({ loading: false, error: false });
+      }
 
     } catch (error) {
       console.error("Failed to fetch dashboard data", error);
@@ -1167,10 +1171,10 @@ const Dashboard = () => {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Opportunities</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Inter, sans-serif', color: 'var(--text-primary)', lineHeight: 1.2 }}>
-                      {jobs.length || 5}
+                      {jobsStatus.loading ? '—' : jobsStatus.error ? '—' : jobs.length}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-                      Active matching positions
+                      {jobsStatus.error ? 'Failed to load opportunities' : `${jobs.length} active matching position${jobs.length === 1 ? '' : 's'}`}
                     </div>
                   </div>
                 </div>
@@ -1185,10 +1189,10 @@ const Dashboard = () => {
                     <Globe size={16} color="var(--brand-blue)" />
                   </div>
                   <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
-                    {scores?.overall ? Math.min(100, Math.round(scores.overall / 10)) : 72}%
+                    {scores?.overall != null && scores.overall > 0 ? `${Math.min(100, Math.round(scores.overall / 10))}%` : '—'}
                   </div>
                   <div style={{ width: '100%', height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${scores?.overall ? Math.min(100, Math.round(scores.overall / 10)) : 72}%`, height: '100%', background: 'var(--brand-blue)', borderRadius: '2px' }} />
+                    <div style={{ width: `${scores?.overall ? Math.min(100, Math.round(scores.overall / 10)) : 0}%`, height: '100%', background: 'var(--brand-blue)', borderRadius: '2px' }} />
                   </div>
                 </div>
 
@@ -1199,10 +1203,10 @@ const Dashboard = () => {
                     <GitBranch size={16} color="#8B5CF6" />
                   </div>
                   <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
-                    {scores?.development || 80}%
+                    {scores?.development != null && scores.development > 0 ? `${scores.development}%` : '—'}
                   </div>
                   <div style={{ width: '100%', height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${scores?.development || 80}%`, height: '100%', background: '#8B5CF6', borderRadius: '2px' }} />
+                    <div style={{ width: `${scores?.development || 0}%`, height: '100%', background: '#8B5CF6', borderRadius: '2px' }} />
                   </div>
                 </div>
 
@@ -1213,10 +1217,12 @@ const Dashboard = () => {
                     <Code2 size={16} color="#06B6D4" />
                   </div>
                   <div style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif', lineHeight: 1.2 }}>
-                    {scores?.problemSolving || scores?.problem_solving || 68}%
+                    {(scores?.problemSolving != null && scores.problemSolving > 0) || (scores?.problem_solving != null && scores.problem_solving > 0)
+                      ? `${scores.problemSolving ?? scores.problem_solving}%`
+                      : '—'}
                   </div>
                   <div style={{ width: '100%', height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${scores?.problemSolving || scores?.problem_solving || 68}%`, height: '100%', background: '#06B6D4', borderRadius: '2px' }} />
+                    <div style={{ width: `${(scores?.problemSolving ?? scores?.problem_solving) || 0}%`, height: '100%', background: '#06B6D4', borderRadius: '2px' }} />
                   </div>
                 </div>
               </div>

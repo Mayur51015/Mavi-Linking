@@ -209,10 +209,12 @@ const Login = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      if (err.response?.data?.code === 'EMAIL_VERIFICATION_REQUIRED') {
+      const errCode = err.response?.data?.code || err.code;
+      const errData = err.response?.data?.data || err.data;
+      if (errCode === 'EMAIL_VERIFICATION_REQUIRED') {
         setUnverifiedInfo({
-          email: err.response?.data?.data?.email || cleanId,
-          etxId: err.response?.data?.data?.etxId,
+          email: errData?.email || cleanId,
+          etxId: errData?.etxId,
         });
       } else {
         setUnverifiedInfo(null);

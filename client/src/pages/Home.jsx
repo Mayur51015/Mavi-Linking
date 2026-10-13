@@ -22,10 +22,10 @@ const Home = () => {
   return (
     <div
       style={{
-        background: '#FFFFFF',
-        color: '#111111',
+        background: 'var(--page-bg)',
+        color: 'var(--text-primary)',
         minHeight: '100vh',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        fontFamily: 'var(--font-body)',
       }}
     >
       {/* 1. Navbar */}

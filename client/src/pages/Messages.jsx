@@ -112,7 +112,7 @@ const Messages = () => {
   };
 
   return (
-    <div style={{ padding: '2rem', height: 'calc(100vh - 4rem)', display: 'flex', flexDirection: 'column', color: 'white', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem', height: 'calc(100vh - 4rem)', display: 'flex', flexDirection: 'column', color: 'var(--text-primary)', maxWidth: '1200px', margin: '0 auto' }}>
       <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -195,7 +195,7 @@ const Messages = () => {
                   {activeChat.name?.charAt(0)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1rem', color: 'white' }}>{activeChat.name}</h3>
+                  <h3 style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>{activeChat.name}</h3>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
                     {activeChat.role === 'user' ? 'Student' : activeChat.role} {activeChat.companyName ? `at ${activeChat.companyName}` : ''}
                   </span>
@@ -220,11 +220,11 @@ const Messages = () => {
                       <div style={{
                         padding: '0.75rem 1rem',
                         borderRadius: '12px',
-                        background: isOwn ? 'var(--gradient-primary)' : 'rgba(255, 255, 255, 0.03)',
+                        background: isOwn ? 'var(--primary)' : 'var(--surface-muted)',
                         border: isOwn ? 'none' : '1px solid var(--border-color)',
                         fontSize: '0.85rem',
                         lineHeight: '1.4',
-                        color: 'white',
+                        color: isOwn ? 'white' : 'var(--text-primary)',
                       }}>
                         {msg.content}
                       </div>

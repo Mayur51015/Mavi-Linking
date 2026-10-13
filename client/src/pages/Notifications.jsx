@@ -241,7 +241,7 @@ const Notifications = () => {
               >
                 <Bell size={20} />
               </div>
-              <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white', margin: 0 }}>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
                 Notifications
               </h1>
               <span

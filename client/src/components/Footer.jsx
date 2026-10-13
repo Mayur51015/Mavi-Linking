@@ -13,8 +13,8 @@ const Footer = () => {
             <BrandLogo variant="full" size={28} linkTo="/" />
             <p
               style={{
-                color: '#6B7280',
-                fontSize: '0.85rem',
+                color: 'var(--text-secondary)',
+                fontSize: '0.875rem',
                 margin: '0.65rem 0 0 0',
                 letterSpacing: '0.01em',
               }}
@@ -71,8 +71,8 @@ const Footer = () => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            fontSize: '0.8rem',
-            color: '#6B7280',
+            fontSize: '0.875rem',
+            color: 'var(--text-muted)',
             flexWrap: 'wrap',
             gap: '0.5rem',
           }}

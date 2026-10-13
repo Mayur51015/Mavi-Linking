@@ -182,7 +182,7 @@ const CareerRoadmapCard = () => {
   }
 
   return (
-    <div className="erp-card" style={{ padding: '1.25rem 1.4rem', display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px' }}>
+    <div className="erp-card" style={{ padding: '1.25rem 1.4rem', display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -190,25 +190,25 @@ const CareerRoadmapCard = () => {
             width: '32px',
             height: '32px',
             borderRadius: '8px',
-            background: '#EFF6FF',
-            border: '1px solid #BFDBFE',
+            background: 'var(--primary-soft)',
+            border: '1px solid #BDCEE8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#2563EB',
+            color: 'var(--primary)',
           }}>
             <Compass size={18} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h3 style={{ color: '#111111', margin: 0, fontSize: '0.95rem', fontWeight: 700, fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
+              <h3 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-heading)' }}>
                 EduTalentX Career Roadmap
               </h3>
-              <span className="badge" style={{ fontSize: '0.65rem', padding: '0.15rem 0.45rem', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE', borderRadius: '4px', fontWeight: 600 }}>
+              <span className="badge" style={{ fontSize: '0.75rem', padding: '0.15rem 0.45rem', background: 'var(--primary-soft)', color: 'var(--primary)', border: '1px solid #BDCEE8', borderRadius: '4px', fontWeight: 600 }}>
                 AI Personalized
               </span>
             </div>
-            <p style={{ color: '#4B5563', fontSize: '0.78rem', margin: '0.15rem 0 0 0' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.15rem 0 0 0' }}>
               Build your path from your current skills to your target career.
             </p>
           </div>
@@ -219,7 +219,7 @@ const CareerRoadmapCard = () => {
           disabled={generating}
           className="btn btn-secondary btn-sm"
           title="Regenerate Roadmap"
-          style={{ padding: '0.35rem 0.6rem', color: '#111111' }}
+          style={{ padding: '0.35rem 0.6rem', color: 'var(--text-primary)' }}
         >
           <RefreshCw size={14} className={generating ? 'animate-spin' : ''} />
         </button>
@@ -227,16 +227,16 @@ const CareerRoadmapCard = () => {
 
       {generating && (
         <div style={{
-          background: 'rgba(139, 92, 246, 0.1)',
-          border: '1px solid rgba(139, 92, 246, 0.2)',
+          background: 'rgba(66, 99, 184, 0.1)',
+          border: '1px solid rgba(66, 99, 184, 0.25)',
           borderRadius: '10px',
           padding: '0.75rem 1rem',
           marginBottom: '1rem',
           display: 'flex',
           alignItems: 'center',
           gap: '0.75rem',
-          color: 'var(--accent-purple)',
-          fontSize: '0.85rem'
+          color: 'var(--primary)',
+          fontSize: '0.875rem'
         }}>
           <Loader2 size={16} className="animate-spin" />
           <span>Building your personalized career roadmap...</span>
@@ -248,27 +248,27 @@ const CareerRoadmapCard = () => {
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '0.75rem',
-        background: '#F8F9FA',
-        border: '1px solid #E5E7EB',
+        background: 'var(--surface-muted)',
+        border: '1px solid var(--border)',
         borderRadius: '8px',
         padding: '0.875rem 1rem',
         marginBottom: '1.25rem',
       }}>
         <div>
-          <div style={{ color: '#6B7280', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem', fontWeight: 600 }}>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem', fontWeight: 600 }}>
             Current Level
           </div>
-          <div style={{ color: '#111111', fontWeight: '700', fontSize: '0.95rem' }}>
+          <div style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '0.95rem' }}>
             {currentLevel}
           </div>
         </div>
 
         <div>
-          <div style={{ color: '#6B7280', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem', fontWeight: 600 }}>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem', fontWeight: 600 }}>
             Target Role
           </div>
           <div style={{
-            color: '#2563EB',
+            color: 'var(--primary)',
             fontWeight: '600',
             fontSize: '0.95rem',
             whiteSpace: 'nowrap',
@@ -283,15 +283,15 @@ const CareerRoadmapCard = () => {
           title="Click to change target role"
           >
             <span>{targetRole}</span>
-            <Edit3 size={11} color="#6B7280" />
+            <Edit3 size={11} color="var(--text-muted)" />
           </div>
         </div>
 
         <div>
-          <div style={{ color: '#6B7280', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem', fontWeight: 600 }}>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem', fontWeight: 600 }}>
             Progress
           </div>
-          <div style={{ color: '#2563EB', fontWeight: '700', fontSize: '0.95rem', fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
+          <div style={{ color: 'var(--primary)', fontWeight: '700', fontSize: '0.95rem', fontFamily: 'var(--font-heading)' }}>
             {progressPercent}%
           </div>
         </div>
@@ -302,14 +302,14 @@ const CareerRoadmapCard = () => {
         <div style={{
           width: '100%',
           height: '6px',
-          background: '#E5E7EB',
+          background: 'var(--border)',
           borderRadius: '999px',
           overflow: 'hidden',
         }}>
           <div style={{
             width: `${progressPercent}%`,
             height: '100%',
-            background: '#2563EB',
+            background: 'var(--primary)',
             borderRadius: '999px',
             transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
           }} />
@@ -319,8 +319,8 @@ const CareerRoadmapCard = () => {
       {/* Next Recommended Items List */}
       <div style={{ flex: 1, marginBottom: '1.25rem' }}>
         <div style={{
-          fontSize: '0.78rem',
-          color: '#374151',
+          fontSize: '0.8125rem',
+          color: 'var(--text-primary)',
           fontWeight: '700',
           textTransform: 'uppercase',
           letterSpacing: '0.05em',
@@ -339,18 +339,18 @@ const CareerRoadmapCard = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.6rem',
-                  fontSize: '0.85rem',
-                  color: isCompleted ? '#6B7280' : '#111111',
-                  padding: '0.4rem 0.6rem',
+                  fontSize: '0.875rem',
+                  color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)',
+                  padding: '0.45rem 0.65rem',
                   borderRadius: '6px',
-                  background: isCompleted ? '#F0FDF4' : '#F9FAFB',
-                  border: isCompleted ? '1px solid #A7F3D0' : '1px solid #E5E7EB',
+                  background: isCompleted ? '#E5F4EC' : 'var(--surface-muted)',
+                  border: isCompleted ? '1px solid #B6E2CF' : '1px solid var(--border)',
                 }}
               >
                 {isCompleted ? (
-                  <Check size={15} color="#059669" style={{ flexShrink: 0 }} />
+                  <Check size={15} color="var(--success)" style={{ flexShrink: 0 }} />
                 ) : (
-                  <ArrowRight size={14} color="#2563EB" style={{ flexShrink: 0 }} />
+                  <ArrowRight size={14} color="var(--primary)" style={{ flexShrink: 0 }} />
                 )}
                 <span style={{
                   textDecoration: isCompleted ? 'line-through' : 'none',

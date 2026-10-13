@@ -186,11 +186,11 @@ const TimelineWidget = ({ userId }) => {
             width: '28px',
             height: '28px',
             borderRadius: '6px',
-            background: '#EFF6FF',
+            background: 'var(--primary-soft)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#2563EB',
+            color: 'var(--primary)',
             flexShrink: 0,
           }}
         >
@@ -200,9 +200,9 @@ const TimelineWidget = ({ userId }) => {
           style={{
             fontSize: '1rem',
             fontWeight: 700,
-            color: '#111111',
+            color: 'var(--text-primary)',
             margin: 0,
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'var(--font-heading)',
           }}
         >
           Developer Activity & Timeline
@@ -223,10 +223,10 @@ const TimelineWidget = ({ userId }) => {
           style={{
             padding: '0.45rem 0.75rem',
             borderRadius: '6px',
-            border: '1px solid #E5E7EB',
-            background: '#FFFFFF',
-            color: '#111111',
-            fontSize: '0.8125rem',
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+            color: 'var(--text-primary)',
+            fontSize: '0.875rem',
             outline: 'none',
           }}
         >
@@ -244,10 +244,10 @@ const TimelineWidget = ({ userId }) => {
           style={{
             padding: '0.45rem 0.75rem',
             borderRadius: '6px',
-            border: '1px solid #E5E7EB',
-            background: '#FFFFFF',
-            color: '#111111',
-            fontSize: '0.8125rem',
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+            color: 'var(--text-primary)',
+            fontSize: '0.875rem',
             outline: 'none',
           }}
         >
@@ -301,8 +301,8 @@ const TimelineWidget = ({ userId }) => {
                     width: '14px',
                     height: '14px',
                     borderRadius: '50%',
-                    background: '#FFFFFF',
-                    border: '2px solid #2563EB',
+                    background: 'var(--surface)',
+                    border: '2px solid var(--primary)',
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -314,15 +314,15 @@ const TimelineWidget = ({ userId }) => {
                       width: '6px',
                       height: '6px',
                       borderRadius: '50%',
-                      background: '#2563EB',
+                      background: 'var(--primary)',
                     }}
                   />
                 </div>
 
                 <div
                   style={{
-                    background: '#F8F9FA',
-                    border: '1px solid #E5E7EB',
+                    background: 'var(--surface-muted)',
+                    border: '1px solid var(--border)',
                     borderRadius: '8px',
                     padding: '0.9rem 1rem',
                     marginLeft: '0.75rem',
@@ -340,13 +340,13 @@ const TimelineWidget = ({ userId }) => {
                         minWidth: '36px',
                         width: '36px',
                         height: '36px',
-                        background: '#EFF6FF',
+                        background: 'var(--primary-soft)',
                         borderRadius: '6px',
-                        border: '1px solid #DBEAFE',
+                        border: '1px solid #BDCEE8',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#2563EB',
+                        color: 'var(--primary)',
                         flexShrink: 0,
                       }}
                     >
@@ -368,9 +368,10 @@ const TimelineWidget = ({ userId }) => {
                             flex: 1,
                             minWidth: 0,
                             overflowWrap: 'anywhere',
-                            fontWeight: 600,
-                            fontSize: '0.925rem',
-                            color: '#111111',
+                            fontWeight: 650,
+                            fontSize: '0.95rem',
+                            color: 'var(--text-primary)',
+                            fontFamily: 'var(--font-heading)',
                             margin: 0,
                           }}
                         >
@@ -379,8 +380,8 @@ const TimelineWidget = ({ userId }) => {
 
                         <span
                           style={{
-                            fontSize: '0.75rem',
-                            color: '#6B7280',
+                            fontSize: '0.8125rem',
+                            color: 'var(--text-muted)',
                             whiteSpace: 'nowrap',
                           }}
                         >
@@ -398,9 +399,9 @@ const TimelineWidget = ({ userId }) => {
                       {event.description && (
                         <p
                           style={{
-                            fontSize: '0.8125rem',
-                            color: '#4B5563',
-                            lineHeight: 1.45,
+                            fontSize: '0.875rem',
+                            color: 'var(--text-secondary)',
+                            lineHeight: 1.5,
                             margin: '0.2rem 0 0',
                           }}
                         >
@@ -418,9 +419,9 @@ const TimelineWidget = ({ userId }) => {
                             alignItems: 'center',
                             gap: '0.25rem',
                             marginTop: '0.45rem',
-                            fontSize: '0.78rem',
+                            fontSize: '0.875rem',
                             fontWeight: 600,
-                            color: '#2563EB',
+                            color: 'var(--primary)',
                             textDecoration: 'none',
                           }}
                         >

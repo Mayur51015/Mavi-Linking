@@ -70,7 +70,7 @@ const VoluntaryChangePasswordForm = ({ onSuccess }) => {
           <KeyRound size={22} />
         </div>
         <div>
-          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>Change Password</h3>
+          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)' }}>Change Password</h3>
           <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Update your account security credentials</p>
         </div>
       </div>

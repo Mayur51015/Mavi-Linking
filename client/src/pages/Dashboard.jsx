@@ -954,10 +954,10 @@ const Dashboard = () => {
     <UserLayout>
       <header style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h1 className="dashboard-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: '#111111', fontFamily: 'Inter, sans-serif' }}>
+          <h1 className="dashboard-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 650, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
             Welcome back, {user?.name?.split(' ')[0] || user?.name || 'Mayur'}!
           </h1>
-          <p style={{ color: '#4B5563', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', margin: '0.25rem 0 0 0' }}>
             Track your growth, skills, and opportunities.
           </p>
         </div>
@@ -1967,7 +1967,7 @@ const Dashboard = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '70vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
               {/* Profile Avatar Upload Section */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1rem', background: 'var(--bg-subtle, #F8FAFC)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <div style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid var(--brand-blue, #2563EB)' }}>
+                <div style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid var(--primary, #4263B8)' }}>
                   {user?.avatar ? (
                     <img
                       src={user.avatar}

@@ -549,10 +549,10 @@ const RecentOpportunitiesTable = ({
                         opacity: isApplying ? 0.7 : 1,
                       }}
                       onMouseEnter={(e) => {
-                        if (!isApplying) e.currentTarget.style.background = 'var(--brand-blue-hover, #2563EB)';
+                        if (!isApplying) e.currentTarget.style.background = 'var(--primary-hover)';
                       }}
                       onMouseLeave={(e) => {
-                        if (!isApplying) e.currentTarget.style.background = 'var(--brand-blue, #3B82F6)';
+                        if (!isApplying) e.currentTarget.style.background = 'var(--primary)';
                       }}
                     >
                       {isApplying ? 'Applying...' : 'Apply Now'}

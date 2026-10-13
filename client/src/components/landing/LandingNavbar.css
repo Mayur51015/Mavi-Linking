@@ -7,8 +7,8 @@
   right: 0;
   width: 100%;
   height: 68px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E5E7EB;
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -16,7 +16,7 @@
 }
 
 .edutalentx-navbar.scrolled {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(48, 57, 66, 0.06);
 }
 
 .edutalentx-navbar-container {
@@ -46,7 +46,8 @@
 }
 
 .edutalentx-nav-link {
-  color: #4B5563;
+  font-family: var(--font-heading);
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.9375rem;
   font-weight: 500;
@@ -57,12 +58,12 @@
 
 .edutalentx-nav-link:hover,
 .edutalentx-nav-link:focus-visible {
-  color: #111111;
+  color: var(--text-primary);
   outline: none;
 }
 
 .edutalentx-nav-link:focus-visible {
-  border-bottom: 2px solid #2563EB;
+  border-bottom: 2px solid var(--primary);
 }
 
 /* Desktop Action Buttons */
@@ -73,9 +74,10 @@
 }
 
 .edutalentx-login-btn {
-  color: #111111;
+  font-family: var(--font-heading);
+  color: var(--text-primary);
   font-size: 0.9375rem;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
   padding: 0.5rem 0.85rem;
   border-radius: 6px;
@@ -84,34 +86,35 @@
 
 .edutalentx-login-btn:hover,
 .edutalentx-login-btn:focus-visible {
-  color: #2563EB;
-  background-color: #F8F9FA;
+  color: var(--primary);
+  background-color: var(--surface-muted);
   outline: none;
 }
 
 .edutalentx-get-started-btn {
-  background-color: #2563EB;
+  font-family: var(--font-heading);
+  background-color: var(--primary);
   color: #FFFFFF !important;
   font-size: 0.9375rem;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
   padding: 0.55rem 1.25rem;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  border: 1px solid transparent;
+  border: 1px solid var(--primary-hover);
   transition: background-color 0.15s ease, transform 0.15s ease;
   white-space: nowrap;
 }
 
 .edutalentx-get-started-btn:hover {
-  background-color: #1D4ED8;
+  background-color: var(--primary-hover);
   transform: translateY(-1px);
 }
 
 .edutalentx-get-started-btn:focus-visible {
-  outline: 2px solid #2563EB;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -122,10 +125,10 @@
   justify-content: center;
   min-width: 44px;
   min-height: 44px;
-  background: #FFFFFF;
-  border: 1px solid #E5E7EB;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #111111;
+  color: var(--text-primary);
   cursor: pointer;
   padding: 0.5rem;
   transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -133,9 +136,9 @@
 
 .edutalentx-mobile-toggle:hover,
 .edutalentx-mobile-toggle:focus-visible {
-  background-color: #F8F9FA;
-  border-color: #D1D5DB;
-  outline: 2px solid #2563EB;
+  background-color: var(--surface-muted);
+  border-color: #B0B8C1;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -170,7 +173,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(17, 24, 39, 0.35);
+    background-color: rgba(48, 57, 66, 0.4);
     z-index: 998;
     animation: edxFadeIn 0.2s ease forwards;
   }
@@ -185,9 +188,9 @@
     right: 0;
     max-height: calc(100vh - 68px);
     overflow-y: auto;
-    background-color: #FFFFFF;
-    border-bottom: 1px solid #E5E7EB;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    background-color: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 25px -5px rgba(48, 57, 66, 0.1);
     z-index: 999;
     padding: 1.25rem 1.5rem 1.75rem 1.5rem;
     animation: edxSlideDown 0.22s ease forwards;
@@ -198,17 +201,18 @@
     flex-direction: column;
     gap: 0.25rem;
     padding-bottom: 1.25rem;
-    border-bottom: 1px solid #F3F4F6;
+    border-bottom: 1px solid var(--border);
   }
 
   .edutalentx-mobile-link {
+    font-family: var(--font-heading);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0.85rem 0.75rem;
     font-size: 1rem;
     font-weight: 500;
-    color: #1F2937;
+    color: var(--text-primary);
     text-decoration: none;
     border-radius: 6px;
     transition: background-color 0.15s ease, color 0.15s ease;
@@ -217,8 +221,8 @@
 
   .edutalentx-mobile-link:hover,
   .edutalentx-mobile-link:focus-visible {
-    background-color: #F8F9FA;
-    color: #2563EB;
+    background-color: var(--surface-muted);
+    color: var(--primary);
     outline: none;
   }
 
@@ -230,6 +234,7 @@
   }
 
   .edutalentx-mobile-login-btn {
+    font-family: var(--font-heading);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -237,10 +242,10 @@
     min-height: 44px;
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
-    font-weight: 500;
-    color: #111111;
-    background-color: #F8F9FA;
-    border: 1px solid #E5E7EB;
+    font-weight: 600;
+    color: var(--text-primary);
+    background-color: var(--surface-muted);
+    border: 1px solid var(--border);
     border-radius: 6px;
     text-decoration: none;
     transition: background-color 0.15s ease;
@@ -248,11 +253,12 @@
 
   .edutalentx-mobile-login-btn:hover,
   .edutalentx-mobile-login-btn:focus-visible {
-    background-color: #F3F4F6;
-    color: #2563EB;
+    background-color: #DFE4E8;
+    color: var(--primary);
   }
 
   .edutalentx-mobile-get-started-btn {
+    font-family: var(--font-heading);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -261,18 +267,18 @@
     min-height: 44px;
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
-    font-weight: 500;
+    font-weight: 600;
     color: #FFFFFF !important;
-    background-color: #2563EB;
+    background-color: var(--primary);
     border-radius: 6px;
     text-decoration: none;
-    border: 1px solid transparent;
+    border: 1px solid var(--primary-hover);
     transition: background-color 0.15s ease;
   }
 
   .edutalentx-mobile-get-started-btn:hover,
   .edutalentx-mobile-get-started-btn:focus-visible {
-    background-color: #1D4ED8;
+    background-color: var(--primary-hover);
   }
 }
 

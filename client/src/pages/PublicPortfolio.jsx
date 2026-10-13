@@ -134,18 +134,18 @@ const PublicPortfolio = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
             {portfolio.projects.map(proj => (
               <div key={proj._id} className="glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '1.25rem', color: 'white', marginBottom: '1rem' }}>{proj.title}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flex: 1 }}>{proj.description}</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', marginBottom: '0.75rem', fontWeight: 650, fontFamily: 'var(--font-heading)', lineHeight: 1.3 }}>{proj.title}</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.25rem', flex: 1, lineHeight: 1.5 }}>{proj.description}</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
                   {proj.technologies.map((tech, idx) => (
-                    <span key={idx} style={{ background: 'rgba(255,255,255,0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>
+                    <span key={idx} className="badge badge-gray" style={{ fontSize: '0.75rem', padding: '0.2rem 0.55rem' }}>
                       {tech}
                     </span>
                   ))}
                 </div>
-                <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                  {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}><GitBranch size={16} style={{display:'inline', verticalAlign:'text-bottom'}}/> Code</a>}
-                  {proj.liveUrl && <a href={proj.liveUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-blue)', fontSize: '0.875rem' }}><ExternalLink size={16} style={{display:'inline', verticalAlign:'text-bottom'}}/> Live Demo</a>}
+                <div style={{ display: 'flex', gap: '1.25rem', marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                  {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 500 }}><GitBranch size={16} /> Code</a>}
+                  {proj.liveUrl && <a href={proj.liveUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}><ExternalLink size={16} /> Live Demo</a>}
                 </div>
               </div>
             ))}

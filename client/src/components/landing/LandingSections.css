@@ -3,12 +3,12 @@
 /* Common Section Containers */
 .edx-section {
   padding: 5rem 0;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E5E7EB;
+  background-color: var(--page-bg);
+  border-bottom: 1px solid var(--border);
 }
 
 .edx-section.edx-section-alt {
-  background-color: #F8F9FA;
+  background-color: var(--surface-muted);
 }
 
 .edx-section-container {
@@ -27,28 +27,30 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  font-family: var(--font-heading);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #2563EB;
+  color: var(--primary);
   margin-bottom: 0.65rem;
 }
 
 .edx-section-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-heading);
   font-size: clamp(1.75rem, 3.2vw, 2.25rem);
-  font-weight: 600;
-  color: #111111;
+  font-weight: 650;
+  color: var(--text-primary);
   letter-spacing: -0.02em;
   line-height: 1.25;
   margin: 0;
 }
 
 .edx-section-subtitle {
+  font-family: var(--font-body);
   font-size: 1.05rem;
   line-height: 1.6;
-  color: #4B5563;
+  color: var(--text-secondary);
   margin: 0.75rem 0 0 0;
   max-width: 600px;
 }
@@ -63,28 +65,29 @@
 }
 
 .edx-feature-card {
-  background: #FFFFFF;
-  border: 1px solid #E5E7EB;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1.75rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   box-sizing: border-box;
 }
 
 .edx-feature-card:hover {
-  border-color: #D1D5DB;
-  background-color: #F8F9FA;
+  border-color: #B0B8C1;
+  background-color: var(--surface);
+  box-shadow: 0 2px 6px rgba(48, 57, 66, 0.04);
 }
 
 .edx-feature-icon-box {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 6px;
-  background: #EFF6FF;
-  color: #2563EB;
+  background: var(--primary-soft);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -92,16 +95,18 @@
 }
 
 .edx-feature-title {
+  font-family: var(--font-heading);
   font-size: 1.05rem;
-  font-weight: 600;
-  color: #111111;
+  font-weight: 650;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .edx-feature-desc {
-  font-size: 0.925rem;
-  line-height: 1.55;
-  color: #4B5563;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -115,8 +120,8 @@
 }
 
 .edx-role-card {
-  background: #FFFFFF;
-  border: 1px solid #E5E7EB;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 2rem 1.75rem;
   display: flex;
@@ -127,8 +132,8 @@
 }
 
 .edx-role-card:hover {
-  border-color: #D1D5DB;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border-color: #B0B8C1;
+  box-shadow: 0 4px 12px rgba(48, 57, 66, 0.05);
 }
 
 .edx-role-top {
@@ -138,18 +143,19 @@
 }
 
 .edx-role-badge {
-  font-size: 0.78rem;
+  font-family: var(--font-heading);
+  font-size: 0.8125rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  color: #2563EB;
+  letter-spacing: 0.06em;
+  color: var(--primary);
 }
 
 .edx-role-icon-box {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 6px;
-  background: #EFF6FF;
-  color: #2563EB;
+  background: var(--primary-soft);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,9 +163,10 @@
 }
 
 .edx-role-desc {
-  font-size: 1.05rem;
-  line-height: 1.5;
-  color: #111111;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-primary);
   margin: 0;
   font-weight: 400;
 }
@@ -185,29 +192,31 @@
 }
 
 .edx-flow-step-num {
-  font-size: 0.75rem;
-  font-family: monospace;
-  color: #2563EB;
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
+  color: var(--primary);
   font-weight: 600;
 }
 
 .edx-flow-step-title {
+  font-family: var(--font-heading);
   font-size: 1.05rem;
-  font-weight: 600;
-  color: #111111;
+  font-weight: 650;
+  color: var(--text-primary);
 }
 
 .edx-flow-step-desc {
-  font-size: 0.85rem;
-  color: #4B5563;
-  line-height: 1.4;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 .edx-flow-arrow {
   display: flex;
   align-items: center;
   padding-top: 1.35rem;
-  color: #9CA3AF;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -215,7 +224,7 @@
 .edx-security-container {
   margin-top: 4.5rem;
   padding-top: 3.5rem;
-  border-top: 1px solid #E5E7EB;
+  border-top: 1px solid var(--border);
   width: 100%;
   box-sizing: border-box;
 }
@@ -230,8 +239,8 @@
 }
 
 .edx-security-card {
-  background: #FFFFFF;
-  border: 1px solid #E5E7EB;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1.5rem 1.25rem;
   display: flex;
@@ -242,15 +251,15 @@
 }
 
 .edx-security-card:hover {
-  border-color: #D1D5DB;
+  border-color: #B0B8C1;
 }
 
 .edx-security-icon-box {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 6px;
-  background: #EFF6FF;
-  color: #2563EB;
+  background: var(--primary-soft);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -258,29 +267,32 @@
 }
 
 .edx-security-card-title {
+  font-family: var(--font-heading);
   font-size: 1rem;
-  font-weight: 600;
-  color: #111111;
+  font-weight: 650;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .edx-security-card-desc {
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: #4B5563;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
   margin: 0;
 }
 
 /* 5. Final CTA Section */
 .edx-cta-card {
-  background: #F8F9FA;
-  border: 1px solid #E5E7EB;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 3.5rem 2rem;
   text-align: center;
   max-width: 680px;
   margin: 0 auto;
   box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(48, 57, 66, 0.04);
 }
 
 .edx-cta-actions {
@@ -292,35 +304,37 @@
 }
 
 .edx-cta-primary-btn {
-  background-color: #2563EB;
+  font-family: var(--font-heading);
+  background-color: var(--primary);
   color: #FFFFFF !important;
   padding: 0.75rem 1.6rem;
   border-radius: 6px;
-  font-size: 0.925rem;
-  font-weight: 500;
+  font-size: 0.9375rem;
+  font-weight: 600;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  border: 1px solid transparent;
+  border: 1px solid var(--primary-hover);
   transition: background-color 0.15s ease, transform 0.15s ease;
   min-height: 44px;
 }
 
 .edx-cta-primary-btn:hover {
-  background-color: #1D4ED8;
+  background-color: var(--primary-hover);
   transform: translateY(-1px);
 }
 
 .edx-cta-secondary-btn {
-  background-color: #FFFFFF;
-  color: #111111;
-  border: 1px solid #E5E7EB;
+  font-family: var(--font-heading);
+  background-color: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
   padding: 0.75rem 1.6rem;
   border-radius: 6px;
-  font-size: 0.925rem;
-  font-weight: 500;
+  font-size: 0.9375rem;
+  font-weight: 600;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -330,14 +344,14 @@
 }
 
 .edx-cta-secondary-btn:hover {
-  background-color: #F8F9FA;
-  border-color: #D1D5DB;
+  background-color: var(--surface-muted);
+  border-color: #B0B8C1;
 }
 
 /* 6. Footer Layout */
 .edx-footer {
-  border-top: 1px solid #E5E7EB;
-  background-color: #FFFFFF;
+  border-top: 1px solid var(--border);
+  background-color: var(--surface-muted);
   padding: 3rem 0 2rem 0;
   box-sizing: border-box;
 }
@@ -349,7 +363,7 @@
   align-items: flex-start;
   gap: 2rem;
   padding-bottom: 2.5rem;
-  border-bottom: 1px solid #E5E7EB;
+  border-bottom: 1px solid var(--border);
 }
 
 .edx-footer-links {
@@ -360,15 +374,16 @@
 }
 
 .edx-footer-link {
-  color: #4B5563;
+  font-family: var(--font-heading);
+  color: var(--text-secondary);
   text-decoration: none;
-  font-size: 0.85rem;
+  font-size: 0.9375rem;
   padding: 0.25rem 0;
   transition: color 0.15s ease;
 }
 
 .edx-footer-link:hover {
-  color: #111111;
+  color: var(--text-primary);
 }
 
 /* Responsive Breakpoints */
@@ -384,7 +399,7 @@
   }
 
   .edx-flow-step {
-    border-left: 2px solid #2563EB;
+    border-left: 2px solid var(--primary);
     padding-left: 0.85rem;
   }
 }

@@ -56,7 +56,7 @@ const AIInsights = () => {
         <div className="glass-card animate-fade-in delay-100" style={{ lineHeight: '1.8', fontSize: '1.1rem' }}>
           {insights.split('\n').map((line, idx) => {
             if (line.startsWith('###') || line.startsWith('**')) {
-              return <h3 key={idx} style={{ marginTop: '1.5rem', marginBottom: '0.5rem', color: 'white' }}>{line.replace(/#/g, '').replace(/\*\*/g, '')}</h3>;
+              return <h3 key={idx} style={{ marginTop: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>{line.replace(/#/g, '').replace(/\*\*/g, '')}</h3>;
             }
             if (line.startsWith('- ')) {
               return <li key={idx} style={{ marginLeft: '1.5rem', color: 'var(--text-secondary)' }}>{line.replace('- ', '')}</li>;

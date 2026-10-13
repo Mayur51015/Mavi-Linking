@@ -147,12 +147,12 @@ const CareerRoadmapPage = () => {
         {/* Top Breadcrumb & Actions */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#6B7280', marginBottom: '0.25rem' }}>
-              <span style={{ cursor: 'pointer', color: '#4B5563', fontWeight: 500 }} onClick={() => navigate('/dashboard')}>Student Dashboard</span>
-              <ChevronRight size={14} color="#9CA3AF" />
-              <span style={{ color: '#2563EB', fontWeight: '600' }}>EduTalentX Career Roadmap</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+              <span style={{ cursor: 'pointer', color: 'var(--text-secondary)', fontWeight: 500 }} onClick={() => navigate('/dashboard')}>Student Dashboard</span>
+              <ChevronRight size={14} color="var(--text-muted)" />
+              <span style={{ color: 'var(--primary)', fontWeight: '600' }}>EduTalentX Career Roadmap</span>
             </div>
-            <h1 style={{ color: '#111111', fontSize: '1.875rem', fontWeight: '700', fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif', margin: 0, letterSpacing: '-0.02em' }}>
+            <h1 style={{ color: 'var(--text-primary)', fontSize: '1.875rem', fontWeight: 650, fontFamily: 'var(--font-heading)', margin: 0, letterSpacing: '-0.02em' }}>
               EduTalentX Career Roadmap
             </h1>
           </div>
@@ -161,7 +161,7 @@ const CareerRoadmapPage = () => {
             <button
               onClick={() => setShowGoalModal(true)}
               className="btn btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem' }}
             >
               <Edit3 size={15} />
               Update Career Goal
@@ -171,7 +171,7 @@ const CareerRoadmapPage = () => {
               onClick={() => handleGenerate()}
               disabled={generating}
               className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}
             >
               <RefreshCw size={15} className={generating ? 'animate-spin' : ''} />
               {generating ? 'Regenerating Roadmap...' : 'Regenerate Roadmap'}
@@ -182,8 +182,8 @@ const CareerRoadmapPage = () => {
         {/* Profile Changed Banner */}
         {profileChanged && (
           <div style={{
-            background: '#FFFBEB',
-            border: '1px solid #FDE68A',
+            background: 'var(--surface-muted)',
+            border: '1px solid var(--border)',
             borderRadius: '8px',
             padding: '1rem 1.25rem',
             marginBottom: '1.5rem',
@@ -194,12 +194,12 @@ const CareerRoadmapPage = () => {
             flexWrap: 'wrap',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0 }} />
+              <AlertTriangle size={20} color="var(--warning)" style={{ flexShrink: 0 }} />
               <div>
-                <div style={{ color: '#111111', fontWeight: '600', fontSize: '0.9rem' }}>
+                <div style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9375rem' }}>
                   Your profile has changed since your roadmap was generated.
                 </div>
-                <div style={{ color: '#4B5563', fontSize: '0.8125rem' }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                   Regenerate your roadmap to synchronize with your newest projects, skills, and coding platform milestones.
                 </div>
               </div>
@@ -218,12 +218,12 @@ const CareerRoadmapPage = () => {
         {/* Global Error Banner */}
         {error && (
           <div style={{
-            background: '#FEF2F2',
+            background: '#FEECEB',
             border: '1px solid #FCA5A5',
             borderRadius: '8px',
             padding: '1rem',
             marginBottom: '1.5rem',
-            color: '#DC2626',
+            color: 'var(--error)',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
@@ -235,12 +235,12 @@ const CareerRoadmapPage = () => {
         )}
 
         {loading ? (
-          <div className="glass-card" style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '4rem', textAlign: 'center' }}>
-            <Loader2 size={48} color="#2563EB" className="animate-spin" style={{ margin: '0 auto 1.5rem' }} />
-            <h3 style={{ color: '#111111', fontSize: '1.35rem', fontWeight: 700, fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif' }}>
+          <div className="glass-card" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '4rem', textAlign: 'center' }}>
+            <Loader2 size={48} color="var(--primary)" className="animate-spin" style={{ margin: '0 auto 1.5rem' }} />
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.35rem', fontWeight: 650, fontFamily: 'var(--font-heading)' }}>
               Building your personalized career roadmap...
             </h3>
-            <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
               Analyzing your skills, experience, project history, and platform metrics.
             </p>
           </div>
@@ -248,8 +248,8 @@ const CareerRoadmapPage = () => {
           <>
             {/* HERO OVERVIEW CARD */}
             <div className="glass-card" style={{
-              background: '#FFFFFF',
-              border: '1px solid #E5E7EB',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
               borderRadius: '8px',
               padding: '2rem',
               marginBottom: '2rem',
@@ -260,9 +260,9 @@ const CareerRoadmapPage = () => {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
                     <span className="badge" style={{
-                      background: '#EFF6FF',
-                      border: '1px solid #BFDBFE',
-                      color: '#1E40AF',
+                      background: 'var(--primary-soft)',
+                      border: '1px solid #BDCEE8',
+                      color: 'var(--primary)',
                       fontWeight: 600,
                       padding: '0.2rem 0.6rem',
                       fontSize: '0.75rem',
@@ -270,30 +270,30 @@ const CareerRoadmapPage = () => {
                     }}>
                       Target Career
                     </span>
-                    <span style={{ color: '#6B7280', fontSize: '0.8125rem' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                       AI-estimated learning roadmap
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                    <h2 style={{ color: '#111111', fontSize: '1.75rem', fontWeight: '700', fontFamily: 'Inter, "Helvetica Neue", Arial, sans-serif', margin: 0, letterSpacing: '-0.02em' }}>
+                    <h2 style={{ color: 'var(--text-primary)', fontSize: '1.75rem', fontWeight: 650, fontFamily: 'var(--font-heading)', margin: 0, letterSpacing: '-0.02em' }}>
                       {targetRole}
                     </h2>
                     <button
                       onClick={() => setShowGoalModal(true)}
                       className="btn btn-secondary btn-sm"
                       title="Edit target role"
-                      style={{ padding: '0.25rem 0.5rem', minHeight: '28px', color: '#111111' }}
+                      style={{ padding: '0.25rem 0.5rem', minHeight: '28px', color: 'var(--text-primary)' }}
                     >
                       <Edit3 size={14} />
                     </button>
                   </div>
 
-                  <p style={{ color: '#4B5563', fontSize: '0.9rem', maxWidth: '540px', lineHeight: '1.5', margin: 0 }}>
-                    Build your personalized path from your current <strong style={{ color: '#111111' }}>{currentLevel}</strong> foundation to an industry-ready <strong style={{ color: '#111111' }}>{targetRole}</strong>.
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', maxWidth: '540px', lineHeight: '1.6', margin: 0 }}>
+                    Build your personalized path from your current <strong style={{ color: 'var(--text-primary)' }}>{currentLevel}</strong> foundation to an industry-ready <strong style={{ color: 'var(--text-primary)' }}>{targetRole}</strong>.
                   </p>
 
-                  <div style={{ marginTop: '1.25rem', fontSize: '0.8125rem', color: '#6B7280' }}>
+                  <div style={{ marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     Roadmap generated: {roadmap?.generatedAt ? new Date(roadmap.generatedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Today'}
                   </div>
                 </div>

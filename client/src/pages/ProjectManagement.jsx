@@ -146,30 +146,35 @@ const ProjectManagement = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '1.5rem' }}>
           {projects.map(proj => (
             <div key={proj._id} className="glass-card animate-fade-in" style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.25rem', color: 'white' }}>{proj.title}</h3>
-                <button onClick={() => handleDelete(proj._id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', gap: '0.75rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 650, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', margin: 0, lineHeight: 1.3 }}>{proj.title}</h3>
+                <button
+                  onClick={() => handleDelete(proj._id)}
+                  aria-label={`Delete ${proj.title}`}
+                  title="Delete project"
+                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                >
                   <Trash2 size={18} />
                 </button>
               </div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', flex: 1 }}>{proj.description}</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.25rem', flex: 1, lineHeight: 1.5 }}>{proj.description}</p>
 
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
                 {proj.technologies.map((tech, idx) => (
-                  <span key={idx} style={{ background: 'rgba(255,255,255,0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--text-primary)' }}>
+                  <span key={idx} className="badge badge-gray" style={{ fontSize: '0.75rem', padding: '0.2rem 0.55rem' }}>
                     {tech}
                   </span>
                 ))}
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1.25rem', marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                 {proj.githubUrl && (
-                  <a href={proj.githubUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem' }}>
+                  <a href={proj.githubUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.875rem', fontWeight: 500 }}>
                     <GitBranch size={16} /> Code
                   </a>
                 )}
                 {proj.liveUrl && (
-                  <a href={proj.liveUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem' }}>
+                  <a href={proj.liveUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.875rem', fontWeight: 600 }}>
                     <ExternalLink size={16} /> Live Demo
                   </a>
                 )}

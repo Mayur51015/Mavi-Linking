@@ -8,21 +8,21 @@ import { SkeletonCard } from './ui/Skeleton';
 const renderMedalBadge = (medal) => {
   if (medal === 'GOLD') {
     return (
-      <span className="badge" style={{ background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', border: '1px solid #fbbf24', fontSize: '0.75rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold' }}>
+      <span className="badge" style={{ background: 'rgba(152, 96, 21, 0.12)', color: '#986015', border: '1px solid #D4A359', fontSize: '0.75rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
         🥇 Gold
       </span>
     );
   }
   if (medal === 'SILVER') {
     return (
-      <span className="badge" style={{ background: 'rgba(156, 163, 175, 0.15)', color: '#9ca3af', border: '1px solid #9ca3af', fontSize: '0.75rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold' }}>
+      <span className="badge" style={{ background: 'rgba(89, 101, 116, 0.1)', color: '#596574', border: '1px solid #CBD5E1', fontSize: '0.75rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
         🥈 Silver
       </span>
     );
   }
   if (medal === 'BRONZE') {
     return (
-      <span className="badge" style={{ background: 'rgba(180, 83, 9, 0.15)', color: '#f59e0b', border: '1px solid #b45309', fontSize: '0.75rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 'bold' }}>
+      <span className="badge" style={{ background: 'rgba(141, 91, 40, 0.12)', color: '#8D5B28', border: '1px solid #C49B72', fontSize: '0.75rem', padding: '0.15rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
         🥉 Bronze
       </span>
     );
@@ -32,13 +32,13 @@ const renderMedalBadge = (medal) => {
 
 const getScoreTierColor = (scoreTier) => {
   switch (scoreTier) {
-    case 'Exceptional': return '#ec4899';
-    case 'Expert': return '#a855f7';
-    case 'Advanced': return '#38bdf8';
-    case 'Intermediate': return '#34d399';
-    case 'Developing': return '#fbbf24';
-    case 'Beginner': return '#9ca3af';
-    default: return '#9ca3af';
+    case 'Exceptional': return '#B4235E';
+    case 'Expert': return '#63339E';
+    case 'Advanced': return '#246B9C';
+    case 'Intermediate': return '#237A57';
+    case 'Developing': return '#986015';
+    case 'Beginner': return '#596574';
+    default: return '#596574';
   }
 };
 
@@ -65,14 +65,14 @@ const LeaderboardWidget = () => {
     <div className="erp-card" style={{ padding: '1.25rem 1.4rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(251, 191, 36, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F59E0B' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(152, 96, 21, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#986015' }}>
             <Trophy size={16} />
           </div>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111111', fontFamily: 'Inter, sans-serif' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
             Global Leaderboard
           </h3>
         </div>
-        <span style={{ fontSize: '0.72rem', color: '#6B7280' }}>
+        <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
           {leaderboard.length} Ranked
         </span>
       </div>
@@ -117,38 +117,38 @@ const LeaderboardWidget = () => {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '0.85rem 1rem',
-                  background: isSelf ? '#EFF6FF' : '#F8F9FA',
-                  border: isSelf ? '1px solid #BFDBFE' : '1px solid #E5E7EB',
+                  background: isSelf ? 'var(--primary-soft)' : 'var(--surface-muted)',
+                  border: isSelf ? '1px solid #BDCEE8' : '1px solid var(--border)',
                   marginBottom: '0.5rem',
                   borderRadius: '8px'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: rank <= 3 ? '#fbbf24' : '#4B5563', width: '24px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: rank <= 3 ? '#986015' : 'var(--text-secondary)', width: '24px', textAlign: 'center' }}>
                     #{rank}
                   </span>
-                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: isSelf ? '#2563EB' : '#F3F4F6', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: isSelf ? '#FFFFFF' : '#111111' }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: isSelf ? 'var(--primary)' : 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: isSelf ? '#FFFFFF' : 'var(--text-primary)' }}>
                     {userObj.name?.charAt(0) || '?'}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 'bold', color: isSelf ? '#2563EB' : '#111111', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <div style={{ fontWeight: 'bold', color: isSelf ? 'var(--primary)' : 'var(--text-primary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                       <span>{userObj.name || 'Developer'}</span>
                       {userObj.etxId && (
-                        <span style={{ fontSize: '0.7rem', color: '#6B7280', fontFamily: 'monospace' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                           ({userObj.etxId})
                         </span>
                       )}
-                      {isSelf && <span className="badge badge-blue" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>You</span>}
+                      {isSelf && <span className="badge badge-blue" style={{ fontSize: '0.6875rem', padding: '0.1rem 0.4rem' }}>You</span>}
                       {renderMedalBadge(medal)}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: getScoreTierColor(scoreTier), fontWeight: '600', marginTop: '0.1rem' }}>
+                    <div style={{ fontSize: '0.8125rem', color: getScoreTierColor(scoreTier), fontWeight: '600', marginTop: '0.1rem' }}>
                       Tier: {scoreTier}
                     </div>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 'bold', color: 'var(--accent-cyan)', fontSize: '1rem' }}>{item.score || 0}</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Score</div>
+                  <div style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1rem' }}>{item.score || 0}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Score</div>
                 </div>
               </div>
             );

@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { describe, it, expect } from 'vitest';
 import LandingNavbar from './LandingNavbar';
 import { AuthContext } from '../../context/AuthContext';
 

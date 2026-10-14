@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { describe, it, expect } from 'vitest';
 import HeroSection from './HeroSection';
 
 describe('HeroSection Component with 3D Background', () => {

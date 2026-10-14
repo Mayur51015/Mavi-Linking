@@ -14,12 +14,25 @@
     "server": "npm run dev --workspace=server",
     "dev": "npm run dev --workspaces",
     "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
+    "test": "npm run test:client && npm run test:server",
+    "test:client": "npm run test --workspace=client",
+    "test:server": "npm run test --workspace=server",
+    "test:unit": "npm run test:unit --workspace=client && npm run test:unit --workspace=server",
+    "test:integration": "npm run test:integration --workspace=client",
+    "test:api": "npm run test:api --workspace=server",
+    "test:security": "npm run test:security --workspace=server && node scripts/security-audit.js",
+    "test:e2e": "playwright test e2e/landing-and-navigation.spec.js e2e/auth-journey.spec.js e2e/protected-routes.spec.js e2e/registration-journey.spec.js",
+    "test:a11y": "playwright test e2e/accessibility.spec.js",
+    "test:perf": "node scripts/run-load-test.js",
+    "test:all": "npm run test:client && npm run test:server && npm run test:e2e && npm run test:a11y && npm run test:perf && npm run test:security",
     "lint": "npm run lint --workspace=client",
     "db:reset-users": "npm run db:reset-users --workspace=server",
     "db:seed-super-admin": "npm run db:seed-super-admin --workspace=server"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0",
+    "autocannon": "^8.0.0",
     "dequal": "^2.0.3"
   }
 }

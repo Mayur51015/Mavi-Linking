@@ -8,8 +8,10 @@
     "start": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:unit": "vitest run src/utils src/constants",
+    "test:integration": "vitest run src/routes src/pages src/components",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
@@ -26,6 +28,9 @@
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@babel/preset-env": "^7.29.7",
+    "@babel/preset-react": "^7.29.7",
     "@eslint/js": "^10.0.1",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.6.3",
@@ -33,11 +38,16 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "babel-jest": "^30.5.2",
+    "babel-plugin-transform-import-meta": "^3.0.0",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
+    "jest": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
     "jsdom": "^25.0.1",
+    "msw": "^3.0.3",
     "vite": "^8.0.10",
     "vitest": "^5.0.3"
   },

@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { getSupabaseAuthErrorMessage } from '../utils/supabaseErrors';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 

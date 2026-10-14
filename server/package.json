@@ -11,8 +11,10 @@
     "db:reset-demo": "node src/scripts/resetDemoDatabase.js",
     "db:reset-users": "node src/scripts/resetUsersQA.js",
     "db:seed-super-admin": "node src/scripts/seedSuperAdmin.js",
-    "build": "echo Backend is Node.js, no build step required",
     "test": "jest --runInBand",
+    "test:unit": "jest --runInBand tests/candidateEligibility.test.js tests/fileValidation.test.js",
+    "test:api": "jest --runInBand tests/authEndpointsApi.test.js",
+    "test:security": "jest --runInBand tests/securityRbacAndDataProtection.test.js",
     "test:smtp": "node src/scripts/verifySmtp.js"
   },
   "keywords": [

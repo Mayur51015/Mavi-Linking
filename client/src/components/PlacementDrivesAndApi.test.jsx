@@ -1,12 +1,12 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import api, { getApiBaseUrl, getBackendBaseUrl } from '../api/axios';
 import PlacementDrives from '../pages/teacher/PlacementDrives';
 
 // Mock the TeacherLayout to simplify test rendering
 vi.mock('../layouts/TeacherLayout', () => ({
+  __esModule: true,
   default: ({ children }) => <div data-testid="teacher-layout">{children}</div>,
 }));
 
